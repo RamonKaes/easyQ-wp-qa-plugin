@@ -644,3 +644,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 13 | Approval and confirmation apply to new registrations only; existing users are treated as approved and confirmed | 2026-10-13 |
 | 14 | Posting questions, answers and comments needs an account by default (privacy) | 2026-10-13 |
 | 15 | WordPress administrators always keep `easyq_manage`, whatever the role mapping says | 2026-10-13 |
+| 16 | Favorites, notices, wall and message endpoints come with their features in phase 7 | 2026-10-13 |

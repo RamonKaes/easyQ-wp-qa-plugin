@@ -6,8 +6,8 @@ WordPress.
 
 > **Status:** early development. The foundation and the core domain (posts,
 > moderation, votes, flags, points, categories, search index, rate limits and
-> events) and users and permissions (levels, capabilities, profile integration)
-> are in place; features are added phase by phase, see
+> events), users and permissions (levels, capabilities, profile integration) and
+> the REST API are in place; features are added phase by phase, see
 > [docs/feature-mapping.md](docs/feature-mapping.md#13-phases).
 
 ## Principles
@@ -21,7 +21,7 @@ WordPress.
 
 The full mapping of Question2Answer features to WordPress is documented in
 [docs/feature-mapping.md](docs/feature-mapping.md), the public hooks in
-[docs/hooks.md](docs/hooks.md).
+[docs/hooks.md](docs/hooks.md) and the REST API in [docs/rest-api.md](docs/rest-api.md).
 
 ## Requirements
 
