@@ -29,6 +29,7 @@ final class Plugin {
 		( new Users\User_Events( Services::posts(), Services::points() ) )->register();
 		( new Users\Avatars() )->register();
 		( new Users\Registration() )->register();
+		( new Rest\Rest_Api() )->register();
 
 		if ( is_admin() ) {
 			( new Admin\Profile_Screen() )->register();

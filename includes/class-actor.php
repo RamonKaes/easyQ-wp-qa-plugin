@@ -21,7 +21,7 @@ final class Actor {
 	 * Sets up the actor.
 	 *
 	 * @param int|null    $user_id   WordPress user ID, or null for visitors and the system.
-	 * @param int|null    $cookie_id Anonymous visitor cookie ID, or null.
+	 * @param int|null    $cookie_id Visitor cookie ID, or null.
 	 * @param string|null $ip        IP address of the request, or null.
 	 */
 	public function __construct(
@@ -34,13 +34,15 @@ final class Actor {
 	/**
 	 * Returns the actor of the current request.
 	 *
-	 * @param int|null $cookie_id Anonymous visitor cookie ID, used only if no user is logged in.
+	 * The cookie is kept for logged-in users too, so they can claim posts they wrote before registering.
+	 *
+	 * @param int|null $cookie_id Anonymous visitor cookie ID.
 	 * @return self
 	 */
 	public static function current( ?int $cookie_id = null ): self {
 		$user_id = get_current_user_id();
 
-		return new self( $user_id > 0 ? $user_id : null, $user_id > 0 ? null : $cookie_id, Ip::current() );
+		return new self( $user_id > 0 ? $user_id : null, $cookie_id, Ip::current() );
 	}
 
 	/**

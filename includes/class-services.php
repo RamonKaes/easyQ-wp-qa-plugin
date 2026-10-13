@@ -10,7 +10,9 @@ namespace EasyQ;
 use EasyQ\Categories\Categories;
 use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
+use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post_Repository;
+use EasyQ\Posts\Question_Query;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Posts\Post_Validator;
 use EasyQ\Search\Search;
@@ -139,6 +141,24 @@ final class Services {
 	 */
 	public static function user_fields(): User_Fields {
 		return self::shared( User_Fields::class, static fn (): User_Fields => new User_Fields() );
+	}
+
+	/**
+	 * Returns the content renderer.
+	 *
+	 * @return Content_Renderer
+	 */
+	public static function content_renderer(): Content_Renderer {
+		return self::shared( Content_Renderer::class, static fn (): Content_Renderer => new Content_Renderer() );
+	}
+
+	/**
+	 * Returns the question lists.
+	 *
+	 * @return Question_Query
+	 */
+	public static function question_query(): Question_Query {
+		return self::shared( Question_Query::class, static fn (): Question_Query => new Question_Query( self::posts(), self::categories() ) );
 	}
 
 	/**
