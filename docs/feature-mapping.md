@@ -610,18 +610,18 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 
 ## 13. Phases
 
-| Phase | Scope | Acceptance criteria |
-| --- | --- | --- |
-| 1 Foundation | Bootstrap, autoloader, activation/uninstall, schema, options, capabilities, tooling, CI | Activates without errors on single site and multisite; tables created; Plugin Check, PHPCS and PHPStan clean |
-| 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A |
-| 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested |
-| 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors |
-| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass |
-| 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows |
-| 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests |
-| 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested |
-| 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP |
-| 10 Extensions | Selection from section 10 | |
+| Phase | Scope | Acceptance criteria | Status |
+| --- | --- | --- | --- |
+| 1 Foundation | Bootstrap, autoloader, activation/uninstall, schema, options, capabilities, tooling, CI | Activates without errors on single site and multisite; tables created; Plugin Check, PHPCS and PHPStan clean | Done |
+| 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A | Done |
+| 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
+| 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories and search are done. Open: user list and profile pages, account page, activity/answer/comment lists, feeds, sitemaps, navigation link search, block patterns, classic theme fallback, screenshot checks with more themes |
+| 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows | Open (profile and users screens done in phase 3) |
+| 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests | Open |
+| 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
+| 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
+| 10 Extensions | Selection from section 10 | | Open |
 
 ---
 
