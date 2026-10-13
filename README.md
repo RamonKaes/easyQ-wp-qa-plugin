@@ -4,8 +4,9 @@ A complete question and answer platform for WordPress, built from blocks.
 easyQ is a port of [Question2Answer](https://www.question2answer.org/) 1.8.8 to
 WordPress.
 
-> **Status:** early development. The foundation (schema, installation, capabilities,
-> tooling) is in place; features are added phase by phase, see
+> **Status:** early development. The foundation and the core domain (posts,
+> moderation, votes, flags, points, categories, search index, rate limits and
+> events) are in place; features are added phase by phase, see
 > [docs/feature-mapping.md](docs/feature-mapping.md#13-phases).
 
 ## Principles
@@ -18,7 +19,8 @@ WordPress.
 - **High compatibility.** Everything is extensible through documented hooks.
 
 The full mapping of Question2Answer features to WordPress is documented in
-[docs/feature-mapping.md](docs/feature-mapping.md).
+[docs/feature-mapping.md](docs/feature-mapping.md), the public hooks in
+[docs/hooks.md](docs/hooks.md).
 
 ## Requirements
 

@@ -63,12 +63,12 @@ Q2A uses 31 tables. The schema is created with `dbDelta()`, versioned through th
 
 | Q2A table | Target | Notes |
 | --- | --- | --- |
-| `posts` | **P** `easyq_posts` | Questions, answers, comments including states (`_HIDDEN`, `_QUEUED`); type `NOTE` dropped (unused). `userid` becomes a WP user ID (`BIGINT UNSIGNED`) |
+| `posts` | **P** `easyq_posts` | Questions, answers, comments including states (`_HIDDEN`, `_QUEUED`); plus type `NOTE` for the reasons questions are closed with. `userid` becomes a WP user ID (`BIGINT UNSIGNED`) |
 | `postmetas` | **P** `easyq_postmeta` | Compatible with the WP metadata API (`add_metadata( 'easyq_post', … )`) |
 | `categories` | **P** `easyq_categories` | Up to 4 levels, `backpath`, counters, position |
 | `categorymetas` | **P** `easyq_categorymeta` | Metadata API |
 | `posttags`, `tagwords`, `tagmetas` | **P** `easyq_posttags`, `easyq_tagmeta` | Tags stay a custom structure (no taxonomy) because they are tied to the word index |
-| `words`, `titlewords`, `contentwords` | **P** `easyq_words`, `easyq_titlewords`, `easyq_contentwords` | Search index |
+| `words`, `titlewords`, `contentwords` | **P** `easyq_words`, `easyq_titlewords`, `easyq_contentwords` | Search index; words are stored as binary UTF-8 with a unique key, so lookups are exact and no table locks are needed |
 | `uservotes` | **P** `easyq_uservotes` | Votes and flags |
 | `userpoints` | **P** `easyq_userpoints` | Aggregated points per user |
 | `userlevels` | **P** `easyq_userlevels` | Per-category levels (section 2) |
@@ -87,6 +87,7 @@ Q2A uses 31 tables. The schema is created with `dbDelta()`, versioned through th
 | `pages` | **–** | Replaced by WP pages and navigation |
 | `widgets` | **–** | Replaced by blocks |
 | `cache` | **WP** Transients / object cache | |
+| Cached counts in `options` (`cache_qcount`, …) | **P** option `easyq_counts` | Invalidated on change and recalculated on the next read instead of incremental updates |
 | – | **N** `easyq_email_templates` *(or options)* | Editable email templates (section 8) |
 
 **Uninstall (N):** `uninstall.php` removes tables, options and meta only if this is
@@ -481,19 +482,24 @@ block editor previews and future extensions.
 
 ## 7. Events → WordPress hooks
 
-Every Q2A event becomes an action `easyq_{event}` with typed parameters:
+Every Q2A event fires the action `easyq_{event}` and the generic action
+`easyq_event`, with the event parameters and the `EasyQ\Actor` who caused it.
+Event names are kept from Q2A. The full list with parameters is maintained in
+[hooks.md](hooks.md).
 
-`q_post`, `a_post`, `c_post`, `q_edit`, `a_edit`, `c_edit`, `a_select`, `a_unselect`,
-`q_close`, `q_reopen`, `q_move`, `a_to_c`, `q_claim`, `a_claim`, `c_claim`,
-`q_requeue`, `a_requeue`, `c_requeue`, `q_delete`, `a_delete`, `c_delete`
-(each with `*_before`), `search`, `feedback`, `ip_block`, `ip_unblock`,
-`u_register`, `u_confirmed`, `u_login`, `u_logout`, `u_password`, `u_reset`, `u_save`,
-`u_edit`, `u_level`, `u_delete` (+ `_before`), `u_message`, `u_wall_post`,
-`u_wall_delete`.
+| Group | Events |
+| --- | --- |
+| Questions | `q_post`, `q_queue`, `q_edit`, `q_requeue`, `q_approve`, `q_reject`, `q_hide`, `q_reshow`, `q_close`, `q_reopen`, `q_move`, `q_claim`, `q_delete_before`, `q_delete` |
+| Answers | `a_post`, `a_queue`, `a_edit`, `a_requeue`, `a_approve`, `a_reject`, `a_hide`, `a_reshow`, `a_select`, `a_unselect`, `a_to_c`, `a_claim`, `a_delete_before`, `a_delete` |
+| Comments | `c_post`, `c_queue`, `c_edit`, `c_requeue`, `c_approve`, `c_reject`, `c_hide`, `c_reshow`, `c_claim`, `c_delete_before`, `c_delete` |
+| Votes and flags | `{q,a,c}_vote_up`, `{q,a,c}_vote_down`, `{q,a,c}_vote_nil`, `{q,a,c}_flag`, `{q,a,c}_unflag`, `{q,a,c}_clearflags` |
+| Other | `search`, `feedback`, `ip_block`, `ip_unblock` |
+| Users | `u_register`, `u_confirmed`, `u_login`, `u_logout`, `u_password`, `u_reset`, `u_save`, `u_edit`, `u_level`, `u_block`, `u_unblock`, `u_delete_before`, `u_delete`, `u_message`, `u_wall_post`, `u_wall_delete`, `u_favorite`, `u_unfavorite` |
 
-The three internal Q2A event modules (`event-limits`, `event-notify`, `event-updates`)
-become internal listeners of these actions. Events WordPress already fires (login,
-registration, password) are mapped onto the core hooks.
+The three internal Q2A event modules become internal listeners: `event-limits`
+(rate limits and last write activity, phase 2), `event-updates` and
+`event-notify` (phase 7). Events WordPress already fires (login, registration,
+password) are mapped onto the core hooks.
 
 ---
 
@@ -627,3 +633,6 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 7 | No plugin CSS; styling comes from the block theme | 2026-10-13 |
 | 8 | Full compliance with WordPress core guidelines | 2026-10-13 |
 | 9 | PHP namespace `EasyQ\` (capitalized, as recommended by the PHP coding standards handbook) | 2026-10-13 |
+| 10 | Site-wide counts are invalidated and recalculated on read instead of being updated incrementally | 2026-10-13 |
+| 11 | The post type `NOTE` is kept for close reasons | 2026-10-13 |
+| 12 | Category changes update posts and counts right away instead of needing a separate recalculation | 2026-10-13 |
