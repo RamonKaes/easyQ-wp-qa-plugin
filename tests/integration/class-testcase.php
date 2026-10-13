@@ -88,6 +88,20 @@ abstract class TestCase extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Creates an administrator who may edit other users, also on multisite.
+	 *
+	 * @return int User ID.
+	 */
+	protected function administrator(): int {
+		$user_id = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			grant_super_admin( $user_id );
+		}
+
+		return $user_id;
+	}
+
+	/**
 	 * Creates a question.
 	 *
 	 * @param Actor    $author      Author.

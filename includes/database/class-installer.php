@@ -8,6 +8,7 @@
 namespace EasyQ\Database;
 
 use EasyQ\Settings\Options;
+use EasyQ\Users\User_Fields;
 use WP_Site;
 
 defined( 'ABSPATH' ) || exit;
@@ -89,6 +90,7 @@ final class Installer {
 		Schema::install();
 		Schema::register_meta_tables();
 		Options::install();
+		( new User_Fields() )->install_defaults();
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
 	}

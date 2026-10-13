@@ -14,6 +14,9 @@ use EasyQ\Posts\Post_Repository;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Posts\Post_Validator;
 use EasyQ\Search\Search;
+use EasyQ\Users\Permissions;
+use EasyQ\Users\User_Fields;
+use EasyQ\Users\User_Levels;
 use EasyQ\Votes\Votes;
 
 defined( 'ABSPATH' ) || exit;
@@ -106,6 +109,36 @@ final class Services {
 	 */
 	public static function limits(): Limits {
 		return self::shared( Limits::class, static fn (): Limits => new Limits() );
+	}
+
+	/**
+	 * Returns the user levels service.
+	 *
+	 * @return User_Levels
+	 */
+	public static function user_levels(): User_Levels {
+		return self::shared( User_Levels::class, static fn (): User_Levels => new User_Levels() );
+	}
+
+	/**
+	 * Returns the permission checks.
+	 *
+	 * @return Permissions
+	 */
+	public static function permissions(): Permissions {
+		return self::shared(
+			Permissions::class,
+			static fn (): Permissions => new Permissions( self::user_levels(), self::points(), self::limits(), self::votes() )
+		);
+	}
+
+	/**
+	 * Returns the user profile fields service.
+	 *
+	 * @return User_Fields
+	 */
+	public static function user_fields(): User_Fields {
+		return self::shared( User_Fields::class, static fn (): User_Fields => new User_Fields() );
 	}
 
 	/**

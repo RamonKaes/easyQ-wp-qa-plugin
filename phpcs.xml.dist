@@ -27,6 +27,39 @@
 		</properties>
 	</rule>
 
+	<!-- Meta capabilities resolved in EasyQ\Capabilities. -->
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="easyq_manage"/>
+				<element value="easyq_moderate"/>
+				<element value="easyq_view_questions"/>
+				<element value="easyq_post_question"/>
+				<element value="easyq_edit_silently"/>
+				<element value="easyq_view_ips"/>
+				<element value="easyq_view_voters"/>
+				<element value="easyq_post_wall"/>
+				<element value="easyq_view_new_users"/>
+				<element value="easyq_view_special_users"/>
+				<element value="easyq_post_answer"/>
+				<element value="easyq_post_comment"/>
+				<element value="easyq_edit_post"/>
+				<element value="easyq_retag_question"/>
+				<element value="easyq_select_answer"/>
+				<element value="easyq_flag_post"/>
+				<element value="easyq_clear_flags"/>
+				<element value="easyq_close_question"/>
+				<element value="easyq_reopen_question"/>
+				<element value="easyq_moderate_post"/>
+				<element value="easyq_hide_post"/>
+				<element value="easyq_reshow_post"/>
+				<element value="easyq_delete_post"/>
+				<element value="easyq_vote_post"/>
+				<element value="easyq_vote_down_post"/>
+			</property>
+		</properties>
+	</rule>
+
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">

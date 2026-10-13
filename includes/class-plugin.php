@@ -25,5 +25,14 @@ final class Plugin {
 		( new Capabilities() )->register();
 		( new Events\Activity_Tracker() )->register();
 		Services::limits()->register();
+		( new Users\User_Status() )->register();
+		( new Users\User_Events( Services::posts(), Services::points() ) )->register();
+		( new Users\Avatars() )->register();
+		( new Users\Registration() )->register();
+
+		if ( is_admin() ) {
+			( new Admin\Profile_Screen() )->register();
+			( new Admin\Users_Screen() )->register();
+		}
 	}
 }

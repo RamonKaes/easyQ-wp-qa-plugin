@@ -7,6 +7,9 @@
 
 namespace EasyQ\Settings;
 
+use EasyQ\Users\Levels;
+use EasyQ\Users\Permits;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -31,17 +34,76 @@ final class Options {
 	 * Deviations from the Question2Answer defaults are privacy related: anonymous
 	 * posting and notifications are off by default.
 	 *
-	 * @return array<string, array<string, scalar>>
+	 * @return array<string, array<string, mixed>>
 	 */
 	public static function defaults(): array {
 		$defaults = array(
-			'general' => array(
+			'general'     => array(
 				'base_slug'                => 'questions',
 				'tags_or_categories'       => 'tc',
 				'read_only'                => false,
 				'delete_data_on_uninstall' => false,
+				// Q&A level of each WordPress role; roles not listed get the basic level.
+				'role_levels'              => array(
+					'administrator' => Levels::ADMIN,
+					'editor'        => Levels::MODERATOR,
+				),
 			),
-			'posting' => array(
+			'permissions' => array(
+				'permit_view_q_page'                    => Permits::ALL,
+				'allow_view_q_bots'                     => true,
+				'permit_post_q'                         => Permits::USERS,
+				'permit_post_a'                         => Permits::USERS,
+				'permit_post_c'                         => Permits::USERS,
+				'permit_vote_q'                         => Permits::USERS,
+				'permit_vote_a'                         => Permits::USERS,
+				'permit_vote_c'                         => Permits::USERS,
+				'permit_vote_down'                      => Permits::USERS,
+				'permit_retag_cat'                      => Permits::EDITORS,
+				'permit_edit_q'                         => Permits::EDITORS,
+				'permit_edit_a'                         => Permits::EXPERTS,
+				'permit_edit_c'                         => Permits::EDITORS,
+				'permit_edit_silent'                    => Permits::MODERATORS,
+				'permit_close_q'                        => Permits::EDITORS,
+				'permit_select_a'                       => Permits::EXPERTS,
+				'permit_anon_view_ips'                  => Permits::EDITORS,
+				'permit_view_voters_flaggers'           => Permits::ADMINS,
+				'permit_flag'                           => Permits::CONFIRMED,
+				'permit_moderate'                       => Permits::EXPERTS,
+				'permit_hide_show'                      => Permits::EDITORS,
+				'permit_delete_hidden'                  => Permits::MODERATORS,
+				'permit_view_new_users_page'            => Permits::EDITORS,
+				'permit_view_special_users_page'        => Permits::MODERATORS,
+				'permit_post_wall'                      => Permits::CONFIRMED,
+				'permit_post_q_points'                  => 0,
+				'permit_post_a_points'                  => 0,
+				'permit_post_c_points'                  => 0,
+				'permit_vote_q_points'                  => 0,
+				'permit_vote_a_points'                  => 0,
+				'permit_vote_c_points'                  => 0,
+				'permit_vote_down_points'               => 0,
+				'permit_retag_cat_points'               => 0,
+				'permit_edit_q_points'                  => 0,
+				'permit_edit_a_points'                  => 0,
+				'permit_edit_c_points'                  => 0,
+				'permit_edit_silent_points'             => 0,
+				'permit_close_q_points'                 => 0,
+				'permit_select_a_points'                => 0,
+				'permit_anon_view_ips_points'           => 0,
+				'permit_view_voters_flaggers_points'    => 0,
+				'permit_flag_points'                    => 0,
+				'permit_moderate_points'                => 0,
+				'permit_hide_show_points'               => 0,
+				'permit_delete_hidden_points'           => 0,
+				'permit_view_new_users_page_points'     => 0,
+				'permit_view_special_users_page_points' => 0,
+				'permit_post_wall_points'               => 0,
+			),
+			'users'       => array(
+				'avatar_allow_upload' => true,
+				'avatar_store_size'   => 400,
+			),
+			'posting'     => array(
 				'allow_close_questions'     => true,
 				'allow_close_own_questions' => true,
 				'allow_self_answer'         => true,
@@ -61,7 +123,7 @@ final class Options {
 				'tag_separator_comma'       => false,
 				'notify_users_default'      => false,
 			),
-			'viewing' => array(
+			'viewing'     => array(
 				'voting_on_qs'          => true,
 				'voting_on_q_page_only' => false,
 				'voting_on_as'          => true,
@@ -70,7 +132,7 @@ final class Options {
 				'do_count_q_views'      => true,
 				'recalc_hotness_q_view' => true,
 			),
-			'lists'   => array(
+			'lists'       => array(
 				'hot_weight_q_age'   => 100,
 				'hot_weight_a_age'   => 100,
 				'hot_weight_answers' => 100,
@@ -78,7 +140,7 @@ final class Options {
 				'hot_weight_views'   => 100,
 				'search_provider'    => 'basic',
 			),
-			'points'  => array(
+			'points'      => array(
 				'points_base'             => 100,
 				'points_multiple'         => 10,
 				'points_post_q'           => 2,
@@ -102,7 +164,10 @@ final class Options {
 				'points_vote_up_a'        => 1,
 				'points_vote_down_a'      => 1,
 			),
-			'spam'    => array(
+			'spam'        => array(
+				'confirm_user_emails'    => true,
+				'confirm_user_required'  => false,
+				'moderate_users'         => false,
 				'flagging_of_posts'      => true,
 				'flagging_notify_first'  => 1,
 				'flagging_notify_every'  => 2,
@@ -140,7 +205,7 @@ final class Options {
 		/**
 		 * Filters the default settings.
 		 *
-		 * @param array<string, array<string, scalar>> $defaults Default values keyed by section and setting.
+		 * @param array<string, array<string, mixed>> $defaults Default values keyed by section and setting.
 		 */
 		return (array) apply_filters( 'easyq_default_settings', $defaults );
 	}
