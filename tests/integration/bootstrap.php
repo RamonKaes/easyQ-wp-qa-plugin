@@ -24,6 +24,11 @@ tests_add_filter(
 	'muplugins_loaded',
 	static function (): void {
 		require dirname( __DIR__, 2 ) . '/easyq.php';
+
+		// Start every run with a fresh schema; the plugin installs it on plugins_loaded.
+		EasyQ\Database\Schema::drop();
+		delete_option( EasyQ\Database\Installer::DB_VERSION_OPTION );
+		delete_option( EasyQ\Stats\Counts::OPTION );
 	}
 );
 

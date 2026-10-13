@@ -1,0 +1,139 @@
+<?php
+/**
+ * Shared service instances.
+ *
+ * @package easyQ
+ */
+
+namespace EasyQ;
+
+use EasyQ\Categories\Categories;
+use EasyQ\Limits\Limits;
+use EasyQ\Points\Points;
+use EasyQ\Posts\Post_Repository;
+use EasyQ\Posts\Post_Service;
+use EasyQ\Posts\Post_Validator;
+use EasyQ\Search\Search;
+use EasyQ\Votes\Votes;
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Creates the plugin services once and wires their dependencies.
+ *
+ * Extensions use these accessors to work with easyQ data, e.g.
+ * `EasyQ\Services::posts()->find( $id )`.
+ */
+final class Services {
+
+	/**
+	 * Created services keyed by name.
+	 *
+	 * @var array<string, object>
+	 */
+	private static array $instances = array();
+
+	/**
+	 * Returns the post storage.
+	 *
+	 * @return Post_Repository
+	 */
+	public static function posts(): Post_Repository {
+		return self::shared( Post_Repository::class, static fn (): Post_Repository => new Post_Repository() );
+	}
+
+	/**
+	 * Returns the post operations.
+	 *
+	 * @return Post_Service
+	 */
+	public static function post_service(): Post_Service {
+		return self::shared(
+			Post_Service::class,
+			static fn (): Post_Service => new Post_Service( self::posts(), self::search(), self::points(), self::categories() )
+		);
+	}
+
+	/**
+	 * Returns the post validator.
+	 *
+	 * @return Post_Validator
+	 */
+	public static function validator(): Post_Validator {
+		return self::shared( Post_Validator::class, static fn (): Post_Validator => new Post_Validator() );
+	}
+
+	/**
+	 * Returns the votes and flags service.
+	 *
+	 * @return Votes
+	 */
+	public static function votes(): Votes {
+		return self::shared( Votes::class, static fn (): Votes => new Votes( self::posts(), self::post_service(), self::points() ) );
+	}
+
+	/**
+	 * Returns the search service.
+	 *
+	 * @return Search
+	 */
+	public static function search(): Search {
+		return self::shared( Search::class, static fn (): Search => new Search() );
+	}
+
+	/**
+	 * Returns the points service.
+	 *
+	 * @return Points
+	 */
+	public static function points(): Points {
+		return self::shared( Points::class, static fn (): Points => new Points() );
+	}
+
+	/**
+	 * Returns the categories service.
+	 *
+	 * @return Categories
+	 */
+	public static function categories(): Categories {
+		return self::shared( Categories::class, static fn (): Categories => new Categories( self::posts() ) );
+	}
+
+	/**
+	 * Returns the rate limits service.
+	 *
+	 * @return Limits
+	 */
+	public static function limits(): Limits {
+		return self::shared( Limits::class, static fn (): Limits => new Limits() );
+	}
+
+	/**
+	 * Forgets all created services, so the next call creates new ones. Used by tests.
+	 */
+	public static function reset(): void {
+		self::$instances = array();
+	}
+
+	/**
+	 * Returns a shared service, creating it on first use.
+	 *
+	 * @template T of object
+	 * @param string   $name    Service class.
+	 * @param callable $factory Creates the service.
+	 * @return object
+	 * @phpstan-param class-string<T> $name
+	 * @phpstan-param callable(): T $factory
+	 * @phpstan-return T
+	 */
+	private static function shared( string $name, callable $factory ): object {
+		if ( ! isset( self::$instances[ $name ] ) ) {
+			self::$instances[ $name ] = $factory();
+		}
+
+		$instance = self::$instances[ $name ];
+		assert( $instance instanceof $name );
+
+		return $instance;
+	}
+}

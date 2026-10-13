@@ -19,9 +19,11 @@ defined( 'ABSPATH' ) || exit;
  * - Meta tables use the layout of the WordPress metadata API.
  * - No foreign keys (WordPress core does not use them); dependent rows are
  *   removed in code.
+ * - Index words are stored as binary UTF-8 with a unique key, so lookups are
+ *   exact and new words can be added without table locks.
  * - IP address columns are nullable so they can be purged after the retention
  *   period. The `lastviewip` column is dropped; views are counted without IPs.
- * - Q2A's `NOTE` post type and the `users`, `userlogins`, `userprofile`,
+ * - The `users`, `userlogins`, `userprofile`,
  *   `usermetas`, `options`, `blobs`, `pages`, `widgets` and `cache` tables are
  *   replaced by WordPress features.
  *
@@ -147,13 +149,13 @@ KEY parent_position (parent_id,position),
 KEY backpath (backpath(191))",
 
 			'words'         => "id bigint(20) unsigned NOT NULL auto_increment,
-word varchar(80) NOT NULL default '',
+word varbinary(320) NOT NULL default '',
 title_count int(10) unsigned NOT NULL default '0',
 content_count int(10) unsigned NOT NULL default '0',
 tagword_count int(10) unsigned NOT NULL default '0',
 tag_count int(10) unsigned NOT NULL default '0',
 PRIMARY KEY  (id),
-KEY word (word),
+UNIQUE KEY word (word),
 KEY tag_count (tag_count)",
 
 			'titlewords'    => 'post_id bigint(20) unsigned NOT NULL,
@@ -195,7 +197,7 @@ points int(11) NOT NULL default '0',
 questions mediumint(9) NOT NULL default '0',
 answers mediumint(9) NOT NULL default '0',
 comments mediumint(9) NOT NULL default '0',
-answers_selected_by_user mediumint(9) NOT NULL default '0',
+selections mediumint(9) NOT NULL default '0',
 answers_selected mediumint(9) NOT NULL default '0',
 question_upvotes mediumint(9) NOT NULL default '0',
 question_downvotes mediumint(9) NOT NULL default '0',
@@ -366,6 +368,21 @@ KEY meta_key (meta_key(191))";
 				$wpdb->query( $sql );
 			}
 		}
+	}
+
+	/**
+	 * Deletes all metadata of an object.
+	 *
+	 * The metadata API needs a meta key to delete, so this removes the rows directly and clears the meta cache.
+	 *
+	 * @param string $meta_type One of META_TYPES.
+	 * @param int    $object_id Object ID.
+	 */
+	public static function delete_all_meta( string $meta_type, int $object_id ): void {
+		$wpdb = Db::wpdb();
+
+		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE %i = %d', $wpdb->prefix . $meta_type . 'meta', $meta_type . '_id', $object_id ) );
+		wp_cache_delete( $object_id, $meta_type . '_meta' );
 	}
 
 	/**
