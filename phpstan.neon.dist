@@ -1,0 +1,14 @@
+parameters:
+	level: max
+	paths:
+		- easyq.php
+		- uninstall.php
+		- includes
+	bootstrapFiles:
+		- tests/phpstan-bootstrap.php
+	treatPhpDocTypesAsCertain: false
+	ignoreErrors:
+		# Meta tables are registered on wpdb at runtime, see Schema::register_meta_tables().
+		-
+			message: '#^Access to an undefined property wpdb::\$easyq_[a-z]+meta\.$#'
+			path: includes/database/class-schema.php
