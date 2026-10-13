@@ -1,334 +1,406 @@
-# easyQ – Feature-Mapping Question2Answer 1.8.8 → WordPress
+# easyQ – Feature Mapping: Question2Answer 1.8.8 → WordPress
 
-Dieses Dokument ordnet jeder Funktion, Seite, Option, Tabelle und Schnittstelle von
-Question2Answer (Q2A) 1.8.8 ein Ziel in WordPress zu. Es ist die verbindliche Grundlage
-für die Umsetzung; Abweichungen werden hier nachgetragen.
+This document maps every feature, page, option, table and interface of
+Question2Answer (Q2A) 1.8.8 to its target in WordPress. It is the binding basis for the
+implementation; deviations are recorded here.
 
-**Legende**
+**Legend**
 
-| Kürzel | Bedeutung |
+| Code | Meaning |
 |---|---|
-| **Ü** | übernommen (portiert), Ziel angegeben |
-| **WP** | durch eine WordPress-Bordfunktion ersetzt |
-| **–** | entfällt ersatzlos (Begründung angegeben) |
-| **N** | neu – in Q2A nicht vorhanden, aber für WP-Konformität sinnvoll |
-| **P** | später, Teil der Plugin-Auswahl am Projektende |
+| **P** | Ported – Q2A logic is carried over; target given |
+| **WP** | Replaced by a WordPress core feature |
+| **–** | Dropped; reason given |
+| **N** | New – not in Q2A, added for WordPress conformance |
+| **X** | Deferred to the extension selection at the end of the project |
 
 ---
 
-## 0. Rahmen und Konventionen
+## 0. Principles
 
-| Thema | Festlegung |
+1. **WordPress core guidelines, without exception.** WordPress Coding Standards (PHP,
+   JS, HTML), Plugin Handbook, Block Editor Handbook, accessibility (WCAG 2.2 AA),
+   internationalization, security best practices and the wordpress.org plugin
+   guidelines. Every release passes the official Plugin Check tool without findings.
+2. **No plugin CSS.** All styling comes from the active block theme. easyQ reuses core
+   markup and class names (`wp-block-*`, `wp-element-button`, …), exposes block
+   supports (color, typography, spacing, border, layout) and relies on `theme.json`
+   presets. Layout is built with core blocks (Group, Row, Stack, Columns) in templates
+   and patterns. The CSS that core generates from block supports and global styles is
+   the only CSS on the page. Any unavoidable exception must be agreed on first and
+   listed in section 12.
+3. **Privacy by design and by default (GDPR).** No external requests without opt-in,
+   minimal data, defined retention periods, opt-in for every non-essential email,
+   full support for the WordPress privacy tools. Details in section 11.
+4. **High compatibility.** No global state outside the plugin namespace, no
+   overriding of core behaviour, everything extensible through documented hooks.
+5. **Language.** All repository documentation and all code comments are written in
+   English.
+
+| Topic | Decision |
 |---|---|
-| Name / Slug / Textdomain | easyQ / `easyq` / `easyq` |
-| PHP-Namespace | `easyQ\` (PSR-4, `src/`) |
-| Präfix Funktionen, Optionen, Hooks, Meta | `easyq_` |
-| Tabellen | `{$wpdb->prefix}easyq_*` (Multisite: pro Site) |
-| Blöcke | `easyq/<name>` |
-| REST-Namespace | `easyq/v1` |
+| Name / slug / text domain | easyQ / `easyq` / `easyq` |
+| PHP namespace | `easyQ\` (PSR-4, `src/`) |
+| Prefix for functions, options, hooks, meta | `easyq_` |
+| Tables | `{$wpdb->prefix}easyq_*` (per site on multisite) |
+| Blocks | `easyq/<name>` |
+| REST namespace | `easyq/v1` |
 | Capabilities | `easyq_*` |
-| Mindestversionen | PHP 8.1, WordPress 6.6 (siehe offene Punkte) |
-| Sprachen | Englisch (Quellsprache), Deutsch |
-| Standards | WordPress Coding Standards, wordpress.org Plugin Guidelines, GPLv2+ |
-| Basis | Portierung der Q2A-Logik (`qa-include/app`, `qa-include/db`) in Klassen; kein Q2A-Code wird unverändert geladen |
+| Minimum versions | PHP 8.1, WordPress 6.7 |
+| Languages | English (source), German `de_DE` (informal) and `de_DE_formal` (formal) |
+| License | GPLv2 or later |
+| Basis | Q2A logic (`qa-include/app`, `qa-include/db`) ported into classes; no Q2A code is loaded as is |
 
-**Grundsatz Konfiguration:** Globale Einstellungen liefern Standardwerte. Jeder Block kann
-seine Darstellung (Seitengröße, Spalten, Avatargröße, Ein-/Ausblenden von Metadaten …)
-pro Instanz überschreiben. Dadurch lassen sich die Komponenten frei kombinieren.
+**Configuration rule:** Global settings provide defaults. Every block can override its
+behaviour (page size, columns, avatar size, visible metadata, …) per instance.
 
 ---
 
-## 1. Datenmodell
+## 1. Data model
 
-Q2A hat 31 Tabellen. Schema wird per `dbDelta()` angelegt, Versionierung über Option
-`easyq_db_version`, Upgrades schrittweise.
+Q2A uses 31 tables. The schema is created with `dbDelta()`, versioned through the option
+`easyq_db_version` and upgraded step by step.
 
-| Q2A-Tabelle | Ziel | Anmerkung |
+| Q2A table | Target | Notes |
 |---|---|---|
-| `posts` | **Ü** `easyq_posts` | Fragen, Antworten, Kommentare inkl. Zustände (`_HIDDEN`, `_QUEUED`); `NOTE` entfällt (ungenutzt). `userid` → WP-User-ID (`BIGINT UNSIGNED`) |
-| `postmetas` | **Ü** `easyq_postmeta` | Struktur kompatibel zu WP-Meta-API (`add_metadata('easyq_post', …)`) |
-| `categories` | **Ü** `easyq_categories` | Hierarchie bis 4 Ebenen, `backpath`, Zähler, Position |
-| `categorymetas` | **Ü** `easyq_categorymeta` | Meta-API |
-| `posttags`, `tagwords`, `tagmetas` | **Ü** `easyq_posttags`, `easyq_tagmeta` | Tags bleiben eigene Struktur (keine WP-Taxonomie, da Tags an Wortindex hängen) |
-| `words`, `titlewords`, `contentwords` | **Ü** `easyq_words`, `easyq_titlewords`, `easyq_contentwords` | Suchindex |
-| `uservotes` | **Ü** `easyq_uservotes` | Stimmen und Meldungen (Flags) |
-| `userpoints` | **Ü** `easyq_userpoints` | Punkte-Aggregat pro User |
-| `userlevels` | **Ü** `easyq_userlevels` | Stufen pro Kategorie (s. Abschnitt 2) |
-| `userfields` | **Ü** `easyq_userfields` | Konfiguration der Profilfelder |
-| `userprofile` | **WP** User-Meta `easyq_field_{name}` | |
-| `usermetas` | **WP** User-Meta | |
-| `userfavorites` | **Ü** `easyq_userfavorites` | Fragen, Benutzer, Tags, Kategorien |
-| `usernotices` | **Ü** `easyq_usernotices` | |
-| `userevents`, `sharedevents` | **Ü** `easyq_userevents`, `easyq_sharedevents` | Basis für „Meine Updates“ |
-| `messages` | **Ü** `easyq_messages` | Private Nachrichten und Pinnwand |
-| `userlimits`, `iplimits` | **Ü** `easyq_userlimits`, `easyq_iplimits` | Ratenbegrenzung |
-| `cookies` | **Ü** `easyq_cookies` | Nur für anonymes Posten; Datenschutz-Hinweis über WP-Privacy-API |
+| `posts` | **P** `easyq_posts` | Questions, answers, comments including states (`_HIDDEN`, `_QUEUED`); type `NOTE` dropped (unused). `userid` becomes a WP user ID (`BIGINT UNSIGNED`) |
+| `postmetas` | **P** `easyq_postmeta` | Compatible with the WP metadata API (`add_metadata( 'easyq_post', … )`) |
+| `categories` | **P** `easyq_categories` | Up to 4 levels, `backpath`, counters, position |
+| `categorymetas` | **P** `easyq_categorymeta` | Metadata API |
+| `posttags`, `tagwords`, `tagmetas` | **P** `easyq_posttags`, `easyq_tagmeta` | Tags stay a custom structure (no taxonomy) because they are tied to the word index |
+| `words`, `titlewords`, `contentwords` | **P** `easyq_words`, `easyq_titlewords`, `easyq_contentwords` | Search index |
+| `uservotes` | **P** `easyq_uservotes` | Votes and flags |
+| `userpoints` | **P** `easyq_userpoints` | Aggregated points per user |
+| `userlevels` | **P** `easyq_userlevels` | Per-category levels (section 2) |
+| `userfields` | **P** `easyq_userfields` | Profile field configuration |
+| `userprofile` | **WP** user meta `easyq_field_{name}` | |
+| `usermetas` | **WP** user meta | |
+| `userfavorites` | **P** `easyq_userfavorites` | Questions, users, tags, categories |
+| `usernotices` | **P** `easyq_usernotices` | |
+| `userevents`, `sharedevents` | **P** `easyq_userevents`, `easyq_sharedevents` | Basis for "My updates" |
+| `messages` | **P** `easyq_messages` | Private messages and wall posts |
+| `userlimits`, `iplimits` | **P** `easyq_userlimits`, `easyq_iplimits` | Rate limiting; IP data subject to retention (section 11) |
+| `cookies` | **P** `easyq_cookies` | Anonymous posting only (section 11) |
 | `users`, `userlogins` | **WP** `wp_users`, `wp_usermeta` | |
-| `options` | **WP** `wp_options` | gruppiert je Einstellungsbereich (`easyq_settings_<tab>`) |
-| `blobs` | **WP** Mediathek | Avatar-Uploads und Dateianhänge als Attachments |
-| `pages` | **–** | ersetzt durch WP-Seiten und Navigationsmenüs |
-| `widgets` | **–** | ersetzt durch Blöcke |
-| `cache` | **WP** Transients / Object Cache | |
+| `options` | **WP** `wp_options` | Grouped per settings section (`easyq_settings_<section>`) |
+| `blobs` | **WP** Media Library | Avatar uploads and attachments |
+| `pages` | **–** | Replaced by WP pages and navigation |
+| `widgets` | **–** | Replaced by blocks |
+| `cache` | **WP** Transients / object cache | |
+| – | **N** `easyq_email_templates` *(or options)* | Editable email templates (section 8) |
 
-**Datenschutz (N):** Exporter und Eraser für die WP-Privacy-Tools (Beiträge, Stimmen,
-Nachrichten, Favoriten, IP-Adressen); Hinweistext für die Datenschutzerklärung über
-`wp_add_privacy_policy_content()`.
-
-**Deinstallation (N):** `uninstall.php` entfernt Tabellen, Optionen, Meta – nur wenn in
-den Einstellungen ausdrücklich aktiviert (Standard: Daten behalten).
+**Uninstall (N):** `uninstall.php` removes tables, options and meta only if this is
+explicitly enabled in the settings (default: keep data).
 
 ---
 
-## 2. Benutzer, Stufen, Berechtigungen
+## 2. Users, levels, permissions
 
-| Q2A | Ziel |
+| Q2A | Target |
 |---|---|
-| Registrierung, Login, Logout, Passwort vergessen/zurücksetzen | **WP** `wp-login.php` bzw. Login-Block; Q2A-Seiten `login`, `register`, `forgot`, `reset`, `logout` entfallen |
-| E-Mail-Bestätigung (`confirm`) | **WP/Ü** WP bestätigt die Adresse beim Setzen des Passworts; Status als User-Meta `easyq_confirmed`. Eigener Bestätigungslink nur für Fälle ohne WP-Flow |
-| Benutzerfreigabe (`moderate_users`) | **Ü** User-Meta `easyq_approved`, Ansicht „Freigabe ausstehend“ und Sammelaktion in der WP-Benutzerliste |
-| Benutzer sperren | **Ü** User-Meta `easyq_blocked`, Sammelaktion in der Benutzerliste |
-| Benutzername ändern (`allow_change_usernames`) | **–** WP erlaubt keine Änderung des Logins; öffentlich angezeigt wird `display_name`, Profil-URL über `user_nicename` |
-| Login mit E-Mail (`allow_login_email_only`) | **WP** Kernfunktion |
+| Register, log in, log out, forgot/reset password | **WP** `wp-login.php` / core login block; Q2A pages `login`, `register`, `forgot`, `reset`, `logout` are dropped |
+| Email confirmation (`confirm`) | **WP/P** WP confirms the address when the password is set; status stored as user meta `easyq_confirmed`. An own confirmation link only where the WP flow does not apply |
+| User approval (`moderate_users`) | **P** user meta `easyq_approved`; "Pending approval" view and bulk action in the WP users list |
+| Blocking users | **P** user meta `easyq_blocked`; view and bulk action in the WP users list |
+| Change username (`allow_change_usernames`) | **–** WP logins are immutable; the public name is `display_name`, profile URLs use `user_nicename` |
+| Log in with email (`allow_login_email_only`) | **WP** core feature |
 
-**Stufen.** Q2A kennt Basis (0), Freigeschaltet (10), Experte (20), Editor (50),
-Moderator (80), Admin (100), Super-Admin (120).
+**Levels.** Q2A knows Basic (0), Approved (10), Expert (20), Editor (50), Moderator (80),
+Admin (100) and Super Admin (120).
 
-- Neue WP-Rollen werden **nicht** angelegt.
-- Zuordnung „WP-Rolle → Q&A-Stufe“ in den Einstellungen. Standard: Abonnent → Basis,
-  Mitarbeiter/Autor → Basis, Redakteur → Moderator, Administrator → Admin,
-  Super-Admin (Multisite) → Super-Admin.
-- Optional pro Benutzer im WP-Profil: globale Q&A-Stufe (überschreibt die Rolle nach
-  oben) sowie Stufen pro Kategorie (`easyq_userlevels`). Damit sind Experten und
-  Kategorie-Moderatoren abbildbar.
-- „Freigeschaltet“ und „bestätigt“ sind Status (User-Meta), keine Stufen.
+- No new WP roles are created.
+- A "WP role → Q&A level" mapping in the settings. Default: Subscriber, Contributor,
+  Author → Basic; Editor → Moderator; Administrator → Admin; Super Admin (multisite) →
+  Super Admin.
+- Optional per user in the WP profile: a global Q&A level (can only raise the level
+  given by the role) and per-category levels (`easyq_userlevels`). This covers experts
+  and category moderators.
+- "Approved" and "confirmed" are states (user meta), not levels.
 
-**Berechtigungen.** Alle `permit_*`-Optionen (Abschnitt 5.9) bleiben erhalten: Mindeststufe
-plus optional Mindestpunkte. Umsetzung über Meta-Capabilities (`easyq_post_question`,
-`easyq_vote_answer`, `easyq_edit_post`, `easyq_moderate` …), aufgelöst in
-`map_meta_cap` unter Berücksichtigung von Stufe, Kategorie, Punkten, Status und Sperre.
-Zusätzlich Admin-Capability `easyq_manage` für das Backend (Standard: Administrator).
-
----
-
-## 3. Frontend-Seiten
-
-Alle Q&A-Seiten liegen unter einem konfigurierbaren Basis-Slug (Standard `questions`,
-deutsche Installationen `fragen`). Routing über Rewrite-Regeln und Query-Vars, Ausgabe
-über Block-Templates des Plugins, die im Site-Editor angepasst werden können. Ohne
-Permalinks funktioniert alles über Query-Parameter.
-
-| Q2A-Route | Ziel | Block-Template / Blöcke |
-|---|---|---|
-| `/` (Startseite) | **Ü** | `easyq-home`: Fragenliste (Sortierung „neueste Aktivität“) |
-| `activity/` | **Ü** | Aktivitätenliste |
-| `questions/` (Sortierungen neu, heiß, Stimmen, Antworten, Aufrufe) | **Ü** | Fragenliste mit Sortier-Navigation |
-| `hot/` | **Ü** | Fragenliste „heiß“ |
-| `unanswered/` (ohne Antwort, ohne ausgewählte, ohne Stimmen) | **Ü** | Fragenliste „unbeantwortet“ |
-| `answers/`, `comments/` | **Ü** | Listen neuester Antworten/Kommentare |
-| `{id}/{slug}` (Frage) | **Ü** | `easyq-single`: Frage, Antworten, Kommentare, Antwortformular |
-| `ask` | **Ü** | Frageformular (inkl. Ähnliche-Fragen-Prüfung, Tag-Vorschläge, Kategorieauswahl) |
-| `categories/…` | **Ü** | Kategorienliste, Kategoriearchiv |
-| `tags`, `tag/{tag}` | **Ü** | Tag-Übersicht, Tag-Archiv |
-| `search` | **Ü** | Suchergebnisse |
-| `users`, `users/new`, `users/special` | **Ü** | Benutzerliste (Punkte, neueste, mit Sonderrechten) |
-| `users/blocked` | **WP** | Ansicht in der WP-Benutzerliste |
-| `user/{name}` (+ `/questions`, `/answers`, `/activity`, `/wall`) | **Ü** | öffentliches Profil mit Unterseiten |
-| `account` | **Ü/WP** | Konto-Block für Q&A-Daten (Profilfelder, Avatar, Benachrichtigungen, Pinnwand/PN-Freigabe); E-Mail und Passwort über WP-Profil |
-| `favorites`, `favorites/{questions,users,tags}` | **Ü** | Favoriten |
-| `updates` | **Ü** | Meine Updates |
-| `messages/`, `message/{name}` | **Ü** | Postfach, Unterhaltung |
-| `feedback` | **Ü** | Feedback-Formular-Block |
-| `unsubscribe` | **Ü** | Abmeldung vom Rundschreiben (+ `List-Unsubscribe`-Header) |
-| `ip/{ip}` | **Ü→Admin** | Admin-Seite „IP-Adresse“ (Beiträge der IP, sperren/entsperren) |
-| `login`, `register`, `forgot`, `reset`, `logout`, `confirm` | **WP** | s. Abschnitt 2 |
-| `admin/*` | **Ü→Admin** | s. Abschnitt 5 |
-| `feed/*` | **Ü** | s. Abschnitt 5.10 |
-| Benutzerdefinierte Seiten (`pages`) | **WP** | WP-Seiten |
-
-**SEO (N):** Kanonische URLs, `<title>` über `document_title_parts`, strukturierte Daten
-als JSON-LD (`QAPage`) statt Microdata, Einbindung in die WP-Core-Sitemaps
-(`wp_sitemaps_add_provider`), `noindex` für Listen ohne Inhalt.
+**Permissions.** All `permit_*` options (section 5.9) are kept: minimum level plus an
+optional points threshold. Implemented as meta capabilities (`easyq_post_question`,
+`easyq_vote_answer`, `easyq_edit_post`, `easyq_moderate`, …) resolved in `map_meta_cap`,
+taking level, category, points, status and blocking into account. The admin
+capability `easyq_manage` (default: Administrator) controls the backend.
 
 ---
 
-## 4. Blöcke
+## 3. Frontend routes
 
-Jede Komponente ist ein eigener, konfigurierbarer Block (dynamisch, serverseitig
-gerendert, `block.json`, API v3). Interaktivität über die Interactivity API
-(Abstimmen, Favoriten, Antworten nachladen) mit Fallback ohne JavaScript.
+All Q&A pages live below a configurable base slug (default `questions`; translatable,
+e.g. `fragen`). Routing uses rewrite rules and query vars; output uses block templates
+registered with `register_block_template()`, editable in the Site Editor. Without pretty
+permalinks everything works through query parameters. Header and footer come from the
+theme's template parts.
 
-| Block | Quelle in Q2A | Wichtige Attribute |
+| Q2A route | Target | Block template |
 |---|---|---|
-| `easyq/question-list` | Listenseiten | Quelle (neu/heiß/Stimmen/Antworten/Aufrufe/unbeantwortet/Aktivität), Kategorie, Tag, Anzahl, Paginierung, Metadaten ein/aus, Avatargröße |
-| `easyq/question` | Fragenseite | Bereiche ein/aus (Stimmen, Tags, Kategorie, Kommentare) |
-| `easyq/answers` | Fragenseite | Sortierung, ausgewählte zuerst, Seitengröße |
-| `easyq/answer-form` | Fragenseite | sofort anzeigen ja/nein |
-| `easyq/ask-form` | `ask` | Kategorie vorbelegen, Hinweistext |
-| `easyq/ask-box` | Widget „Ask box“ | Platzhalter, Zielseite |
-| `easyq/search` | Suchfeld | |
-| `easyq/search-results` | `search` | Seitengröße |
-| `easyq/categories` | Widget „Category list“, `categories` | Tiefe, Zähler, Darstellung (Liste/Kacheln) |
-| `easyq/tags` | `tags` | Anzahl, Spalten, Sortierung |
-| `easyq/related-questions` | Widget „Related questions“ | Anzahl, Übereinstimmungsgrad |
-| `easyq/activity-count` | Widget „Activity count“ | angezeigte Zähler |
-| `easyq/users` | `users` | Sortierung, Spalten, Anzahl |
-| `easyq/user-profile` | `user` | Bereiche ein/aus |
-| `easyq/user-wall` | `user/wall` | Seitengröße |
-| `easyq/account` | `account` | |
-| `easyq/favorites` | `favorites` | Typen |
-| `easyq/updates` | `updates` | |
-| `easyq/messages` | `messages`, `message` | |
-| `easyq/feedback-form` | `feedback` | |
-| `easyq/navigation` | Q2A-Hauptmenü und Unternavigation | Einträge ein/aus; zusätzlich Links im Navigations-Block |
-| `easyq/notices` | Besucher-/Willkommens-/Benutzerhinweise | |
-| `easyq/breadcrumbs` | Kategoriepfad | |
+| `/` (home) | **P** | `easyq-home`: question query sorted by recent activity |
+| `activity/` | **P** | `easyq-activity` |
+| `questions/` (sort: newest, hot, votes, answers, views) | **P** | `easyq-questions` |
+| `hot/` | **P** | `easyq-questions` with source "hot" |
+| `unanswered/` (no answer, no selected answer, no upvotes) | **P** | `easyq-unanswered` |
+| `answers/`, `comments/` | **P** | `easyq-answers`, `easyq-comments` |
+| `{id}/{slug}` (question) | **P** | `easyq-single` |
+| `ask` | **P** | `easyq-ask` |
+| `categories/…` | **P** | `easyq-categories`, `easyq-category` |
+| `tags`, `tag/{tag}` | **P** | `easyq-tags`, `easyq-tag` |
+| `search` | **P** | `easyq-search` |
+| `users`, `users/new`, `users/special` | **P** | `easyq-users` |
+| `users/blocked` | **WP** | View in the WP users list |
+| `user/{name}` (+ `/questions`, `/answers`, `/activity`, `/wall`) | **P** | `easyq-user` and sub-templates |
+| `account` | **P/WP** | `easyq-account` for Q&A data (profile fields, avatar, notifications, privacy choices); email and password via the WP profile |
+| `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites` |
+| `updates` | **P** | `easyq-updates` |
+| `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message` |
+| `feedback` | **P** | `easyq-feedback` |
+| `unsubscribe` | **P** | `easyq-unsubscribe` (plus `List-Unsubscribe` / one-click headers) |
+| `ip/{ip}` | **P → admin** | Admin screen "IP address" |
+| `login`, `register`, `forgot`, `reset`, `logout`, `confirm` | **WP** | Section 2 |
+| `admin/*` | **P → admin** | Section 5 |
+| `feed/*` | **P** | Section 5.10 |
+| Custom pages (`pages`) | **WP** | WP pages |
 
-Ziel ist, dass sich jedes Q2A-Layout aus diesen Blöcken nachbauen lässt. Ergänzend
-gibt es Block-Patterns für typische Seiten (Startseite, Fragenseite, Profil).
+**SEO (N):** Canonical URLs, titles via `document_title_parts`, structured data as JSON-LD
+(`QAPage`) instead of microdata, integration into the core sitemaps
+(`wp_sitemaps_add_provider`), `noindex` for empty lists.
+
+**Navigation (N):** Q&A routes are offered in the link search of the core Navigation
+block through a custom REST search handler (`wp_rest_search_handlers`), so menus are
+built with core blocks only.
 
 ---
 
-## 5. Admin-Bereich
+## 4. Blocks
 
-### 5.1 Menüstruktur
+The block architecture follows core's Query Loop model so that every part can be
+arranged and styled in the Site Editor without plugin CSS.
 
-Hauptmenü **easyQ** (Capability `easyq_manage`, Moderation ab `easyq_moderate`):
+**Building principles**
 
-| Untermenü | Q2A-Quelle | Umsetzung |
+- **Context providers + small field blocks** instead of large monolithic blocks.
+  Lists provide items through block context; each visible piece (title, votes,
+  author, …) is its own small block.
+- **Block Bindings first.** A binding source `easyq/post` (and `easyq/user`) lets core
+  blocks show easyQ data: Heading/Paragraph for title and text, Button for links, Image
+  for avatars. Dedicated blocks exist only where core blocks cannot do the job
+  (interaction, structured output, forms).
+- **Core markup.** Dynamic blocks render the same markup and class names as their core
+  counterparts (pagination, search, buttons, lists), so the theme's styles apply.
+- **Block supports** for color, typography, spacing, border and layout on every block.
+- **Interactivity API** for voting, favorites, loading more comments, inline answering –
+  always with a working no-JS fallback (regular form posts).
+
+**Containers (context providers)**
+
+| Block | Q2A source | Key attributes |
 |---|---|---|
-| Übersicht | `admin/stats` | Kennzahlen, Warteschlangen, Schnellzugriffe; zusätzlich WP-Dashboard-Widget |
-| Fragen **(N)** | – | `WP_List_Table` aller Fragen/Antworten/Kommentare mit Filter, Suche, Bearbeiten, Verstecken, Löschen – analog zur WP-Kommentarverwaltung |
-| Moderation | `admin/moderate`, `admin/flagged`, `admin/hidden` | eine `WP_List_Table` mit Ansichten „Ausstehend | Gemeldet | Versteckt“, Sammelaktionen, Zähler-Badge am Menü und in der Admin-Leiste |
-| Kategorien | `admin/categories` | Liste + Formular, Hierarchie, Sortierung, Beiträge verschieben beim Löschen |
-| Punkte | `admin/points` | Formular (Settings API) |
-| Benutzertitel | `admin/usertitles` | Liste + Formular |
-| Benutzerfelder | `admin/userfields` | Liste + Formular, Sortierung |
-| Einstellungen | `admin/general` … `admin/mailing` | Settings API mit Tabs (5.2–5.12) |
-| Rundschreiben | `admin/mailing` | eigener Bildschirm mit Fortschritt, Versand in Batches über WP-Cron |
-| Wartung | `admin/recalc` | s. 5.13 |
-| IP-Adresse (versteckt, verlinkt) | `ip/{ip}` | Beiträge einer IP, IP sperren/entsperren |
+| `easyq/question-query` | All question lists | Source (recent, hot, votes, answers, views, unanswered variants, activity), category, tag, author, favorites, per page, inherit from route |
+| `easyq/question-template` | List item | – (repeats inner blocks per item) |
+| `easyq/query-pagination` (+ previous, numbers, next) | Paging | Same markup as core pagination |
+| `easyq/query-no-results` | Empty lists | Inner blocks |
+| `easyq/question` | Question page | Provides the current question from the route |
+| `easyq/answer-list` / `easyq/answer-template` | Answers | Sort order, selected first, page size |
+| `easyq/comment-list` / `easyq/comment-template` | Comments | Show fewer from / count |
+| `easyq/user-query` / `easyq/user-template` | User lists | Sort (points, newest, special), columns, per page |
+| `easyq/user` | Profile page | Provides the current user from the route |
 
-Weitere Integrationen in WP-Bildschirme:
+**Field blocks (consume context)**
 
-- **Benutzer → Profil:** Abschnitt „easyQ“ mit Stufe global/pro Kategorie, Punkten,
-  Status (bestätigt, freigegeben, gesperrt), Profilfeldern, Avatar.
-- **Benutzer → Liste:** Spalten Punkte und Stufe, Ansichten „Freigabe ausstehend“ und
-  „Gesperrt“, Sammelaktionen.
-- **Website-Zustand (N):** Prüfungen (Tabellenversion, Cron, Permalinks, Suchindex).
-- **WP-CLI (N):** `wp easyq` für Wartung, Neuberechnung, Statistik.
-
-Die Q2A-Seiten `admin/approve` (→ Benutzerliste), `admin/pages` (→ WP-Seiten/Menüs),
-`admin/layoutwidgets` (→ Blöcke) und `admin/plugins` (→ WP-Plugins) entfallen.
-
-### 5.2 Einstellungen → Allgemein (`admin/general`)
-
-| Option | Ziel |
+| Block | Content |
 |---|---|
-| `site_title` | **WP** Seitentitel / Titel der Q&A-Seite |
+| `easyq/post-title` | Question title (link optional) |
+| `easyq/post-content` | Formatted content |
+| `easyq/post-excerpt` | Shortened content (list items) |
+| `easyq/post-votes` | Vote score and buttons |
+| `easyq/post-answer-count` | Answer count, "selected" state |
+| `easyq/post-view-count` | Views |
+| `easyq/post-date` | Created/updated, relative or absolute |
+| `easyq/post-author` | Avatar, name, points, user title |
+| `easyq/post-category` | Category path |
+| `easyq/post-tags` | Tags |
+| `easyq/post-status` | Closed, selected, hidden, queued |
+| `easyq/post-actions` | Answer, comment, edit, close, select, flag, hide, delete … depending on permissions |
+| `easyq/user-name`, `easyq/user-avatar`, `easyq/user-points`, `easyq/user-title`, `easyq/user-fields`, `easyq/user-stats` | Profile pieces |
+
+**Forms and standalone blocks**
+
+| Block | Q2A source |
+|---|---|
+| `easyq/ask-form` | `ask` (similar-question check, tag suggestions, category picker, extra field) |
+| `easyq/answer-form` | Question page |
+| `easyq/comment-form` | Question page |
+| `easyq/ask-box` | Widget "Ask box" |
+| `easyq/search` | Search form (core search markup) |
+| `easyq/categories` | Widget "Category list", `categories` |
+| `easyq/tags` | `tags` |
+| `easyq/related-questions` | Widget "Related questions" |
+| `easyq/activity-count` | Widget "Activity count" |
+| `easyq/user-wall` | Wall |
+| `easyq/account` | `account` |
+| `easyq/updates` | `updates` |
+| `easyq/messages` | `messages`, `message` |
+| `easyq/feedback-form` | `feedback` |
+| `easyq/notices` | Visitor, welcome and user notices |
+| `easyq/sort-navigation` | Sort tabs of the question lists (rendered as a core-style list of links) |
+| `easyq/breadcrumbs` | Category path |
+
+**Patterns** for typical layouts (home, question page, profile, compact list) built
+from the blocks above and core blocks. Every Q2A layout can be rebuilt with these
+building blocks.
+
+**Form styling.** `theme.json` has no element for form fields yet. easyQ renders fields
+with the same markup as core forms (comment form, search) so they pick up the theme's
+form styles. This is the area to check most carefully against several block themes
+(section 12).
+
+---
+
+## 5. Admin area
+
+All screens use core admin markup only (`wrap`, `form-table`, `WP_List_Table`,
+`nav-tab-wrapper`, admin notices, `@wordpress/components` where React is needed) –
+no plugin CSS.
+
+### 5.1 Menu structure
+
+Top-level menu **easyQ** (capability `easyq_manage`; moderation from `easyq_moderate`):
+
+| Submenu | Q2A source | Implementation |
+|---|---|---|
+| Dashboard | `admin/stats` | Figures, queues, quick links; plus a WP dashboard widget |
+| Posts **(N)** | `admin/moderate`, `admin/flagged`, `admin/hidden` | One `WP_List_Table` for questions, answers and comments, modelled on the core Comments screen: views "All | Pending | Flagged | Hidden | Closed", filters by type, category, author and date, search, row and bulk actions (approve, reject, hide, restore, delete, close/reopen, edit), counter badge in the menu and the admin bar |
+| Categories | `admin/categories` | List and form, hierarchy, ordering, moving posts on delete |
+| Points | `admin/points` | Settings API form |
+| User titles | `admin/usertitles` | List and form |
+| User fields | `admin/userfields` | List and form, ordering |
+| Email templates **(N)** | language files `emails` | List of all templates, editor with placeholders, preview, test mail, reset to default (section 8) |
+| Settings | `admin/general` … `admin/mailing` | Settings API with tabs (5.2–5.12) |
+| Newsletter | `admin/mailing` | Own screen with progress; batches via WP-Cron |
+| Tools | `admin/recalc` | Section 5.13 |
+| IP address (hidden, linked) | `ip/{ip}` | Posts from an IP, block/unblock |
+
+Integration into core screens:
+
+- **Users → Profile:** "easyQ" section with level (global and per category), points,
+  states (confirmed, approved, blocked), profile fields, avatar.
+- **Users → List:** columns for points and level, views "Pending approval" and
+  "Blocked", bulk actions.
+- **Site Health (N):** checks for table version, cron, permalinks, search index.
+- **WP-CLI (N):** `wp easyq` for recalculation, statistics, maintenance.
+
+Dropped Q2A screens: `admin/approve` (→ users list), `admin/pages` (→ WP pages and
+navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins).
+
+### 5.2 Settings → General (`admin/general`)
+
+| Option | Target |
+|---|---|
+| `site_title` | **WP** site title / page titles |
 | `site_url` | **WP** `home_url()` |
-| `neat_urls` | **WP** Permalinks |
-| `site_language` | **WP** Sprache der Website/des Benutzers |
-| `site_theme`, `site_theme_mobile` | **WP** Block-Theme |
+| `neat_urls` | **WP** permalinks |
+| `site_language` | **WP** site / user locale |
+| `site_theme`, `site_theme_mobile` | **WP** block theme |
 | `site_text_direction` | **WP** `is_rtl()` |
-| `tags_or_categories` | **Ü** |
-| `site_maintenance` | **Ü** als „Nur-Lesen-Modus“ für den Q&A-Bereich |
-| Basis-Slug **(N)** | **N** |
-| Rollen-Zuordnung **(N)** | **N** (Abschnitt 2) |
-| Daten bei Deinstallation löschen **(N)** | **N** |
+| `tags_or_categories` | **P** |
+| `site_maintenance` | **P** as read-only mode for the Q&A area |
+| Base slug | **N** |
+| Role-to-level mapping | **N** (section 2) |
+| Delete data on uninstall | **N** |
 
-### 5.3 Einstellungen → E-Mails (`admin/emails`)
+### 5.3 Settings → Email (`admin/emails`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `from_email` | **Ü** optional, sonst WP-Standard |
-| `feedback_email` | **Ü** |
-| `notify_admin_q_post` | **Ü** |
-| `feedback_enabled` | **Ü** |
-| `email_privacy` | **Ü** |
-| `smtp_active`, `smtp_address`, `smtp_port`, `smtp_secure`, `smtp_authenticate`, `smtp_username`, `smtp_password` | **WP** `wp_mail()`; SMTP über SMTP-Plugins |
+| `from_email` | **P** optional, otherwise WP default |
+| `feedback_email` | **P** |
+| `notify_admin_q_post` | **P** |
+| `feedback_enabled` | **P** |
+| `email_privacy` | **P** |
+| `smtp_active`, `smtp_address`, `smtp_port`, `smtp_secure`, `smtp_authenticate`, `smtp_username`, `smtp_password` | **WP** `wp_mail()`; SMTP via dedicated plugins |
 
-### 5.4 Einstellungen → Benutzer (`admin/users`)
+### 5.4 Settings → Users (`admin/users`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `show_notice_visitor`, `notice_visitor` | **Ü** |
-| `show_notice_welcome`, `notice_welcome` | **Ü** |
-| `show_custom_welcome`, `custom_welcome` | **Ü** |
-| `show_custom_register`, `custom_register` | **Ü** über `register_form` im WP-Registrierungsformular |
-| `show_register_terms`, `register_terms` | **Ü** Pflicht-Checkbox im WP-Registrierungsformular |
+| `show_notice_visitor`, `notice_visitor` | **P** |
+| `show_notice_welcome`, `notice_welcome` | **P** |
+| `show_custom_welcome`, `custom_welcome` | **P** |
+| `show_custom_register`, `custom_register` | **P** via `register_form` on the WP registration form |
+| `show_register_terms`, `register_terms` | **P** required checkbox on the WP registration form; links the WP privacy policy page |
 | `allow_login_email_only` | **WP** |
-| `allow_change_usernames` | **–** (Abschnitt 2) |
-| `register_notify_admin` | **Ü** über `wp_send_new_user_notification_to_admin` |
-| `suspend_register_users` | **WP** Option „Jeder kann sich registrieren“ |
-| `block_bad_usernames` | **Ü** über `registration_errors` |
-| `allow_private_messages`, `show_message_history`, `page_size_pms` | **Ü** |
-| `allow_user_walls`, `page_size_wall` | **Ü** |
-| `avatar_allow_gravatar`, `avatar_default_show` | **WP** Einstellungen → Diskussion (Avatare) |
-| `avatar_allow_upload`, `avatar_store_size` | **Ü** eigener Avatar-Upload (Mediathek), eingebunden über `pre_get_avatar_data` |
-| `avatar_profile_size`, `avatar_users_size`, `avatar_q_page_q_size`, `avatar_q_page_a_size`, `avatar_q_page_c_size`, `avatar_q_list_size`, `avatar_message_list_size` | **Ü** als Standardwerte, pro Block überschreibbar |
+| `allow_change_usernames` | **–** (section 2) |
+| `register_notify_admin` | **P** via `wp_send_new_user_notification_to_admin` |
+| `suspend_register_users` | **WP** "Anyone can register" |
+| `block_bad_usernames` | **P** via `registration_errors` |
+| `allow_private_messages`, `show_message_history`, `page_size_pms` | **P** |
+| `allow_user_walls`, `page_size_wall` | **P** |
+| `avatar_allow_gravatar`, `avatar_default_show` | **WP** Settings → Discussion (avatars) |
+| `avatar_allow_upload`, `avatar_store_size` | **P** local avatar upload (Media Library), hooked into `pre_get_avatar_data` |
+| `avatar_profile_size`, `avatar_users_size`, `avatar_q_page_q_size`, `avatar_q_page_a_size`, `avatar_q_page_c_size`, `avatar_q_list_size`, `avatar_message_list_size` | **P** as block defaults |
 
-### 5.5 Einstellungen → Layout (`admin/layout`)
+### 5.5 Settings → Layout (`admin/layout`)
 
-Alle Optionen entfallen; das Block-Theme und der Site-Editor übernehmen das Layout.
+All options are dropped; the block theme and the Site Editor handle layout.
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `logo_show`, `logo_url`, `logo_width`, `logo_height` | **WP** Website-Logo |
-| `show_custom_sidebar`, `custom_sidebar`, `show_custom_sidepanel`, `custom_sidepanel` | **WP** Blöcke im Template |
-| `show_custom_header`, `custom_header`, `show_custom_footer`, `custom_footer` | **WP** Template-Teile |
-| `show_custom_in_head`, `custom_in_head` | **–** (Theme/Plugins; ungefiltertes HTML ist für wordpress.org unzulässig) |
-| `show_custom_home`, `custom_home_heading`, `custom_home_content` | **WP** Inhalte der Startseite im Editor |
-| `show_home_description`, `home_description` | **WP** Meta-Beschreibung über SEO-Plugins; Filter wird angeboten |
+| `logo_show`, `logo_url`, `logo_width`, `logo_height` | **WP** site logo |
+| `show_custom_sidebar`, `custom_sidebar`, `show_custom_sidepanel`, `custom_sidepanel` | **WP** blocks in templates |
+| `show_custom_header`, `custom_header`, `show_custom_footer`, `custom_footer` | **WP** template parts |
+| `show_custom_in_head`, `custom_in_head` | **–** (theme/plugins; unfiltered HTML output is not allowed on wordpress.org) |
+| `show_custom_home`, `custom_home_heading`, `custom_home_content` | **WP** home template content |
+| `show_home_description`, `home_description` | **WP** meta description via SEO plugins; a filter is provided |
 
-### 5.6 Einstellungen → Darstellung (`admin/viewing`)
+### 5.6 Settings → Viewing (`admin/viewing`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `q_urls_title_length` | **Ü** |
-| `q_urls_remove_accents` | **WP** `sanitize_title()` entfernt Akzente immer |
-| `do_count_q_views`, `show_view_counts`, `show_view_count_q_page`, `recalc_hotness_q_view` | **Ü** |
-| `voting_on_qs`, `voting_on_q_page_only`, `voting_on_as`, `voting_on_cs`, `votes_separated` | **Ü** |
-| `show_url_links`, `links_in_new_window` | **Ü** |
-| `show_when_created`, `show_full_date_days` | **Ü** (Datumsformat aus WP) |
-| `show_user_titles`, `show_user_points` | **Ü** |
-| `show_post_update_meta`, `show_compact_numbers` | **Ü** |
-| `use_microdata` | **Ü** als JSON-LD `QAPage` |
-| `minify_html` | **–** (Aufgabe von Caching-/Optimierungs-Plugins) |
-| `sort_answers_by`, `show_selected_first`, `page_size_q_as`, `show_a_form_immediate` | **Ü** als Standardwerte der Blöcke |
-| `show_fewer_cs_from`, `show_fewer_cs_count`, `show_c_reply_buttons` | **Ü** |
-| `match_related_qs`, `page_size_related_qs` | **Ü** als Standardwerte des Blocks `related-questions` |
-| `pages_prev_next` | **Ü** |
+| `q_urls_title_length` | **P** |
+| `q_urls_remove_accents` | **WP** `sanitize_title()` always removes accents |
+| `do_count_q_views`, `show_view_counts`, `show_view_count_q_page`, `recalc_hotness_q_view` | **P** (view counting without storing IPs, section 11) |
+| `voting_on_qs`, `voting_on_q_page_only`, `voting_on_as`, `voting_on_cs`, `votes_separated` | **P** |
+| `show_url_links`, `links_in_new_window` | **P** |
+| `show_when_created`, `show_full_date_days` | **P** (date format from WP) |
+| `show_user_titles`, `show_user_points` | **P** |
+| `show_post_update_meta`, `show_compact_numbers` | **P** |
+| `use_microdata` | **P** as JSON-LD `QAPage` |
+| `minify_html` | **–** (job of caching/optimization plugins) |
+| `sort_answers_by`, `show_selected_first`, `page_size_q_as`, `show_a_form_immediate` | **P** as block defaults |
+| `show_fewer_cs_from`, `show_fewer_cs_count`, `show_c_reply_buttons` | **P** |
+| `match_related_qs`, `page_size_related_qs` | **P** as defaults of `easyq/related-questions` |
+| `pages_prev_next` | **P** |
 
-### 5.7 Einstellungen → Listen (`admin/lists`)
+### 5.7 Settings → Lists (`admin/lists`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `page_size_home`, `page_size_activity`, `page_size_qs`, `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search` | **Ü** als Standardwerte der Blöcke |
-| `page_size_tags`, `columns_tags`, `page_size_users`, `columns_users` | **Ü** als Standardwerte der Blöcke |
-| `search_module` | **Ü** als Filter für alternative Suchanbieter; Auswahl erscheint nur, wenn ein Anbieter registriert ist |
-| `hot_weight_q_age`, `hot_weight_a_age`, `hot_weight_answers`, `hot_weight_votes`, `hot_weight_views` | **Ü** |
+| `page_size_home`, `page_size_activity`, `page_size_qs`, `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search` | **P** as block defaults |
+| `page_size_tags`, `columns_tags`, `page_size_users`, `columns_users` | **P** as block defaults |
+| `search_module` | **P** as a search provider interface; the choice appears once a provider is registered |
+| `hot_weight_q_age`, `hot_weight_a_age`, `hot_weight_answers`, `hot_weight_votes`, `hot_weight_views` | **P** |
 
-### 5.8 Einstellungen → Beiträge (`admin/posting`)
+### 5.8 Settings → Posting (`admin/posting`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `do_close_on_select`, `allow_close_questions`, `allow_close_own_questions` | **Ü** |
-| `allow_self_answer`, `allow_multi_answers`, `follow_on_as` | **Ü** |
-| `comment_on_qs`, `comment_on_as` | **Ü** |
-| `allow_anonymous_naming` | **Ü** |
-| `editor_for_qs`, `editor_for_as`, `editor_for_cs` | **Ü** Auswahl erscheint, sobald mehr als ein Editor registriert ist; Kern liefert den einfachen Editor (Textarea) |
-| `show_custom_ask`, `custom_ask`, `show_custom_answer`, `custom_answer`, `show_custom_comment`, `custom_comment` | **Ü** (HTML über `wp_kses_post`) |
-| `extra_field_active`, `extra_field_prompt`, `extra_field_display`, `extra_field_label` | **Ü** |
-| `min_len_q_title`, `max_len_q_title`, `min_len_q_content`, `min_len_a_content`, `min_len_c_content` | **Ü** |
-| `min_num_q_tags`, `max_num_q_tags`, `tag_separator_comma` | **Ü** |
-| `notify_users_default` | **Ü** |
-| `block_bad_words` | **Ü** |
-| `do_ask_check_qs`, `match_ask_check_qs`, `page_size_ask_check_qs` | **Ü** |
-| `do_example_tags`, `match_example_tags`, `do_complete_tags`, `page_size_ask_tags` | **Ü** |
+| `do_close_on_select`, `allow_close_questions`, `allow_close_own_questions` | **P** |
+| `allow_self_answer`, `allow_multi_answers`, `follow_on_as` | **P** |
+| `comment_on_qs`, `comment_on_as` | **P** |
+| `allow_anonymous_naming` | **P** (section 11) |
+| `editor_for_qs`, `editor_for_as`, `editor_for_cs` | **P** shown once more than one editor is registered; core ships the plain editor (textarea) |
+| `show_custom_ask`, `custom_ask`, `show_custom_answer`, `custom_answer`, `show_custom_comment`, `custom_comment` | **P** (HTML through `wp_kses_post`) |
+| `extra_field_active`, `extra_field_prompt`, `extra_field_display`, `extra_field_label` | **P** |
+| `min_len_q_title`, `max_len_q_title`, `min_len_q_content`, `min_len_a_content`, `min_len_c_content` | **P** |
+| `min_num_q_tags`, `max_num_q_tags`, `tag_separator_comma` | **P** |
+| `notify_users_default` | **P** (default off, section 11) |
+| `block_bad_words` | **P** |
+| `do_ask_check_qs`, `match_ask_check_qs`, `page_size_ask_check_qs` | **P** |
+| `do_example_tags`, `match_example_tags`, `do_complete_tags`, `page_size_ask_tags` | **P** |
 
-### 5.9 Einstellungen → Berechtigungen (`admin/permissions`)
+### 5.9 Settings → Permissions (`admin/permissions`)
 
-Alle **Ü**, jeweils Mindeststufe und bei Bedarf Mindestpunkte (`*_points`):
+All **P**, each with a minimum level and, where applicable, minimum points (`*_points`):
 `permit_view_q_page` (+ `allow_view_q_bots`), `permit_post_q`, `permit_post_a`,
 `permit_post_c`, `permit_vote_q`, `permit_vote_a`, `permit_vote_c`, `permit_vote_down`,
 `permit_retag_cat`, `permit_edit_q`, `permit_edit_a`, `permit_edit_c`,
@@ -337,203 +409,220 @@ Alle **Ü**, jeweils Mindeststufe und bei Bedarf Mindestpunkte (`*_points`):
 `permit_delete_hidden`, `permit_view_new_users_page`, `permit_view_special_users_page`,
 `permit_post_wall`.
 
-### 5.10 Einstellungen → Feeds (`admin/feeds`)
+### 5.10 Settings → Feeds (`admin/feeds`)
 
-Alle **Ü**, umgesetzt über `add_feed()` mit RSS-2.0-Ausgabe:
+All **P**, implemented with `add_feed()` and RSS 2.0 output:
 `feed_for_questions`, `feed_for_qa`, `feed_for_activity`, `feed_for_hot`,
 `feed_for_unanswered`, `feed_for_tag_qs`, `feed_per_category`, `feed_for_search`,
 `feed_number_items`, `feed_full_text`.
 
-### 5.11 Einstellungen → Spam (`admin/spam`)
+### 5.11 Settings → Spam (`admin/spam`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `confirm_user_emails`, `confirm_user_required` | **Ü** (Abschnitt 2) |
-| `moderate_users` | **Ü** |
-| `captcha_on_register`, `captcha_on_reset_password`, `captcha_on_anon_post`, `captcha_on_unapproved`, `captcha_on_unconfirmed`, `captcha_on_feedback`, `captcha_module` | **Ü** über eine Captcha-Schnittstelle; Optionen erscheinen, sobald ein Anbieter registriert ist (Anbieter: **P**) |
-| `moderate_anon_post`, `moderate_unapproved`, `moderate_unconfirmed`, `moderate_by_points`, `moderate_points_limit`, `moderate_edited_again`, `moderate_notify_admin`, `moderate_update_time` | **Ü** |
-| `flagging_of_posts`, `flagging_notify_first`, `flagging_notify_every`, `flagging_hide_after` | **Ü** |
-| `block_ips_write` | **Ü** |
-| `max_rate_ip_registers`, `max_rate_ip_logins` | **Ü** über WP-Hooks (`registration_errors`, `authenticate`) |
-| `max_rate_ip_qs`, `max_rate_user_qs`, `max_rate_ip_as`, `max_rate_user_as`, `max_rate_ip_cs`, `max_rate_user_cs` | **Ü** |
-| `max_rate_ip_votes`, `max_rate_user_votes`, `max_rate_ip_flags`, `max_rate_user_flags`, `max_rate_ip_uploads`, `max_rate_user_uploads`, `max_rate_ip_messages`, `max_rate_user_messages` | **Ü** |
-| Akismet **(N)** | **N** optionale Prüfung über Akismet, nur wenn das Akismet-Plugin aktiv und eingerichtet ist |
+| `confirm_user_emails`, `confirm_user_required` | **P** (section 2) |
+| `moderate_users` | **P** |
+| `captcha_on_register`, `captcha_on_reset_password`, `captcha_on_anon_post`, `captcha_on_unapproved`, `captcha_on_unconfirmed`, `captcha_on_feedback`, `captcha_module` | **P** through a captcha interface; options appear once a provider is registered (providers: **X**) |
+| `moderate_anon_post`, `moderate_unapproved`, `moderate_unconfirmed`, `moderate_by_points`, `moderate_points_limit`, `moderate_edited_again`, `moderate_notify_admin`, `moderate_update_time` | **P** |
+| `flagging_of_posts`, `flagging_notify_first`, `flagging_notify_every`, `flagging_hide_after` | **P** |
+| `block_ips_write` | **P** |
+| `max_rate_ip_registers`, `max_rate_ip_logins` | **P** via WP hooks (`registration_errors`, `authenticate`) |
+| `max_rate_ip_qs`, `max_rate_user_qs`, `max_rate_ip_as`, `max_rate_user_as`, `max_rate_ip_cs`, `max_rate_user_cs` | **P** |
+| `max_rate_ip_votes`, `max_rate_user_votes`, `max_rate_ip_flags`, `max_rate_user_flags`, `max_rate_ip_uploads`, `max_rate_user_uploads`, `max_rate_ip_messages`, `max_rate_user_messages` | **P** |
+| Akismet | **N** optional check, available only when the Akismet plugin is active and configured; off by default |
+| IP retention and anonymization | **N** (section 11) |
 
-### 5.12 Einstellungen → Caching (`admin/caching`), Rundschreiben (`admin/mailing`)
+### 5.12 Settings → Caching (`admin/caching`), Newsletter (`admin/mailing`)
 
-| Option | Ziel |
+| Option | Target |
 |---|---|
-| `caching_enabled`, `caching_driver`, `caching_q_start`, `caching_q_time`, `caching_catwidget_time` | **WP** Object Cache / Transients, intern ohne Einstellungen |
-| `mailing_enabled`, `mailing_from_name`, `mailing_from_email`, `mailing_subject`, `mailing_body`, `mailing_per_minute` | **Ü** Bildschirm „Rundschreiben“ |
+| `caching_enabled`, `caching_driver`, `caching_q_start`, `caching_q_time`, `caching_catwidget_time` | **WP** object cache / transients, internal, no settings |
+| `mailing_enabled`, `mailing_from_name`, `mailing_from_email`, `mailing_subject`, `mailing_body`, `mailing_per_minute` | **P** "Newsletter" screen; recipients are only users who opted in (section 11) |
 
-### 5.13 Punkte, Benutzertitel, Benutzerfelder, Wartung
+### 5.13 Points, user titles, user fields, tools
 
-| Bereich | Ziel |
+| Area | Target |
 |---|---|
-| Punkte: `points_base`, `points_post_q`, `points_post_a`, `points_select_a`, `points_a_selected`, `points_vote_up_q`, `points_vote_down_q`, `points_vote_up_a`, `points_vote_down_a`, `points_per_q_voted_up/down`, `points_per_a_voted_up/down`, `points_per_c_voted_up/down`, `points_q_voted_max_gain/loss`, `points_a_voted_max_gain/loss`, `points_c_voted_max_gain/loss`, `points_multiple` | **Ü**; Speichern stößt die Neuberechnung im Hintergrund an |
-| Benutzertitel (Punkte → Titel) | **Ü** |
-| Benutzerfelder (Name, Typ, Sichtbarkeit, bei Registrierung) | **Ü**; Felder erscheinen im WP-Profil, im Konto-Block und optional im Registrierungsformular |
-| Wartung: Suchindex neu aufbauen, Beiträge neu zählen, Punkte neu berechnen, Ereignisse neu füllen, Kategorien neu berechnen, versteckte Beiträge löschen | **Ü** Batch-Verarbeitung (REST + Fortschrittsanzeige), zusätzlich `wp easyq recalc …` |
-| Wartung: Blobs in Dateien/Datenbank verschieben, Cache leeren | **–** (Mediathek bzw. Object Cache) |
-| Versionsprüfung (`ajax/version`) | **WP** Plugin-Updates |
+| Points: `points_base`, `points_post_q`, `points_post_a`, `points_select_a`, `points_a_selected`, `points_vote_up_q`, `points_vote_down_q`, `points_vote_up_a`, `points_vote_down_a`, `points_per_q_voted_up/down`, `points_per_a_voted_up/down`, `points_per_c_voted_up/down`, `points_q_voted_max_gain/loss`, `points_a_voted_max_gain/loss`, `points_c_voted_max_gain/loss`, `points_multiple` | **P**; saving triggers a background recalculation |
+| User titles (points → title) | **P** |
+| User fields (name, type, visibility, on registration) | **P**; fields appear in the WP profile, the account block and optionally on the registration form |
+| Tools: rebuild search index, recount posts, recalculate points, refill events, recalculate categories, delete hidden posts | **P** batch processing (REST + progress bar), plus `wp easyq recalc …` |
+| Tools: move blobs to disk/database, clear cache | **–** (Media Library / object cache) |
+| Version check (`ajax/version`) | **WP** plugin updates |
 
 ---
 
-## 6. AJAX → REST-API
+## 6. AJAX → REST API
 
-Alle Endpunkte unter `easyq/v1`, Nonce über `wp_rest`, Rechteprüfung über
-`permission_callback`, Validierung über Argument-Schemas.
+All endpoints under `easyq/v1`, nonce via `wp_rest`, authorization via
+`permission_callback`, validation via argument schemas.
 
-| Q2A-AJAX | REST |
+| Q2A AJAX | REST |
 |---|---|
 | `vote` | `POST /posts/{id}/vote` |
-| `favorite` | `POST/DELETE /favorites` |
+| `favorite` | `POST` / `DELETE /favorites` |
 | `answer` | `POST /questions/{id}/answers` |
 | `comment` | `POST /posts/{id}/comments` |
-| `click_a`, `click_c` (auswählen, verstecken, wiederherstellen, löschen, melden, freigeben …) | `POST /posts/{id}/actions/{action}` |
+| `click_a`, `click_c` (select, hide, restore, delete, flag, approve, …) | `POST /posts/{id}/actions/{action}` |
 | `show_cs` | `GET /posts/{id}/comments` |
 | `asktitle` | `GET /questions/similar` |
 | `category` | `GET /categories?parent=` |
 | `notice` | `DELETE /notices/{id}` |
-| `wallpost`, `click_wall` | `POST/DELETE /users/{id}/wall` |
+| `wallpost`, `click_wall` | `POST` / `DELETE /users/{id}/wall` |
 | `click_pm` | `DELETE /messages/{id}` |
-| `click_admin` | Admin-Aktionen in der Moderationsliste |
-| `recalc`, `mailing` | `POST /admin/recalc`, `POST /admin/mailing` |
+| `click_admin` | Row actions of the admin posts list |
+| `recalc`, `mailing` | `POST /admin/recalc`, `POST /admin/newsletter` |
 | `version` | **–** |
 
-Zusätzlich lesende Endpunkte für Fragen, Antworten, Kategorien, Tags und Benutzer
-(Grundlage für die Blöcke im Editor und spätere Erweiterungen).
+Additional read endpoints for questions, answers, categories, tags and users serve the
+block editor previews and future extensions.
 
 ---
 
-## 7. Ereignisse → WordPress-Hooks
+## 7. Events → WordPress hooks
 
-Jedes Q2A-Ereignis wird zu einer Action `easyq_{event}` mit typisierten Parametern:
+Every Q2A event becomes an action `easyq_{event}` with typed parameters:
 
 `q_post`, `a_post`, `c_post`, `q_edit`, `a_edit`, `c_edit`, `a_select`, `a_unselect`,
 `q_close`, `q_reopen`, `q_move`, `a_to_c`, `q_claim`, `a_claim`, `c_claim`,
 `q_requeue`, `a_requeue`, `c_requeue`, `q_delete`, `a_delete`, `c_delete`
-(jeweils mit `*_before`), `search`, `feedback`, `ip_block`, `ip_unblock`,
+(each with `*_before`), `search`, `feedback`, `ip_block`, `ip_unblock`,
 `u_register`, `u_confirmed`, `u_login`, `u_logout`, `u_password`, `u_reset`, `u_save`,
 `u_edit`, `u_level`, `u_delete` (+ `_before`), `u_message`, `u_wall_post`,
 `u_wall_delete`.
 
-Die drei Q2A-internen Event-Module (`event-limits`, `event-notify`, `event-updates`)
-werden zu internen Listenern auf diese Actions. Ereignisse, die WP bereits auslöst
-(Login, Registrierung, Passwort), werden auf die WP-Hooks abgebildet.
+The three internal Q2A event modules (`event-limits`, `event-notify`, `event-updates`)
+become internal listeners of these actions. Events WordPress already fires (login,
+registration, password) are mapped onto the core hooks.
 
 ---
 
-## 8. E-Mails
+## 8. Email
 
-Alle 20 Q2A-Vorlagen bleiben erhalten, Versand über `wp_mail()`, Texte übersetzbar:
+Q2A ships 20 templates; 18 are kept and sent through `wp_mail()`:
 `a_commented`, `a_followed`, `a_selected`, `c_commented`, `confirm`, `feedback`,
-`flagged`, `moderate`, `remoderate`, `new_password`, `reset`, `private_message`,
-`q_answered`, `q_commented`, `q_posted`, `u_registered`, `u_to_approve`, `u_approved`,
-`wall_post`, `welcome`. `new_password` und `reset` entfallen zugunsten der WP-Mails.
+`flagged`, `moderate`, `remoderate`, `private_message`, `q_answered`, `q_commented`,
+`q_posted`, `u_registered`, `u_to_approve`, `u_approved`, `wall_post`, `welcome`.
+`new_password` and `reset` are dropped in favour of the core emails.
 
-Jede Mail ist über Filter (`easyq_email_{name}`) anpassbar.
+**Editable templates (N):**
+
+- Admin screen "Email templates" (section 5.1): subject and body per template,
+  list of available placeholders, preview with sample data, test mail to the current
+  user, reset to default.
+- Defaults are translatable strings; once edited, the stored text wins. On
+  multilingual sites the edited text is passed through the WPML/Polylang string
+  translation hooks where available.
+- Placeholders are replaced with escaped values; bodies are plain text (as in Q2A),
+  optional HTML through a filter.
+- Filter `easyq_email_{name}` for programmatic changes.
+- Every notification email contains an unsubscribe/manage link (section 11).
 
 ---
 
-## 9. Erweiterbarkeit (Q2A-Plugin-System)
+## 9. Extensibility (Q2A plugin system)
 
-| Q2A-Mechanismus | Ziel |
+| Q2A mechanism | Target |
 |---|---|
-| Plugin-Verzeichnis `qa-plugin/`, `metadata.json` | **WP** eigenständige WP-Plugins, die auf easyQ aufbauen |
-| Overrides (`qa_to_override`) | **WP** Filter an den relevanten Stellen |
-| Layer (Theme-Erweiterungen) | **WP** Filter auf Block-Ausgabe, eigene Blöcke |
-| Theme (`qa-theme`) | **WP** Block-Theme |
-| Modul `page` | **Ü** Registrierungs-API für zusätzliche Q&A-Routen |
-| Modul `widget` | **WP** Blöcke |
-| Modul `editor`, `viewer` | **Ü** Editor-Registry (Interface) |
-| Modul `captcha` | **Ü** Captcha-Registry (Interface) |
-| Modul `search` | **Ü** Suchanbieter-Interface |
-| Modul `filter` | **Ü** Filter bei Validierung von Beiträgen/Profilen |
-| Modul `event` | **WP** Actions (Abschnitt 7) |
-| Modul `login` | **WP** Login-Plugins |
-| Modul `process` | **WP** Actions |
-| Sprachphrasen (`qa_register_plugin_phrases`) | **WP** gettext |
+| Plugin folder `qa-plugin/`, `metadata.json` | **WP** standalone WP plugins built on top of easyQ |
+| Overrides (`qa_to_override`) | **WP** filters at the relevant places |
+| Layers (theme extensions) | **WP** block render filters, custom blocks, block hooks |
+| Theme (`qa-theme`) | **WP** block theme |
+| Module `page` | **P** registration API for additional Q&A routes |
+| Module `widget` | **WP** blocks |
+| Modules `editor`, `viewer` | **P** editor registry (interface) |
+| Module `captcha` | **P** captcha registry (interface) |
+| Module `search` | **P** search provider interface |
+| Module `filter` | **P** validation filters for posts and profiles |
+| Module `event` | **WP** actions (section 7) |
+| Module `login` | **WP** login plugins |
+| Module `process` | **WP** actions |
+| Language phrases (`qa_register_plugin_phrases`) | **WP** gettext |
 
-Alle öffentlichen Hooks und Interfaces werden in `docs/hooks.md` dokumentiert.
+All public hooks and interfaces are documented in `docs/hooks.md`.
 
 ---
 
-## 10. Mitgelieferte Q2A-Plugins (Auswahl am Projektende, **P**)
+## 10. Bundled Q2A plugins (selection at the end, **X**)
 
-| Plugin | Vorschlag |
+| Plugin | Proposal |
 |---|---|
-| reCAPTCHA | übernehmen (Captcha-Interface) |
-| WYSIWYG-Editor (CKEditor) | übernehmen als Editor auf Basis des in WP enthaltenen TinyMCE |
-| Tag Cloud Widget | übernehmen als Block |
-| Event Logger | übernehmen (Protokoll im Admin) |
-| Mouseover Layer | übernehmen als Block-Option der Fragenliste |
-| OpenSearch | übernehmen |
-| XML Sitemap | im Kern über die WP-Core-Sitemaps erledigt (Abschnitt 3) |
-| Facebook Login | streichen (Login-Plugins) |
-| Basic AdSense | streichen |
-| Example Page | streichen (wird durch Entwicklerdokumentation ersetzt) |
+| reCAPTCHA | Port (captcha interface); opt-in with privacy notice. Consider privacy-friendlier providers too |
+| WYSIWYG editor (CKEditor) | Port as an editor based on core assets |
+| Tag cloud widget | Port as a block |
+| Event logger | Port (log screen in the admin) |
+| Mouseover layer | Port as a block option of the question list |
+| OpenSearch | Port |
+| XML sitemap | Covered by the core sitemaps (section 3) |
+| Facebook login | Drop (login plugins) |
+| Basic AdSense | Drop |
+| Example page | Drop (replaced by developer documentation) |
 
 ---
 
-## 11. Querschnittsthemen
+## 11. Privacy (GDPR)
 
-| Thema | Umsetzung |
+| Topic | Implementation |
 |---|---|
-| HTML-Filterung | `wp_kses` mit eigener Erlaubnisliste statt htmLawed |
-| Mailer | `wp_mail()` statt PHPMailer-Kopie |
-| Sicherheit | Nonces, Capability-Prüfung, Escaping bei der Ausgabe, `$wpdb->prepare()` |
-| IP-Adressen | wie in Q2A binär gespeichert (`VARBINARY(16)`) |
-| Zeit | UTC in der Datenbank, Ausgabe über `wp_date()` |
-| Assets | `@wordpress/scripts`, nur auf Seiten laden, die sie brauchen |
-| Barrierefreiheit | WCAG 2.2 AA für Frontend und Admin |
-| Multisite | Tabellen pro Site, Aktivierung netzwerkweit und pro Site, `wp_initialize_site` / `wp_uninitialize_site` |
-| Übersetzung | Textdomain `easyq`, `.pot`, `de_DE` (PHP und JS) |
-| Q2A-Fremdbibliotheken (htmLawed, PHPMailer, CKEditor, Facebook-SDK) | entfallen |
+| External requests | None by default. Third-party services (captcha providers, Akismet) only after the site owner enables them; each adds a notice to the privacy policy guide |
+| Privacy policy guide | Suggested text via `wp_add_privacy_policy_content()`: data stored, purposes, retention, cookies |
+| Data export / erasure | Exporters and erasers for the core privacy tools: posts, votes, flags, favorites, messages, wall posts, profile fields, IP data, consent records. Erasure anonymizes the author of posts by default (like core comments); full deletion is configurable |
+| IP addresses | Stored only for abuse prevention (post creation/edit, rate limits, IP blocks). Configurable retention (default 30 days), then removed by WP-Cron. Optional storage in anonymized form (last octet / last 80 bits removed) |
+| View counting | No IP storage; duplicate views are filtered through a short-lived salted hash in a transient |
+| Anonymous posting | Disabled by default. When enabled: a functional cookie is set only at the moment of posting, the form shows a privacy notice with link to the privacy policy, name is optional, an email address is asked for only for opt-in notifications |
+| Notifications | `notify_users_default` defaults to off; every mail links to the notification settings; one-click unsubscribe |
+| Newsletter | Explicit opt-in (checkbox in account/registration, default off), consent timestamp stored, double opt-in for the first subscription, `List-Unsubscribe` and one-click unsubscribe headers |
+| Registration | Optional terms/privacy checkbox; consent stored with timestamp |
+| Public profile | Visibility per profile field; users can hide themselves from user lists if the site owner allows it |
+| Avatars | Gravatar governed by the core setting; local upload as an alternative |
+| Cookies | Documented in the privacy guide; easyQ sets no cookies for visitors who only read |
+| Fonts, scripts, assets | All bundled locally; no CDNs |
 
 ---
 
-## 12. Qualitätssicherung
+## 12. Quality assurance
 
-| Ebene | Werkzeug | Zweck |
+| Level | Tool | Purpose |
 |---|---|---|
-| Statische Analyse | PHPStan (mit WordPress-Erweiterung), PHPCS mit WPCS, ESLint, Stylelint | Typfehler, Standards |
-| Unit-Tests | PHPUnit | Fachlogik ohne WP: Hotness, Punkte, Rechte, Suchindex, Validierung |
-| Integrationstests | PHPUnit mit WP-Testsuite (`wp-env`) | Datenbank, Hooks, REST, Capabilities, Multisite |
-| End-to-End | Playwright (`@wordpress/e2e-test-utils-playwright`) | Fragen stellen, antworten, abstimmen, moderieren, Admin-Einstellungen, Blöcke im Editor |
-| Barrierefreiheit | axe in Playwright | |
-| Plugin-Prüfung | Plugin Check (offizielles WP-Tool) | Anforderungen von wordpress.org |
-| CI | GitHub Actions | PHP 8.1–8.4 × WP 6.6 / aktuell, Single- und Multisite |
+| Static analysis | PHPStan (with WordPress extension), PHPCS with WPCS, ESLint and Stylelint (`@wordpress/scripts`) | Type errors, coding standards |
+| Unit tests | PHPUnit | Domain logic without WP: hotness, points, permissions, search index, validation |
+| Integration tests | PHPUnit with the WP test suite (`wp-env`) | Database, hooks, REST, capabilities, privacy tools, multisite |
+| End-to-end | Playwright (`@wordpress/e2e-test-utils-playwright`) | Ask, answer, vote, moderate, settings, blocks in the editor |
+| Accessibility | axe in Playwright | |
+| Theme compatibility | Playwright screenshots with Twenty Twenty-Five, Twenty Twenty-Four, Twenty Twenty-Three and at least two popular third-party block themes | Verifies the no-CSS approach, especially forms |
+| Plugin review | Plugin Check (official) | wordpress.org requirements |
+| CI | GitHub Actions | PHP 8.1–8.4 × WP 6.7 / latest, single site and multisite |
+
+**CSS exceptions:** none so far. Any exception is listed here with reason and approval.
 
 ---
 
-## 13. Phasenplan
+## 13. Phases
 
-| Phase | Inhalt | Abnahmekriterien |
+| Phase | Scope | Acceptance criteria |
 |---|---|---|
-| 1 Grundgerüst | Bootstrap, Autoloader, Aktivierung/Deinstallation, Schema, Optionen, Capabilities, Tooling, CI | Plugin aktiviert sich auf Single- und Multisite fehlerfrei; Tabellen werden angelegt; Plugin Check, PHPCS und PHPStan ohne Fehler |
-| 2 Kern | Beiträge (Q/A/C), Zustände, Kategorien, Tags, Stimmen, Meldungen, Punkte, Hotness, Suchindex, Limits, Ereignisse | Unit- und Integrationstests decken die portierte Logik ab; Ergebnisse entsprechen Q2A |
-| 3 Rechte und Benutzer | Stufen, Rollen-Zuordnung, `map_meta_cap`, Profilintegration, Freigabe/Sperre, Avatare, Profilfelder | Rechte-Matrix vollständig getestet |
-| 4 REST-API | Endpunkte aus Abschnitt 6 | Integrationstests je Endpunkt inkl. Rechte- und Validierungsfehler |
-| 5 Frontend | Routing, Block-Templates, alle Blöcke, Interactivity API, Feeds, SEO | Alle Q2A-Seiten nachgebaut; E2E-Tests der Hauptabläufe; axe ohne Verstöße |
-| 6 Admin | Abschnitt 5 vollständig | Jede Q2A-Option zugeordnet und getestet; E2E-Tests der Admin-Abläufe |
-| 7 Kommunikation | E-Mails, Benachrichtigungen, PN, Pinnwand, Favoriten, Updates, Rundschreiben | Mails in Tests abgefangen und geprüft |
-| 8 Datenschutz und Werkzeuge | Privacy-Exporter/Eraser, WP-CLI, Website-Zustand | |
-| 9 Übersetzung und Release | `.pot`, `de_DE`, `readme.txt`, Screenshots, Entwicklerdoku | Plugin Check ohne Befunde; Release-ZIP baut reproduzierbar |
-| 10 Erweiterungen | Auswahl aus Abschnitt 10 | |
+| 1 Foundation | Bootstrap, autoloader, activation/uninstall, schema, options, capabilities, tooling, CI | Activates without errors on single site and multisite; tables created; Plugin Check, PHPCS and PHPStan clean |
+| 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A |
+| 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested |
+| 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass |
+| 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows |
+| 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests |
+| 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested |
+| 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP |
+| 10 Extensions | Selection from section 10 | |
 
 ---
 
-## 14. Offene Punkte
+## 14. Decisions log
 
-1. **Mindestversion WordPress.** Block-Templates lassen sich ab WP 6.7 über
-   `register_block_template()` sauber registrieren. Für 6.6 wäre ein Workaround über
-   Template-Filter nötig. Vorschlag: Mindestversion 6.7.
-2. **Anrede in der deutschen Übersetzung.** WordPress führt zwei deutsche Sprachpakete:
-   `de_DE` (Du) und `de_DE_formal` (Sie). Vorschlag: beide liefern; welche Form ist für
-   Texte in diesem Dokument und in Beispielen Standard?
-3. **Admin-Liste „Fragen“ (N):** gewünscht? Q2A hat keine solche Liste, in WP wird sie
-   erwartet.
-4. **Anonymes Posten:** beibehalten (setzt ein Cookie und speichert IP-Adressen) oder
-   nur für angemeldete Benutzer?
-5. **E-Mail-Vorlagen im Backend bearbeitbar** (N) oder nur über Übersetzung und Filter?
+| # | Decision | Date |
+|---|---|---|
+| 1 | Minimum WordPress version 6.7 (`register_block_template()`) | 2026-10-13 |
+| 2 | Ship both German language packs: `de_DE` (informal) and `de_DE_formal` (formal) | 2026-10-13 |
+| 3 | One admin "Posts" list (modelled on the core Comments screen) replaces the separate Q2A moderation pages | 2026-10-13 |
+| 4 | Privacy by design and by default, see section 11 | 2026-10-13 |
+| 5 | Email templates editable in the backend | 2026-10-13 |
+| 6 | All repository documentation and code comments in English | 2026-10-13 |
+| 7 | No plugin CSS; styling comes from the block theme | 2026-10-13 |
+| 8 | Full compliance with WordPress core guidelines | 2026-10-13 |
