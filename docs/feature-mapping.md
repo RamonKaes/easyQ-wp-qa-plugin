@@ -73,7 +73,7 @@ Q2A uses 31 tables. The schema is created with `dbDelta()`, versioned through th
 | `userpoints` | **P** `easyq_userpoints` | Aggregated points per user |
 | `userlevels` | **P** `easyq_userlevels` | Per-category levels (section 2) |
 | `userfields` | **P** `easyq_userfields` | Profile field configuration |
-| `userprofile` | **WP** user meta `easyq_field_{name}` | |
+| `userprofile` | **WP** user meta `easyq_field_{name}` | The Q2A fields "website" and "about" map to the core user fields `user_url` and `description`; the default custom field is "location" |
 | `usermetas` | **WP** user meta | |
 | `userfavorites` | **P** `easyq_userfavorites` | Questions, users, tags, categories |
 | `usernotices` | **P** `easyq_usernotices` | |
@@ -116,7 +116,12 @@ Admin (100) and Super Admin (120).
 - Optional per user in the WP profile: a global Q&A level (can only raise the level
   given by the role) and per-category levels (`easyq_userlevels`). This covers experts
   and category moderators.
-- "Approved" and "confirmed" are states (user meta), not levels.
+- "Approved" and "confirmed" are states (user meta), not levels. Users without
+  these meta values count as confirmed and need no approval, so existing users
+  keep working when the plugin is installed or approval is switched on. Only new
+  registrations through the WordPress form are marked as unconfirmed or waiting
+  for approval. Setting the password through the emailed link confirms the address.
+- Approved users have at least the level Approved, as in Q2A.
 
 **Permissions.** All `permit_*` options (section 5.9) are kept: minimum level plus an
 optional points threshold. Implemented as meta capabilities (`easyq_post_question`,
@@ -636,3 +641,6 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 10 | Site-wide counts are invalidated and recalculated on read instead of being updated incrementally | 2026-10-13 |
 | 11 | The post type `NOTE` is kept for close reasons | 2026-10-13 |
 | 12 | Category changes update posts and counts right away instead of needing a separate recalculation | 2026-10-13 |
+| 13 | Approval and confirmation apply to new registrations only; existing users are treated as approved and confirmed | 2026-10-13 |
+| 14 | Posting questions, answers and comments needs an account by default (privacy) | 2026-10-13 |
+| 15 | WordPress administrators always keep `easyq_manage`, whatever the role mapping says | 2026-10-13 |

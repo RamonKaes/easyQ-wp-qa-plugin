@@ -80,8 +80,24 @@ logs carry over.
 | `c_vote_up`, `c_vote_down`, `c_vote_nil` | Votes on comments | as for questions |
 | `c_flag`, `c_unflag`, `c_clearflags` | Flags on comments | as for questions |
 
-`old` is the `EasyQ\Posts\Post` before the change. User, message and wall events
-follow with the corresponding features.
+`old` is the `EasyQ\Posts\Post` before the change.
+
+### Users
+
+| Event | When | Notable parameters |
+| --- | --- | --- |
+| `u_register` | A user account was created | `user_id` |
+| `u_login`, `u_logout` | A user logged in or out | `user_id` |
+| `u_confirmed` | A user confirmed their email address | `user_id` |
+| `u_password` | A password was set | `user_id` |
+| `u_reset` | A password was reset through the emailed link | `user_id` |
+| `u_save` | A user saved their own profile | `user_id` |
+| `u_edit` | Someone else saved a user's profile | `user_id` |
+| `u_level` | The Q&A level of a user changed, also by approval | `user_id`, `level`, `old_level`, `category_id` (category levels) |
+| `u_block`, `u_unblock` | A user was blocked or unblocked | `user_id` |
+| `u_delete_before`, `u_delete` | A user is deleted; their posts stay, without author or with the user chosen to receive them | `user_id` |
+
+Message, wall and favorite events follow with the corresponding features.
 
 ## Filters
 
@@ -90,6 +106,36 @@ follow with the corresponding features.
 | `easyq_default_settings` | `array $defaults` | Default values of all settings, keyed by section and setting |
 | `easyq_search_providers` | `EasyQ\Search\Search_Provider[] $providers` | Add search engines; the built-in search is always kept |
 | `easyq_client_ip` | `string $ip` | IP address of the current request; easyQ trusts only `REMOTE_ADDR` by default. Sites behind a proxy return the client address from a trusted header here |
+
+## Capabilities
+
+easyQ adds no roles. All capabilities are meta capabilities decided by the
+permission settings, the user's Q&A level and status, so they can be checked
+with `current_user_can()` and `user_can()` anywhere:
+
+| Capability | Argument | Meaning |
+| --- | --- | --- |
+| `easyq_manage` | – | Manage the plugin settings (WordPress administrators and Q&A administrators) |
+| `easyq_moderate` | – | Use the moderation screens |
+| `easyq_view_questions` | – | View question pages |
+| `easyq_post_question` | – | Ask questions |
+| `easyq_post_answer` | question ID | Answer the question |
+| `easyq_post_comment` | post ID | Comment on the post |
+| `easyq_edit_post` | post ID | Edit the post |
+| `easyq_retag_question` | question ID | Change tags and category |
+| `easyq_edit_silently` | – | Edit without the edit being shown |
+| `easyq_select_answer` | question ID | Select the best answer |
+| `easyq_vote_post`, `easyq_vote_down_post` | post ID | Vote, vote down |
+| `easyq_flag_post`, `easyq_clear_flags` | post ID | Flag, clear all flags |
+| `easyq_close_question`, `easyq_reopen_question` | question ID | Close, reopen |
+| `easyq_moderate_post` | post ID | Approve or reject a queued post |
+| `easyq_hide_post`, `easyq_reshow_post`, `easyq_delete_post` | post ID | Hide, show again, delete |
+| `easyq_view_ips`, `easyq_view_voters` | – | See IP addresses of anonymous posts, see who voted and flagged |
+| `easyq_post_wall` | – | Post on user walls |
+| `easyq_view_new_users`, `easyq_view_special_users` | – | See the lists of new users and users with special levels |
+
+Rate limits and blocked IP addresses are request specific and are checked by the
+REST API and the blocks, not by capabilities.
 
 ## Interfaces
 
@@ -118,5 +164,8 @@ $results  = EasyQ\Services::search()->search( 'block themes', 0, 10 );
 | `Services::search()` | `EasyQ\Search\Search`: search and index |
 | `Services::points()` | `EasyQ\Points\Points`: user points |
 | `Services::limits()` | `EasyQ\Limits\Limits`: rate limits |
+| `Services::user_levels()` | `EasyQ\Users\User_Levels`: Q&A levels of users |
+| `Services::permissions()` | `EasyQ\Users\Permissions`: permission checks with reasons |
+| `Services::user_fields()` | `EasyQ\Users\User_Fields`: profile fields |
 
 The services do not check permissions; the REST API and the blocks do that.

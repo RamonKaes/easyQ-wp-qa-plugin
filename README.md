@@ -6,7 +6,8 @@ WordPress.
 
 > **Status:** early development. The foundation and the core domain (posts,
 > moderation, votes, flags, points, categories, search index, rate limits and
-> events) are in place; features are added phase by phase, see
+> events) and users and permissions (levels, capabilities, profile integration)
+> are in place; features are added phase by phase, see
 > [docs/feature-mapping.md](docs/feature-mapping.md#13-phases).
 
 ## Principles
