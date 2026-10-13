@@ -4,10 +4,10 @@ This document maps every feature, page, option, table and interface of
 Question2Answer (Q2A) 1.8.8 to its target in WordPress. It is the binding basis for the
 implementation; deviations are recorded here.
 
-**Legend**
+## Legend
 
 | Code | Meaning |
-|---|---|
+| --- | --- |
 | **P** | Ported – Q2A logic is carried over; target given |
 | **WP** | Replaced by a WordPress core feature |
 | **–** | Dropped; reason given |
@@ -38,7 +38,7 @@ implementation; deviations are recorded here.
    English.
 
 | Topic | Decision |
-|---|---|
+| --- | --- |
 | Name / slug / text domain | easyQ / `easyq` / `easyq` |
 | PHP namespace | `easyQ\` (PSR-4, `src/`) |
 | Prefix for functions, options, hooks, meta | `easyq_` |
@@ -62,7 +62,7 @@ Q2A uses 31 tables. The schema is created with `dbDelta()`, versioned through th
 `easyq_db_version` and upgraded step by step.
 
 | Q2A table | Target | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `posts` | **P** `easyq_posts` | Questions, answers, comments including states (`_HIDDEN`, `_QUEUED`); type `NOTE` dropped (unused). `userid` becomes a WP user ID (`BIGINT UNSIGNED`) |
 | `postmetas` | **P** `easyq_postmeta` | Compatible with the WP metadata API (`add_metadata( 'easyq_post', … )`) |
 | `categories` | **P** `easyq_categories` | Up to 4 levels, `backpath`, counters, position |
@@ -97,7 +97,7 @@ explicitly enabled in the settings (default: keep data).
 ## 2. Users, levels, permissions
 
 | Q2A | Target |
-|---|---|
+| --- | --- |
 | Register, log in, log out, forgot/reset password | **WP** `wp-login.php` / core login block; Q2A pages `login`, `register`, `forgot`, `reset`, `logout` are dropped |
 | Email confirmation (`confirm`) | **WP/P** WP confirms the address when the password is set; status stored as user meta `easyq_confirmed`. An own confirmation link only where the WP flow does not apply |
 | User approval (`moderate_users`) | **P** user meta `easyq_approved`; "Pending approval" view and bulk action in the WP users list |
@@ -134,7 +134,7 @@ permalinks everything works through query parameters. Header and footer come fro
 theme's template parts.
 
 | Q2A route | Target | Block template |
-|---|---|---|
+| --- | --- | --- |
 | `/` (home) | **P** | `easyq-home`: question query sorted by recent activity |
 | `activity/` | **P** | `easyq-activity` |
 | `questions/` (sort: newest, hot, votes, answers, views) | **P** | `easyq-questions` |
@@ -176,7 +176,7 @@ built with core blocks only.
 The block architecture follows core's Query Loop model so that every part can be
 arranged and styled in the Site Editor without plugin CSS.
 
-**Building principles**
+### Building principles
 
 - **Context providers + small field blocks** instead of large monolithic blocks.
   Lists provide items through block context; each visible piece (title, votes,
@@ -191,10 +191,10 @@ arranged and styled in the Site Editor without plugin CSS.
 - **Interactivity API** for voting, favorites, loading more comments, inline answering –
   always with a working no-JS fallback (regular form posts).
 
-**Containers (context providers)**
+### Containers (context providers)
 
 | Block | Q2A source | Key attributes |
-|---|---|---|
+| --- | --- | --- |
 | `easyq/question-query` | All question lists | Source (recent, hot, votes, answers, views, unanswered variants, activity), category, tag, author, favorites, per page, inherit from route |
 | `easyq/question-template` | List item | – (repeats inner blocks per item) |
 | `easyq/query-pagination` (+ previous, numbers, next) | Paging | Same markup as core pagination |
@@ -205,10 +205,10 @@ arranged and styled in the Site Editor without plugin CSS.
 | `easyq/user-query` / `easyq/user-template` | User lists | Sort (points, newest, special), columns, per page |
 | `easyq/user` | Profile page | Provides the current user from the route |
 
-**Field blocks (consume context)**
+### Field blocks (consume context)
 
 | Block | Content |
-|---|---|
+| --- | --- |
 | `easyq/post-title` | Question title (link optional) |
 | `easyq/post-content` | Formatted content |
 | `easyq/post-excerpt` | Shortened content (list items) |
@@ -223,10 +223,10 @@ arranged and styled in the Site Editor without plugin CSS.
 | `easyq/post-actions` | Answer, comment, edit, close, select, flag, hide, delete … depending on permissions |
 | `easyq/user-name`, `easyq/user-avatar`, `easyq/user-points`, `easyq/user-title`, `easyq/user-fields`, `easyq/user-stats` | Profile pieces |
 
-**Forms and standalone blocks**
+### Forms and standalone blocks
 
 | Block | Q2A source |
-|---|---|
+| --- | --- |
 | `easyq/ask-form` | `ask` (similar-question check, tag suggestions, category picker, extra field) |
 | `easyq/answer-form` | Question page |
 | `easyq/comment-form` | Question page |
@@ -267,9 +267,9 @@ no plugin CSS.
 Top-level menu **easyQ** (capability `easyq_manage`; moderation from `easyq_moderate`):
 
 | Submenu | Q2A source | Implementation |
-|---|---|---|
+| --- | --- | --- |
 | Dashboard | `admin/stats` | Figures, queues, quick links; plus a WP dashboard widget |
-| Posts **(N)** | `admin/moderate`, `admin/flagged`, `admin/hidden` | One `WP_List_Table` for questions, answers and comments, modelled on the core Comments screen: views "All | Pending | Flagged | Hidden | Closed", filters by type, category, author and date, search, row and bulk actions (approve, reject, hide, restore, delete, close/reopen, edit), counter badge in the menu and the admin bar |
+| Posts **(N)** | `admin/moderate`, `admin/flagged`, `admin/hidden` | One `WP_List_Table` for questions, answers and comments, modelled on the core Comments screen: views All, Pending, Flagged, Hidden and Closed, filters by type, category, author and date, search, row and bulk actions (approve, reject, hide, restore, delete, close/reopen, edit), counter badge in the menu and the admin bar |
 | Categories | `admin/categories` | List and form, hierarchy, ordering, moving posts on delete |
 | Points | `admin/points` | Settings API form |
 | User titles | `admin/usertitles` | List and form |
@@ -295,7 +295,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 ### 5.2 Settings → General (`admin/general`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `site_title` | **WP** site title / page titles |
 | `site_url` | **WP** `home_url()` |
 | `neat_urls` | **WP** permalinks |
@@ -311,7 +311,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 ### 5.3 Settings → Email (`admin/emails`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `from_email` | **P** optional, otherwise WP default |
 | `feedback_email` | **P** |
 | `notify_admin_q_post` | **P** |
@@ -322,7 +322,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 ### 5.4 Settings → Users (`admin/users`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `show_notice_visitor`, `notice_visitor` | **P** |
 | `show_notice_welcome`, `notice_welcome` | **P** |
 | `show_custom_welcome`, `custom_welcome` | **P** |
@@ -344,7 +344,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 All options are dropped; the block theme and the Site Editor handle layout.
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `logo_show`, `logo_url`, `logo_width`, `logo_height` | **WP** site logo |
 | `show_custom_sidebar`, `custom_sidebar`, `show_custom_sidepanel`, `custom_sidepanel` | **WP** blocks in templates |
 | `show_custom_header`, `custom_header`, `show_custom_footer`, `custom_footer` | **WP** template parts |
@@ -355,7 +355,7 @@ All options are dropped; the block theme and the Site Editor handle layout.
 ### 5.6 Settings → Viewing (`admin/viewing`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `q_urls_title_length` | **P** |
 | `q_urls_remove_accents` | **WP** `sanitize_title()` always removes accents |
 | `do_count_q_views`, `show_view_counts`, `show_view_count_q_page`, `recalc_hotness_q_view` | **P** (view counting without storing IPs, section 11) |
@@ -374,7 +374,7 @@ All options are dropped; the block theme and the Site Editor handle layout.
 ### 5.7 Settings → Lists (`admin/lists`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `page_size_home`, `page_size_activity`, `page_size_qs`, `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search` | **P** as block defaults |
 | `page_size_tags`, `columns_tags`, `page_size_users`, `columns_users` | **P** as block defaults |
 | `search_module` | **P** as a search provider interface; the choice appears once a provider is registered |
@@ -383,7 +383,7 @@ All options are dropped; the block theme and the Site Editor handle layout.
 ### 5.8 Settings → Posting (`admin/posting`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `do_close_on_select`, `allow_close_questions`, `allow_close_own_questions` | **P** |
 | `allow_self_answer`, `allow_multi_answers`, `follow_on_as` | **P** |
 | `comment_on_qs`, `comment_on_as` | **P** |
@@ -419,7 +419,7 @@ All **P**, implemented with `add_feed()` and RSS 2.0 output:
 ### 5.11 Settings → Spam (`admin/spam`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `confirm_user_emails`, `confirm_user_required` | **P** (section 2) |
 | `moderate_users` | **P** |
 | `captcha_on_register`, `captcha_on_reset_password`, `captcha_on_anon_post`, `captcha_on_unapproved`, `captcha_on_unconfirmed`, `captcha_on_feedback`, `captcha_module` | **P** through a captcha interface; options appear once a provider is registered (providers: **X**) |
@@ -435,14 +435,14 @@ All **P**, implemented with `add_feed()` and RSS 2.0 output:
 ### 5.12 Settings → Caching (`admin/caching`), Newsletter (`admin/mailing`)
 
 | Option | Target |
-|---|---|
+| --- | --- |
 | `caching_enabled`, `caching_driver`, `caching_q_start`, `caching_q_time`, `caching_catwidget_time` | **WP** object cache / transients, internal, no settings |
 | `mailing_enabled`, `mailing_from_name`, `mailing_from_email`, `mailing_subject`, `mailing_body`, `mailing_per_minute` | **P** "Newsletter" screen; recipients are only users who opted in (section 11) |
 
 ### 5.13 Points, user titles, user fields, tools
 
 | Area | Target |
-|---|---|
+| --- | --- |
 | Points: `points_base`, `points_post_q`, `points_post_a`, `points_select_a`, `points_a_selected`, `points_vote_up_q`, `points_vote_down_q`, `points_vote_up_a`, `points_vote_down_a`, `points_per_q_voted_up/down`, `points_per_a_voted_up/down`, `points_per_c_voted_up/down`, `points_q_voted_max_gain/loss`, `points_a_voted_max_gain/loss`, `points_c_voted_max_gain/loss`, `points_multiple` | **P**; saving triggers a background recalculation |
 | User titles (points → title) | **P** |
 | User fields (name, type, visibility, on registration) | **P**; fields appear in the WP profile, the account block and optionally on the registration form |
@@ -458,7 +458,7 @@ All endpoints under `easyq/v1`, nonce via `wp_rest`, authorization via
 `permission_callback`, validation via argument schemas.
 
 | Q2A AJAX | REST |
-|---|---|
+| --- | --- |
 | `vote` | `POST /posts/{id}/vote` |
 | `favorite` | `POST` / `DELETE /favorites` |
 | `answer` | `POST /questions/{id}/answers` |
@@ -523,7 +523,7 @@ Q2A ships 20 templates; 18 are kept and sent through `wp_mail()`:
 ## 9. Extensibility (Q2A plugin system)
 
 | Q2A mechanism | Target |
-|---|---|
+| --- | --- |
 | Plugin folder `qa-plugin/`, `metadata.json` | **WP** standalone WP plugins built on top of easyQ |
 | Overrides (`qa_to_override`) | **WP** filters at the relevant places |
 | Layers (theme extensions) | **WP** block render filters, custom blocks, block hooks |
@@ -546,7 +546,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 ## 10. Bundled Q2A plugins (selection at the end, **X**)
 
 | Plugin | Proposal |
-|---|---|
+| --- | --- |
 | reCAPTCHA | Port (captcha interface); opt-in with privacy notice. Consider privacy-friendlier providers too |
 | WYSIWYG editor (CKEditor) | Port as an editor based on core assets |
 | Tag cloud widget | Port as a block |
@@ -563,7 +563,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 ## 11. Privacy (GDPR)
 
 | Topic | Implementation |
-|---|---|
+| --- | --- |
 | External requests | None by default. Third-party services (captcha providers, Akismet) only after the site owner enables them; each adds a notice to the privacy policy guide |
 | Privacy policy guide | Suggested text via `wp_add_privacy_policy_content()`: data stored, purposes, retention, cookies |
 | Data export / erasure | Exporters and erasers for the core privacy tools: posts, votes, flags, favorites, messages, wall posts, profile fields, IP data, consent records. Erasure anonymizes the author of posts by default (like core comments); full deletion is configurable |
@@ -583,7 +583,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 ## 12. Quality assurance
 
 | Level | Tool | Purpose |
-|---|---|---|
+| --- | --- | --- |
 | Static analysis | PHPStan (with WordPress extension), PHPCS with WPCS, ESLint and Stylelint (`@wordpress/scripts`) | Type errors, coding standards |
 | Unit tests | PHPUnit | Domain logic without WP: hotness, points, permissions, search index, validation |
 | Integration tests | PHPUnit with the WP test suite (`wp-env`) | Database, hooks, REST, capabilities, privacy tools, multisite |
@@ -600,7 +600,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 ## 13. Phases
 
 | Phase | Scope | Acceptance criteria |
-|---|---|---|
+| --- | --- | --- |
 | 1 Foundation | Bootstrap, autoloader, activation/uninstall, schema, options, capabilities, tooling, CI | Activates without errors on single site and multisite; tables created; Plugin Check, PHPCS and PHPStan clean |
 | 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A |
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested |
@@ -617,7 +617,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 ## 14. Decisions log
 
 | # | Decision | Date |
-|---|---|---|
+| --- | --- | --- |
 | 1 | Minimum WordPress version 6.7 (`register_block_template()`) | 2026-10-13 |
 | 2 | Ship both German language packs: `de_DE` (informal) and `de_DE_formal` (formal) | 2026-10-13 |
 | 3 | One admin "Posts" list (modelled on the core Comments screen) replaces the separate Q2A moderation pages | 2026-10-13 |
