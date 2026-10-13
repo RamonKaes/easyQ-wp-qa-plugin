@@ -71,6 +71,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run build
       - name: Configure WordPress version
         run: |
           if [ "${{ matrix.wp }}" = "latest" ]; then CORE=null; else CORE='"WordPress/WordPress#${{ matrix.wp }}"'; fi
@@ -91,6 +92,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run build
       - run: npx playwright install chromium --with-deps
       - run: npm run env:start
       - run: npm run test:e2e
@@ -113,6 +115,7 @@ jobs:
       - run: npm ci
       - name: Build release archive
         run: |
+          npm run build
           npm run plugin-zip
           unzip -q easyq.zip -d dist
       - uses: WordPress/plugin-check-action@v1

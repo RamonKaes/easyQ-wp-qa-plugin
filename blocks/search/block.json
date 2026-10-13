@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/search",
+	"title": "Q&A Search",
+	"category": "easyq",
+	"description": "Search field for questions.",
+	"textdomain": "easyq",
+	"attributes": {
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"style": "wp-block-search",
+	"render": "file:./render.php"
+}

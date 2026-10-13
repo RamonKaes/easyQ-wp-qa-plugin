@@ -1,0 +1,37 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/page-title",
+	"title": "Q&A Page Title",
+	"category": "easyq",
+	"description": "Title of the current Q&A page, e.g. the tag or category.",
+	"textdomain": "easyq",
+	"attributes": {
+		"level": {
+			"type": "number",
+			"default": 1
+		}
+	},
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"align": [
+			"wide",
+			"full"
+		]
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

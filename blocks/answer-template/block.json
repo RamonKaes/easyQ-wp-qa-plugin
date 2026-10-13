@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/answer-template",
+	"title": "Answer Template",
+	"category": "easyq",
+	"description": "The layout of each answer.",
+	"textdomain": "easyq",
+	"parent": [
+		"easyq/answer-list"
+	],
+	"usesContext": [
+		"easyq/postId",
+		"easyq/listId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		},
+		"layout": true
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php",
+	"style": "wp-block-post-template"
+}

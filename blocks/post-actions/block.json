@@ -1,0 +1,43 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/post-actions",
+	"title": "Post Actions",
+	"category": "easyq",
+	"description": "Buttons for the actions the visitor can perform: select, flag, hide, close and more.",
+	"textdomain": "easyq",
+	"usesContext": [
+		"easyq/postId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"layout": {
+			"default": {
+				"type": "flex",
+				"flexWrap": "wrap"
+			},
+			"allowSwitching": false,
+			"allowInheriting": false,
+			"allowOrientation": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"style": [
+		"wp-block-buttons",
+		"wp-block-button"
+	],
+	"render": "file:./render.php"
+}

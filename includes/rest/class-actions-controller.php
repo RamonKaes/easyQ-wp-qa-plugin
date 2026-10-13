@@ -59,6 +59,16 @@ final class Actions_Controller extends Controller {
 	public function register_routes(): void {
 		register_rest_route(
 			self::NAMESPACE,
+			'/posts/(?P<id>\d+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_post' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/posts/(?P<id>\d+)/vote',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -110,6 +120,20 @@ final class Actions_Controller extends Controller {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Returns any post the viewer may see, whatever its type.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_post( $request ): WP_REST_Response|WP_Error {
+		$actor = $this->actor();
+		$post  = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor );
+
+		return $post instanceof WP_Error ? $post : new WP_REST_Response( $this->formatter()->format( $post, $actor ) );
 	}
 
 	/**

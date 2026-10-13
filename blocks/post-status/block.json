@@ -1,0 +1,39 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/post-status",
+	"title": "Post Status",
+	"category": "easyq",
+	"description": "Shows whether a question is closed or an answer is selected, hidden or waiting for approval.",
+	"textdomain": "easyq",
+	"usesContext": [
+		"easyq/postId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"layout": {
+			"default": {
+				"type": "flex",
+				"flexWrap": "wrap"
+			},
+			"allowSwitching": false,
+			"allowInheriting": false,
+			"allowOrientation": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

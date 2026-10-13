@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/post-date",
+	"title": "Post Date",
+	"category": "easyq",
+	"description": "When a post was written or last changed.",
+	"textdomain": "easyq",
+	"attributes": {
+		"showModified": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"usesContext": [
+		"easyq/postId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

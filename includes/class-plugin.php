@@ -31,6 +31,14 @@ final class Plugin {
 		( new Users\Registration() )->register();
 		( new Rest\Rest_Api() )->register();
 
+		$router = new Frontend\Router();
+		Blocks\Block_Context::set_router( $router );
+		$router->register();
+		( new Frontend\Templates( $router ) )->register();
+		( new Frontend\Page_Meta( $router ) )->register();
+		( new Frontend\Form_Handler() )->register();
+		( new Blocks\Blocks() )->register();
+
 		if ( is_admin() ) {
 			( new Admin\Profile_Screen() )->register();
 			( new Admin\Users_Screen() )->register();

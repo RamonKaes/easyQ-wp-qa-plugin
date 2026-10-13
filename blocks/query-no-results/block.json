@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/query-no-results",
+	"title": "Q&A No Results",
+	"category": "easyq",
+	"description": "Content shown when a list is empty.",
+	"textdomain": "easyq",
+	"attributes": {
+		"message": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"usesContext": [
+		"easyq/listId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

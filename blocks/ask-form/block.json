@@ -1,0 +1,27 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/ask-form",
+	"title": "Ask Form",
+	"category": "easyq",
+	"description": "Form to ask a new question.",
+	"textdomain": "easyq",
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

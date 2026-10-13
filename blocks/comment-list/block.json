@@ -1,0 +1,31 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/comment-list",
+	"title": "Comment List",
+	"category": "easyq",
+	"description": "The comments on a question or answer.",
+	"textdomain": "easyq",
+	"usesContext": [
+		"easyq/postId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		},
+		"layout": true
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

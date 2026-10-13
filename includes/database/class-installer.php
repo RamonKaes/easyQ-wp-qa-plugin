@@ -80,7 +80,9 @@ final class Installer {
 	 * Data is kept; it is only removed on uninstall when the site owner asked for it.
 	 */
 	public static function deactivate(): void {
-		// Rewrite rules and scheduled events are cleaned up here once they exist.
+		// WordPress rebuilds the rewrite rules without the Q&A routes on the next request.
+		delete_option( 'rewrite_rules' );
+		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
 	}
 
 	/**
@@ -93,6 +95,9 @@ final class Installer {
 		( new User_Fields() )->install_defaults();
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
+
+		// Adds the Q&A routes to the rewrite rules on the next request.
+		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
 	}
 
 	/**

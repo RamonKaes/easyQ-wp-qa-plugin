@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/ask-box",
+	"title": "Ask Box",
+	"category": "easyq",
+	"description": "A short field that starts asking a question.",
+	"textdomain": "easyq",
+	"attributes": {
+		"placeholder": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"style": "wp-block-search",
+	"render": "file:./render.php"
+}

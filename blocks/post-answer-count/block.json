@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/post-answer-count",
+	"title": "Answer Count",
+	"category": "easyq",
+	"description": "Number of answers of a question.",
+	"textdomain": "easyq",
+	"usesContext": [
+		"easyq/postId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

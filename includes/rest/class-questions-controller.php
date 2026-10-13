@@ -211,6 +211,15 @@ final class Questions_Controller extends Controller {
 		}
 
 		$actor  = $this->actor();
+		$follow = null;
+		$answer = self::int_param( $request, 'follow' );
+		if ( null !== $answer ) {
+			$follow = Services::posts()->find( $answer );
+			if ( null === $follow || ! Services::permissions()->post_rules( $follow, $actor )['followable'] ) {
+				return Rest_Errors::invalid( new WP_Error( 'follow', __( 'Questions can only follow on from visible answers.', 'easyq' ) ) );
+			}
+		}
+
 		$queued = null !== Services::permissions()->moderation_reason( $actor );
 		$author = Post_Input::author( $actor, $request );
 		$extra  = self::string_param( $request, 'extra' );
@@ -224,7 +233,7 @@ final class Questions_Controller extends Controller {
 			$category_id,
 			$author['notify'],
 			$author['name'],
-			null,
+			$follow,
 			$queued,
 			null === $extra ? null : sanitize_textarea_field( $extra )
 		);
@@ -458,6 +467,10 @@ final class Questions_Controller extends Controller {
 			'extra'    => array(
 				'description' => __( 'Value of the extra question field.', 'easyq' ),
 				'type'        => 'string',
+			),
+			'follow'   => array(
+				'description' => __( 'Answer the new question follows on from.', 'easyq' ),
+				'type'        => 'integer',
 			),
 		) + Post_Input::content_args( false );
 	}
