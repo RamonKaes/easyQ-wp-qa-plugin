@@ -11,6 +11,7 @@ use EasyQ\Database\Db;
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
+use EasyQ\Stats\Counts;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -80,6 +81,7 @@ final class Uninstaller {
 		Schema::drop();
 		Options::delete_all();
 		delete_option( Installer::DB_VERSION_OPTION );
+		delete_option( Counts::OPTION );
 	}
 
 	/**

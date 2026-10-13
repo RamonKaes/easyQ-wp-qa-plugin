@@ -23,5 +23,7 @@ final class Plugin {
 
 		( new Database\Installer() )->register();
 		( new Capabilities() )->register();
+		( new Events\Activity_Tracker() )->register();
+		Services::limits()->register();
 	}
 }
