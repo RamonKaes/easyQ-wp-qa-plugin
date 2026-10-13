@@ -5,7 +5,7 @@
  * @package easyQ
  */
 
-namespace easyQ\Database;
+namespace EasyQ\Database;
 
 defined( 'ABSPATH' ) || exit;
 

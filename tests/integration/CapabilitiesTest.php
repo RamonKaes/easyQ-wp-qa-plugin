@@ -5,12 +5,12 @@
  * @package easyQ
  */
 
-namespace easyQ\Tests\Integration;
+namespace EasyQ\Tests\Integration;
 
-use easyQ\Capabilities;
+use EasyQ\Capabilities;
 
 /**
- * @covers \easyQ\Capabilities
+ * @covers \EasyQ\Capabilities
  */
 final class CapabilitiesTest extends TestCase {
 

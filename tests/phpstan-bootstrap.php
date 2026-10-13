@@ -5,7 +5,7 @@
  * @package easyQ
  */
 
-namespace easyQ;
+namespace EasyQ;
 
 const VERSION     = '0.1.0';
 const PLUGIN_FILE = __DIR__ . '/../easyq.php';

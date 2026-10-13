@@ -5,15 +5,15 @@
  * @package easyQ
  */
 
-namespace easyQ\Tests\Unit;
+namespace EasyQ\Tests\Unit;
 
-use easyQ\Database\Schema;
+use EasyQ\Database\Schema;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Guards the format that dbDelta() needs and the index size limits of MySQL.
  *
- * @covers \easyQ\Database\Schema
+ * @covers \EasyQ\Database\Schema
  */
 final class SchemaTest extends TestCase {
 

@@ -5,15 +5,15 @@
  * @package easyQ
  */
 
-namespace easyQ\Tests\Integration;
+namespace EasyQ\Tests\Integration;
 
-use easyQ\Database\Installer;
-use easyQ\Database\Schema;
-use easyQ\Settings\Options;
-use easyQ\Uninstaller;
+use EasyQ\Database\Installer;
+use EasyQ\Database\Schema;
+use EasyQ\Settings\Options;
+use EasyQ\Uninstaller;
 
 /**
- * @covers \easyQ\Uninstaller
+ * @covers \EasyQ\Uninstaller
  */
 final class UninstallerTest extends TestCase {
 

@@ -40,7 +40,7 @@ implementation; deviations are recorded here.
 | Topic | Decision |
 | --- | --- |
 | Name / slug / text domain | easyQ / `easyq` / `easyq` |
-| PHP namespace | `easyQ\` (PSR-4, `src/`) |
+| PHP namespace | `EasyQ\`; classes in `includes/` with WordPress file names (`class-*.php`) |
 | Prefix for functions, options, hooks, meta | `easyq_` |
 | Tables | `{$wpdb->prefix}easyq_*` (per site on multisite) |
 | Blocks | `easyq/<name>` |
@@ -626,3 +626,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 6 | All repository documentation and code comments in English | 2026-10-13 |
 | 7 | No plugin CSS; styling comes from the block theme | 2026-10-13 |
 | 8 | Full compliance with WordPress core guidelines | 2026-10-13 |
+| 9 | PHP namespace `EasyQ\\` (capitalized, as recommended by the PHP coding standards handbook) | 2026-10-13 |

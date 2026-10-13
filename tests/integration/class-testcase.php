@@ -5,7 +5,7 @@
  * @package easyQ
  */
 
-namespace easyQ\Tests\Integration;
+namespace EasyQ\Tests\Integration;
 
 use WP_UnitTestCase;
 
@@ -39,7 +39,7 @@ abstract class TestCase extends WP_UnitTestCase {
 	protected function activate_network_wide(): void {
 		update_site_option(
 			'active_sitewide_plugins',
-			array( plugin_basename( \easyQ\PLUGIN_FILE ) => time() )
+			array( plugin_basename( \EasyQ\PLUGIN_FILE ) => time() )
 		);
 	}
 }

@@ -74,7 +74,7 @@ To test against another WordPress or PHP version, create `.wp-env.override.json`
 | --- | --- |
 | `easyq.php` | Plugin bootstrap |
 | `uninstall.php` | Data removal when the plugin is deleted |
-| `includes/` | PHP classes; `easyQ\Database\Schema` lives in `includes/database/class-schema.php` |
+| `includes/` | PHP classes; `EasyQ\Database\Schema` lives in `includes/database/class-schema.php` |
 | `languages/` | Translation template and bundled translations |
 | `tests/unit/` | Unit tests without WordPress |
 | `tests/integration/` | Integration tests with the WordPress test suite |
@@ -84,7 +84,7 @@ To test against another WordPress or PHP version, create `.wp-env.override.json`
 ### Conventions
 
 - Code, comments and documentation are written in English.
-- Classes live in the `easyQ` namespace and follow the WordPress file naming
+- Classes live in the `EasyQ` namespace and follow the WordPress file naming
   conventions (`class-*.php`, lowercase directories).
 - Every change keeps PHPCS, PHPStan (level max), all tests and Plugin Check clean.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/).

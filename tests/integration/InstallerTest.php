@@ -5,15 +5,15 @@
  * @package easyQ
  */
 
-namespace easyQ\Tests\Integration;
+namespace EasyQ\Tests\Integration;
 
-use easyQ\Database\Installer;
-use easyQ\Database\Schema;
-use easyQ\Settings\Options;
+use EasyQ\Database\Installer;
+use EasyQ\Database\Schema;
+use EasyQ\Settings\Options;
 
 /**
- * @covers \easyQ\Database\Installer
- * @covers \easyQ\Database\Schema
+ * @covers \EasyQ\Database\Installer
+ * @covers \EasyQ\Database\Schema
  */
 final class InstallerTest extends TestCase {
 

@@ -11,4 +11,4 @@ define( 'ABSPATH', __DIR__ . '/' );
 require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
 require_once dirname( __DIR__, 2 ) . '/includes/class-autoloader.php';
 
-easyQ\Autoloader::register( 'easyQ', dirname( __DIR__, 2 ) . '/includes' );
+EasyQ\Autoloader::register( 'EasyQ', dirname( __DIR__, 2 ) . '/includes' );

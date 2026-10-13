@@ -5,12 +5,12 @@
  * @package easyQ
  */
 
-namespace easyQ;
+namespace EasyQ;
 
-use easyQ\Database\Db;
-use easyQ\Database\Installer;
-use easyQ\Database\Schema;
-use easyQ\Settings\Options;
+use EasyQ\Database\Db;
+use EasyQ\Database\Installer;
+use EasyQ\Database\Schema;
+use EasyQ\Settings\Options;
 
 defined( 'ABSPATH' ) || exit;
 

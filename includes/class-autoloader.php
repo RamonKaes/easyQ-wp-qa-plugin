@@ -5,14 +5,14 @@
  * @package easyQ
  */
 
-namespace easyQ;
+namespace EasyQ;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Maps namespaced class names to files named after the WordPress conventions.
  *
- * `easyQ\Database\Schema_Manager` resolves to `includes/database/class-schema-manager.php`.
+ * `EasyQ\Database\Schema_Manager` resolves to `includes/database/class-schema-manager.php`.
  * Interfaces, traits and enums use the `interface-`, `trait-` and `enum-` prefixes.
  */
 final class Autoloader {

@@ -5,14 +5,14 @@
  * @package easyQ
  */
 
-namespace easyQ\Tests\Integration;
+namespace EasyQ\Tests\Integration;
 
-use easyQ\Database\Installer;
-use easyQ\Database\Schema;
+use EasyQ\Database\Installer;
+use EasyQ\Database\Schema;
 
 /**
  * @group ms-required
- * @covers \easyQ\Database\Installer
+ * @covers \EasyQ\Database\Installer
  */
 final class MultisiteInstallerTest extends TestCase {
 

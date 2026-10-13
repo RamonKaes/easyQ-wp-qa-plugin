@@ -5,7 +5,7 @@
  * @package easyQ
  */
 
-namespace easyQ;
+namespace EasyQ;
 
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 

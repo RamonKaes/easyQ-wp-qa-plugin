@@ -5,9 +5,9 @@
  * @package easyQ
  */
 
-namespace easyQ\Database;
+namespace EasyQ\Database;
 
-use easyQ\Settings\Options;
+use EasyQ\Settings\Options;
 use WP_Site;
 
 defined( 'ABSPATH' ) || exit;
@@ -151,6 +151,6 @@ final class Installer {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		return is_plugin_active_for_network( plugin_basename( \easyQ\PLUGIN_FILE ) );
+		return is_plugin_active_for_network( plugin_basename( \EasyQ\PLUGIN_FILE ) );
 	}
 }

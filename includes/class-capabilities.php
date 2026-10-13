@@ -5,7 +5,7 @@
  * @package easyQ
  */
 
-namespace easyQ;
+namespace EasyQ;
 
 defined( 'ABSPATH' ) || exit;
 
