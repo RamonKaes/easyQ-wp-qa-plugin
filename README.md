@@ -6,8 +6,10 @@ WordPress.
 
 > **Status:** early development. The foundation and the core domain (posts,
 > moderation, votes, flags, points, categories, search index, rate limits and
-> events), users and permissions (levels, capabilities, profile integration) and
-> the REST API are in place; features are added phase by phase, see
+> events), users and permissions (levels, capabilities, profile integration), the
+> REST API and the first part of the frontend (routes, block templates and the
+> blocks for question lists, question pages and forms) are in place; features are
+> added phase by phase, see
 > [docs/feature-mapping.md](docs/feature-mapping.md#13-phases).
 
 ## Principles
@@ -42,6 +44,7 @@ The full mapping of Question2Answer features to WordPress is documented in
 ```bash
 composer install
 npm install
+npm run build
 npm run env:start
 ```
 
@@ -59,6 +62,8 @@ The development site runs at <http://localhost:8888>, the test site at
 | `npm run test:php` | Integration tests with the WordPress test suite |
 | `npm run test:php:multisite` | Integration tests on multisite |
 | `npm run test:e2e` | End-to-end tests with Playwright |
+| `npm run build` | Build the editor script and the interactivity module |
+| `npm run start` | Rebuild JavaScript on changes |
 | `npm run lint:js` | JavaScript coding standards |
 | `npm run lint:md` | Markdown coding standards |
 | `npm run plugin-check` | Official Plugin Check on the development site |
@@ -78,6 +83,9 @@ To test against another WordPress or PHP version, create `.wp-env.override.json`
 | `easyq.php` | Plugin bootstrap |
 | `uninstall.php` | Data removal when the plugin is deleted |
 | `includes/` | PHP classes; `EasyQ\Database\Schema` lives in `includes/database/class-schema.php` |
+| `blocks/` | Block metadata (`block.json`) and server-side rendering of every block |
+| `src/` | JavaScript sources: block editor (`src/editor`) and frontend interactivity (`src/view`) |
+| `build/` | Built JavaScript, created by `npm run build` |
 | `languages/` | Translation template and bundled translations |
 | `tests/unit/` | Unit tests without WordPress |
 | `tests/integration/` | Integration tests with the WordPress test suite |

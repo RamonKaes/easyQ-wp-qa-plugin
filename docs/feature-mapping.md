@@ -645,3 +645,6 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 14 | Posting questions, answers and comments needs an account by default (privacy) | 2026-10-13 |
 | 15 | WordPress administrators always keep `easyq_manage`, whatever the role mapping says | 2026-10-13 |
 | 16 | Favorites, notices, wall and message endpoints come with their features in phase 7 | 2026-10-13 |
+| 17 | Frontend forms work without JavaScript and are sent to the REST API internally (same checks), followed by a redirect with a message | 2026-10-13 |
+| 18 | Blocks reuse core class names and core block style handles (buttons, search, pagination, post template, post terms) and the core flex layout support, so the theme styles them | 2026-10-13 |
+| 19 | Views are counted once per visitor and hour using a salted hash in a transient; no IP address is stored | 2026-10-13 |

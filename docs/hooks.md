@@ -137,6 +137,18 @@ with `current_user_can()` and `user_can()` anywhere:
 Rate limits and blocked IP addresses are request specific and are checked by the
 REST API and the blocks, not by capabilities.
 
+## Block bindings
+
+The binding source `easyq/post` lets core blocks show data of the current post
+(from the context `easyq/postId`, or the question of the page). Supported keys:
+`title`, `content`, `excerpt`, `url`, `author` and `date`.
+
+```html
+<!-- wp:heading {"metadata":{"bindings":{"content":{"source":"easyq/post","args":{"key":"title"}}}}} -->
+<h2 class="wp-block-heading"></h2>
+<!-- /wp:heading -->
+```
+
 ## Interfaces
 
 ### `EasyQ\Search\Search_Provider`
