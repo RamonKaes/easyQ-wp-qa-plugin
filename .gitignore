@@ -1,0 +1,24 @@
+# Dependencies
+/vendor/
+/node_modules/
+
+# Build output
+/build/
+/dist/
+*.zip
+
+# Tooling caches
+.phpunit.result.cache
+.phpunit.cache/
+.phpcs-cache
+/coverage/
+/test-results/
+/playwright-report/
+.wp-env.override.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
