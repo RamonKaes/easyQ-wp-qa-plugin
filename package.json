@@ -13,6 +13,13 @@
 		"blocks"
 	],
 	"homepage": "https://easyq.info",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/RamonKaes/easyQ-wp-qa-plugin.git"
+	},
+	"bugs": {
+		"url": "https://github.com/RamonKaes/easyQ-wp-qa-plugin/issues"
+	},
 	"engines": {
 		"node": ">=20"
 	},
