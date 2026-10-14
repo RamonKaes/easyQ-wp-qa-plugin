@@ -10,6 +10,7 @@ namespace EasyQ\Tests\Integration;
 use EasyQ\Admin\Users_Screen;
 use EasyQ\Users\User_Status;
 use WP_User_Query;
+use EasyQ\Users\Site_Meta;
 
 /**
  * @covers \EasyQ\Admin\Users_Screen
@@ -36,7 +37,7 @@ final class UsersScreenTest extends TestCase {
 
 	public function test_adds_level_and_points_columns(): void {
 		$user = self::factory()->user->create();
-		update_user_meta( $user, User_Status::UNAPPROVED_META, 1 );
+		Site_Meta::update( $user, User_Status::UNAPPROVED_META, 1 );
 
 		$this->assertArrayHasKey( 'easyq_points', $this->screen->columns( array() ) );
 		$this->assertSame( '100', $this->screen->column_value( '', 'easyq_points', $user ) );
@@ -47,7 +48,7 @@ final class UsersScreenTest extends TestCase {
 	public function test_bulk_actions_approve_and_block(): void {
 		$users = self::factory()->user->create_many( 2 );
 		foreach ( $users as $user ) {
-			update_user_meta( $user, User_Status::UNAPPROVED_META, 1 );
+			Site_Meta::update( $user, User_Status::UNAPPROVED_META, 1 );
 		}
 
 		$redirect = $this->screen->handle_bulk_action( 'users.php', 'easyq_approve', $users );
@@ -85,7 +86,7 @@ final class UsersScreenTest extends TestCase {
 		$query = new WP_User_Query();
 		$this->screen->filter_query( $query );
 
-		$this->assertSame( User_Status::BLOCKED_META, $query->get( 'meta_key' ) );
+		$this->assertSame( Site_Meta::key( User_Status::BLOCKED_META ), $query->get( 'meta_key' ) );
 	}
 
 	public function test_shows_a_notice_after_bulk_actions(): void {

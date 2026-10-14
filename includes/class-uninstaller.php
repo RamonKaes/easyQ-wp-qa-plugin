@@ -12,6 +12,7 @@ use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
+use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -82,12 +83,29 @@ final class Uninstaller {
 		Options::delete_all();
 		delete_option( Installer::DB_VERSION_OPTION );
 		delete_option( Counts::OPTION );
+		self::delete_site_user_meta();
+	}
+
+	/**
+	 * Removes the user meta of the current site, such as levels and blocks.
+	 */
+	public static function delete_site_user_meta(): void {
+		self::delete_meta_with_prefix( Site_Meta::key( self::USER_META_PREFIX ) );
 	}
 
 	/**
 	 * Removes all user meta written by the plugin.
 	 */
 	public static function delete_user_meta(): void {
+		self::delete_meta_with_prefix( self::USER_META_PREFIX );
+	}
+
+	/**
+	 * Deletes the user meta of all users whose key starts with a prefix.
+	 *
+	 * @param string $prefix Meta key prefix.
+	 */
+	private static function delete_meta_with_prefix( string $prefix ): void {
 		$wpdb = Db::wpdb();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup on uninstall; no API deletes meta by key prefix.
@@ -95,7 +113,7 @@ final class Uninstaller {
 			$wpdb->prepare(
 				'SELECT DISTINCT meta_key FROM %i WHERE meta_key LIKE %s',
 				$wpdb->usermeta,
-				$wpdb->esc_like( self::USER_META_PREFIX ) . '%'
+				$wpdb->esc_like( $prefix ) . '%'
 			)
 		);
 

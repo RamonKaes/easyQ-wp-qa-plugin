@@ -75,7 +75,7 @@ final class User_Status {
 		}
 
 		if ( Options::get_bool( 'spam', 'moderate_users' ) ) {
-			update_user_meta( $user_id, self::UNAPPROVED_META, 1 );
+			Site_Meta::update( $user_id, self::UNAPPROVED_META, 1 );
 		}
 	}
 
@@ -105,7 +105,7 @@ final class User_Status {
 	 * @return bool
 	 */
 	public static function awaits_approval( int $user_id ): bool {
-		return '' !== get_user_meta( $user_id, self::UNAPPROVED_META, true );
+		return '' !== Site_Meta::get( $user_id, self::UNAPPROVED_META );
 	}
 
 	/**
@@ -115,7 +115,7 @@ final class User_Status {
 	 * @return bool
 	 */
 	public static function is_approved( int $user_id ): bool {
-		return '' !== get_user_meta( $user_id, self::APPROVED_META, true );
+		return '' !== Site_Meta::get( $user_id, self::APPROVED_META );
 	}
 
 	/**
@@ -125,7 +125,7 @@ final class User_Status {
 	 * @return bool
 	 */
 	public static function is_blocked( int $user_id ): bool {
-		return '' !== get_user_meta( $user_id, self::BLOCKED_META, true );
+		return '' !== Site_Meta::get( $user_id, self::BLOCKED_META );
 	}
 
 	/**
@@ -163,8 +163,8 @@ final class User_Status {
 			return;
 		}
 
-		delete_user_meta( $user_id, self::UNAPPROVED_META );
-		update_user_meta( $user_id, self::APPROVED_META, 1 );
+		Site_Meta::delete( $user_id, self::UNAPPROVED_META );
+		Site_Meta::update( $user_id, self::APPROVED_META, 1 );
 
 		Events::dispatch(
 			'u_level',
@@ -187,7 +187,7 @@ final class User_Status {
 			return;
 		}
 
-		update_user_meta( $user_id, self::BLOCKED_META, 1 );
+		Site_Meta::update( $user_id, self::BLOCKED_META, 1 );
 		Events::dispatch( 'u_block', array( 'user_id' => $user_id ), $actor );
 	}
 
@@ -202,7 +202,7 @@ final class User_Status {
 			return;
 		}
 
-		delete_user_meta( $user_id, self::BLOCKED_META );
+		Site_Meta::delete( $user_id, self::BLOCKED_META );
 		Events::dispatch( 'u_unblock', array( 'user_id' => $user_id ), $actor );
 	}
 }

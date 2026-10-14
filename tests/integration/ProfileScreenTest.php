@@ -12,6 +12,7 @@ use EasyQ\Admin\Profile_Screen;
 use EasyQ\Services;
 use EasyQ\Users\Levels;
 use EasyQ\Users\User_Status;
+use EasyQ\Users\Site_Meta;
 
 /**
  * @covers \EasyQ\Admin\Profile_Screen
@@ -107,7 +108,7 @@ final class ProfileScreenTest extends TestCase {
 		// Only roles that may edit other users reach this screen, e.g. administrators.
 		$moderator = $this->administrator();
 		$user      = self::factory()->user->create();
-		update_user_meta( $user, User_Status::UNAPPROVED_META, 1 );
+		Site_Meta::update( $user, User_Status::UNAPPROVED_META, 1 );
 
 		$this->assertStringContainsString( 'name="easyq_blocked"', $this->render( $moderator, $user ) );
 

@@ -68,7 +68,7 @@ final class User_Levels {
 
 		$level    = Levels::BASIC;
 		$mapping  = $this->role_levels();
-		$assigned = get_user_meta( $user_id, self::LEVEL_META, true );
+		$assigned = Site_Meta::get( $user_id, self::LEVEL_META );
 
 		foreach ( $user->roles as $role ) {
 			$level = max( $level, $mapping[ $role ] ?? Levels::BASIC );
@@ -144,7 +144,7 @@ final class User_Levels {
 	 * @return int|null Null if no level is set.
 	 */
 	public function assigned_level( int $user_id ): ?int {
-		$level = get_user_meta( $user_id, self::LEVEL_META, true );
+		$level = Site_Meta::get( $user_id, self::LEVEL_META );
 
 		return is_numeric( $level ) ? (int) $level : null;
 	}
@@ -163,9 +163,9 @@ final class User_Levels {
 		}
 
 		if ( null === $level ) {
-			delete_user_meta( $user_id, self::LEVEL_META );
+			Site_Meta::delete( $user_id, self::LEVEL_META );
 		} else {
-			update_user_meta( $user_id, self::LEVEL_META, $level );
+			Site_Meta::update( $user_id, self::LEVEL_META, $level );
 		}
 
 		Events::dispatch(
@@ -267,7 +267,7 @@ final class User_Levels {
 		$wpdb = Db::wpdb();
 
 		$assigned = Db::get_int_col(
-			$wpdb->prepare( 'SELECT user_id FROM %i WHERE meta_key = %s AND CAST(meta_value AS UNSIGNED) >= %d', $wpdb->usermeta, self::LEVEL_META, Levels::EXPERT )
+			$wpdb->prepare( 'SELECT user_id FROM %i WHERE meta_key = %s AND CAST(meta_value AS UNSIGNED) >= %d', $wpdb->usermeta, Site_Meta::key( self::LEVEL_META ), Levels::EXPERT )
 		);
 		$category = Db::get_int_col(
 			$wpdb->prepare( 'SELECT DISTINCT user_id FROM %i WHERE level IS NOT NULL', Schema::table( 'userlevels' ) )

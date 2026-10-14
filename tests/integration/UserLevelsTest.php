@@ -132,6 +132,28 @@ final class UserLevelsTest extends TestCase {
 		$this->assertSame( Levels::SUPER, $this->levels->level( $user ) );
 	}
 
+	/**
+	 * Each site of a network has its own Q&A community, so levels and blocks apply to one site only.
+	 *
+	 * @group ms-required
+	 */
+	public function test_levels_and_blocks_belong_to_one_site(): void {
+		$user  = self::factory()->user->create();
+		$other = self::factory()->blog->create();
+		$this->levels->set_level( Actor::system(), $user, Levels::MODERATOR );
+		User_Status::block( Actor::system(), $user );
+
+		switch_to_blog( $other );
+		$level   = $this->levels->level( $user );
+		$blocked = User_Status::is_blocked( $user );
+		restore_current_blog();
+
+		$this->assertSame( Levels::BASIC, $level );
+		$this->assertFalse( $blocked );
+		$this->assertSame( Levels::MODERATOR, $this->levels->level( $user ) );
+		$this->assertTrue( User_Status::is_blocked( $user ) );
+	}
+
 	public function test_labels(): void {
 		$this->assertCount( 7, Levels::labels() );
 		$this->assertTrue( Levels::is_valid( Levels::EDITOR ) );

@@ -13,6 +13,7 @@ use EasyQ\Services;
 use EasyQ\Users\Levels;
 use EasyQ\Users\User_Status;
 use WP_User_Query;
+use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -98,8 +99,8 @@ final class Users_Screen {
 
 		$current = $this->current_view();
 		$items   = array(
-			'unapproved' => array( __( 'Awaiting approval', 'easyq' ), User_Status::UNAPPROVED_META ),
-			'blocked'    => array( __( 'Blocked', 'easyq' ), User_Status::BLOCKED_META ),
+			'unapproved' => array( __( 'Awaiting approval', 'easyq' ), Site_Meta::key( User_Status::UNAPPROVED_META ) ),
+			'blocked'    => array( __( 'Blocked', 'easyq' ), Site_Meta::key( User_Status::BLOCKED_META ) ),
 		);
 
 		foreach ( $items as $view => [ $label, $meta_key ] ) {
@@ -133,8 +134,8 @@ final class Users_Screen {
 		}
 
 		$meta_key = match ( $this->current_view() ) {
-			'unapproved' => User_Status::UNAPPROVED_META,
-			'blocked'    => User_Status::BLOCKED_META,
+			'unapproved' => Site_Meta::key( User_Status::UNAPPROVED_META ),
+			'blocked'    => Site_Meta::key( User_Status::BLOCKED_META ),
 			default      => null,
 		};
 

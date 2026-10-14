@@ -10,6 +10,7 @@ namespace EasyQ\Tests\Integration;
 use EasyQ\Actor;
 use EasyQ\Settings\Options;
 use EasyQ\Users\User_Status;
+use EasyQ\Users\Site_Meta;
 
 /**
  * @covers \EasyQ\Users\User_Status
@@ -56,7 +57,7 @@ final class UserStatusTest extends TestCase {
 
 	public function test_approving_blocking_and_unblocking(): void {
 		$user = self::factory()->user->create();
-		update_user_meta( $user, User_Status::UNAPPROVED_META, 1 );
+		Site_Meta::update( $user, User_Status::UNAPPROVED_META, 1 );
 
 		User_Status::approve( Actor::system(), $user );
 		User_Status::block( Actor::system(), $user );

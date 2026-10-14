@@ -11,6 +11,7 @@ use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
 use EasyQ\Uninstaller;
+use EasyQ\Users\Site_Meta;
 
 /**
  * @covers \EasyQ\Uninstaller
@@ -36,6 +37,17 @@ final class UninstallerTest extends TestCase {
 
 		$this->assertSame( '', get_user_meta( $user_id, 'easyq_points', true ) );
 		$this->assertSame( 'keep', get_user_meta( $user_id, 'other_plugin_meta', true ) );
+	}
+
+	public function test_deletes_the_user_meta_of_the_site(): void {
+		$user_id = self::factory()->user->create();
+		Site_Meta::update( $user_id, 'easyq_level', 50 );
+		update_user_meta( $user_id, 'easyq_field_location', 'Berlin' );
+
+		Uninstaller::delete_site_user_meta();
+
+		$this->assertSame( '', Site_Meta::get( $user_id, 'easyq_level' ) );
+		$this->assertSame( 'Berlin', get_user_meta( $user_id, 'easyq_field_location', true ) );
 	}
 
 	/**

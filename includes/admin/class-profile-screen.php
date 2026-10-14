@@ -13,6 +13,7 @@ use EasyQ\Services;
 use EasyQ\Users\Levels;
 use EasyQ\Users\User_Status;
 use WP_User;
+use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -244,8 +245,8 @@ final class Profile_Screen {
 				User_Status::approve( $editor, $user_id );
 			}
 		} else {
-			update_user_meta( $user_id, User_Status::UNAPPROVED_META, 1 );
-			delete_user_meta( $user_id, User_Status::APPROVED_META );
+			Site_Meta::update( $user_id, User_Status::UNAPPROVED_META, 1 );
+			Site_Meta::delete( $user_id, User_Status::APPROVED_META );
 		}
 
 		if ( ! empty( $input['easyq_blocked'] ) ) {

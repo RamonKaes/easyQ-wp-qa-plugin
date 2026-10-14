@@ -15,6 +15,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Users\Levels;
 use EasyQ\Users\Permits;
 use EasyQ\Users\User_Status;
+use EasyQ\Users\Site_Meta;
 
 /**
  * @covers \EasyQ\Users\Permissions
@@ -38,7 +39,7 @@ final class PermissionsTest extends TestCase {
 
 		match ( $kind ) {
 			'unconfirmed' => User_Status::unconfirm( $id ),
-			'unapproved'  => update_user_meta( $id, User_Status::UNAPPROVED_META, 1 ),
+			'unapproved'  => Site_Meta::update( $id, User_Status::UNAPPROVED_META, 1 ),
 			'approved'    => User_Status::approve( Actor::system(), $id ),
 			'expert'      => Services::user_levels()->set_level( Actor::system(), $id, Levels::EXPERT ),
 			'moderator'   => Services::user_levels()->set_level( Actor::system(), $id, Levels::MODERATOR ),
