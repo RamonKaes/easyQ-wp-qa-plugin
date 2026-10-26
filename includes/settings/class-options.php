@@ -152,6 +152,7 @@ final class Options {
 				'sort_answers_by'        => 'created',
 				'show_selected_first'    => true,
 				'page_size_q_as'         => 10,
+				'sitemap_users'          => false,
 			),
 			'lists'       => array(
 				'hot_weight_q_age'   => 100,
