@@ -1,7 +1,7 @@
 * text=auto eol=lf
 
 # Excluded from release archives (git archive)
-/.github                     export-ignore
+/bin                         export-ignore
 /docs                        export-ignore
 /tests                       export-ignore
 /.editorconfig               export-ignore

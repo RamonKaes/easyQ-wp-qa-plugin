@@ -70,11 +70,29 @@ The development site runs at <http://localhost:8888>, the test site at
 | `npm run plugin-check` | Official Plugin Check on the development site |
 | `npm run i18n:pot` | Regenerate `languages/easyq.pot` |
 | `npm run plugin-zip` | Build the release archive |
+| `bash bin/ci.sh [--full] [commit]` | Local CI for a commit, see below |
 
 To test against another WordPress or PHP version, create `.wp-env.override.json`:
 
 ```json
 { "core": "WordPress/WordPress#6.7", "phpVersion": "8.4" }
+```
+
+### Continuous integration
+
+CI runs locally, not on GitHub. `bin/ci.sh` checks a commit (default `HEAD`) in its own
+worktree in `~/easyq-wp-audit/easyq`, with its own `wp-env` instance on ports 8890 and
+8891, so the development environment keeps running. It runs the coding standards,
+static analysis, JavaScript, Markdown and `package.json` linting, the unit tests on PHP
+8.1 to 8.4 (Docker images), the integration tests on single site and multisite, the
+end-to-end tests and Plugin Check. `--full` runs the integration tests on WordPress 6.7
+and the latest version, each with PHP 8.1 and 8.4. A commit that only changes Markdown
+files is only linted. The result is written to `~/easyq-wp-audit/logs/{commit}/result.txt`.
+
+Run it before every push through the pre-push hook:
+
+```bash
+ln -sf ../../bin/pre-push.sh .git/hooks/pre-push
 ```
 
 ### Project structure
@@ -92,6 +110,7 @@ To test against another WordPress or PHP version, create `.wp-env.override.json`
 | `tests/integration/` | Integration tests with the WordPress test suite |
 | `tests/e2e/` | Playwright end-to-end tests |
 | `docs/` | Project documentation |
+| `bin/` | Local CI and the pre-push hook |
 
 ### Conventions
 
