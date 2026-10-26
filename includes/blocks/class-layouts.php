@@ -10,7 +10,8 @@ namespace EasyQ\Blocks;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Builds the block markup of the Q&A layouts used by the block templates.
+ * Builds the block markup of the Q&A layouts, so the block templates and the block
+ * patterns stay alike.
  */
 final class Layouts {
 
@@ -52,6 +53,33 @@ final class Layouts {
 <!-- /wp:group -->
 <!-- /wp:easyq/question-template -->
 <!-- wp:easyq/query-pagination /-->
+<!-- wp:easyq/query-no-results /-->
+<!-- /wp:easyq/question-query -->';
+	}
+
+	/**
+	 * Returns the markup of a compact question list: title, answers and last activity in one line.
+	 *
+	 * @param array<string, mixed> $query    Query of the list, see the easyq/question-query block.
+	 * @param int                  $query_id ID of the list, unique on the page.
+	 * @return string
+	 */
+	public static function compact_question_list( array $query, int $query_id ): string {
+		return '<!-- wp:easyq/question-query ' . self::json(
+			array(
+				'queryId' => $query_id,
+				'query'   => $query,
+			)
+		) . ' -->
+<!-- wp:easyq/question-template -->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+<div class="wp-block-group"><!-- wp:easyq/post-title {"level":3,"isLink":true,"fontSize":"medium"} /-->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-answer-count /-->
+<!-- wp:easyq/post-activity {"showPoints":false} /--></div>
+<!-- /wp:group --></div>
+<!-- /wp:group -->
+<!-- /wp:easyq/question-template -->
 <!-- wp:easyq/query-no-results /-->
 <!-- /wp:easyq/question-query -->';
 	}
@@ -130,6 +158,31 @@ final class Layouts {
 <!-- /wp:group -->
 <!-- /wp:easyq/user-template -->
 <!-- wp:easyq/query-pagination /-->
+<!-- wp:easyq/query-no-results ' . self::json( array( 'message' => __( 'No users found.', 'easyq' ) ) ) . ' /-->
+<!-- /wp:easyq/user-query -->';
+	}
+
+	/**
+	 * Returns the markup of a compact user list: avatar, name and points, one user per line.
+	 *
+	 * @param array<string, mixed> $query    Query of the list, see the easyq/user-query block.
+	 * @param int                  $query_id ID of the list, unique on the page.
+	 * @return string
+	 */
+	public static function compact_user_list( array $query, int $query_id ): string {
+		return '<!-- wp:easyq/user-query ' . self::json(
+			array(
+				'queryId' => $query_id,
+				'query'   => $query,
+			)
+		) . ' -->
+<!-- wp:easyq/user-template -->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+<div class="wp-block-group"><!-- wp:easyq/user-avatar {"avatarSize":32} /-->
+<!-- wp:easyq/user-name /-->
+<!-- wp:easyq/user-points {"fontSize":"small"} /--></div>
+<!-- /wp:group -->
+<!-- /wp:easyq/user-template -->
 <!-- wp:easyq/query-no-results ' . self::json( array( 'message' => __( 'No users found.', 'easyq' ) ) ) . ' /-->
 <!-- /wp:easyq/user-query -->';
 	}

@@ -41,6 +41,7 @@ final class Plugin {
 		( new Frontend\Navigation( $router ) )->register();
 		( new Frontend\Form_Handler() )->register();
 		( new Blocks\Blocks() )->register();
+		( new Blocks\Patterns() )->register();
 
 		if ( is_admin() ) {
 			( new Admin\Profile_Screen() )->register();
