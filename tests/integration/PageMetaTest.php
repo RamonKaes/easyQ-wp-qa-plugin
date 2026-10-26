@@ -10,6 +10,7 @@ namespace EasyQ\Tests\Integration;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Frontend\Page_Meta;
 use EasyQ\Frontend\Route;
+use EasyQ\Frontend\Urls;
 use EasyQ\Services;
 
 /**
@@ -73,8 +74,33 @@ final class PageMetaTest extends TestCase {
 		$this->assertStringContainsString( 'application/ld+json', $html );
 	}
 
+	public function test_keeps_the_account_page_out_of_search_engines(): void {
+		$meta = new Page_Meta( Block_Context::router() );
+
+		Block_Context::router()->set_current( new Route( 'account' ) );
+		$this->assertTrue( $meta->robots( array() )['noindex'] );
+
+		Block_Context::router()->set_current( new Route( 'users' ) );
+		$this->assertArrayNotHasKey( 'noindex', $meta->robots( array() ) );
+	}
+
+	public function test_prints_the_canonical_address_of_profile_sections(): void {
+		$user = get_userdata( (int) $this->user()->user_id );
+		$this->assertInstanceOf( \WP_User::class, $user );
+		Block_Context::router()->set_current( new Route( 'user', $user, 'answers' ) );
+
+		ob_start();
+		( new Page_Meta( Block_Context::router() ) )->head();
+		$html = (string) ob_get_clean();
+
+		$this->assertStringContainsString( sprintf( '<link rel="canonical" href="%s">', esc_url( Urls::user( $user, 'answers' ) ) ), $html );
+		$this->assertStringNotContainsString( 'application/ld+json', $html );
+	}
+
 	public function test_registers_block_templates(): void {
 		$this->assertNotNull( get_block_template( 'easyq//easyq-question' ) );
 		$this->assertNotNull( get_block_template( 'easyq//easyq-home' ) );
+		$this->assertNotNull( get_block_template( 'easyq//easyq-user' ) );
+		$this->assertNotNull( get_block_template( 'easyq//easyq-account' ) );
 	}
 }

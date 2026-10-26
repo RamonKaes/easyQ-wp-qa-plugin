@@ -9,6 +9,7 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
+use EasyQ\Frontend\Routes;
 use EasyQ\Services;
 
 /**
@@ -132,6 +133,42 @@ final class FormHandlerTest extends Rest_TestCase {
 		);
 
 		$this->assertTrue( $this->post( $question->id )->is_closed() );
+	}
+
+	public function test_saves_the_account(): void {
+		$user = $this->login();
+
+		$url = $this->submit(
+			'account',
+			array(
+				'field_location' => 'Lisbon',
+				'field_unknown'  => 'ignored',
+			)
+		);
+
+		$this->assertStringStartsWith( Routes::url( 'account' ), $url );
+		$this->assertSame( 'success', Flash::current()['type'] ?? '' );
+		$this->assertSame( 'Lisbon', Services::user_fields()->value( $user, Services::user_fields()->all()[0] ) );
+	}
+
+	public function test_account_errors_keep_the_values(): void {
+		$this->login();
+		$file = wp_tempnam( 'avatar' );
+		file_put_contents( $file, 'not an image' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
+		$_FILES['avatar'] = array(
+			'name'     => 'avatar.png',
+			'type'     => 'image/png',
+			'tmp_name' => $file,
+			'size'     => 12,
+			'error'    => UPLOAD_ERR_OK,
+		);
+
+		$this->submit( 'account', array( 'field_location' => 'Oslo' ) );
+		unset( $_FILES['avatar'] );
+
+		$this->assertSame( 'error', Flash::current()['type'] ?? '' );
+		$this->assertSame( 'Oslo', Flash::value( 'account', 'field_location' ) );
+		$this->assertNotSame( '', Flash::error( 'account', 'avatar' ) );
 	}
 
 	public function test_reports_permission_errors(): void {

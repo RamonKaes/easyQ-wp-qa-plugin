@@ -9,6 +9,7 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Frontend\Routes;
+use EasyQ\Frontend\Templates;
 use EasyQ\Frontend\Urls;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -75,6 +76,8 @@ final class RoutingTest extends TestCase {
 		$this->assertNull( $router->resolve( 'user', 'ada', 'bogus' )->section );
 		$this->assertSame( 'not_found', $router->resolve( 'unknown', null, null )->name );
 		$this->assertSame( 'easyq-ask', $router->resolve( 'ask', null, null )->template_slug() );
+		$this->assertSame( 'easyq-user-answers', $router->resolve( 'user', 'ada', 'answers' )->template_slug() );
+		$this->assertSame( 'easyq-user', $router->resolve( 'user', 'ada', null )->template_slug() );
 	}
 
 	public function test_requests_are_routed_without_404(): void {
@@ -91,6 +94,32 @@ final class RoutingTest extends TestCase {
 		$this->go_to( home_url( '/questions/999999/missing/' ) );
 
 		$this->assertSame( 'not_found', Block_Context::router()->current()?->name );
+	}
+
+	public function test_routes_without_a_template_are_not_found(): void {
+		$this->go_to( Routes::url( 'favorites' ) );
+		$templates = new Templates( Block_Context::router() );
+
+		$template = $templates->template_include( 'index.php' );
+
+		$this->assertTrue( is_404() );
+		$this->assertSame( get_404_template(), $template );
+	}
+
+	public function test_profile_pages_use_their_section_template(): void {
+		switch_theme( 'twentytwentyfive' );
+		// Block themes get the support for block templates on `after_setup_theme`, which does not run again in tests.
+		wp_enable_block_templates();
+		self::factory()->user->create( array( 'user_nicename' => 'grace' ) );
+		$this->go_to( Routes::url( 'user', 'grace', 'activity' ) );
+		$templates = new Templates( Block_Context::router() );
+
+		$template = $templates->template_include( 'index.php' );
+
+		$this->assertFalse( is_404() );
+		$this->assertStringContainsString( 'template-canvas.php', $template );
+		// Core prefixes the ID of the resolved template with the theme, so only the slug is compared.
+		$this->assertStringEndsWith( '//easyq-user-activity', (string) ( $GLOBALS['_wp_current_template_id'] ?? '' ) );
 	}
 
 	public function test_other_requests_are_left_alone(): void {

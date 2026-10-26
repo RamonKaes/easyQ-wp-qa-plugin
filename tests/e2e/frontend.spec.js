@@ -9,6 +9,8 @@ const route = ( name, arg ) =>
 
 test.describe( 'Q&A frontend', () => {
 	test.beforeAll( async ( { requestUtils } ) => {
+		// The PHP integration tests reinstall the test site, which deactivates the plugin.
+		await requestUtils.activatePlugin( 'easyq' );
 		await requestUtils.activateTheme( 'twentytwentyfive' );
 	} );
 
