@@ -23,11 +23,11 @@ defined( 'ABSPATH' ) || exit;
 final class Router {
 
 	/**
-	 * Option that remembers the base slug the rewrite rules were built for.
+	 * Option that remembers a hash of the rewrite rules WordPress has stored.
 	 *
 	 * @var string
 	 */
-	public const RULES_OPTION = 'easyq_rewrite_base';
+	public const RULES_OPTION = 'easyq_rewrite_rules_hash';
 
 	/**
 	 * Route of the current request, once resolved.
@@ -58,12 +58,14 @@ final class Router {
 	}
 
 	/**
-	 * Rebuilds the rewrite rules after the base slug changed.
+	 * Rebuilds the rewrite rules after they changed: a new base slug or new routes after an update.
 	 */
 	public function maybe_flush_rules(): void {
-		if ( get_option( self::RULES_OPTION ) !== Routes::base() ) {
+		$hash = md5( (string) wp_json_encode( Routes::rewrite_rules() ) );
+
+		if ( get_option( self::RULES_OPTION ) !== $hash ) {
 			flush_rewrite_rules( false );
-			update_option( self::RULES_OPTION, Routes::base(), true );
+			update_option( self::RULES_OPTION, $hash, true );
 		}
 	}
 

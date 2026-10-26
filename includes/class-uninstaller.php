@@ -10,6 +10,7 @@ namespace EasyQ;
 use EasyQ\Database\Db;
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
+use EasyQ\Frontend\Router;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Users\Site_Meta;
@@ -83,6 +84,7 @@ final class Uninstaller {
 		Options::delete_all();
 		delete_option( Installer::DB_VERSION_OPTION );
 		delete_option( Counts::OPTION );
+		delete_option( Router::RULES_OPTION );
 		self::delete_site_user_meta();
 	}
 
