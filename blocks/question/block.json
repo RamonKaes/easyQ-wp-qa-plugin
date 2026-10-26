@@ -27,8 +27,10 @@
 		"typography": {
 			"fontSize": true
 		},
-		"layout": true
+		"layout": true,
+		"interactivity": true
 	},
 	"editorScript": "easyq-editor",
+	"viewScriptModule": "easyq-view",
 	"render": "file:./render.php"
 }

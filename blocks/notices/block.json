@@ -20,8 +20,10 @@
 		"spacing": {
 			"margin": true,
 			"padding": true
-		}
+		},
+		"interactivity": true
 	},
 	"editorScript": "easyq-editor",
+	"viewScriptModule": "easyq-view",
 	"render": "file:./render.php"
 }

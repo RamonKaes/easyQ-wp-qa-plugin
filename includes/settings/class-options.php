@@ -152,6 +152,8 @@ final class Options {
 				'sort_answers_by'        => 'created',
 				'show_selected_first'    => true,
 				'page_size_q_as'         => 10,
+				'show_fewer_cs_from'     => 10,
+				'show_fewer_cs_count'    => 5,
 				'sitemap_users'          => false,
 			),
 			'lists'       => array(

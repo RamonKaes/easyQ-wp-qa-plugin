@@ -286,14 +286,18 @@ final class Widgets {
 	public static function notices(): string {
 		$flash = Flash::current();
 
+		// The element is always there, hidden when empty: it is a router region that answering updates in place, see src/view.
+		$region = 'data-wp-interactive="easyq" data-wp-router-region="easyq/notices"';
+
 		// Forms show their own errors next to the fields.
 		if ( null === $flash || ( 'error' === $flash['type'] && in_array( $flash['form'], Forms::INLINE_NOTICES, true ) ) ) {
-			return '';
+			return sprintf( '<div %s %s hidden></div>', get_block_wrapper_attributes(), $region );
 		}
 
 		return sprintf(
-			'<div %s role="%s"><p>%s</p></div>',
+			'<div %s %s role="%s"><p>%s</p></div>',
 			get_block_wrapper_attributes(),
+			$region,
 			'error' === $flash['type'] ? 'alert' : 'status',
 			esc_html( $flash['message'] )
 		);

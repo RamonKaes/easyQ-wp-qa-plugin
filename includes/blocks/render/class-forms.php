@@ -38,6 +38,13 @@ final class Forms {
 	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account' );
 
 	/**
+	 * Forms on the question page that are sent in the background and update the page in place.
+	 *
+	 * @var string[]
+	 */
+	public const IN_PLACE = array( 'answer', 'comment' );
+
+	/**
 	 * Renders the form to ask a question.
 	 *
 	 * @return string
@@ -317,8 +324,9 @@ final class Forms {
 		$notice  = self::form_notice( $form );
 
 		return sprintf(
-			'<form method="post"%s %s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form>',
+			'<form method="post"%s%s %s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form>',
 			'account' === $form ? ' enctype="multipart/form-data"' : '',
+			in_array( $form, self::IN_PLACE, true ) ? ' data-wp-on--submit="actions.submit"' : '',
 			$wrapper,
 			$notice,
 			$hidden_html,

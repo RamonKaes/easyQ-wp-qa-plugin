@@ -23,6 +23,13 @@ defined( 'ABSPATH' ) || exit;
 final class Lists_Render {
 
 	/**
+	 * Query parameter with the post whose comments are all shown.
+	 *
+	 * @var string
+	 */
+	public const SHOW_COMMENTS_VAR = 'easyq_comments';
+
+	/**
 	 * Renders the question list container.
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
@@ -139,9 +146,11 @@ final class Lists_Render {
 			return '';
 		}
 
+		// A router region: answering and loading comments update it in place, see src/view.
 		return sprintf(
-			'<article %s>%s</article>',
+			'<article %s data-wp-interactive="easyq" data-wp-router-region="%s">%s</article>',
 			get_block_wrapper_attributes( array( 'id' => 'easyq-post-' . $question->id ) ),
+			esc_attr( 'easyq/question-' . $question->id ),
 			Render::inner_blocks( $block, array( 'easyq/postId' => $question->id ) )
 		);
 	}
@@ -225,7 +234,9 @@ final class Lists_Render {
 	 * @return string
 	 */
 	public static function comment_list( array $attributes, string $content, WP_Block $block ): string {
-		return null === Block_Context::post( $block ) ? '' : sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), $content );
+		$post = Block_Context::post( $block );
+
+		return null === $post ? '' : sprintf( '<div %s>%s</div>', get_block_wrapper_attributes( array( 'id' => 'easyq-comments-' . $post->id ) ), $content );
 	}
 
 	/**
@@ -252,7 +263,25 @@ final class Lists_Render {
 			}
 		}
 
-		return self::loop( $block, $ids, 'li' );
+		// Long discussions show only the latest comments, with a link to the earlier ones, as in Question2Answer.
+		$from    = max( 1, Options::get_int( 'viewing', 'show_fewer_cs_from' ) );
+		$keep    = max( 1, Options::get_int( 'viewing', 'show_fewer_cs_count' ) );
+		$earlier = '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading which comments to show.
+		$show_all = isset( $_GET[ self::SHOW_COMMENTS_VAR ] ) && is_string( $_GET[ self::SHOW_COMMENTS_VAR ] ) && absint( $_GET[ self::SHOW_COMMENTS_VAR ] ) === $parent->id;
+
+		if ( count( $ids ) > $from && ! $show_all ) {
+			$hidden  = count( $ids ) - $keep;
+			$ids     = array_slice( $ids, -$keep );
+			$earlier = sprintf(
+				'<p><a href="%s" data-wp-on--click="actions.navigate">%s</a></p>',
+				esc_url( add_query_arg( self::SHOW_COMMENTS_VAR, $parent->id ) . '#easyq-comments-' . $parent->id ),
+				/* translators: %s: number of comments. */
+				esc_html( sprintf( _n( 'Show %s previous comment', 'Show %s previous comments', $hidden, 'easyq' ), number_format_i18n( $hidden ) ) )
+			);
+		}
+
+		return $earlier . self::loop( $block, $ids, 'li' );
 	}
 
 	/**

@@ -75,10 +75,17 @@ final class Form_Handler {
 	 */
 	public function handle(): void {
 		$url = $this->process();
-		if ( null !== $url ) {
-			wp_safe_redirect( $url );
-			exit;
+		if ( null === $url ) {
+			return;
 		}
+
+		// Forms sent in the background (src/view) get the address as JSON and update the page in place.
+		if ( isset( $_SERVER['HTTP_X_EASYQ_IN_PLACE'] ) ) {
+			wp_send_json( array( 'url' => wp_validate_redirect( $url, home_url( '/' ) ) ) );
+		}
+
+		wp_safe_redirect( $url );
+		exit;
 	}
 
 	/**
