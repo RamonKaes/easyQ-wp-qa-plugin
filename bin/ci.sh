@@ -7,8 +7,8 @@
 #
 # - Own worktree in ~/easyq-wp-audit/easyq (the folder must be called `easyq`: plugin slug and text domain).
 #   vendor/ and node_modules/ stay between runs. Uncommitted changes in the project are not part of the run.
-# - Own wp-env instance on ports 8890 (development) and 8891 (tests), so the development environment on
-#   8888/8889 keeps running. It is stopped after the run.
+# - Own instance of the test environment (.wp-env.test.json) on port 8891, so the development and test
+#   environments on 8888/8889 keep running. It is stopped after the run.
 # - Scope from the difference to the last GREEN run: only Markdown changed → Markdown lint only;
 #   otherwise everything. `--full` additionally runs the integration tests on the whole matrix
 #   (WordPress 6.7 and latest × PHP 8.1 and 8.4); the default run uses latest WordPress with PHP 8.1.
@@ -30,9 +30,10 @@ TREE=$ROOT/easyq
 LOGS=$ROOT/logs/$SHORT
 RESULT=$LOGS/result.txt
 
-export WP_ENV_PORT=${WP_ENV_PORT:-8890}
-export WP_ENV_TESTS_PORT=${WP_ENV_TESTS_PORT:-8891}
-export WP_BASE_URL=http://localhost:$WP_ENV_TESTS_PORT
+# The test environment; npm run test:php and plugin-check use it as well.
+export WP_ENV_CONFIG=.wp-env.test.json
+export WP_ENV_PORT=${CI_PORT:-8891}
+export WP_BASE_URL=http://localhost:$WP_ENV_PORT
 
 mkdir -p "$LOGS"
 : > "$RESULT"
@@ -112,20 +113,20 @@ unit() {
 
 # Starts the environment with a WordPress and PHP version; `null` is the latest WordPress.
 environment() {
-	echo "{ \"core\": $1, \"phpVersion\": \"$2\" }" > .wp-env.override.json
-	npx wp-env start
+	echo "{ \"core\": $1, \"phpVersion\": \"$2\" }" > .wp-env.test.override.json
+	npx wp-env start --config="$WP_ENV_CONFIG"
 }
 
 stop_environment() {
-	npx wp-env stop > /dev/null 2>&1
-	rm -f .wp-env.override.json
+	npx wp-env stop --config="$WP_ENV_CONFIG" > /dev/null 2>&1
+	rm -f .wp-env.test.override.json
 }
 trap stop_environment EXIT
 
 plugin_check() {
-	npx wp-env run cli wp plugin is-installed plugin-check \
-		|| npx wp-env run cli wp plugin install plugin-check || return 1
-	npx wp-env run cli wp plugin activate plugin-check easyq && npm run plugin-check
+	npx wp-env run --config="$WP_ENV_CONFIG" cli wp plugin is-installed plugin-check \
+		|| npx wp-env run --config="$WP_ENV_CONFIG" cli wp plugin install plugin-check || return 1
+	npx wp-env run --config="$WP_ENV_CONFIG" cli wp plugin activate plugin-check easyq && npm run plugin-check
 }
 
 step setup setup

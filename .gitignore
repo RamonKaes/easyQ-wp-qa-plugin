@@ -15,6 +15,7 @@
 /test-results/
 /playwright-report/
 .wp-env.override.json
+.wp-env.test.override.json
 
 # OS / editor
 .DS_Store

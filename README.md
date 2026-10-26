@@ -49,7 +49,10 @@ npm run env:start
 ```
 
 The development site runs at <http://localhost:8888>, the test site at
-<http://localhost:8889> (user `admin`, password `password`).
+<http://localhost:8889> (user `admin`, password `password`). They are two separate
+`wp-env` environments: `.wp-env.json` for development and `.wp-env.test.json` for the
+integration and end-to-end tests, which reset its content. Run `wp-env` commands for the
+test site with `npm run env:test -- <command>`, e.g. `npm run env:test -- run cli wp plugin list`.
 
 ### Commands
 
@@ -66,12 +69,13 @@ The development site runs at <http://localhost:8888>, the test site at
 | `npm run start` | Rebuild JavaScript on changes |
 | `npm run lint:js` | JavaScript coding standards |
 | `npm run lint:md` | Markdown coding standards |
-| `npm run plugin-check` | Official Plugin Check on the development site |
+| `npm run plugin-check` | Official Plugin Check on the development site (`WP_ENV_CONFIG=.wp-env.test.json` for the test site) |
 | `npm run i18n:pot` | Regenerate `languages/easyq.pot` |
 | `npm run plugin-zip` | Build the release archive |
 | `bash bin/ci.sh [--full] [commit]` | Local CI for a commit, see below |
 
-To test against another WordPress or PHP version, create `.wp-env.override.json`:
+To test against another WordPress or PHP version, create `.wp-env.test.override.json`
+(`.wp-env.override.json` for the development site) and start the environment again:
 
 ```json
 { "core": "WordPress/WordPress#6.7", "phpVersion": "8.4" }
@@ -80,8 +84,8 @@ To test against another WordPress or PHP version, create `.wp-env.override.json`
 ### Continuous integration
 
 CI runs locally, not on GitHub. `bin/ci.sh` checks a commit (default `HEAD`) in its own
-worktree in `~/easyq-wp-audit/easyq`, with its own `wp-env` instance on ports 8890 and
-8891, so the development environment keeps running. It runs the coding standards,
+worktree in `~/easyq-wp-audit/easyq`, with its own instance of the test environment on
+port 8891 (`CI_PORT`), so the development and test sites keep running. It runs the coding standards,
 static analysis, JavaScript, Markdown and `package.json` linting, the unit tests on PHP
 8.1 to 8.4 (Docker images), the integration tests on single site and multisite, the
 end-to-end tests and Plugin Check. `--full` runs the integration tests on WordPress 6.7
