@@ -26,7 +26,7 @@ final class Blocks {
 	 *
 	 * @var string[]
 	 */
-	private const LOOPS = array( 'question', 'question-template', 'answer-template', 'comment-template' );
+	private const LOOPS = array( 'question', 'question-template', 'answer-template', 'comment-template', 'user', 'user-template' );
 
 	/**
 	 * Hooks the registration into WordPress.
@@ -55,6 +55,15 @@ final class Blocks {
 				'label'              => __( 'Q&A post', 'easyq' ),
 				'get_value_callback' => array( $this, 'binding_value' ),
 				'uses_context'       => array( 'easyq/postId' ),
+			)
+		);
+
+		register_block_bindings_source(
+			'easyq/user',
+			array(
+				'label'              => __( 'Q&A user', 'easyq' ),
+				'get_value_callback' => array( $this, 'user_binding_value' ),
+				'uses_context'       => array( 'easyq/userId' ),
 			)
 		);
 	}
@@ -100,6 +109,32 @@ final class Blocks {
 			'author'  => esc_html( Render::author_name( $post ) ),
 			'date'    => esc_html( Render::date( $post->created ) ),
 			default   => null,
+		};
+	}
+
+	/**
+	 * Returns a value of the current user for a bound block attribute.
+	 *
+	 * Supported keys: name, url, avatar, points, title, description.
+	 *
+	 * @param array<string, mixed> $source_args Binding arguments with the key.
+	 * @param WP_Block             $block       Bound block.
+	 * @return string|null
+	 */
+	public function user_binding_value( array $source_args, WP_Block $block ): ?string {
+		$user = Block_Context::user( $block );
+		if ( null === $user ) {
+			return null;
+		}
+
+		return match ( $source_args['key'] ?? '' ) {
+			'name'        => esc_html( $user->display_name ),
+			'url'         => esc_url( \EasyQ\Frontend\Urls::user( $user ) ),
+			'avatar'      => esc_url( (string) get_avatar_url( $user->ID, array( 'size' => 192 ) ) ),
+			'points'      => esc_html( Render::number( Services::points()->get( $user->ID ) ) ),
+			'title'       => esc_html( Services::user_titles()->title( $user->ID ) ),
+			'description' => esc_html( $user->description ),
+			default       => null,
 		};
 	}
 

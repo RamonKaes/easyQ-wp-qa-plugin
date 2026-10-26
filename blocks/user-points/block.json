@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/user-points",
+	"title": "User Points",
+	"category": "easyq",
+	"description": "The points of a user, optionally with their rank.",
+	"textdomain": "easyq",
+	"attributes": {
+		"showRank": {
+			"type": "boolean",
+			"default": false
+		}
+	},
+	"usesContext": [
+		"easyq/userId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

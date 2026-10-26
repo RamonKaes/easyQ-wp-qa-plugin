@@ -56,11 +56,17 @@ final class Page_Meta {
 	}
 
 	/**
-	 * Prints the canonical address and the structured data of questions.
+	 * Prints the canonical address of questions and profiles and the structured data of questions.
 	 */
 	public function head(): void {
 		$route = $this->router->current();
 		if ( null === $route || 'not_found' === $route->name ) {
+			return;
+		}
+
+		$user = $route->user();
+		if ( 'user' === $route->name && null !== $user ) {
+			printf( '<link rel="canonical" href="%s">' . "\n", esc_url( Urls::user( $user, $route->section ) ) );
 			return;
 		}
 
@@ -77,7 +83,7 @@ final class Page_Meta {
 	}
 
 	/**
-	 * Keeps search engines away from search results and hidden or queued posts.
+	 * Keeps search engines away from search results, forms, the account page and hidden or queued posts.
 	 *
 	 * @param array<string, bool|string> $robots Robots directives.
 	 * @return array<string, bool|string>
@@ -89,7 +95,7 @@ final class Page_Meta {
 		}
 
 		$question = $route->question();
-		if ( 'search' === $route->name || 'ask' === $route->name || ( null !== $question && ! $question->is_visible() ) ) {
+		if ( in_array( $route->name, array( 'search', 'ask', 'account' ), true ) || ( null !== $question && ! $question->is_visible() ) ) {
 			$robots['noindex'] = true;
 		}
 

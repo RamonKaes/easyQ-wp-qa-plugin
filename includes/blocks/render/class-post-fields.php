@@ -11,6 +11,7 @@ use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\Urls;
+use EasyQ\Posts\Activity_Item;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Services;
@@ -288,6 +289,73 @@ final class Post_Fields {
 		}
 
 		return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), $html );
+	}
+
+	/**
+	 * Renders what happened to a question, when and by whom, e.g. "answered 5 minutes ago by Alex".
+	 *
+	 * In activity lists the item comes from the context `easyq/activity`;
+	 * otherwise the creation of the post is shown.
+	 *
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @param string               $content    Inner blocks.
+	 * @param WP_Block             $block      Block.
+	 * @return string
+	 */
+	public static function post_activity( array $attributes, string $content, WP_Block $block ): string {
+		$post = Block_Context::post( $block );
+		if ( null === $post ) {
+			return '';
+		}
+
+		$item  = Activity_Item::from_context( $post->id, $block->context['easyq/activity'] ?? null ) ?? Activity_Item::created( $post, $post->id );
+		$other = $item->post_id === $post->id ? $post : Services::posts()->find( $item->post_id );
+		if ( null === $other ) {
+			return '';
+		}
+
+		$what = esc_html( $item->label( $other ) );
+		if ( $other->id !== $post->id ) {
+			$what = sprintf( '<a href="%s">%s</a>', esc_url( Urls::post( $other ) ), $what );
+		}
+
+		$when = sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $item->time ) ), esc_html( Render::date( $item->time ) ) );
+
+		$who = '';
+		if ( $attributes['showAuthor'] ?? true ) {
+			$who = self::activity_user( $item, $other, (bool) ( $attributes['showPoints'] ?? true ) );
+		}
+
+		$html = '' === $who
+			? $what . ' ' . $when
+			/* translators: 1: what happened, e.g. "answered", 2: when it happened, e.g. "5 minutes ago", 3: who did it. */
+			: sprintf( esc_html__( '%1$s %2$s by %3$s', 'easyq' ), $what, $when, $who );
+
+		return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), $html );
+	}
+
+	/**
+	 * Returns who created or changed a post, linked to their profile.
+	 *
+	 * @param Activity_Item $item        Activity.
+	 * @param Post          $post        The created or changed post.
+	 * @param bool          $show_points Whether to show the points of users.
+	 * @return string HTML; empty if the user of a change is unknown.
+	 */
+	private static function activity_user( Activity_Item $item, Post $post, bool $show_points ): string {
+		$user = null === $item->user_id ? false : get_userdata( $item->user_id );
+		if ( false === $user ) {
+			return null === $item->update_type ? esc_html( Render::author_name( $post ) ) : '';
+		}
+
+		$html = sprintf( '<a href="%s">%s</a>', esc_url( Urls::user( $user ) ), esc_html( $user->display_name ) );
+		if ( $show_points && Options::get_bool( 'viewing', 'show_user_points' ) ) {
+			$points = Services::points()->get( $user->ID );
+			/* translators: %s: number of points. */
+			$html .= ' ' . esc_html( sprintf( _n( '(%s point)', '(%s points)', $points, 'easyq' ), Render::number( $points ) ) );
+		}
+
+		return $html;
 	}
 
 	/**

@@ -14,6 +14,9 @@ const CONTAINERS = [
 	'easyq/answer-template',
 	'easyq/comment-list',
 	'easyq/comment-template',
+	'easyq/user-query',
+	'easyq/user-template',
+	'easyq/user',
 ];
 
 const metadataFiles = require.context( '../../blocks', true, /block\.json$/ );

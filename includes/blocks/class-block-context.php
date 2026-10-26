@@ -13,6 +13,7 @@ use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Users\Visitor_Cookie;
 use WP_Block;
+use WP_User;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -76,6 +77,23 @@ final class Block_Context {
 		}
 
 		return $post;
+	}
+
+	/**
+	 * Returns the user a block shows: from block context, or the user of the page.
+	 *
+	 * @param WP_Block $block Block.
+	 * @return WP_User|null
+	 */
+	public static function user( WP_Block $block ): ?WP_User {
+		$id = $block->context['easyq/userId'] ?? null;
+		if ( ! is_numeric( $id ) ) {
+			return self::router()->current()?->user();
+		}
+
+		$user = get_userdata( (int) $id );
+
+		return false === $user ? null : $user;
 	}
 
 	/**

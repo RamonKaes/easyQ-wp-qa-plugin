@@ -174,7 +174,7 @@ final class Router {
 			case 'user':
 			case 'message':
 				$user = null === $arg ? false : get_user_by( 'slug', sanitize_title( rawurldecode( $arg ) ) );
-				if ( false === $user ) {
+				if ( false === $user || ! Services::user_query()->is_member( $user ) ) {
 					return Route::not_found();
 				}
 				$section = 'user' === $name && in_array( $section, Routes::USER_SECTIONS, true ) ? $section : null;

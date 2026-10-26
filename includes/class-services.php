@@ -10,6 +10,7 @@ namespace EasyQ;
 use EasyQ\Categories\Categories;
 use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
+use EasyQ\Posts\Activity_Query;
 use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Posts\Question_Query;
@@ -19,6 +20,8 @@ use EasyQ\Search\Search;
 use EasyQ\Users\Permissions;
 use EasyQ\Users\User_Fields;
 use EasyQ\Users\User_Levels;
+use EasyQ\Users\User_Query;
+use EasyQ\Users\User_Titles;
 use EasyQ\Votes\Votes;
 
 defined( 'ABSPATH' ) || exit;
@@ -159,6 +162,33 @@ final class Services {
 	 */
 	public static function question_query(): Question_Query {
 		return self::shared( Question_Query::class, static fn (): Question_Query => new Question_Query( self::posts(), self::categories() ) );
+	}
+
+	/**
+	 * Returns the activity lists.
+	 *
+	 * @return Activity_Query
+	 */
+	public static function activity_query(): Activity_Query {
+		return self::shared( Activity_Query::class, static fn (): Activity_Query => new Activity_Query( self::posts(), self::categories() ) );
+	}
+
+	/**
+	 * Returns the user lists.
+	 *
+	 * @return User_Query
+	 */
+	public static function user_query(): User_Query {
+		return self::shared( User_Query::class, static fn (): User_Query => new User_Query( self::user_levels() ) );
+	}
+
+	/**
+	 * Returns the user titles.
+	 *
+	 * @return User_Titles
+	 */
+	public static function user_titles(): User_Titles {
+		return self::shared( User_Titles::class, static fn (): User_Titles => new User_Titles( self::user_levels(), self::points() ) );
 	}
 
 	/**

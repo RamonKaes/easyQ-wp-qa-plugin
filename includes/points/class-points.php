@@ -8,6 +8,7 @@
 namespace EasyQ\Points;
 
 use EasyQ\Database\Db;
+use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
@@ -133,6 +134,43 @@ final class Points {
 		);
 
 		return null === $points ? Options::get_int( 'points', 'points_base' ) : (int) $points;
+	}
+
+	/**
+	 * Returns the stored statistics of a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array<string, int> Points, bonus and every statistic column; zero for users without activity.
+	 */
+	public function stats( int $user_id ): array {
+		$row   = Db::get_row( Db::wpdb()->prepare( 'SELECT * FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
+		$stats = array(
+			'points' => null === $row ? Options::get_int( 'points', 'points_base' ) : Row::int( $row, 'points' ),
+			'bonus'  => null === $row ? 0 : Row::int( $row, 'bonus' ),
+		);
+
+		foreach ( array_keys( $this->multipliers() ) as $column ) {
+			$stats[ $column ] = null === $row ? 0 : Row::int( $row, $column );
+		}
+
+		return $stats;
+	}
+
+	/**
+	 * Returns the rank of a user by points.
+	 *
+	 * @param int $user_id User ID.
+	 * @return int|null Rank starting at 1, or null if the user has no points stored.
+	 */
+	public function rank( int $user_id ): ?int {
+		$wpdb   = Db::wpdb();
+		$table  = Schema::table( 'userpoints' );
+		$points = Db::get_var( $wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', $table, $user_id ) );
+		if ( null === $points ) {
+			return null;
+		}
+
+		return 1 + Db::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE points > %d', $table, (int) $points ) );
 	}
 
 	/**

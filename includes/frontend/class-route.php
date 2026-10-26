@@ -83,6 +83,8 @@ final class Route {
 	 * @return string
 	 */
 	public function template_slug(): string {
-		return 'easyq-' . str_replace( '_', '-', $this->name );
+		$slug = 'easyq-' . str_replace( '_', '-', $this->name );
+
+		return null === $this->section ? $slug : $slug . '-' . $this->section;
 	}
 }

@@ -45,8 +45,20 @@ final class Lists_Render {
 		$list_id = Block_Context::list_id( $block );
 		$query   = is_array( $block->context['easyq/query'] ?? null ) ? $block->context['easyq/query'] : array();
 		$result  = Query_Resolver::questions( $query, $list_id );
+		$items   = array();
 
-		return self::loop( $block, $result['ids'], 'li' );
+		foreach ( $result['ids'] as $index => $id ) {
+			$activity = $result['activity'][ $index ] ?? null;
+			$items[]  = array(
+				'id'      => null === $activity ? $id : $activity->post_id,
+				'context' => array(
+					'easyq/postId'   => $id,
+					'easyq/activity' => $activity?->to_context(),
+				),
+			);
+		}
+
+		return self::render_items( $block, $items );
 	}
 
 	/**
@@ -252,20 +264,42 @@ final class Lists_Render {
 	 * @return string
 	 */
 	private static function loop( WP_Block $block, array $ids, string $tag ): string {
-		if ( array() === $ids ) {
+		return self::render_items(
+			$block,
+			array_map(
+				static fn ( int $id ): array => array(
+					'id'      => $id,
+					'context' => array( 'easyq/postId' => $id ),
+				),
+				$ids
+			),
+			$tag
+		);
+	}
+
+	/**
+	 * Renders the inner blocks once per item inside a list.
+	 *
+	 * @param WP_Block                                             $block Template block.
+	 * @param array<array{id: int, context: array<string, mixed>}> $items Items with the post ID of the element and the block context.
+	 * @param string                                               $tag   Element of each item.
+	 * @return string
+	 */
+	private static function render_items( WP_Block $block, array $items, string $tag = 'li' ): string {
+		if ( array() === $items ) {
 			return '';
 		}
 
-		$items = '';
-		foreach ( $ids as $id ) {
-			$items .= sprintf(
+		$html = '';
+		foreach ( $items as $item ) {
+			$html .= sprintf(
 				'<%1$s id="easyq-post-%2$d">%3$s</%1$s>',
 				$tag,
-				$id,
-				Render::inner_blocks( $block, array( 'easyq/postId' => $id ) )
+				$item['id'],
+				Render::inner_blocks( $block, $item['context'] )
 			);
 		}
 
-		return sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes( array( 'class' => 'wp-block-post-template' ) ), $items );
+		return sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes( array( 'class' => 'wp-block-post-template' ) ), $html );
 	}
 }

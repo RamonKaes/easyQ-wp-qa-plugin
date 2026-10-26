@@ -16,6 +16,8 @@ use EasyQ\Posts\Post;
 use EasyQ\Rest\Post_Input;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Users\Avatars;
+use EasyQ\Users\User_Fields;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -27,6 +29,13 @@ defined( 'ABSPATH' ) || exit;
  * class names so the theme styles them.
  */
 final class Forms {
+
+	/**
+	 * Forms that show their errors themselves, next to the fields.
+	 *
+	 * @var string[]
+	 */
+	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account' );
 
 	/**
 	 * Renders the form to ask a question.
@@ -61,6 +70,71 @@ final class Forms {
 		$follow = isset( $_GET['follow'] ) && is_string( $_GET['follow'] ) ? absint( $_GET['follow'] ) : 0;
 
 		return self::form( 'ask', 0, $fields, __( 'Ask the question', 'easyq' ), $follow > 0 ? array( 'follow' => $follow ) : array() );
+	}
+
+	/**
+	 * Renders the form for users to edit their Q&A profile.
+	 *
+	 * Email address, password and name are edited in the WordPress profile.
+	 *
+	 * @return string
+	 */
+	public static function account(): string {
+		$viewer = Block_Context::viewer();
+		if ( null === $viewer->user_id ) {
+			return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), self::permission_message( 'login' ) );
+		}
+
+		$fields = '';
+		foreach ( Services::user_fields()->all() as $field ) {
+			$name  = Form_Handler::PROFILE_FIELD_PREFIX . $field->name;
+			$value = '' !== Flash::value( 'account', $name ) ? Flash::value( 'account', $name ) : Services::user_fields()->value( $viewer->user_id, $field );
+			$type  = match ( true ) {
+				$field->is_multi_line() => 'textarea',
+				$field->is_link()       => 'url',
+				default                 => 'text',
+			};
+
+			$fields .= self::field( 'account', $name, $field->display_label(), $type, $value, array( 'maxlength' => (string) User_Fields::MAX_VALUE_LENGTH ) );
+		}
+
+		if ( Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
+			$fields .= self::avatar_fields( $viewer->user_id );
+		}
+
+		$fields .= sprintf(
+			'<p><a href="%s">%s</a></p>',
+			esc_url( get_edit_profile_url( $viewer->user_id ) ),
+			esc_html__( 'Change your name, email address or password', 'easyq' )
+		);
+
+		return self::form( 'account', 0, $fields, __( 'Save profile', 'easyq' ), array() );
+	}
+
+	/**
+	 * Returns the avatar upload of the account form.
+	 *
+	 * @param int $user_id User ID.
+	 * @return string
+	 */
+	private static function avatar_fields( int $user_id ): string {
+		$current = (string) get_avatar( $user_id, 96, '', __( 'Your current avatar', 'easyq' ) );
+		$remove  = null === Avatars::attachment_id( $user_id ) ? '' : sprintf(
+			'<p><label><input type="checkbox" name="remove_avatar" value="1"> %s</label></p>',
+			esc_html__( 'Remove the uploaded image and use the default avatar', 'easyq' )
+		);
+
+		return sprintf( '<p>%s</p>', $current )
+			. self::field(
+				'account',
+				'avatar',
+				__( 'Upload a new avatar', 'easyq' ),
+				'file',
+				'',
+				array( 'accept' => implode( ',', array_values( Avatars::MIME_TYPES ) ) ),
+				__( 'JPEG, PNG, GIF or WebP. The image is cropped to a square.', 'easyq' )
+			)
+			. $remove;
 	}
 
 	/**
@@ -239,11 +313,12 @@ final class Forms {
 			$hidden_html .= sprintf( '<input type="hidden" name="%s" value="%s">', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
 		}
 
-		$wrapper = in_array( $form, array( 'ask' ), true ) ? get_block_wrapper_attributes() : '';
+		$wrapper = in_array( $form, array( 'ask', 'account' ), true ) ? get_block_wrapper_attributes() : '';
 		$notice  = self::form_notice( $form );
 
 		return sprintf(
-			'<form method="post" %s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form>',
+			'<form method="post"%s %s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form>',
+			'account' === $form ? ' enctype="multipart/form-data"' : '',
 			$wrapper,
 			$notice,
 			$hidden_html,

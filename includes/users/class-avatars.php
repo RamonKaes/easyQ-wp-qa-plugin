@@ -9,6 +9,8 @@ namespace EasyQ\Users;
 
 use EasyQ\Settings\Options;
 use WP_Comment;
+use WP_Error;
+use WP_Image_Editor;
 use WP_Post;
 use WP_User;
 
@@ -26,9 +28,30 @@ final class Avatars {
 	/**
 	 * User meta key with the attachment ID of the uploaded avatar.
 	 *
+	 * Attachments belong to a site, so the key is site-specific (see Site_Meta).
+	 *
 	 * @var string
 	 */
 	public const META = 'easyq_avatar_id';
+
+	/**
+	 * Post meta key that marks attachments uploaded as avatar, with the user ID.
+	 *
+	 * @var string
+	 */
+	public const ATTACHMENT_META = '_easyq_avatar_user';
+
+	/**
+	 * Image types accepted as avatar.
+	 *
+	 * @var array<string, string>
+	 */
+	public const MIME_TYPES = array(
+		'jpg|jpeg|jpe' => 'image/jpeg',
+		'png'          => 'image/png',
+		'gif'          => 'image/gif',
+		'webp'         => 'image/webp',
+	);
 
 	/**
 	 * Hooks the avatar lookup into WordPress.
@@ -54,7 +77,7 @@ final class Avatars {
 			return $args;
 		}
 
-		$stored        = get_user_meta( $user_id, self::META, true );
+		$stored        = Site_Meta::get( $user_id, self::META );
 		$attachment_id = is_numeric( $stored ) ? (int) $stored : 0;
 		if ( $attachment_id <= 0 ) {
 			return $args;
@@ -76,18 +99,167 @@ final class Avatars {
 	 *
 	 * @param int      $user_id       User ID.
 	 * @param int|null $attachment_id Attachment ID of an image, or null to remove the avatar.
-	 * @return bool Whether the avatar was changed.
+	 * @return bool False if the attachment is not an image.
 	 */
 	public static function set( int $user_id, ?int $attachment_id ): bool {
 		if ( null === $attachment_id ) {
-			return delete_user_meta( $user_id, self::META );
+			Site_Meta::delete( $user_id, self::META );
+			return true;
 		}
 
 		if ( ! wp_attachment_is_image( $attachment_id ) ) {
 			return false;
 		}
 
-		return false !== update_user_meta( $user_id, self::META, $attachment_id );
+		Site_Meta::update( $user_id, self::META, $attachment_id );
+
+		return true;
+	}
+
+	/**
+	 * Stores an uploaded image as the avatar of a user, replacing the previous one.
+	 *
+	 * The image is cropped to a square of the configured size, which also drops
+	 * the metadata of the original file, and added to the Media Library.
+	 *
+	 * @param int   $user_id User ID.
+	 * @param array $file    Entry of the uploaded file, see file_entry().
+	 * @phpstan-param array{name: non-empty-string, type: non-empty-string, tmp_name: non-empty-string, size: int<0, max>, error: int<0, 8>} $file
+	 * @return int|WP_Error Attachment ID, or the reason the image was refused.
+	 */
+	public static function upload( int $user_id, array $file ): int|WP_Error {
+		if ( UPLOAD_ERR_OK !== $file['error'] || $file['size'] <= 0 ) {
+			return new WP_Error( 'easyq_avatar_upload', __( 'The image could not be uploaded.', 'easyq' ) );
+		}
+		if ( $file['size'] > wp_max_upload_size() ) {
+			return new WP_Error( 'easyq_avatar_size', __( 'The image is too large.', 'easyq' ) );
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$uploaded = wp_handle_sideload(
+			$file,
+			array(
+				'test_form' => false,
+				'mimes'     => self::MIME_TYPES,
+			)
+		);
+		if ( isset( $uploaded['error'] ) || ! isset( $uploaded['file'], $uploaded['type'] ) ) {
+			return new WP_Error( 'easyq_avatar_type', __( 'Please upload a JPEG, PNG, GIF or WebP image.', 'easyq' ) );
+		}
+
+		$path   = $uploaded['file'];
+		$side   = max( 16, Options::get_int( 'users', 'avatar_store_size' ) );
+		$editor = wp_get_image_editor( $path );
+		if ( is_wp_error( $editor ) || is_wp_error( self::crop( $editor, $side ) ) || is_wp_error( $editor->save( $path ) ) ) {
+			wp_delete_file( $path );
+			return new WP_Error( 'easyq_avatar_type', __( 'Please upload a JPEG, PNG, GIF or WebP image.', 'easyq' ) );
+		}
+
+		$user          = get_userdata( $user_id );
+		$attachment_id = wp_insert_attachment(
+			array(
+				'post_mime_type' => $uploaded['type'],
+				/* translators: %s: user name. */
+				'post_title'     => sprintf( __( 'Avatar of %s', 'easyq' ), false === $user ? $user_id : $user->display_name ),
+				'post_status'    => 'inherit',
+				'post_author'    => $user_id,
+			),
+			$path,
+			0,
+			true
+		);
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $path );
+			return $attachment_id;
+		}
+
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $path ) );
+		update_post_meta( $attachment_id, self::ATTACHMENT_META, $user_id );
+
+		self::remove( $user_id );
+		self::set( $user_id, $attachment_id );
+
+		return $attachment_id;
+	}
+
+	/**
+	 * Crops an image to a square, at most as large as the given side.
+	 *
+	 * @param WP_Image_Editor $editor Image.
+	 * @param int             $side   Largest side length.
+	 * @return true|WP_Error
+	 */
+	private static function crop( WP_Image_Editor $editor, int $side ): bool|WP_Error {
+		$size   = $editor->get_size();
+		$target = min( $side, $size['width'], $size['height'] );
+
+		if ( $size['width'] === $target && $size['height'] === $target ) {
+			return true;
+		}
+
+		return $editor->resize( $target, $target, true );
+	}
+
+	/**
+	 * Checks the entry of an uploaded file, as in `$_FILES`.
+	 *
+	 * @param mixed $file Entry of an uploaded file.
+	 * @return array|null The entry, or null if no file was sent.
+	 * @phpstan-return array{name: non-empty-string, type: non-empty-string, tmp_name: non-empty-string, size: int<0, max>, error: int<0, 8>}|null
+	 */
+	public static function file_entry( mixed $file ): ?array {
+		if ( ! is_array( $file ) ) {
+			return null;
+		}
+
+		$name     = is_string( $file['name'] ?? null ) ? sanitize_file_name( $file['name'] ) : '';
+		$type     = is_string( $file['type'] ?? null ) ? sanitize_mime_type( $file['type'] ) : '';
+		$tmp_name = is_string( $file['tmp_name'] ?? null ) ? $file['tmp_name'] : '';
+		$size     = is_numeric( $file['size'] ?? null ) ? (int) $file['size'] : 0;
+		$error    = is_numeric( $file['error'] ?? null ) ? (int) $file['error'] : UPLOAD_ERR_NO_FILE;
+
+		if ( UPLOAD_ERR_NO_FILE === $error || '' === $name || '' === $type || '' === $tmp_name || $size < 0 || $error < 0 || $error > 8 ) {
+			return null;
+		}
+
+		return array(
+			'name'     => $name,
+			'type'     => $type,
+			'tmp_name' => $tmp_name,
+			'size'     => $size,
+			'error'    => $error,
+		);
+	}
+
+	/**
+	 * Removes the avatar of a user and deletes the image if it was uploaded as an avatar.
+	 *
+	 * @param int $user_id User ID.
+	 */
+	public static function remove( int $user_id ): void {
+		$stored        = Site_Meta::get( $user_id, self::META );
+		$attachment_id = is_numeric( $stored ) ? (int) $stored : 0;
+
+		self::set( $user_id, null );
+
+		$owner = $attachment_id > 0 ? get_post_meta( $attachment_id, self::ATTACHMENT_META, true ) : '';
+		if ( is_numeric( $owner ) && (int) $owner === $user_id ) {
+			wp_delete_attachment( $attachment_id, true );
+		}
+	}
+
+	/**
+	 * Returns the attachment ID of the uploaded avatar of a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return int|null
+	 */
+	public static function attachment_id( int $user_id ): ?int {
+		$stored = Site_Meta::get( $user_id, self::META );
+
+		return is_numeric( $stored ) && (int) $stored > 0 ? (int) $stored : null;
 	}
 
 	/**

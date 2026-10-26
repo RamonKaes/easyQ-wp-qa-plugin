@@ -164,6 +164,7 @@ final class Options {
 				'page_size_search'   => 10,
 				'page_size_tags'     => 30,
 				'page_size_users'    => 30,
+				'page_size_activity' => 20,
 			),
 			'points'      => array(
 				'points_base'             => 100,
@@ -188,6 +189,7 @@ final class Options {
 				'points_vote_down_q'      => 1,
 				'points_vote_up_a'        => 1,
 				'points_vote_down_a'      => 1,
+				'user_titles'             => array(),
 			),
 			'spam'        => array(
 				'confirm_user_emails'    => true,

@@ -59,20 +59,33 @@ final class Post_Repository {
 	 * @return array<int, Post> Posts keyed by ID, in ID order.
 	 */
 	public function find_many( array $ids ): array {
-		$ids = array_values( array_unique( array_map( 'intval', $ids ) ) );
-		if ( array() === $ids ) {
-			return array();
+		$ids    = array_values( array_unique( array_map( 'intval', $ids ) ) );
+		$posts  = array();
+		$cached = array() === $ids ? array() : wp_cache_get_multiple( $ids, self::CACHE_GROUP );
+		foreach ( $cached as $id => $post ) {
+			if ( $post instanceof Post ) {
+				$posts[ (int) $id ] = $post;
+			}
 		}
 
-		$wpdb = Db::wpdb();
-		$rows = Db::get_results(
-			$wpdb->prepare(
-				'SELECT * FROM %i WHERE id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ') ORDER BY id',
-				array_merge( array( Schema::table( 'posts' ) ), $ids )
-			)
-		);
+		$missing = array_values( array_diff( $ids, array_keys( $posts ) ) );
+		if ( array() !== $missing ) {
+			$rows = Db::get_results(
+				Db::wpdb()->prepare(
+					'SELECT * FROM %i WHERE id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
+					array_merge( array( Schema::table( 'posts' ) ), $missing )
+				)
+			);
 
-		return $this->to_posts( $rows );
+			foreach ( $this->to_posts( $rows ) as $id => $post ) {
+				wp_cache_set( $id, $post, self::CACHE_GROUP );
+				$posts[ $id ] = $post;
+			}
+		}
+
+		ksort( $posts );
+
+		return $posts;
 	}
 
 	/**

@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/user-template",
+	"title": "User Template",
+	"category": "easyq",
+	"description": "The layout of each user in a user list.",
+	"textdomain": "easyq",
+	"parent": [
+		"easyq/user-query"
+	],
+	"usesContext": [
+		"easyq/listId",
+		"easyq/userQuery"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		},
+		"layout": true
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php",
+	"style": "wp-block-post-template"
+}

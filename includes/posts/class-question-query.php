@@ -74,6 +74,26 @@ final class Question_Query {
 	}
 
 	/**
+	 * Returns the posts column that filters by a category and its subcategories.
+	 *
+	 * Each depth has its own indexed column; the deepest level uses the category itself.
+	 *
+	 * @param Categories $categories  Categories.
+	 * @param int        $category_id Category ID.
+	 * @return string|null Column name, or null if the category does not exist.
+	 * @phpstan-return literal-string|null
+	 */
+	public static function category_column( Categories $categories, int $category_id ): ?string {
+		return match ( count( $categories->path( $category_id ) ) ) {
+			0       => null,
+			1       => 'category_path_1',
+			2       => 'category_path_2',
+			3       => 'category_path_3',
+			default => 'category_id',
+		};
+	}
+
+	/**
 	 * Lists questions.
 	 *
 	 * @param array<string, mixed> $args {
@@ -104,15 +124,7 @@ final class Question_Query {
 
 		$category_id = is_numeric( $args['category_id'] ?? null ) ? (int) $args['category_id'] : null;
 		if ( null !== $category_id ) {
-			// Each depth has its own indexed column; the deepest level uses the category itself.
-			$column = match ( count( $this->categories->path( $category_id ) ) ) {
-				0       => null,
-				1       => 'p.category_path_1 = %d',
-				2       => 'p.category_path_2 = %d',
-				3       => 'p.category_path_3 = %d',
-				default => 'p.category_id = %d',
-			};
-
+			$column = self::category_column( $this->categories, $category_id );
 			if ( null === $column ) {
 				return array(
 					'posts' => array(),
@@ -120,7 +132,7 @@ final class Question_Query {
 				);
 			}
 
-			$where[]  = $column;
+			$where[]  = 'p.' . $column . ' = %d';
 			$params[] = $category_id;
 		}
 

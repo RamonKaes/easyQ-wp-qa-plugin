@@ -19,13 +19,16 @@ import { RawHTML, useEffect, useInstanceId } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
 
 import Inspector from './inspector';
-import { questionsPath, useEasyQ } from './data';
+import { questionsPath, usersPath, useEasyQ } from './data';
 import {
 	ANSWER_LIST,
 	COMMENT_LIST,
 	QUESTION_ITEM,
 	QUESTION_LIST,
 	QUESTION_PAGE,
+	USER_ITEM,
+	USER_LIST,
+	USER_PAGE,
 } from './templates';
 
 /**
@@ -155,6 +158,134 @@ function FieldPreview( { name, attributes, context, title } ) {
 				</div>
 			);
 	}
+}
+
+/**
+ * Preview of one part of the user from block context.
+ *
+ * @param {Object} props            Properties.
+ * @param {string} props.name       Block name.
+ * @param {Object} props.attributes Attributes.
+ * @param {Object} props.context    Block context.
+ * @param {string} props.title      Block title, shown without user.
+ * @return {Element} Preview.
+ */
+function UserFieldPreview( { name, attributes, context, title } ) {
+	const blockProps = useBlockProps();
+	const userId = context[ 'easyq/userId' ];
+	const user = useEasyQ( userId ? `users/${ userId }` : null );
+
+	if ( ! user ) {
+		return (
+			<div { ...blockProps }>
+				<p>{ title }</p>
+			</div>
+		);
+	}
+
+	const term = ( label, value ) => [
+		<dt key={ `${ label }-term` }>{ label }</dt>,
+		<dd key={ `${ label }-value` }>{ value }</dd>,
+	];
+
+	switch ( name ) {
+		case 'easyq/user-name':
+			return <div { ...blockProps }>{ user.name }</div>;
+		case 'easyq/user-avatar':
+			return (
+				<div { ...blockProps }>
+					<img
+						src={ user.avatar }
+						alt=""
+						width={ attributes.avatarSize }
+						height={ attributes.avatarSize }
+					/>
+				</div>
+			);
+		case 'easyq/user-points':
+			return (
+				<div { ...blockProps }>
+					{ sprintf(
+						/* translators: %s: number of points. */
+						_n( '%s point', '%s points', user.points, 'easyq' ),
+						user.points
+					) }
+					{ attributes.showRank &&
+						user.rank &&
+						' ' +
+							sprintf(
+								/* translators: %s: rank of the user by points. */
+								__( '(ranked #%s)', 'easyq' ),
+								user.rank
+							) }
+				</div>
+			);
+		case 'easyq/user-title':
+			return user.title ? (
+				<div { ...blockProps }>{ user.title }</div>
+			) : null;
+		case 'easyq/user-fields':
+			return user.fields?.length ? (
+				<dl { ...blockProps }>
+					{ user.fields.flatMap( ( field ) =>
+						term( field.label, field.value )
+					) }
+				</dl>
+			) : (
+				<div { ...blockProps }>
+					<p>{ title }</p>
+				</div>
+			);
+		case 'easyq/user-stats':
+			return (
+				<dl { ...blockProps }>
+					{ term( __( 'Points', 'easyq' ), user.points ) }
+					{ term(
+						__( 'Questions', 'easyq' ),
+						user.counts.questions
+					) }
+					{ term( __( 'Answers', 'easyq' ), user.counts.answers ) }
+					{ term( __( 'Comments', 'easyq' ), user.counts.comments ) }
+				</dl>
+			);
+		case 'easyq/user-navigation':
+			return (
+				<nav { ...blockProps }>
+					<a href={ user.link }>{ __( 'Profile', 'easyq' ) }</a>{ ' ' }
+					<a href={ user.link }>{ __( 'Questions', 'easyq' ) }</a>{ ' ' }
+					<a href={ user.link }>{ __( 'Answers', 'easyq' ) }</a>{ ' ' }
+					<a href={ user.link }>
+						{ __( 'Recent activity', 'easyq' ) }
+					</a>
+				</nav>
+			);
+		default:
+			return (
+				<div { ...blockProps }>
+					<p>{ title }</p>
+				</div>
+			);
+	}
+}
+
+/**
+ * Renders inner blocks with a user as context.
+ *
+ * @param {Object}           props          Properties.
+ * @param {number|undefined} props.userId   User ID for the context.
+ * @param {Array}            props.template Default inner blocks.
+ * @return {Element} Inner blocks.
+ */
+function UserContextBlocks( { userId, template } ) {
+	const innerBlocksProps = useInnerBlocksProps( useBlockProps(), {
+		template,
+	} );
+
+	return (
+		<BlockContextProvider value={ { 'easyq/userId': userId } }>
+			<div { ...innerBlocksProps } />
+		</BlockContextProvider>
+	);
 }
 
 /**
@@ -308,6 +439,72 @@ function QueryInspector( { attributes, setAttributes } ) {
 }
 
 /**
+ * Settings of a user list.
+ *
+ * @param {Object}                       props               Properties.
+ * @param {Object}                       props.attributes    Attributes.
+ * @param {(attributes: Object) => void} props.setAttributes Updates attributes.
+ * @return {Element} Sidebar.
+ */
+function UserQueryInspector( { attributes, setAttributes } ) {
+	const query = attributes.query ?? {};
+	const update = ( change ) =>
+		setAttributes( { query: { ...query, ...change } } );
+
+	return (
+		<InspectorControls>
+			<PanelBody title={ __( 'Users', 'easyq' ) }>
+				<ToggleControl
+					__nextHasNoMarginBottom
+					label={ __( 'Sort order of the current page', 'easyq' ) }
+					help={ __(
+						'Lets visitors switch between top, newest and special users on the users page.',
+						'easyq'
+					) }
+					checked={ !! query.inherit }
+					onChange={ ( inherit ) => update( { inherit } ) }
+				/>
+				{ ! query.inherit && (
+					<SelectControl
+						__nextHasNoMarginBottom
+						__next40pxDefaultSize
+						label={ __( 'Users', 'easyq' ) }
+						value={ query.sort ?? 'points' }
+						options={ [
+							{
+								label: __( 'Top users by points', 'easyq' ),
+								value: 'points',
+							},
+							{
+								label: __( 'Newest users', 'easyq' ),
+								value: 'newest',
+							},
+							{
+								label: __( 'Special users', 'easyq' ),
+								value: 'special',
+							},
+						] }
+						onChange={ ( sort ) => update( { sort } ) }
+					/>
+				) }
+				<RangeControl
+					__nextHasNoMarginBottom
+					__next40pxDefaultSize
+					label={ __(
+						'Users per page (0 for the default)',
+						'easyq'
+					) }
+					value={ query.perPage ?? 0 }
+					min={ 0 }
+					max={ 100 }
+					onChange={ ( perPage ) => update( { perPage } ) }
+				/>
+			</PanelBody>
+		</InspectorControls>
+	);
+}
+
+/**
  * Returns the editor component of a block.
  *
  * @param {Object} metadata Block metadata.
@@ -356,6 +553,23 @@ export default function editFor( metadata ) {
 				return (
 					<ChildTemplateEdit context={ context } type="comments" />
 				);
+			case 'easyq/user-query':
+				return (
+					<>
+						<UserQueryInspector { ...props } />
+						<ListContainer { ...props } template={ USER_LIST } />
+					</>
+				);
+			case 'easyq/user-template':
+				return <UserTemplateEdit context={ context } />;
+			case 'easyq/user':
+				return (
+					<>
+						{ inspector }
+						<UserEdit userId={ attributes.userId } />
+					</>
+				);
+			case 'easyq/account':
 			case 'easyq/tags':
 			case 'easyq/categories':
 			case 'easyq/activity-count':
@@ -373,6 +587,20 @@ export default function editFor( metadata ) {
 					</>
 				);
 			default:
+				if ( name.startsWith( 'easyq/user-' ) ) {
+					return (
+						<>
+							{ inspector }
+							<UserFieldPreview
+								name={ name }
+								attributes={ attributes }
+								context={ context }
+								title={ metadata.title }
+							/>
+						</>
+					);
+				}
+
 				if ( name.startsWith( 'easyq/post-' ) ) {
 					return (
 						<>
@@ -482,4 +710,33 @@ function ChildTemplateEdit( { context, type } ) {
 	const first = Array.isArray( children ) ? children[ 0 ] : undefined;
 
 	return <PostContextBlocks postId={ first?.id } template={ [] } />;
+}
+
+/**
+ * Editor of the user template: the first user of the list is shown with editable blocks.
+ *
+ * @param {Object} props         Properties.
+ * @param {Object} props.context Block context with the query.
+ * @return {Element} Template.
+ */
+function UserTemplateEdit( { context } ) {
+	const users = useEasyQ( usersPath( context[ 'easyq/userQuery' ] ) );
+	const first = Array.isArray( users ) ? users[ 0 ] : undefined;
+
+	return <UserContextBlocks userId={ first?.id } template={ USER_ITEM } />;
+}
+
+/**
+ * Editor of the user block: shows the chosen user, or the current user as an example.
+ *
+ * @param {Object} props        Properties.
+ * @param {number} props.userId Chosen user, 0 for the user of the page.
+ * @return {Element} User.
+ */
+function UserEdit( { userId } ) {
+	const me = useEasyQ( userId ? null : 'users/me' );
+
+	return (
+		<UserContextBlocks userId={ userId || me?.id } template={ USER_PAGE } />
+	);
 }

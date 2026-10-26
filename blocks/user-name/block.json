@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/user-name",
+	"title": "User Name",
+	"category": "easyq",
+	"description": "The display name of a user.",
+	"textdomain": "easyq",
+	"attributes": {
+		"isLink": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"usesContext": [
+		"easyq/userId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

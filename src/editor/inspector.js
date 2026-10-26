@@ -35,20 +35,41 @@ const LABELS = {
 	count: __( 'Number of questions', 'easyq' ),
 	message: __( 'Message', 'easyq' ),
 	questionId: __( 'Question ID (0 for the question of the page)', 'easyq' ),
+	userId: __( 'User ID (0 for the user of the page)', 'easyq' ),
+	showRank: __( 'Show rank', 'easyq' ),
+	showAuthor: __( 'Show who did it', 'easyq' ),
+};
+
+/**
+ * Labels that differ for the user blocks.
+ *
+ * @type {Object<string, string>}
+ */
+const USER_LABELS = {
+	isLink: __( 'Link to the profile', 'easyq' ),
 };
 
 /**
  * Returns the control of one attribute.
  *
  * @param {Object}                       props               Properties.
+ * @param {string}                       props.blockName     Block name.
  * @param {string}                       props.name          Attribute name.
  * @param {Object}                       props.definition    Attribute definition from block.json.
  * @param {string|number|boolean}        props.value         Current value.
  * @param {(attributes: Object) => void} props.setAttributes Updates attributes.
  * @return {Element|null} Control.
  */
-function AttributeControl( { name, definition, value, setAttributes } ) {
-	const label = LABELS[ name ];
+function AttributeControl( {
+	blockName,
+	name,
+	definition,
+	value,
+	setAttributes,
+} ) {
+	const label =
+		( blockName.startsWith( 'easyq/user-' ) && USER_LABELS[ name ] ) ||
+		LABELS[ name ];
 	if ( ! label ) {
 		return null;
 	}
@@ -131,6 +152,7 @@ export default function Inspector( { metadata, attributes, setAttributes } ) {
 				{ names.map( ( name ) => (
 					<AttributeControl
 						key={ name }
+						blockName={ metadata.name }
 						name={ name }
 						definition={ metadata.attributes[ name ] }
 						value={ attributes[ name ] }

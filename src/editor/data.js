@@ -71,3 +71,17 @@ export function questionsPath( query = {}, perPage = 3 ) {
 
 	return addQueryArgs( 'questions', args );
 }
+
+/**
+ * Returns the REST path of a user list query.
+ *
+ * @param {Object} query   Block query.
+ * @param {number} perPage Number of users.
+ * @return {string} Path.
+ */
+export function usersPath( query = {}, perPage = 1 ) {
+	return addQueryArgs( 'users', {
+		per_page: perPage,
+		sort: ( ! query.inherit && query.sort ) || 'points',
+	} );
+}

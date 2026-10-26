@@ -8,8 +8,7 @@ const meta = [
 	[
 		[ 'easyq/post-tags' ],
 		[ 'easyq/post-category' ],
-		[ 'easyq/post-author', { showAvatar: false } ],
-		[ 'easyq/post-date' ],
+		[ 'easyq/post-activity' ],
 	],
 ];
 
@@ -124,4 +123,61 @@ export const QUESTION_PAGE = [
 	[ 'easyq/answer-list' ],
 	[ 'easyq/answer-form' ],
 	[ 'easyq/related-questions' ],
+];
+
+export const USER_ITEM = [
+	[
+		'core/group',
+		{ layout: { type: 'flex', flexWrap: 'nowrap' } },
+		[
+			[ 'easyq/user-avatar', { avatarSize: 48 } ],
+			[
+				'core/group',
+				{ layout: { type: 'flex', orientation: 'vertical' } },
+				[
+					[ 'easyq/user-name' ],
+					[ 'easyq/user-points' ],
+					[ 'easyq/user-title' ],
+				],
+			],
+		],
+	],
+];
+
+export const USER_LIST = [
+	[
+		'easyq/user-template',
+		{ layout: { type: 'grid', columnCount: 3 } },
+		USER_ITEM,
+	],
+	[ 'easyq/query-pagination' ],
+	[ 'easyq/query-no-results' ],
+];
+
+export const USER_PAGE = [
+	[
+		'core/group',
+		{
+			layout: {
+				type: 'flex',
+				flexWrap: 'wrap',
+				verticalAlignment: 'center',
+			},
+		},
+		[
+			[ 'easyq/user-avatar', { avatarSize: 96 } ],
+			[
+				'core/group',
+				{ layout: { type: 'flex', orientation: 'vertical' } },
+				[
+					[ 'easyq/user-name', { isLink: false } ],
+					[ 'easyq/user-title' ],
+					[ 'easyq/user-points', { showRank: true } ],
+				],
+			],
+		],
+	],
+	[ 'easyq/user-navigation' ],
+	[ 'easyq/user-fields' ],
+	[ 'easyq/user-stats' ],
 ];

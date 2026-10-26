@@ -11,6 +11,7 @@ use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Render;
 use EasyQ\Categories\Category;
 use EasyQ\Frontend\Flash;
+use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\Urls;
 use EasyQ\Posts\Post;
@@ -74,6 +75,12 @@ final class Widgets {
 			'tags'       => __( 'Tags', 'easyq' ),
 			'categories' => __( 'Categories', 'easyq' ),
 			'question'   => (string) $route->question()?->title,
+			'activity'   => __( 'Recent activity', 'easyq' ),
+			'answers'    => __( 'Recent answers', 'easyq' ),
+			'comments'   => __( 'Recent comments', 'easyq' ),
+			'users'      => self::user_sort_labels()[ $sort ] ?? __( 'Top users', 'easyq' ),
+			'user'       => self::user_title( $route ),
+			'account'    => __( 'My account', 'easyq' ),
 			'not_found'  => __( 'Page not found', 'easyq' ),
 			default      => __( 'Questions', 'easyq' ),
 		};
@@ -92,6 +99,15 @@ final class Widgets {
 			$labels  = self::unanswered_labels();
 			$default = 'unanswered';
 			$base    = Routes::url( 'unanswered' );
+		} elseif ( 'users' === $route?->name ) {
+			$param   = 'sort';
+			$labels  = array_filter(
+				self::user_sort_labels(),
+				static fn ( string $sort ): bool => null === Users_Render::permission_error( $sort ),
+				ARRAY_FILTER_USE_KEY
+			);
+			$default = 'points';
+			$base    = Routes::url( 'users' );
 		} else {
 			$param   = 'sort';
 			$labels  = self::sort_labels();
@@ -114,7 +130,9 @@ final class Widgets {
 			);
 		}
 
-		return sprintf( '<nav %s aria-label="%s">%s</nav>', get_block_wrapper_attributes(), esc_attr__( 'Sort questions', 'easyq' ), $items );
+		$label = 'users' === $route?->name ? __( 'Sort users', 'easyq' ) : __( 'Sort questions', 'easyq' );
+
+		return sprintf( '<nav %s aria-label="%s">%s</nav>', get_block_wrapper_attributes(), esc_attr( $label ), $items );
 	}
 
 	/**
@@ -267,7 +285,9 @@ final class Widgets {
 	 */
 	public static function notices(): string {
 		$flash = Flash::current();
-		if ( null === $flash ) {
+
+		// Forms show their own errors next to the fields.
+		if ( null === $flash || ( 'error' === $flash['type'] && in_array( $flash['form'], Forms::INLINE_NOTICES, true ) ) ) {
 			return '';
 		}
 
@@ -319,6 +339,39 @@ final class Widgets {
 			'answers' => __( 'Most answers', 'easyq' ),
 			'views'   => __( 'Most views', 'easyq' ),
 		);
+	}
+
+	/**
+	 * Returns the sort orders of user lists with their names.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function user_sort_labels(): array {
+		return array(
+			'points'  => __( 'Top users', 'easyq' ),
+			'newest'  => __( 'Newest users', 'easyq' ),
+			'special' => __( 'Special users', 'easyq' ),
+		);
+	}
+
+	/**
+	 * Returns the title of a profile page.
+	 *
+	 * @param Route $route Route of a profile page.
+	 * @return string
+	 */
+	private static function user_title( Route $route ): string {
+		$name = (string) $route->user()?->display_name;
+
+		return match ( $route->section ) {
+			/* translators: %s: user name. */
+			'questions' => sprintf( __( 'Questions by %s', 'easyq' ), $name ),
+			/* translators: %s: user name. */
+			'answers'   => sprintf( __( 'Answers by %s', 'easyq' ), $name ),
+			/* translators: %s: user name. */
+			'activity'  => sprintf( __( 'Recent activity by %s', 'easyq' ), $name ),
+			default     => $name,
+		};
 	}
 
 	/**

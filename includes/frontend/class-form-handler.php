@@ -9,6 +9,7 @@ namespace EasyQ\Frontend;
 
 use EasyQ\Rest\Controller;
 use EasyQ\Services;
+use EasyQ\Users\Avatars;
 use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
@@ -41,7 +42,15 @@ final class Form_Handler {
 		'edit'    => array( 'title', 'content', 'tags', 'category', 'silent' ),
 		'vote'    => array( 'vote' ),
 		'action'  => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
+		'account' => array( 'remove_avatar' ),
 	);
+
+	/**
+	 * Prefix of the profile field inputs of the account form.
+	 *
+	 * @var string
+	 */
+	public const PROFILE_FIELD_PREFIX = 'field_';
 
 	/**
 	 * Hooks the handler into WordPress.
@@ -106,12 +115,17 @@ final class Form_Handler {
 			'comment' => array( 'POST', '/posts/' . $target . '/comments' ),
 			'edit'    => array( 'PUT', $this->edit_route( $target ) ),
 			'vote'    => array( 'POST', '/posts/' . $target . '/vote' ),
+			'account' => array( 'POST', '/users/me' ),
 			default   => array( 'POST', '/posts/' . $target . '/actions/' . $action ),
 		};
 
 		$request = new WP_REST_Request( $method, '/' . Controller::NAMESPACE . $route );
 		foreach ( $values as $key => $value ) {
 			$request->set_param( $key, $value );
+		}
+
+		if ( 'account' === $form ) {
+			$values += $this->add_account_input( $request );
 		}
 
 		$response = rest_do_request( $request );
@@ -160,6 +174,36 @@ final class Form_Handler {
 	}
 
 	/**
+	 * Adds the profile fields and the uploaded avatar of the account form to a request.
+	 *
+	 * @param WP_REST_Request $request Request to the REST API.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return array<string, string> Submitted profile field values keyed by input name, to fill the form again after errors.
+	 */
+	private function add_account_input( WP_REST_Request $request ): array {
+		$fields = array();
+		$inputs = array();
+		foreach ( Services::user_fields()->all() as $field ) {
+			$name = self::PROFILE_FIELD_PREFIX . $field->name;
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
+			if ( isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ) {
+				// The field type decides how the value is sanitized; see User_Fields::set_value().
+				$fields[ $field->name ] = sanitize_textarea_field( wp_unslash( $_POST[ $name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$inputs[ $name ]        = $fields[ $field->name ];
+			}
+		}
+		$request->set_param( 'fields', $fields );
+
+		// The entry is checked here; the REST API validates the file itself (wp_handle_sideload() with image types only).
+		$file = Avatars::file_entry( $_FILES['avatar'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( null !== $file ) {
+			$request->set_file_params( array( 'avatar' => $file ) );
+		}
+
+		return $inputs;
+	}
+
+	/**
 	 * Returns the ID of the post a form relates to.
 	 *
 	 * @return int
@@ -194,6 +238,10 @@ final class Form_Handler {
 	 * @return string
 	 */
 	private function success_url( string $form, int $id, string $back ): string {
+		if ( 'account' === $form ) {
+			return Routes::url( 'account' );
+		}
+
 		$post     = Services::posts()->find( $id );
 		$question = null === $post ? null : Services::post_service()->question_of( $post );
 
@@ -221,6 +269,7 @@ final class Form_Handler {
 			'answer'  => __( 'Your answer has been published.', 'easyq' ),
 			'comment' => __( 'Your comment has been published.', 'easyq' ),
 			'edit'    => __( 'Your changes have been saved.', 'easyq' ),
+			'account' => __( 'Your profile has been saved.', 'easyq' ),
 			default   => __( 'Done.', 'easyq' ),
 		};
 	}

@@ -62,7 +62,7 @@ final class Templates {
 			return $template;
 		}
 
-		if ( 'not_found' === $route->name ) {
+		if ( 'not_found' === $route->name || ! isset( $this->definitions()[ $route->template_slug() ] ) ) {
 			global $wp_query;
 			if ( $wp_query instanceof \WP_Query ) {
 				$wp_query->set_404();
@@ -91,57 +91,145 @@ final class Templates {
 		$list = $this->question_list();
 
 		return array(
-			'easyq-home'       => array(
+			'easyq-home'           => array(
 				'title'       => __( 'Q&A: Home', 'easyq' ),
 				'description' => __( 'Start page of the questions and answers.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/ask-box /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . $list,
 			),
-			'easyq-hot'        => array(
+			'easyq-hot'            => array(
 				'title'       => __( 'Q&A: Hot questions', 'easyq' ),
 				'description' => __( 'Questions sorted by recent activity, answers and votes.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . $list,
 			),
-			'easyq-unanswered' => array(
+			'easyq-unanswered'     => array(
 				'title'       => __( 'Q&A: Unanswered questions', 'easyq' ),
 				'description' => __( 'Questions without answers.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . $list,
 			),
-			'easyq-tag'        => array(
+			'easyq-tag'            => array(
 				'title'       => __( 'Q&A: Tag', 'easyq' ),
 				'description' => __( 'Questions with a tag.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . $list,
 			),
-			'easyq-category'   => array(
+			'easyq-category'       => array(
 				'title'       => __( 'Q&A: Category', 'easyq' ),
 				'description' => __( 'Questions in a category.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/breadcrumbs /-->' . "\n" . '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/categories {"showChildrenOfCurrent":true} /-->' . "\n" . $list,
 			),
-			'easyq-search'     => array(
+			'easyq-search'         => array(
 				'title'       => __( 'Q&A: Search results', 'easyq' ),
 				'description' => __( 'Questions found by a search.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/search /-->' . "\n" . $list,
 			),
-			'easyq-question'   => array(
+			'easyq-question'       => array(
 				'title'       => __( 'Q&A: Question', 'easyq' ),
 				'description' => __( 'A question with its answers and comments.', 'easyq' ),
 				'content'     => $this->question_page(),
 			),
-			'easyq-ask'        => array(
+			'easyq-ask'            => array(
 				'title'       => __( 'Q&A: Ask a question', 'easyq' ),
 				'description' => __( 'Form for new questions.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/ask-form /-->',
 			),
-			'easyq-tags'       => array(
+			'easyq-tags'           => array(
 				'title'       => __( 'Q&A: Tags', 'easyq' ),
 				'description' => __( 'All tags by popularity.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/tags /-->',
 			),
-			'easyq-categories' => array(
+			'easyq-categories'     => array(
 				'title'       => __( 'Q&A: Categories', 'easyq' ),
 				'description' => __( 'All categories.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/categories /-->',
 			),
+			'easyq-activity'       => array(
+				'title'       => __( 'Q&A: Recent activity', 'easyq' ),
+				'description' => __( 'Recently asked, answered, commented on and changed questions.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . $list,
+			),
+			'easyq-answers'        => array(
+				'title'       => __( 'Q&A: Recent answers', 'easyq' ),
+				'description' => __( 'Recently answered questions.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . $list,
+			),
+			'easyq-comments'       => array(
+				'title'       => __( 'Q&A: Recent comments', 'easyq' ),
+				'description' => __( 'Recently commented questions and answers.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . $list,
+			),
+			'easyq-users'          => array(
+				'title'       => __( 'Q&A: Users', 'easyq' ),
+				'description' => __( 'Users by points, newest users and users with special levels.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . $this->user_list(),
+			),
+			'easyq-user'           => array(
+				'title'       => __( 'Q&A: User profile', 'easyq' ),
+				'description' => __( 'The profile of a user.', 'easyq' ),
+				'content'     => $this->user_page( '<!-- wp:easyq/user-fields /-->' . "\n" . '<!-- wp:easyq/user-stats /-->' ),
+			),
+			'easyq-user-questions' => array(
+				'title'       => __( 'Q&A: Questions of a user', 'easyq' ),
+				'description' => __( 'The questions a user asked.', 'easyq' ),
+				'content'     => $this->user_page( $list ),
+			),
+			'easyq-user-answers'   => array(
+				'title'       => __( 'Q&A: Answers of a user', 'easyq' ),
+				'description' => __( 'The answers a user wrote.', 'easyq' ),
+				'content'     => $this->user_page( $list ),
+			),
+			'easyq-user-activity'  => array(
+				'title'       => __( 'Q&A: Activity of a user', 'easyq' ),
+				'description' => __( 'What a user did recently.', 'easyq' ),
+				'content'     => $this->user_page( $list ),
+			),
+			'easyq-account'        => array(
+				'title'       => __( 'Q&A: Account', 'easyq' ),
+				'description' => __( 'Form for users to edit their Q&A profile.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/account /-->',
+			),
 		);
+	}
+
+	/**
+	 * Returns the markup of a user list.
+	 *
+	 * @return string
+	 */
+	private function user_list(): string {
+		return '<!-- wp:easyq/user-query {"queryId":1,"query":{"inherit":true}} -->
+<!-- wp:easyq/user-template {"layout":{"type":"grid","columnCount":3}} -->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->
+<div class="wp-block-group"><!-- wp:easyq/user-avatar {"avatarSize":48} /-->
+<!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
+<div class="wp-block-group"><!-- wp:easyq/user-name /-->
+<!-- wp:easyq/user-points /-->
+<!-- wp:easyq/user-title /--></div>
+<!-- /wp:group --></div>
+<!-- /wp:group -->
+<!-- /wp:easyq/user-template -->
+<!-- wp:easyq/query-pagination /-->
+<!-- wp:easyq/query-no-results ' . wp_json_encode( array( 'message' => __( 'No users found.', 'easyq' ) ), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . ' /-->
+<!-- /wp:easyq/user-query -->';
+	}
+
+	/**
+	 * Returns the markup of a profile page.
+	 *
+	 * @param string $content Blocks below the profile header and navigation.
+	 * @return string
+	 */
+	private function user_page( string $content ): string {
+		return '<!-- wp:easyq/user -->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"center"}} -->
+<div class="wp-block-group"><!-- wp:easyq/user-avatar {"avatarSize":96} /-->
+<!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
+<div class="wp-block-group"><!-- wp:easyq/page-title /-->
+<!-- wp:easyq/user-title /-->
+<!-- wp:easyq/user-points {"showRank":true} /--></div>
+<!-- /wp:group --></div>
+<!-- /wp:group -->
+<!-- wp:easyq/user-navigation /-->
+' . $content . '
+<!-- /wp:easyq/user -->';
 	}
 
 	/**
@@ -160,8 +248,7 @@ final class Templates {
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-tags /-->
 <!-- wp:easyq/post-category /-->
-<!-- wp:easyq/post-author {"showAvatar":false} /-->
-<!-- wp:easyq/post-date /--></div>
+<!-- wp:easyq/post-activity /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:group --></div>
 <!-- /wp:group -->
@@ -229,7 +316,8 @@ final class Templates {
 	private function wrap( string $content ): string {
 		return '<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 <!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
-<main class="wp-block-group">' . $content . '</main>
+<main class="wp-block-group"><!-- wp:easyq/notices /-->
+' . $content . '</main>
 <!-- /wp:group -->
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->';
 	}

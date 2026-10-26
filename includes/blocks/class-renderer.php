@@ -10,6 +10,7 @@ namespace EasyQ\Blocks;
 use EasyQ\Blocks\Render\Forms;
 use EasyQ\Blocks\Render\Lists_Render;
 use EasyQ\Blocks\Render\Post_Fields;
+use EasyQ\Blocks\Render\Users_Render;
 use EasyQ\Blocks\Render\Widgets;
 use WP_Block;
 
@@ -32,7 +33,7 @@ final class Renderer {
 	public static function render( string $name, array $attributes, string $content, WP_Block $block ): string {
 		$method = str_replace( '-', '_', $name );
 
-		foreach ( array( Lists_Render::class, Post_Fields::class, Forms::class, Widgets::class ) as $class ) {
+		foreach ( array( Lists_Render::class, Post_Fields::class, Users_Render::class, Forms::class, Widgets::class ) as $class ) {
 			if ( method_exists( $class, $method ) ) {
 				$html = $class::$method( $attributes, $content, $block );
 

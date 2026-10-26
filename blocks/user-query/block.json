@@ -1,0 +1,49 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/user-query",
+	"title": "User List",
+	"category": "easyq",
+	"description": "A list of users with its own layout: top users by points, newest users or users with special levels.",
+	"textdomain": "easyq",
+	"attributes": {
+		"queryId": {
+			"type": "number"
+		},
+		"query": {
+			"type": "object",
+			"default": {
+				"sort": "points",
+				"perPage": 0,
+				"inherit": true
+			}
+		}
+	},
+	"providesContext": {
+		"easyq/listId": "queryId",
+		"easyq/userQuery": "query"
+	},
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true,
+			"blockGap": true
+		},
+		"typography": {
+			"fontSize": true
+		},
+		"align": [
+			"wide",
+			"full"
+		],
+		"layout": true
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}

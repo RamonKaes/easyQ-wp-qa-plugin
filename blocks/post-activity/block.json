@@ -1,0 +1,41 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/post-activity",
+	"title": "Post Activity",
+	"category": "easyq",
+	"description": "What happened to a question, when and by whom, e.g. “answered 5 minutes ago by Alex”.",
+	"textdomain": "easyq",
+	"attributes": {
+		"showAuthor": {
+			"type": "boolean",
+			"default": true
+		},
+		"showPoints": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"usesContext": [
+		"easyq/postId",
+		"easyq/activity"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"render": "file:./render.php"
+}
