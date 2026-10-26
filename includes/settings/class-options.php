@@ -166,6 +166,18 @@ final class Options {
 				'page_size_users'    => 30,
 				'page_size_activity' => 20,
 			),
+			'feeds'       => array(
+				'feed_for_questions'  => true,
+				'feed_for_qa'         => true,
+				'feed_for_activity'   => true,
+				'feed_for_hot'        => false,
+				'feed_for_unanswered' => true,
+				'feed_for_tag_qs'     => false,
+				'feed_per_category'   => true,
+				'feed_for_search'     => false,
+				'feed_number_items'   => 50,
+				'feed_full_text'      => true,
+			),
 			'points'      => array(
 				'points_base'             => 100,
 				'points_multiple'         => 10,

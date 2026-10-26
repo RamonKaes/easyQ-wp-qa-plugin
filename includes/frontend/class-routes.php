@@ -7,6 +7,7 @@
 
 namespace EasyQ\Frontend;
 
+use EasyQ\Feeds\Feeds;
 use EasyQ\Settings\Options;
 
 defined( 'ABSPATH' ) || exit;
@@ -34,7 +35,7 @@ final class Routes {
 	public const ARG_VAR = 'easyq_arg';
 
 	/**
-	 * Query variable with a second route argument, e.g. a profile section.
+	 * Query variable with a second route argument, e.g. a profile section or the argument of a feed.
 	 *
 	 * @var string
 	 */
@@ -92,16 +93,18 @@ final class Routes {
 		$route  = self::ROUTE_VAR;
 		$arg    = self::ARG_VAR;
 		$simple = implode( '|', array_map( static fn ( string $path ): string => preg_quote( $path, '#' ), self::SIMPLE ) );
+		$feeds  = implode( '|', array_keys( Feeds::TYPES ) );
 
 		return array(
-			"^{$base}/?$"                     => "index.php?{$route}=home",
-			"^{$base}/([0-9]+)(?:/[^/]*)?/?$" => "index.php?{$route}=question&{$arg}=\$matches[1]",
-			"^{$base}/({$simple})/?$"         => "index.php?{$route}=\$matches[1]",
-			"^{$base}/tag/([^/]+)/?$"         => "index.php?{$route}=tag&{$arg}=\$matches[1]",
-			"^{$base}/categories/(.+?)/?$"    => "index.php?{$route}=category&{$arg}=\$matches[1]",
+			"^{$base}/?$"                            => "index.php?{$route}=home",
+			"^{$base}/([0-9]+)(?:/[^/]*)?/?$"        => "index.php?{$route}=question&{$arg}=\$matches[1]",
+			"^{$base}/({$simple})/?$"                => "index.php?{$route}=\$matches[1]",
+			"^{$base}/tag/([^/]+)/?$"                => "index.php?{$route}=tag&{$arg}=\$matches[1]",
+			"^{$base}/categories/(.+?)/?$"           => "index.php?{$route}=category&{$arg}=\$matches[1]",
 			"^{$base}/user/([^/]+)/(" . implode( '|', self::USER_SECTIONS ) . ')/?$' => "index.php?{$route}=user&{$arg}=\$matches[1]&" . self::SECTION_VAR . '=$matches[2]',
-			"^{$base}/user/([^/]+)/?$"        => "index.php?{$route}=user&{$arg}=\$matches[1]",
-			"^{$base}/message/([^/]+)/?$"     => "index.php?{$route}=message&{$arg}=\$matches[1]",
+			"^{$base}/user/([^/]+)/?$"               => "index.php?{$route}=user&{$arg}=\$matches[1]",
+			"^{$base}/message/([^/]+)/?$"            => "index.php?{$route}=message&{$arg}=\$matches[1]",
+			"^{$base}/feed/({$feeds})(?:/(.+?))?/?$" => 'index.php?feed=' . Feeds::FEED . "&{$route}=feed&{$arg}=\$matches[1]&" . self::SECTION_VAR . '=$matches[2]',
 		);
 	}
 
@@ -127,7 +130,8 @@ final class Routes {
 	 */
 	public static function url( string $route, string|int|null $arg = null, ?string $section = null, array $query = array() ): string {
 		if ( ! self::pretty() ) {
-			$params = array( self::ROUTE_VAR => $route );
+			$params = 'feed' === $route ? array( 'feed' => Feeds::FEED ) : array();
+			$params = $params + array( self::ROUTE_VAR => $route );
 			if ( null !== $arg ) {
 				$params[ self::ARG_VAR ] = (string) $arg;
 			}
@@ -145,6 +149,7 @@ final class Routes {
 			'category' => 'categories/' . implode( '/', array_map( 'rawurlencode', explode( '/', (string) $arg ) ) ),
 			'user'     => 'user/' . rawurlencode( (string) $arg ) . ( null !== $section ? '/' . $section : '' ),
 			'message'  => 'message/' . rawurlencode( (string) $arg ),
+			'feed'     => 'feed/' . rawurlencode( (string) $arg ) . ( null !== $section ? '/' . implode( '/', array_map( 'rawurlencode', explode( '/', $section ) ) ) : '' ),
 			default    => self::SIMPLE[ $route ] ?? '',
 		};
 

@@ -7,6 +7,7 @@
 
 namespace EasyQ\Frontend;
 
+use EasyQ\Feeds\Feeds;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use WP;
@@ -181,6 +182,10 @@ final class Router {
 				}
 				$section = 'user' === $name && in_array( $section, Routes::USER_SECTIONS, true ) ? $section : null;
 				return new Route( $name, $user, $section );
+
+			case 'feed':
+				// The feed checks its argument itself; see Feeds::channel().
+				return null !== $arg && isset( Feeds::TYPES[ $arg ] ) ? new Route( 'feed', $arg, null === $section || '' === $section ? null : rawurldecode( $section ) ) : Route::not_found();
 
 			case 'home':
 				return new Route( 'home' );

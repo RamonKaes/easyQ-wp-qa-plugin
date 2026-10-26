@@ -36,6 +36,7 @@ final class Plugin {
 		$router->register();
 		( new Frontend\Templates( $router ) )->register();
 		( new Frontend\Page_Meta( $router ) )->register();
+		( new Feeds\Feeds( $router ) )->register();
 		( new Frontend\Form_Handler() )->register();
 		( new Blocks\Blocks() )->register();
 
