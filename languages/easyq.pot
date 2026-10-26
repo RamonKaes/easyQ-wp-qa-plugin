@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T12:35:01+00:00\n"
+"POT-Creation-Date: 2026-10-26T13:14:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -32,6 +32,7 @@ msgid "A complete question and answer platform built from blocks, based on Quest
 msgstr ""
 
 #: includes/admin/class-profile-screen.php:64
+#: includes/blocks/class-patterns.php:43
 msgid "Questions and answers"
 msgstr ""
 
@@ -157,6 +158,89 @@ msgstr ""
 
 #: includes/blocks/class-blocks.php:80
 msgid "Questions & Answers"
+msgstr ""
+
+#: includes/blocks/class-layouts.php:161
+#: includes/blocks/class-layouts.php:186
+msgid "No users found."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:44
+msgid "Layouts for the Q&A pages and lists of questions and users."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:62
+msgid "Q&A start page"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:63
+msgid "Page title, a box to ask a question, sort links and the list of questions."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:68
+msgid "Q&A question page"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:69
+msgid "A question with votes, answers, comments and the answer form."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:75
+msgid "Q&A user profile"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:76
+msgid "Avatar, name, points, profile sections, profile fields and statistics of a user."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:82
+msgid "Recent questions (compact)"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:83
+msgid "A heading and the five newest questions, one per line, for sidebars and front pages."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:85
+msgid "questions"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:85
+msgid "latest"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:85
+#: includes/blocks/class-patterns.php:99
+msgid "sidebar"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:86
+#: includes/blocks/render/class-widgets.php:66
+#: includes/blocks/render/class-widgets.php:336
+#: includes/feeds/class-feeds.php:343
+msgid "Recent questions"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:96
+msgid "Top users (compact)"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:97
+msgid "A heading and the five users with the most points, for sidebars."
+msgstr ""
+
+#: includes/blocks/class-patterns.php:99
+msgid "users"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:99
+msgid "points"
+msgstr ""
+
+#: includes/blocks/class-patterns.php:100
+#: includes/blocks/render/class-widgets.php:81
+#: includes/blocks/render/class-widgets.php:351
+msgid "Top users"
 msgstr ""
 
 #: includes/blocks/class-render.php:86
@@ -660,12 +744,6 @@ msgstr ""
 msgid "%1$s up, %2$s down"
 msgstr ""
 
-#: includes/blocks/render/class-widgets.php:66
-#: includes/blocks/render/class-widgets.php:336
-#: includes/feeds/class-feeds.php:343
-msgid "Recent questions"
-msgstr ""
-
 #: includes/blocks/render/class-widgets.php:67
 #: includes/feeds/class-feeds.php:333
 #: includes/frontend/class-navigation.php:59
@@ -706,11 +784,6 @@ msgstr ""
 #: includes/blocks/render/class-widgets.php:80
 #: includes/feeds/class-feeds.php:336
 msgid "Recent comments"
-msgstr ""
-
-#: includes/blocks/render/class-widgets.php:81
-#: includes/blocks/render/class-widgets.php:351
-msgid "Top users"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:83
@@ -965,160 +1038,156 @@ msgstr ""
 msgid "A link to the Q&A page “%s”."
 msgstr ""
 
-#: includes/frontend/class-templates.php:95
+#: includes/frontend/class-templates.php:97
 msgid "Q&A: Home"
 msgstr ""
 
-#: includes/frontend/class-templates.php:96
+#: includes/frontend/class-templates.php:98
 msgid "Start page of the questions and answers."
 msgstr ""
 
-#: includes/frontend/class-templates.php:100
+#: includes/frontend/class-templates.php:102
 msgid "Q&A: Hot questions"
 msgstr ""
 
-#: includes/frontend/class-templates.php:101
+#: includes/frontend/class-templates.php:103
 msgid "Questions sorted by recent activity, answers and votes."
 msgstr ""
 
-#: includes/frontend/class-templates.php:105
+#: includes/frontend/class-templates.php:107
 msgid "Q&A: Unanswered questions"
 msgstr ""
 
-#: includes/frontend/class-templates.php:106
+#: includes/frontend/class-templates.php:108
 msgid "Questions without answers."
 msgstr ""
 
-#: includes/frontend/class-templates.php:110
+#: includes/frontend/class-templates.php:112
 msgid "Q&A: Tag"
 msgstr ""
 
-#: includes/frontend/class-templates.php:111
+#: includes/frontend/class-templates.php:113
 msgid "Questions with a tag."
 msgstr ""
 
-#: includes/frontend/class-templates.php:115
+#: includes/frontend/class-templates.php:117
 msgid "Q&A: Category"
 msgstr ""
 
-#: includes/frontend/class-templates.php:116
+#: includes/frontend/class-templates.php:118
 msgid "Questions in a category."
 msgstr ""
 
-#: includes/frontend/class-templates.php:120
+#: includes/frontend/class-templates.php:122
 msgid "Q&A: Search results"
 msgstr ""
 
-#: includes/frontend/class-templates.php:121
+#: includes/frontend/class-templates.php:123
 msgid "Questions found by a search."
 msgstr ""
 
-#: includes/frontend/class-templates.php:125
+#: includes/frontend/class-templates.php:127
 msgid "Q&A: Question"
 msgstr ""
 
-#: includes/frontend/class-templates.php:126
+#: includes/frontend/class-templates.php:128
 msgid "A question with its answers and comments."
 msgstr ""
 
-#: includes/frontend/class-templates.php:130
+#: includes/frontend/class-templates.php:132
 msgid "Q&A: Ask a question"
 msgstr ""
 
-#: includes/frontend/class-templates.php:131
+#: includes/frontend/class-templates.php:133
 msgid "Form for new questions."
 msgstr ""
 
-#: includes/frontend/class-templates.php:135
+#: includes/frontend/class-templates.php:137
 msgid "Q&A: Tags"
 msgstr ""
 
-#: includes/frontend/class-templates.php:136
+#: includes/frontend/class-templates.php:138
 msgid "All tags by popularity."
 msgstr ""
 
-#: includes/frontend/class-templates.php:140
+#: includes/frontend/class-templates.php:142
 msgid "Q&A: Categories"
 msgstr ""
 
-#: includes/frontend/class-templates.php:141
+#: includes/frontend/class-templates.php:143
 msgid "All categories."
 msgstr ""
 
-#: includes/frontend/class-templates.php:145
+#: includes/frontend/class-templates.php:147
 msgid "Q&A: Recent activity"
 msgstr ""
 
-#: includes/frontend/class-templates.php:146
+#: includes/frontend/class-templates.php:148
 msgid "Recently asked, answered, commented on and changed questions."
 msgstr ""
 
-#: includes/frontend/class-templates.php:150
+#: includes/frontend/class-templates.php:152
 msgid "Q&A: Recent answers"
 msgstr ""
 
-#: includes/frontend/class-templates.php:151
+#: includes/frontend/class-templates.php:153
 msgid "Recently answered questions."
 msgstr ""
 
-#: includes/frontend/class-templates.php:155
+#: includes/frontend/class-templates.php:157
 msgid "Q&A: Recent comments"
 msgstr ""
 
-#: includes/frontend/class-templates.php:156
+#: includes/frontend/class-templates.php:158
 msgid "Recently commented questions and answers."
 msgstr ""
 
-#: includes/frontend/class-templates.php:160
+#: includes/frontend/class-templates.php:162
 msgid "Q&A: Users"
 msgstr ""
 
-#: includes/frontend/class-templates.php:161
+#: includes/frontend/class-templates.php:163
 msgid "Users by points, newest users and users with special levels."
 msgstr ""
 
-#: includes/frontend/class-templates.php:165
+#: includes/frontend/class-templates.php:167
 msgid "Q&A: User profile"
 msgstr ""
 
-#: includes/frontend/class-templates.php:166
+#: includes/frontend/class-templates.php:168
 msgid "The profile of a user."
 msgstr ""
 
-#: includes/frontend/class-templates.php:170
+#: includes/frontend/class-templates.php:172
 msgid "Q&A: Questions of a user"
 msgstr ""
 
-#: includes/frontend/class-templates.php:171
+#: includes/frontend/class-templates.php:173
 msgid "The questions a user asked."
 msgstr ""
 
-#: includes/frontend/class-templates.php:175
+#: includes/frontend/class-templates.php:177
 msgid "Q&A: Answers of a user"
 msgstr ""
 
-#: includes/frontend/class-templates.php:176
+#: includes/frontend/class-templates.php:178
 msgid "The answers a user wrote."
 msgstr ""
 
-#: includes/frontend/class-templates.php:180
+#: includes/frontend/class-templates.php:182
 msgid "Q&A: Activity of a user"
 msgstr ""
 
-#: includes/frontend/class-templates.php:181
+#: includes/frontend/class-templates.php:183
 msgid "What a user did recently."
 msgstr ""
 
-#: includes/frontend/class-templates.php:185
+#: includes/frontend/class-templates.php:187
 msgid "Q&A: Account"
 msgstr ""
 
-#: includes/frontend/class-templates.php:186
+#: includes/frontend/class-templates.php:188
 msgid "Form for users to edit their Q&A profile."
-msgstr ""
-
-#: includes/frontend/class-templates.php:210
-msgid "No users found."
 msgstr ""
 
 #: includes/posts/class-activity-item.php:95

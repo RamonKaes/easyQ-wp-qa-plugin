@@ -257,9 +257,17 @@ arranged and styled in the Site Editor without plugin CSS.
 | `easyq/sort-navigation` | Sort tabs of the question lists (rendered as a core-style list of links) |
 | `easyq/breadcrumbs` | Category path |
 
-**Patterns** for typical layouts (home, question page, profile, compact list) built
-from the blocks above and core blocks. Every Q2A layout can be rebuilt with these
-building blocks.
+**Patterns** for typical layouts, built from the blocks above and core blocks, in the
+pattern category "Questions and answers". Every Q2A layout can be rebuilt with these
+building blocks. Templates and patterns share their markup (`EasyQ\Blocks\Layouts`).
+
+| Pattern | Use |
+| --- | --- |
+| `easyq/home` | Start page: title, ask box, sort links, question list; offered for the template `easyq-home` and in the inserter |
+| `easyq/question-page` | Question page; offered for the template `easyq-question` only, hidden from the inserter because it needs the route |
+| `easyq/profile` | User profile; offered for the template `easyq-user` only, hidden from the inserter |
+| `easyq/recent-questions` | Heading and the five newest questions, one per line, for sidebars and front pages |
+| `easyq/top-users` | Heading and the five users with the most points, for sidebars |
 
 **Form styling.** `theme.json` has no element for form fields yet. easyQ renders fields
 with the same markup as core forms (comment form, search) so they pick up the theme's
@@ -631,7 +639,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A | Done |
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
-| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories, search, user list, profile pages (profile, questions, answers, activity), account page (profile fields, avatar upload) and activity/answer/comment lists are done. Feeds, sitemaps and navigation links are done. Open: `noindex` for empty lists, block patterns, classic theme fallback, screenshot checks with more themes. The wall, favorites and notification settings follow with their features in phase 7 |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories, search, user list, profile pages (profile, questions, answers, activity), account page (profile fields, avatar upload) and activity/answer/comment lists are done. Feeds, sitemaps, navigation links and block patterns are done. Open: `noindex` for empty lists, classic theme fallback, screenshot checks with more themes. The wall, favorites and notification settings follow with their features in phase 7 |
 | 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows | Open (profile and users screens done in phase 3) |
 | 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests | Open |
 | 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
