@@ -7,9 +7,8 @@ WordPress.
 > **Status:** early development. The foundation and the core domain (posts,
 > moderation, votes, flags, points, categories, search index, rate limits and
 > events), users and permissions (levels, capabilities, profile integration), the
-> REST API and most of the frontend (routes, block templates and the blocks for
-> question lists, question pages, forms, user lists, profiles and the account
-> page) are in place; features are
+> REST API and the frontend (block templates, blocks, patterns, feeds, sitemaps,
+> navigation links and a fallback for classic themes) are in place; features are
 > added phase by phase, see
 > [docs/feature-mapping.md](docs/feature-mapping.md#13-phases).
 

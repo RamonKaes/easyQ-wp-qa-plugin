@@ -105,6 +105,7 @@ Message, wall and favorite events follow with the corresponding features.
 | --- | --- | --- |
 | `easyq_default_settings` | `array $defaults` | Default values of all settings, keyed by section and setting |
 | `easyq_search_providers` | `EasyQ\Search\Search_Provider[] $providers` | Add search engines; the built-in search is always kept |
+| `easyq_classic_template_content` | `string $content`, `string $slug` | Block markup of a Q&A page in classic themes, e.g. `easyq-question`; block themes edit the templates in the Site Editor instead |
 | `easyq_client_ip` | `string $ip` | IP address of the current request; easyQ trusts only `REMOTE_ADDR` by default. Sites behind a proxy return the client address from a trusted header here |
 
 ## Capabilities

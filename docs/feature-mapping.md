@@ -139,6 +139,13 @@ registered with `register_block_template()`, editable in the Site Editor. Withou
 permalinks everything works through query parameters. Header and footer come from the
 theme's template parts.
 
+**Classic themes** cannot load block templates. For them easyQ renders the blocks of the
+same template before the document head and prints them between the theme's
+`get_header()` and `get_footer()` (`includes/frontend/views/classic.php`). Themes can
+replace that file with `easyq/classic.php`, and the filter
+`easyq_classic_template_content` changes the block markup; the Site Editor is only
+available in block themes.
+
 | Q2A route | Target | Block template |
 | --- | --- | --- |
 | `/` (home) | **P** | `easyq-home`: question query sorted by recent activity |
@@ -200,7 +207,14 @@ arranged and styled in the Site Editor without plugin CSS.
   counterparts (pagination, search, buttons, lists), so the theme's styles apply.
 - **Block supports** for color, typography, spacing, border and layout on every block.
 - **Interactivity API** for voting, favorites, loading more comments, inline answering –
-  always with a working no-JS fallback (regular form posts).
+  always with a working no-JS fallback (regular form posts). Answer and comment forms
+  are sent in the background to the same form handler (header `X-EasyQ-In-Place`, which
+  returns the address to show as JSON instead of redirecting); the Interactivity Router
+  then replaces the question and the notices (router regions), so new posts, field
+  errors and messages appear without reloading. The focus moves to the first invalid
+  field or the new post, and messages are announced with `@wordpress/a11y`. Long
+  discussions show the latest `show_fewer_cs_count` of more than `show_fewer_cs_from`
+  comments, with a link to the earlier ones (`?easyq_comments={post}`).
 
 ### Containers (context providers)
 
@@ -639,7 +653,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A | Done |
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
-| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories, search, user list, profile pages (profile, questions, answers, activity), account page (profile fields, avatar upload) and activity/answer/comment lists are done. Feeds, sitemaps, navigation links and block patterns are done. Open: `noindex` for empty lists, classic theme fallback, screenshot checks with more themes. The wall, favorites and notification settings follow with their features in phase 7 |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7 |
 | 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows | Open (profile and users screens done in phase 3) |
 | 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests | Open |
 | 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
@@ -678,3 +692,6 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 24 | User profiles are left out of the sitemaps unless the site owner enables `sitemap_users` (privacy by default; Q2A lists them by default) | 2026-10-26 |
 | 25 | Feeds contain no author names and are not available when visitors may not view the Q&A area | 2026-10-26 |
 | 26 | The rewrite rules are rebuilt whenever they change (hash of the rules), not only when the base slug changes, so updates that add routes work without saving the permalinks | 2026-10-26 |
+| 27 | Classic themes get the same block templates, rendered between the theme's header and footer, instead of separate PHP templates | 2026-10-26 |
+| 28 | Answer and comment forms are sent in the background to the regular form handler and the page is updated with the Interactivity Router, so both ways share one implementation | 2026-10-26 |
+| 29 | Counts in question lists keep their width through core flex child sizing, and text areas use `cols="45"` like the core comment form, so themes without form styles stay usable without plugin CSS | 2026-10-26 |
