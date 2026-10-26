@@ -40,8 +40,8 @@ final class Layouts {
 		) . ' -->
 <!-- wp:easyq/question-template -->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
-<!-- wp:easyq/post-answer-count /-->
+<div class="wp-block-group"><!-- wp:easyq/post-votes {"style":{"layout":{"selfStretch":"fixedNoShrink","flexSize":"max-content"}},"layout":{"type":"flex","orientation":"vertical"}} /-->
+<!-- wp:easyq/post-answer-count {"style":{"layout":{"selfStretch":"fixedNoShrink","flexSize":"max-content"}}} /-->
 <!-- wp:group {"layout":{"type":"constrained"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-title {"isLink":true} /-->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->

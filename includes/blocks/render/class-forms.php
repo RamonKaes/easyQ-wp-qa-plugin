@@ -371,7 +371,7 @@ final class Forms {
 		}
 
 		$input = 'textarea' === $type
-			? sprintf( '<textarea id="%s" name="%s" rows="8"%s>%s</textarea>', esc_attr( $id ), esc_attr( $name ), $attrs, esc_textarea( $value ) )
+			? sprintf( '<textarea id="%s" name="%s" cols="45" rows="8"%s>%s</textarea>', esc_attr( $id ), esc_attr( $name ), $attrs, esc_textarea( $value ) )
 			: sprintf( '<input type="%s" id="%s" name="%s" value="%s"%s>', esc_attr( $type ), esc_attr( $id ), esc_attr( $name ), esc_attr( $value ), $attrs );
 
 		return sprintf(

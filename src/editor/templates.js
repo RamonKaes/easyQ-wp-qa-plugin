@@ -12,6 +12,11 @@ const meta = [
 	],
 ];
 
+// Counts keep their natural width next to long titles (core flex child sizing).
+const noShrink = {
+	layout: { selfStretch: 'fixedNoShrink', flexSize: 'max-content' },
+};
+
 export const QUESTION_ITEM = [
 	[
 		'core/group',
@@ -25,9 +30,12 @@ export const QUESTION_ITEM = [
 		[
 			[
 				'easyq/post-votes',
-				{ layout: { type: 'flex', orientation: 'vertical' } },
+				{
+					style: noShrink,
+					layout: { type: 'flex', orientation: 'vertical' },
+				},
 			],
-			[ 'easyq/post-answer-count' ],
+			[ 'easyq/post-answer-count', { style: noShrink } ],
 			[
 				'core/group',
 				{ layout: { type: 'constrained' } },

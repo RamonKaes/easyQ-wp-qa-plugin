@@ -23,6 +23,15 @@
 		"spacing": {
 			"margin": true,
 			"padding": true
+		},
+		"layout": {
+			"default": {
+				"type": "flex",
+				"flexWrap": "wrap"
+			},
+			"allowSwitching": false,
+			"allowInheriting": false,
+			"allowOrientation": true
 		}
 	},
 	"editorScript": "easyq-editor",
