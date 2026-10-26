@@ -7,6 +7,8 @@
 
 namespace EasyQ\Users;
 
+use EasyQ\Database\Db;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -25,7 +27,7 @@ final class Site_Meta {
 	 * @return string
 	 */
 	public static function key( string $key ): string {
-		return $GLOBALS['wpdb']->get_blog_prefix() . $key;
+		return Db::wpdb()->get_blog_prefix() . $key;
 	}
 
 	/**
