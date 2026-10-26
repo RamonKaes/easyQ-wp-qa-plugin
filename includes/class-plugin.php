@@ -38,6 +38,7 @@ final class Plugin {
 		( new Frontend\Page_Meta( $router ) )->register();
 		( new Feeds\Feeds( $router ) )->register();
 		Frontend\Sitemap_Provider::register();
+		( new Frontend\Navigation( $router ) )->register();
 		( new Frontend\Form_Handler() )->register();
 		( new Blocks\Blocks() )->register();
 
