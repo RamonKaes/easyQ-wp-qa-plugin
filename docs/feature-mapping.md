@@ -242,6 +242,7 @@ arranged and styled in the Site Editor without plugin CSS.
 | `easyq/tags` | `tags` |
 | `easyq/related-questions` | Widget "Related questions" |
 | `easyq/activity-count` | Widget "Activity count" |
+| `easyq/post-activity` | What happened last to a question in activity lists ("answered 5 minutes ago by …") |
 | `easyq/user-wall` | Wall |
 | `easyq/account` | `account` |
 | `easyq/updates` | `updates` |
@@ -616,7 +617,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A | Done |
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
-| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories and search are done. Open: user list and profile pages, account page, activity/answer/comment lists, feeds, sitemaps, navigation link search, block patterns, classic theme fallback, screenshot checks with more themes |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories, search, user list, profile pages (profile, questions, answers, activity), account page (profile fields, avatar upload) and activity/answer/comment lists are done. Open: feeds, sitemaps, navigation link search, block patterns, classic theme fallback, screenshot checks with more themes. The wall, favorites and notification settings follow with their features in phase 7 |
 | 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows | Open (profile and users screens done in phase 3) |
 | 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests | Open |
 | 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
@@ -648,3 +649,6 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 17 | Frontend forms work without JavaScript and are sent to the REST API internally (same checks), followed by a redirect with a message | 2026-10-13 |
 | 18 | Blocks reuse core class names and core block style handles (buttons, search, pagination, post template, post terms) and the core flex layout support, so the theme styles them | 2026-10-13 |
 | 19 | Views are counted once per visitor and hour using a salted hash in a transient; no IP address is stored | 2026-10-13 |
+| 20 | The users list "by points" shows users who took part (as in Q2A); on multisite, users of other sites get a profile only once they took part here | 2026-10-26 |
+| 21 | Uploaded avatars are cropped to a square, stored in the Media Library and replaced or deleted with the user's choice; the avatar is stored per site | 2026-10-26 |
+| 22 | The account page is excluded from search engines; profile sections have their own canonical address | 2026-10-26 |
