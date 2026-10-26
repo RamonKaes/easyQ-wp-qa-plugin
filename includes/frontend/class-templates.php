@@ -21,6 +21,13 @@ defined( 'ABSPATH' ) || exit;
 final class Templates {
 
 	/**
+	 * Rendered Q&A page for classic themes.
+	 *
+	 * @var string
+	 */
+	private static string $classic_html = '';
+
+	/**
 	 * Sets up the templates.
 	 *
 	 * @param Router $router Router of the current request.
@@ -75,13 +82,52 @@ final class Templates {
 			return get_404_template();
 		}
 
-		if ( ! wp_is_block_theme() ) {
-			return $template;
-		}
-
 		$slug = $route->template_slug();
 
+		if ( ! wp_is_block_theme() ) {
+			return $this->classic_template( $slug );
+		}
+
 		return locate_block_template( $template, $slug, array( $slug ) );
+	}
+
+	/**
+	 * Renders the block template of a Q&A page for a classic theme and returns the file that prints it.
+	 *
+	 * Classic themes cannot load block templates, so the blocks of the template are
+	 * rendered here, before the document head, and printed between the theme's header
+	 * and footer. Themes can provide their own `easyq/classic.php`.
+	 *
+	 * @param string $slug Template slug, e.g. `easyq-question`.
+	 * @return string Template file.
+	 */
+	private function classic_template( string $slug ): string {
+		$content = '<!-- wp:easyq/notices /-->' . "\n" . $this->definitions()[ $slug ]['content'];
+
+		/**
+		 * Filters the block markup of a Q&A page in classic themes.
+		 *
+		 * Block themes edit the templates in the Site Editor instead.
+		 *
+		 * @param string $content Block markup.
+		 * @param string $slug    Template slug, e.g. `easyq-question`.
+		 */
+		$content = (string) apply_filters( 'easyq_classic_template_content', $content, $slug );
+
+		self::$classic_html = do_blocks( $content );
+
+		$theme_file = locate_template( array( 'easyq/classic.php' ) );
+
+		return '' !== $theme_file ? $theme_file : \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php';
+	}
+
+	/**
+	 * Returns the rendered Q&A page for classic themes, see classic_template().
+	 *
+	 * @return string HTML.
+	 */
+	public static function classic_html(): string {
+		return self::$classic_html;
 	}
 
 	/**

@@ -1,0 +1,18 @@
+<?php
+/**
+ * Q&A page in classic themes: the rendered block template between the theme's header and footer.
+ *
+ * Themes can replace this file with `easyq/classic.php`.
+ *
+ * @package easyQ
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+get_header();
+?>
+<div class="entry-content">
+	<?php echo EasyQ\Frontend\Templates::classic_html(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Rendered blocks, escaped by each block. ?>
+</div>
+<?php
+get_footer();
