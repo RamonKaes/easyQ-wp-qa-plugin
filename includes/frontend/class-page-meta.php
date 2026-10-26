@@ -7,6 +7,7 @@
 
 namespace EasyQ\Frontend;
 
+use EasyQ\Blocks\Lists;
 use EasyQ\Blocks\Render\Widgets;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
@@ -83,7 +84,9 @@ final class Page_Meta {
 	}
 
 	/**
-	 * Keeps search engines away from search results, forms, the account page and hidden or queued posts.
+	 * Keeps search engines away from search results, forms, the account page, empty lists and hidden or queued posts.
+	 *
+	 * Block templates are rendered before the document head, so the lists of the page are known here.
 	 *
 	 * @param array<string, bool|string> $robots Robots directives.
 	 * @return array<string, bool|string>
@@ -95,7 +98,7 @@ final class Page_Meta {
 		}
 
 		$question = $route->question();
-		if ( in_array( $route->name, array( 'search', 'ask', 'account' ), true ) || ( null !== $question && ! $question->is_visible() ) ) {
+		if ( in_array( $route->name, array( 'search', 'ask', 'account' ), true ) || ( null !== $question && ! $question->is_visible() ) || Lists::main_list_is_empty() ) {
 			$robots['noindex'] = true;
 		}
 

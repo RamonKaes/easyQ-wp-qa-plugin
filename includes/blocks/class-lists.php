@@ -19,6 +19,13 @@ defined( 'ABSPATH' ) || exit;
 final class Lists {
 
 	/**
+	 * Query parameter with the page number of the main list, the one that follows the route.
+	 *
+	 * @var string
+	 */
+	public const MAIN_PAGE_VAR = 'easyq_page';
+
+	/**
 	 * Results keyed by list ID.
 	 *
 	 * @var array<string, array{ids: int[], total: int, page: int, per_page: int, page_var: string}>
@@ -53,6 +60,23 @@ final class Lists {
 	 */
 	public static function get( string $list_id ): ?array {
 		return self::$results[ $list_id ] ?? null;
+	}
+
+	/**
+	 * Checks whether the main list of the page, the one that follows the route, has no items.
+	 *
+	 * Also true for page numbers beyond the last page.
+	 *
+	 * @return bool False if the page has no main list or it has items.
+	 */
+	public static function main_list_is_empty(): bool {
+		foreach ( self::$results as $result ) {
+			if ( self::MAIN_PAGE_VAR === $result['page_var'] && array() === $result['ids'] ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

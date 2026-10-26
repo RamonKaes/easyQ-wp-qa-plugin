@@ -77,7 +77,7 @@ final class Users_Render {
 		$list_id  = Block_Context::list_id( $block );
 		$query    = is_array( $block->context['easyq/userQuery'] ?? null ) ? $block->context['easyq/userQuery'] : array();
 		$sort     = self::sort( $query );
-		$page_var = ! empty( $query['inherit'] ) ? 'easyq_page' : 'easyq_page_' . $list_id;
+		$page_var = ! empty( $query['inherit'] ) ? Lists::MAIN_PAGE_VAR : 'easyq_page_' . $list_id;
 		$page     = Lists::requested_page( $page_var );
 		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : Options::get_int( 'lists', 'page_size_users' );
 		$per_page = max( 1, min( User_Query::MAX_PER_PAGE, $per_page ) );

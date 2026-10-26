@@ -58,7 +58,7 @@ final class Query_Resolver {
 	public static function questions( array $query, string $list_id ): array {
 		$args     = self::arguments( $query );
 		$source   = is_string( $args['source'] ?? null ) ? $args['source'] : 'recent';
-		$page_var = ! empty( $query['inherit'] ) ? 'easyq_page' : 'easyq_page_' . $list_id;
+		$page_var = ! empty( $query['inherit'] ) ? Lists::MAIN_PAGE_VAR : 'easyq_page_' . $list_id;
 		$page     = Lists::requested_page( $page_var );
 		$default  = isset( self::ACTIVITY[ $source ] ) ? Options::get_int( 'lists', 'page_size_activity' ) : Options::get_int( 'lists', 'page_size_qs' );
 		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : $default;
