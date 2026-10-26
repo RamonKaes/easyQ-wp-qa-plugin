@@ -168,12 +168,17 @@ theme's template parts.
 | Custom pages (`pages`) | **WP** | WP pages |
 
 **SEO (N):** Canonical URLs, titles via `document_title_parts`, structured data as JSON-LD
-(`QAPage`) instead of microdata, integration into the core sitemaps
-(`wp_sitemaps_add_provider`), `noindex` for empty lists.
+(`QAPage`) instead of microdata, integration into the core sitemaps (provider `easyq`
+with the subtypes `questions`, `tags`, `categories` and, only if `sitemap_users` is
+enabled, `users`), `noindex` for empty lists.
 
-**Navigation (N):** Q&A routes are offered in the link search of the core Navigation
-block through a custom REST search handler (`wp_rest_search_handlers`), so menus are
-built with core blocks only.
+**Navigation (N):** The main Q&A pages are variations of the core Navigation Link block
+(`get_block_type_variations`), e.g. "Q&A: Ask a question", so menus are built with core
+blocks only. The link search of the Navigation block only queries posts, terms and
+media and ignores custom REST search handlers, so a search handler would not show up
+there. The address of a Q&A link is taken from the route when it is rendered
+(`render_block_core/navigation-link`), and the link of the current page is marked like
+core marks pages.
 
 ---
 
@@ -377,6 +382,7 @@ All options are dropped; the block theme and the Site Editor handle layout.
 | `show_fewer_cs_from`, `show_fewer_cs_count`, `show_c_reply_buttons` | **P** |
 | `match_related_qs`, `page_size_related_qs` | **P** as defaults of `easyq/related-questions` |
 | `pages_prev_next` | **P** |
+| `sitemap_users` (new, off by default) | **N** user profiles in the sitemaps (section 3) |
 
 ### 5.7 Settings → Lists (`admin/lists`)
 
@@ -421,7 +427,15 @@ All **P**, each with a minimum level and, where applicable, minimum points (`*_p
 All **P**, implemented with `add_feed()` and RSS 2.0 output:
 `feed_for_questions`, `feed_for_qa`, `feed_for_activity`, `feed_for_hot`,
 `feed_for_unanswered`, `feed_for_tag_qs`, `feed_per_category`, `feed_for_search`,
-`feed_number_items`, `feed_full_text`.
+`feed_number_items`, `feed_full_text`. Defaults as in Q2A.
+
+Addresses: `/{base}/feed/{type}/{argument}` with the types `questions`, `hot`,
+`unanswered`, `answers`, `comments`, `activity`, `qa`, `tag` and `search`; the argument
+is a category path, a tag or search terms. Without pretty permalinks:
+`?feed=easyq&easyq_route=feed&easyq_arg={type}&easyq_section={argument}`. Q&A list pages
+link to their feed (`<link rel="alternate">`). Feeds show only what visitors may see,
+contain no author names, and are not available when visitors may not view the Q&A area.
+WordPress's conditional GET (based on its own posts) is turned off for these feeds.
 
 ### 5.11 Settings → Spam (`admin/spam`)
 
@@ -617,7 +631,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A | Done |
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
-| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories, search, user list, profile pages (profile, questions, answers, activity), account page (profile fields, avatar upload) and activity/answer/comment lists are done. Open: feeds, sitemaps, navigation link search, block patterns, classic theme fallback, screenshot checks with more themes. The wall, favorites and notification settings follow with their features in phase 7 |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | In progress: question lists, question page, forms, tags, categories, search, user list, profile pages (profile, questions, answers, activity), account page (profile fields, avatar upload) and activity/answer/comment lists are done. Feeds, sitemaps and navigation links are done. Open: `noindex` for empty lists, block patterns, classic theme fallback, screenshot checks with more themes. The wall, favorites and notification settings follow with their features in phase 7 |
 | 6 Admin | Section 5 complete | Every Q2A option mapped and tested; E2E tests for admin flows | Open (profile and users screens done in phase 3) |
 | 7 Communication | Emails and templates, notifications, private messages, wall, favorites, updates, newsletter | Mails captured and asserted in tests | Open |
 | 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
@@ -652,3 +666,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 20 | The users list "by points" shows users who took part (as in Q2A); on multisite, users of other sites get a profile only once they took part here | 2026-10-26 |
 | 21 | Uploaded avatars are cropped to a square, stored in the Media Library and replaced or deleted with the user's choice; the avatar is stored per site | 2026-10-26 |
 | 22 | The account page is excluded from search engines; profile sections have their own canonical address | 2026-10-26 |
+| 23 | Q&A pages are added to menus as variations of the core Navigation Link block instead of a REST search handler, which the link search does not query | 2026-10-26 |
+| 24 | User profiles are left out of the sitemaps unless the site owner enables `sitemap_users` (privacy by default; Q2A lists them by default) | 2026-10-26 |
+| 25 | Feeds contain no author names and are not available when visitors may not view the Q&A area | 2026-10-26 |
+| 26 | The rewrite rules are rebuilt whenever they change (hash of the rules), not only when the base slug changes, so updates that add routes work without saving the permalinks | 2026-10-26 |
