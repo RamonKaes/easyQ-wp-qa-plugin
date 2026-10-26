@@ -2,10 +2,19 @@
 	"$schema": "https://schemas.wp.org/trunk/wp-env.json",
 	"core": null,
 	"phpVersion": "8.1",
-	"plugins": [ "." ],
+	"plugins": [
+		"."
+	],
 	"config": {
 		"WP_DEBUG": true,
 		"WP_DEBUG_LOG": true,
 		"SCRIPT_DEBUG": true
+	},
+	"env": {
+		"tests": {
+			"mappings": {
+				"wp-content/mu-plugins/easyq-e2e-limits.php": "./tests/e2e/mu-plugins/easyq-e2e-limits.php"
+			}
+		}
 	}
 }

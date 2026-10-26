@@ -240,6 +240,8 @@ final class UserBlocksTest extends TestCase {
 
 		$html = do_blocks( '<!-- wp:easyq/notices /-->' );
 
-		$this->assertSame( '', $html );
+		// The form shows the error; the notices block stays an empty, hidden router region.
+		$this->assertStringNotContainsString( 'Please check the form.', $html );
+		$this->assertStringContainsString( ' hidden></div>', $html );
 	}
 }

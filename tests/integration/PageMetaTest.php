@@ -8,6 +8,7 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Blocks\Block_Context;
+use EasyQ\Blocks\Lists;
 use EasyQ\Frontend\Page_Meta;
 use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Urls;
@@ -82,6 +83,21 @@ final class PageMetaTest extends TestCase {
 
 		Block_Context::router()->set_current( new Route( 'users' ) );
 		$this->assertArrayNotHasKey( 'noindex', $meta->robots( array() ) );
+	}
+
+	public function test_keeps_empty_lists_out_of_search_engines(): void {
+		$meta = new Page_Meta( Block_Context::router() );
+		Block_Context::router()->set_current( new Route( 'unanswered' ) );
+
+		Lists::store( '1', array(), 0, 1, 20, Lists::MAIN_PAGE_VAR );
+		$this->assertTrue( $meta->robots( array() )['noindex'] );
+
+		Lists::reset();
+		Lists::store( '1', array( 5 ), 1, 1, 20, Lists::MAIN_PAGE_VAR );
+		Lists::store( '2', array(), 0, 1, 20, 'easyq_answers' );
+		$this->assertArrayNotHasKey( 'noindex', $meta->robots( array() ), 'Only the main list counts.' );
+
+		Lists::reset();
 	}
 
 	public function test_prints_the_canonical_address_of_profile_sections(): void {
