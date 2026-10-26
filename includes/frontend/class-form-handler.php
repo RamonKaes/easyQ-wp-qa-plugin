@@ -280,8 +280,10 @@ final class Form_Handler {
 	 * @return string
 	 */
 	private function back_url(): string {
-		$referer = wp_get_referer();
-		$url     = false === $referer ? Routes::url( 'home' ) : $referer;
+		// Not wp_get_referer(): it ignores a referer that equals the current address, and forms
+		// are always sent to the page they are on. The address is checked like a redirect instead.
+		$referer = wp_get_raw_referer();
+		$url     = wp_validate_redirect( false === $referer ? '' : $referer, Routes::url( 'home' ) );
 
 		return remove_query_arg( Flash::QUERY_VAR, $url );
 	}

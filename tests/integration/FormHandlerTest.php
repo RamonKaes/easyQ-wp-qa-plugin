@@ -20,7 +20,7 @@ final class FormHandlerTest extends Rest_TestCase {
 
 	public function tear_down(): void {
 		$_POST = array();
-		unset( $_SERVER['HTTP_REFERER'], $_GET[ Flash::QUERY_VAR ] );
+		unset( $_SERVER['HTTP_REFERER'], $_GET[ Flash::QUERY_VAR ], $_REQUEST['_wp_http_referer'] );
 		parent::tear_down();
 	}
 
@@ -93,6 +93,37 @@ final class FormHandlerTest extends Rest_TestCase {
 		$this->assertSame( 'Short', Flash::value( 'ask', 'title' ) );
 		$this->assertNotSame( '', Flash::error( 'ask', 'title' ) );
 		$this->assertSame( '', Flash::error( 'answer', 'title' ) );
+	}
+
+	public function test_returns_to_the_form_page_after_failures(): void {
+		$this->login();
+		// Forms are sent to the page they are on, so the referer equals the current address.
+		$_SERVER['REQUEST_URI'] = '/questions/ask/';
+
+		$url = $this->submit(
+			'ask',
+			array(
+				'title'   => 'Short',
+				'content' => 'Some text',
+			)
+		);
+
+		$this->assertStringStartsWith( home_url( '/questions/ask/?easyq_notice=' ), $url );
+	}
+
+	public function test_does_not_return_to_other_sites(): void {
+		$this->login();
+		$_REQUEST['_wp_http_referer'] = 'https://attacker.example/phish';
+
+		$url = $this->submit(
+			'ask',
+			array(
+				'title'   => 'Short',
+				'content' => 'Some text',
+			)
+		);
+
+		$this->assertStringNotContainsString( 'attacker.example', $url );
 	}
 
 	public function test_answers_and_votes(): void {
