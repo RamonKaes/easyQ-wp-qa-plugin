@@ -39,12 +39,16 @@ final class Tags {
 		$offset = max( 0, $page - 1 ) * $count;
 
 		if ( '' === $prefix ) {
-			$rows  = DB::get_results( $wpdb->prepare( 'SELECT word, tag_count FROM %i WHERE tag_count > 0 ORDER BY tag_count DESC, word LIMIT %d, %d', $table, $offset, $count ) );
-			$total = DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0', $table ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$rows = DB::rows( $wpdb->get_results( $wpdb->prepare( 'SELECT word, tag_count FROM %i WHERE tag_count > 0 ORDER BY tag_count DESC, word LIMIT %d, %d', $table, $offset, $count ) ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0', $table ) );
 		} else {
-			$like  = $wpdb->esc_like( $prefix ) . '%';
-			$rows  = DB::get_results( $wpdb->prepare( 'SELECT word, tag_count FROM %i WHERE tag_count > 0 AND word LIKE %s ORDER BY tag_count DESC, word LIMIT %d, %d', $table, $like, $offset, $count ) );
-			$total = DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0 AND word LIKE %s', $table, $like ) );
+			$like = $wpdb->esc_like( $prefix ) . '%';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$rows = DB::rows( $wpdb->get_results( $wpdb->prepare( 'SELECT word, tag_count FROM %i WHERE tag_count > 0 AND word LIKE %s ORDER BY tag_count DESC, word LIMIT %d, %d', $table, $like, $offset, $count ) ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$total = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0 AND word LIKE %s', $table, $like ) );
 		}
 
 		$tags = array();

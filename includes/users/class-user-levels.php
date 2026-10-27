@@ -207,6 +207,7 @@ final class User_Levels {
 	 * @return array<int, int> Levels keyed by category ID.
 	 */
 	public function category_levels( int $user_id ): array {
+		$wpdb   = DB::wpdb();
 		$cached = wp_cache_get( $user_id, 'easyq_userlevels' );
 		if ( is_array( $cached ) ) {
 			$levels = array();
@@ -219,12 +220,15 @@ final class User_Levels {
 			return $levels;
 		}
 
-		$rows = DB::get_results(
-			DB::wpdb()->prepare(
-				'SELECT entity_id, level FROM %i WHERE user_id = %d AND entity_type = %s AND level IS NOT NULL',
-				Schema::table( 'userlevels' ),
-				$user_id,
-				self::ENTITY_CATEGORY
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT entity_id, level FROM %i WHERE user_id = %d AND entity_type = %s AND level IS NOT NULL',
+					Schema::table( 'userlevels' ),
+					$user_id,
+					self::ENTITY_CATEGORY
+				)
 			)
 		);
 
@@ -253,19 +257,25 @@ final class User_Levels {
 		$table = Schema::table( 'userlevels' );
 
 		if ( null === $level || ! Levels::is_valid( $level ) ) {
-			DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d AND entity_type = %s AND entity_id = %d', $table, $user_id, self::ENTITY_CATEGORY, $category_id ) );
+			$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d AND entity_type = %s AND entity_id = %d', $table, $user_id, self::ENTITY_CATEGORY, $category_id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		} else {
-			DB::query(
-				$wpdb->prepare(
-					'INSERT INTO %i (user_id, entity_type, entity_id, level) VALUES (%d, %s, %d, %d) ON DUPLICATE KEY UPDATE level = %d',
-					$table,
-					$user_id,
-					self::ENTITY_CATEGORY,
-					$category_id,
-					$level,
-					$level
-				)
+			$sql = $wpdb->prepare(
+				'INSERT INTO %i (user_id, entity_type, entity_id, level) VALUES (%d, %s, %d, %d) ON DUPLICATE KEY UPDATE level = %d',
+				$table,
+				$user_id,
+				self::ENTITY_CATEGORY,
+				$category_id,
+				$level,
+				$level
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		wp_cache_delete( $user_id, 'easyq_userlevels' );
@@ -291,11 +301,17 @@ final class User_Levels {
 	public function special_user_ids(): array {
 		$wpdb = DB::wpdb();
 
-		$assigned = DB::get_int_col(
-			$wpdb->prepare( 'SELECT user_id FROM %i WHERE meta_key = %s AND CAST(meta_value AS UNSIGNED) >= %d', $wpdb->usermeta, Site_Meta::key( self::LEVEL_META ), Levels::EXPERT )
+		$assigned = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col(
+				$wpdb->prepare( 'SELECT user_id FROM %i WHERE meta_key = %s AND CAST(meta_value AS UNSIGNED) >= %d', $wpdb->usermeta, Site_Meta::key( self::LEVEL_META ), Levels::EXPERT )
+			)
 		);
-		$category = DB::get_int_col(
-			$wpdb->prepare( 'SELECT DISTINCT user_id FROM %i WHERE level IS NOT NULL', Schema::table( 'userlevels' ) )
+		$category = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col(
+				$wpdb->prepare( 'SELECT DISTINCT user_id FROM %i WHERE level IS NOT NULL', Schema::table( 'userlevels' ) )
+			)
 		);
 
 		return array_values( array_unique( array_merge( $assigned, $category ) ) );

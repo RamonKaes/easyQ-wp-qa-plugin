@@ -106,6 +106,7 @@ final class Categories {
 	 * @return array<int, Category> Categories keyed by ID.
 	 */
 	public function all(): array {
+		$wpdb   = DB::wpdb();
 		$cached = wp_cache_get( 'all', self::CACHE_GROUP );
 		if ( is_array( $cached ) ) {
 			$categories = array();
@@ -118,8 +119,11 @@ final class Categories {
 			return $categories;
 		}
 
-		$rows = DB::get_results(
-			DB::wpdb()->prepare( 'SELECT * FROM %i ORDER BY parent_id, position', Schema::table( 'categories' ) )
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare( 'SELECT * FROM %i ORDER BY parent_id, position', Schema::table( 'categories' ) )
+			)
 		);
 
 		$categories = array();
@@ -387,6 +391,7 @@ final class Categories {
 	 * @return true|WP_Error
 	 */
 	public function delete( int $id, ?int $reassign_to = null ): bool|WP_Error {
+		$wpdb     = DB::wpdb();
 		$category = $this->find( $id );
 		if ( null === $category ) {
 			return new WP_Error( 'not_found', __( 'The category does not exist.', 'easyq' ) );
@@ -405,7 +410,11 @@ final class Categories {
 
 		$this->set_position( $id, PHP_INT_MAX );
 		Schema::delete_all_meta( 'easyq_category', $id );
-		DB::query( DB::wpdb()->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'categories' ), $id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'categories' ), $id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		$this->forget();
 
 		$targets = null === $reassign_to ? array() : array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $reassign_to ) );
@@ -423,14 +432,23 @@ final class Categories {
 	 * @param int|null $reassign_to Target category ID, or null for no category.
 	 */
 	public function reassign_posts( int $id, ?int $reassign_to ): void {
-		$wpdb     = DB::wpdb();
-		$table    = Schema::table( 'posts' );
-		$post_ids = DB::get_int_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id = %d', $table, $id ) );
+		$wpdb  = DB::wpdb();
+		$table = Schema::table( 'posts' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$post_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id = %d', $table, $id ) ) );
 
 		if ( null === $reassign_to ) {
-			DB::query( $wpdb->prepare( 'UPDATE %i SET category_id = NULL WHERE category_id = %d', $table, $id ) );
+			$sql = $wpdb->prepare( 'UPDATE %i SET category_id = NULL WHERE category_id = %d', $table, $id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		} else {
-			DB::query( $wpdb->prepare( 'UPDATE %i SET category_id = %d WHERE category_id = %d', $table, $reassign_to, $id ) );
+			$sql = $wpdb->prepare( 'UPDATE %i SET category_id = %d WHERE category_id = %d', $table, $reassign_to, $id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		foreach ( $post_ids as $post_id ) {
@@ -451,21 +469,23 @@ final class Categories {
 		$posts      = Schema::table( 'posts' );
 
 		foreach ( array_unique( array_filter( $ids ) ) as $id ) {
-			DB::query(
-				$wpdb->prepare(
-					"UPDATE %i SET question_count = GREATEST((SELECT COUNT(*) FROM %i WHERE category_id = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_1 = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_2 = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_3 = %d AND type = 'Q')) WHERE id = %d",
-					$categories,
-					$posts,
-					$id,
-					$posts,
-					$id,
-					$posts,
-					$id,
-					$posts,
-					$id,
-					$id
-				)
+			$sql = $wpdb->prepare(
+				"UPDATE %i SET question_count = GREATEST((SELECT COUNT(*) FROM %i WHERE category_id = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_1 = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_2 = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_3 = %d AND type = 'Q')) WHERE id = %d",
+				$categories,
+				$posts,
+				$id,
+				$posts,
+				$id,
+				$posts,
+				$id,
+				$posts,
+				$id,
+				$id
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		$this->forget();
@@ -483,17 +503,19 @@ final class Categories {
 		$table = Schema::table( 'categories' );
 
 		foreach ( $ids as $id ) {
-			DB::query(
-				$wpdb->prepare(
-					"UPDATE %i AS x, (SELECT c1.id, CONCAT_WS('/', c1.slug, c2.slug, c3.slug, c4.slug) AS backpath FROM %i AS c1 LEFT JOIN %i AS c2 ON c1.parent_id = c2.id LEFT JOIN %i AS c3 ON c2.parent_id = c3.id LEFT JOIN %i AS c4 ON c3.parent_id = c4.id WHERE c1.id = %d) AS a SET x.backpath = a.backpath WHERE x.id = a.id",
-					$table,
-					$table,
-					$table,
-					$table,
-					$table,
-					$id
-				)
+			$sql = $wpdb->prepare(
+				"UPDATE %i AS x, (SELECT c1.id, CONCAT_WS('/', c1.slug, c2.slug, c3.slug, c4.slug) AS backpath FROM %i AS c1 LEFT JOIN %i AS c2 ON c1.parent_id = c2.id LEFT JOIN %i AS c3 ON c2.parent_id = c3.id LEFT JOIN %i AS c4 ON c3.parent_id = c4.id WHERE c1.id = %d) AS a SET x.backpath = a.backpath WHERE x.id = a.id",
+				$table,
+				$table,
+				$table,
+				$table,
+				$table,
+				$id
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		$this->forget();
@@ -622,7 +644,11 @@ final class Categories {
 		$table = Schema::table( 'categories' );
 
 		foreach ( $ids as $index => $id ) {
-			DB::query( $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', $table, $index + 1, $id ) );
+			$sql = $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', $table, $index + 1, $id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		$this->forget();

@@ -56,12 +56,14 @@ final class Post_Repository {
 	 * @return Post|null
 	 */
 	public function find( int $id ): ?Post {
+		$wpdb   = DB::wpdb();
 		$cached = wp_cache_get( $id, self::CACHE_GROUP );
 		if ( $cached instanceof Post ) {
 			return $cached;
 		}
 
-		$row = DB::get_row( DB::wpdb()->prepare( 'SELECT * FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$row = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) ) );
 		if ( null === $row ) {
 			return null;
 		}
@@ -81,6 +83,7 @@ final class Post_Repository {
 	 * @return array<int, Post> Posts keyed by ID, in ID order.
 	 */
 	public function find_many( array $ids ): array {
+		$wpdb   = DB::wpdb();
 		$ids    = array_values( array_unique( array_map( 'intval', $ids ) ) );
 		$posts  = array();
 		$cached = array() === $ids ? array() : wp_cache_get_multiple( $ids, self::CACHE_GROUP );
@@ -92,10 +95,13 @@ final class Post_Repository {
 
 		$missing = array_values( array_diff( $ids, array_keys( $posts ) ) );
 		if ( array() !== $missing ) {
-			$rows = DB::get_results(
-				DB::wpdb()->prepare(
-					'SELECT * FROM %i WHERE id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
-					array_merge( array( Schema::table( 'posts' ) ), $missing )
+			$rows = DB::rows(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+				$wpdb->get_results(
+					$wpdb->prepare(
+						'SELECT * FROM %i WHERE id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
+						array_merge( array( Schema::table( 'posts' ) ), $missing )
+					)
 				)
 			);
 
@@ -119,9 +125,13 @@ final class Post_Repository {
 	 * @return array<int, Post> Posts keyed by ID, in ID order.
 	 */
 	public function children( int $parent_id ): array {
+		$wpdb = DB::wpdb();
 		if ( ! isset( $this->children[ $parent_id ] ) ) {
-			$rows = DB::get_results(
-				DB::wpdb()->prepare( 'SELECT * FROM %i WHERE parent_id = %d ORDER BY id', Schema::table( 'posts' ), $parent_id )
+			$rows = DB::rows(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+				$wpdb->get_results(
+					$wpdb->prepare( 'SELECT * FROM %i WHERE parent_id = %d ORDER BY id', Schema::table( 'posts' ), $parent_id )
+				)
 			);
 
 			$this->children[ $parent_id ] = $this->to_posts( $rows );
@@ -140,6 +150,7 @@ final class Post_Repository {
 	 * @param int $question_id Question ID.
 	 */
 	public function prime_children( int $question_id ): void {
+		$wpdb       = DB::wpdb();
 		$parent_ids = array_keys( $this->children( $question_id ) );
 
 		// Answers and comments of the question, then the comments below those.
@@ -149,10 +160,13 @@ final class Post_Repository {
 				return;
 			}
 
-			$rows = DB::get_results(
-				DB::wpdb()->prepare(
-					'SELECT * FROM %i WHERE parent_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ') ORDER BY id',
-					array_merge( array( Schema::table( 'posts' ) ), $missing )
+			$rows = DB::rows(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+				$wpdb->get_results(
+					$wpdb->prepare(
+						'SELECT * FROM %i WHERE parent_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ') ORDER BY id',
+						array_merge( array( Schema::table( 'posts' ) ), $missing )
+					)
 				)
 			);
 
@@ -196,10 +210,13 @@ final class Post_Repository {
 		$parent_ids = array_merge( array( $question_id ), array_keys( $this->answers_of( $question_id ) ) );
 		$wpdb       = DB::wpdb();
 
-		$rows = DB::get_results(
-			$wpdb->prepare(
-				'SELECT * FROM %i WHERE parent_id IN (' . implode( ',', array_fill( 0, count( $parent_ids ), '%d' ) ) . ") AND LEFT(type, 1) IN ('C', 'Q') ORDER BY id",
-				array_merge( array( Schema::table( 'posts' ) ), $parent_ids )
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT * FROM %i WHERE parent_id IN (' . implode( ',', array_fill( 0, count( $parent_ids ), '%d' ) ) . ") AND LEFT(type, 1) IN ('C', 'Q') ORDER BY id",
+					array_merge( array( Schema::table( 'posts' ) ), $parent_ids )
+				)
 			)
 		);
 
@@ -314,14 +331,16 @@ final class Post_Repository {
 		$table = Schema::table( 'posts' );
 
 		if ( null !== $question->selected_child_id ) {
-			DB::query(
-				$wpdb->prepare(
-					'UPDATE %i SET updated = NULL, update_type = NULL, last_user_id = NULL, last_ip = NULL WHERE id = %d AND update_type = %s',
-					$table,
-					$question->selected_child_id,
-					Post::UPDATE_SELECTED
-				)
+			$sql = $wpdb->prepare(
+				'UPDATE %i SET updated = NULL, update_type = NULL, last_user_id = NULL, last_ip = NULL WHERE id = %d AND update_type = %s',
+				$table,
+				$question->selected_child_id,
+				Post::UPDATE_SELECTED
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 			$this->forget( $question->selected_child_id );
 		}
 
@@ -344,10 +363,18 @@ final class Post_Repository {
 	public function delete( int $id ): void {
 		$wpdb = DB::wpdb();
 
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', Schema::table( 'uservotes' ), $id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', Schema::table( 'uservotes' ), $id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		Votes::forget();
 		Schema::delete_all_meta( 'easyq_post', $id );
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'posts' ), $id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->forget( $id );
 	}
@@ -361,28 +388,31 @@ final class Post_Repository {
 	 * @param int|null $last_id  Last post ID, or null for a single post.
 	 */
 	public function calc_category_path( int $first_id, ?int $last_id = null ): void {
+		$wpdb       = DB::wpdb();
 		$last_id    = $last_id ?? $first_id;
 		$posts      = Schema::table( 'posts' );
 		$categories = Schema::table( 'categories' );
 
-		DB::query(
-			DB::wpdb()->prepare(
-				'UPDATE %i AS x, (SELECT p.id, '
+		$sql = $wpdb->prepare(
+			'UPDATE %i AS x, (SELECT p.id, '
 				. 'COALESCE(c2.parent_id, c1.parent_id, c0.parent_id, c0.id) AS path_1, '
 				. 'IF(c2.parent_id IS NOT NULL, c1.parent_id, IF(c1.parent_id IS NOT NULL, c0.parent_id, IF(c0.parent_id IS NOT NULL, c0.id, NULL))) AS path_2, '
 				. 'IF(c2.parent_id IS NOT NULL, c0.parent_id, IF(c1.parent_id IS NOT NULL, c0.id, NULL)) AS path_3 '
 				. 'FROM %i AS p LEFT JOIN %i AS c0 ON p.category_id = c0.id LEFT JOIN %i AS c1 ON c0.parent_id = c1.id LEFT JOIN %i AS c2 ON c1.parent_id = c2.id '
 				. 'WHERE p.id BETWEEN %d AND %d) AS a '
 				. 'SET x.category_path_1 = a.path_1, x.category_path_2 = a.path_2, x.category_path_3 = a.path_3 WHERE x.id = a.id',
-				$posts,
-				$posts,
-				$categories,
-				$categories,
-				$categories,
-				$first_id,
-				$last_id
-			)
+			$posts,
+			$posts,
+			$categories,
+			$categories,
+			$categories,
+			$first_id,
+			$last_id
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->forget_range( $first_id, $last_id );
 	}
@@ -400,10 +430,13 @@ final class Post_Repository {
 		}
 
 		$wpdb     = DB::wpdb();
-		$post_ids = DB::get_int_col(
-			$wpdb->prepare(
-				'SELECT id FROM %i WHERE category_id IN (' . implode( ',', array_fill( 0, count( $category_ids ), '%d' ) ) . ')',
-				array_merge( array( Schema::table( 'posts' ) ), $category_ids )
+		$post_ids = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col(
+				$wpdb->prepare(
+					'SELECT id FROM %i WHERE category_id IN (' . implode( ',', array_fill( 0, count( $category_ids ), '%d' ) ) . ')',
+					array_merge( array( Schema::table( 'posts' ) ), $category_ids )
+				)
 			)
 		);
 
@@ -459,18 +492,21 @@ final class Post_Repository {
 	 * @param int $question_id Question ID.
 	 */
 	public function recount_answers( int $question_id ): void {
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'posts' );
 
-		DB::query(
-			DB::wpdb()->prepare(
-				"UPDATE %i AS x, (SELECT COUNT(*) AS answer_count, COALESCE(GREATEST(MAX(net_votes), 0), 0) AS answer_max_votes FROM %i WHERE parent_id = %d AND type = 'A') AS a "
+		$sql = $wpdb->prepare(
+			"UPDATE %i AS x, (SELECT COUNT(*) AS answer_count, COALESCE(GREATEST(MAX(net_votes), 0), 0) AS answer_max_votes FROM %i WHERE parent_id = %d AND type = 'A') AS a "
 				. 'SET x.answer_count = a.answer_count, x.answer_max_votes = a.answer_max_votes WHERE x.id = %d',
-				$table,
-				$table,
-				$question_id,
-				$question_id
-			)
+			$table,
+			$table,
+			$question_id,
+			$question_id
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->forget( $question_id );
 	}
@@ -483,16 +519,19 @@ final class Post_Repository {
 	 * @param int $id Post ID.
 	 */
 	public function recount_votes( int $id ): void {
-		DB::query(
-			DB::wpdb()->prepare(
-				'UPDATE %i AS x, (SELECT COALESCE(SUM(GREATEST(0, vote)), 0) AS upvotes, -COALESCE(SUM(LEAST(0, vote)), 0) AS downvotes FROM %i WHERE post_id = %d) AS a '
+		$wpdb = DB::wpdb();
+		$sql  = $wpdb->prepare(
+			'UPDATE %i AS x, (SELECT COALESCE(SUM(GREATEST(0, vote)), 0) AS upvotes, -COALESCE(SUM(LEAST(0, vote)), 0) AS downvotes FROM %i WHERE post_id = %d) AS a '
 				. 'SET x.upvotes = a.upvotes, x.downvotes = a.downvotes, x.net_votes = a.upvotes - a.downvotes WHERE x.id = %d',
-				Schema::table( 'posts' ),
-				Schema::table( 'uservotes' ),
-				$id,
-				$id
-			)
+			Schema::table( 'posts' ),
+			Schema::table( 'uservotes' ),
+			$id,
+			$id
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->forget( $id );
 	}
@@ -505,15 +544,18 @@ final class Post_Repository {
 	 * @param int $id Post ID.
 	 */
 	public function recount_flags( int $id ): void {
-		DB::query(
-			DB::wpdb()->prepare(
-				'UPDATE %i AS x, (SELECT COUNT(*) AS flag_count FROM %i WHERE post_id = %d AND flag = 1) AS a SET x.flag_count = a.flag_count WHERE x.id = %d',
-				Schema::table( 'posts' ),
-				Schema::table( 'uservotes' ),
-				$id,
-				$id
-			)
+		$wpdb = DB::wpdb();
+		$sql  = $wpdb->prepare(
+			'UPDATE %i AS x, (SELECT COUNT(*) AS flag_count FROM %i WHERE post_id = %d AND flag = 1) AS a SET x.flag_count = a.flag_count WHERE x.id = %d',
+			Schema::table( 'posts' ),
+			Schema::table( 'uservotes' ),
+			$id,
+			$id
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->forget( $id );
 	}
@@ -530,13 +572,13 @@ final class Post_Repository {
 	 * @param int|null $last_id  Last post ID, or null for a single post.
 	 */
 	public function update_hotness( int $first_id, ?int $last_id = null ): void {
+		$wpdb    = DB::wpdb();
 		$last_id = $last_id ?? $first_id;
 		$table   = Schema::table( 'posts' );
 
 		// The multipliers come from Question2Answer and give the factors roughly equal influence.
-		DB::query(
-			DB::wpdb()->prepare(
-				'UPDATE %i AS x, (SELECT parents.id, MAX(parents.created) AS q_created, COALESCE(MAX(children.created), MAX(parents.created)) AS a_created, '
+		$sql = $wpdb->prepare(
+			'UPDATE %i AS x, (SELECT parents.id, MAX(parents.created) AS q_created, COALESCE(MAX(children.created), MAX(parents.created)) AS a_created, '
 				. 'COUNT(children.id) AS answers, MAX(parents.net_votes) AS net_votes, MAX(parents.views) AS views '
 				. "FROM %i AS parents LEFT JOIN %i AS children ON parents.id = children.parent_id AND children.type = 'A' "
 				. 'WHERE parents.id BETWEEN %d AND %d GROUP BY parents.id) AS a SET x.hotness = ('
@@ -544,18 +586,21 @@ final class Post_Repository {
 				. '((TO_DAYS(a.a_created) - 734138) * 86400.0 + TIME_TO_SEC(a.a_created)) * %f + '
 				. '(a.answers + 0.0) * %f + (a.net_votes + 0.0) * %f + (a.views + 0.0) * %f'
 				. ') WHERE x.id = a.id',
-				$table,
-				$table,
-				$table,
-				$first_id,
-				$last_id,
-				Options::get_int( 'lists', 'hot_weight_q_age' ),
-				Options::get_int( 'lists', 'hot_weight_a_age' ),
-				Options::get_int( 'lists', 'hot_weight_answers' ) * 160000,
-				Options::get_int( 'lists', 'hot_weight_votes' ) * 160000,
-				Options::get_int( 'lists', 'hot_weight_views' ) * 4000
-			)
+			$table,
+			$table,
+			$table,
+			$first_id,
+			$last_id,
+			Options::get_int( 'lists', 'hot_weight_q_age' ),
+			Options::get_int( 'lists', 'hot_weight_a_age' ),
+			Options::get_int( 'lists', 'hot_weight_answers' ) * 160000,
+			Options::get_int( 'lists', 'hot_weight_votes' ) * 160000,
+			Options::get_int( 'lists', 'hot_weight_views' ) * 4000
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->forget_range( $first_id, $last_id );
 	}
@@ -568,7 +613,12 @@ final class Post_Repository {
 	 * @param int $id Question ID.
 	 */
 	public function increment_views( int $id ): void {
-		DB::query( DB::wpdb()->prepare( 'UPDATE %i SET views = views + 1 WHERE id = %d', Schema::table( 'posts' ), $id ) );
+		$wpdb = DB::wpdb();
+		$sql  = $wpdb->prepare( 'UPDATE %i SET views = views + 1 WHERE id = %d', Schema::table( 'posts' ), $id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		$this->forget( $id );
 	}
 

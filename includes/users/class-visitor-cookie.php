@@ -42,12 +42,14 @@ final class Visitor_Cookie {
 	 * @return int|null Null if the visitor has no valid cookie.
 	 */
 	public static function current(): ?int {
+		$wpdb  = DB::wpdb();
 		$value = isset( $_COOKIE[ self::NAME ] ) && is_string( $_COOKIE[ self::NAME ] ) ? sanitize_text_field( wp_unslash( $_COOKIE[ self::NAME ] ) ) : '';
 		if ( ! ctype_digit( $value ) ) {
 			return null;
 		}
 
-		$exists = DB::get_var( DB::wpdb()->prepare( 'SELECT id FROM %i WHERE id = %d', Schema::table( 'cookies' ), $value ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM %i WHERE id = %d', Schema::table( 'cookies' ), $value ) );
 
 		return null === $exists ? null : (int) $value;
 	}

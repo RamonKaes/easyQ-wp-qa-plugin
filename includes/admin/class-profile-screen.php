@@ -375,7 +375,8 @@ final class Profile_Screen {
 	private function bonus( int $user_id ): int {
 		$wpdb = \EasyQ\Database\DB::wpdb();
 
-		return \EasyQ\Database\DB::get_int(
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return (int) $wpdb->get_var(
 			$wpdb->prepare( 'SELECT bonus FROM %i WHERE user_id = %d', \EasyQ\Database\Schema::table( 'userpoints' ), $user_id )
 		);
 	}

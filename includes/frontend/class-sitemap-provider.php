@@ -127,10 +127,12 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 
 		$wpdb  = DB::wpdb();
 		$total = match ( $object_subtype ) {
-			'questions'  => DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE type = %s', Schema::table( 'posts' ), Post::QUESTION ) ),
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			'questions'  => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE type = %s', Schema::table( 'posts' ), Post::QUESTION ) ),
 			'tags'       => ( new Tags() )->popular( '', 1, 1 )['total'],
 			'categories' => count( Services::categories()->all() ),
-			'users'      => DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			'users'      => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
 			default      => 0,
 		};
 
@@ -147,7 +149,9 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	 * @return array<int, array<string, string>>
 	 */
 	private function questions( int $offset, int $limit ): array {
-		$ids   = DB::get_int_col( DB::wpdb()->prepare( 'SELECT id FROM %i WHERE type = %s ORDER BY created, id LIMIT %d, %d', Schema::table( 'posts' ), Post::QUESTION, $offset, $limit ) );
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$ids   = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE type = %s ORDER BY created, id LIMIT %d, %d', Schema::table( 'posts' ), Post::QUESTION, $offset, $limit ) ) );
 		$posts = Services::posts()->find_many( $ids );
 
 		$entries = array();
@@ -212,7 +216,9 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	 * @return array<int, array<string, string>>
 	 */
 	private function users( int $offset, int $limit ): array {
-		$ids = DB::get_int_col( DB::wpdb()->prepare( 'SELECT user_id FROM %i ORDER BY user_id LIMIT %d, %d', Schema::table( 'userpoints' ), $offset, $limit ) );
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT user_id FROM %i ORDER BY user_id LIMIT %d, %d', Schema::table( 'userpoints' ), $offset, $limit ) ) );
 		cache_users( $ids );
 
 		$entries = array();

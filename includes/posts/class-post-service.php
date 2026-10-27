@@ -1099,16 +1099,22 @@ final class Post_Service {
 
 		$wpdb = DB::wpdb();
 
-		DB::query(
-			$wpdb->prepare(
-				'UPDATE %i SET user_id = %d, last_user_id = IF(updated IS NULL, last_user_id, COALESCE(last_user_id, %d)) WHERE id = %d',
-				Schema::table( 'posts' ),
-				$actor->user_id,
-				$actor->user_id,
-				$post->id
-			)
+		$sql = $wpdb->prepare(
+			'UPDATE %i SET user_id = %d, last_user_id = IF(updated IS NULL, last_user_id, COALESCE(last_user_id, %d)) WHERE id = %d',
+			Schema::table( 'posts' ),
+			$actor->user_id,
+			$actor->user_id,
+			$post->id
 		);
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post->id, $actor->user_id ) );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post->id, $actor->user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		Votes::forget();
 
 		$this->posts->forget( $post->id );
@@ -1384,8 +1390,12 @@ final class Post_Service {
 	 * @return array<int, int> Votes keyed by user ID.
 	 */
 	private function voters( int $post_id ): array {
-		$rows = DB::get_results(
-			DB::wpdb()->prepare( 'SELECT user_id, vote FROM %i WHERE post_id = %d AND vote != 0', Schema::table( 'uservotes' ), $post_id )
+		$wpdb = DB::wpdb();
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare( 'SELECT user_id, vote FROM %i WHERE post_id = %d AND vote != 0', Schema::table( 'uservotes' ), $post_id )
+			)
 		);
 
 		$votes = array();

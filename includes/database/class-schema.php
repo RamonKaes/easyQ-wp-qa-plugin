@@ -402,7 +402,11 @@ KEY meta_key (meta_key(191))";
 	public static function delete_all_meta( string $meta_type, int $object_id ): void {
 		$wpdb = DB::wpdb();
 
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE %i = %d', $wpdb->prefix . $meta_type . 'meta', $meta_type . '_id', $object_id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE %i = %d', $wpdb->prefix . $meta_type . 'meta', $meta_type . '_id', $object_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		wp_cache_delete( $object_id, $meta_type . '_meta' );
 	}
 

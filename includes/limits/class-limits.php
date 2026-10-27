@@ -217,13 +217,19 @@ final class Limits {
 
 		[ $user_setting, $ip_setting ] = self::SETTINGS[ $action ];
 
-		$period    = self::period();
-		$wpdb      = DB::wpdb();
-		$remaining = array( Options::get_int( 'spam', $ip_setting ) - $this->used( $wpdb->prepare( 'SELECT period, count FROM %i WHERE ip = %s AND action = %s', Schema::table( 'iplimits' ), (string) $actor->stored_ip(), $action ), $period ) );
+		$period = self::period();
+		$wpdb   = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$ip_row    = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT period, count FROM %i WHERE ip = %s AND action = %s', Schema::table( 'iplimits' ), (string) $actor->stored_ip(), $action ) ) );
+		$remaining = array( Options::get_int( 'spam', $ip_setting ) - $this->used( $ip_row, $period ) );
 
 		if ( null !== $user_setting ) {
-			$user_used   = null === $actor->user_id ? 0 : $this->used( $wpdb->prepare( 'SELECT period, count FROM %i WHERE user_id = %d AND action = %s', Schema::table( 'userlimits' ), $actor->user_id, $action ), $period );
-			$remaining[] = Options::get_int( 'spam', $user_setting ) - $user_used;
+			$user_row = null;
+			if ( null !== $actor->user_id ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+				$user_row = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT period, count FROM %i WHERE user_id = %d AND action = %s', Schema::table( 'userlimits' ), $actor->user_id, $action ) ) );
+			}
+			$remaining[] = Options::get_int( 'spam', $user_setting ) - $this->used( $user_row, $period );
 		}
 
 		return max( 0, min( $remaining ) );
@@ -242,32 +248,36 @@ final class Limits {
 		$wpdb   = DB::wpdb();
 
 		if ( null !== $actor->user_id ) {
-			DB::query(
-				$wpdb->prepare(
-					'INSERT INTO %i (user_id, action, period, count) VALUES (%d, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
-					Schema::table( 'userlimits' ),
-					$actor->user_id,
-					$action,
-					$period,
-					$period,
-					$period
-				)
+			$sql = $wpdb->prepare(
+				'INSERT INTO %i (user_id, action, period, count) VALUES (%d, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
+				Schema::table( 'userlimits' ),
+				$actor->user_id,
+				$action,
+				$period,
+				$period,
+				$period
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		$ip = $actor->stored_ip();
 		if ( null !== $ip ) {
-			DB::query(
-				$wpdb->prepare(
-					'INSERT INTO %i (ip, action, period, count) VALUES (%s, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
-					Schema::table( 'iplimits' ),
-					$ip,
-					$action,
-					$period,
-					$period,
-					$period
-				)
+			$sql = $wpdb->prepare(
+				'INSERT INTO %i (ip, action, period, count) VALUES (%s, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
+				Schema::table( 'iplimits' ),
+				$ip,
+				$action,
+				$period,
+				$period,
+				$period
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 	}
 
@@ -299,13 +309,11 @@ final class Limits {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|null $sql    Prepared query for the period and count columns.
+	 * @param object|null $row    Row with the period and count columns.
 	 * @param int         $period Current period.
 	 * @return int
 	 */
-	private function used( ?string $sql, int $period ): int {
-		$row = DB::get_row( $sql );
-
+	private function used( ?object $row, int $period ): int {
 		return null !== $row && Row::int( $row, 'period' ) === $period ? Row::int( $row, 'count' ) : 0;
 	}
 }

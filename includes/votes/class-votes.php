@@ -141,10 +141,13 @@ final class Votes {
 		}
 
 		$wpdb = DB::wpdb();
-		$rows = DB::get_results(
-			$wpdb->prepare(
-				'SELECT post_id, vote, flag FROM %i WHERE user_id = %d AND post_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
-				array_merge( array( Schema::table( 'uservotes' ), $user_id ), $missing )
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT post_id, vote, flag FROM %i WHERE user_id = %d AND post_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
+					array_merge( array( Schema::table( 'uservotes' ), $user_id ), $missing )
+				)
 			)
 		);
 		foreach ( $rows as $row ) {
@@ -195,6 +198,7 @@ final class Votes {
 	 * @return true|WP_Error
 	 */
 	public function vote( Actor $actor, Post $post, int $vote ): bool|WP_Error {
+		$wpdb = DB::wpdb();
 		if ( null === $actor->user_id ) {
 			return new WP_Error( 'login_required', __( 'Please log in to vote.', 'easyq' ) );
 		}
@@ -211,18 +215,20 @@ final class Votes {
 		}
 
 		$now = DB::now();
-		DB::query(
-			DB::wpdb()->prepare(
-				'INSERT INTO %i (post_id, user_id, vote, flag, vote_created) VALUES (%d, %d, %d, 0, %s) ON DUPLICATE KEY UPDATE vote = %d, vote_updated = %s',
-				Schema::table( 'uservotes' ),
-				$post->id,
-				$actor->user_id,
-				$vote,
-				$now,
-				$vote,
-				$now
-			)
+		$sql = $wpdb->prepare(
+			'INSERT INTO %i (post_id, user_id, vote, flag, vote_created) VALUES (%d, %d, %d, 0, %s) ON DUPLICATE KEY UPDATE vote = %d, vote_updated = %s',
+			Schema::table( 'uservotes' ),
+			$post->id,
+			$actor->user_id,
+			$vote,
+			$now,
+			$vote,
+			$now
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		self::forget();
 
 		$this->posts->recount_votes( $post->id );
@@ -355,7 +361,12 @@ final class Votes {
 	 * @param Post  $post  Post.
 	 */
 	public function clear_flags( Actor $actor, Post $post ): void {
-		DB::query( DB::wpdb()->prepare( 'UPDATE %i SET flag = 0 WHERE post_id = %d', Schema::table( 'uservotes' ), $post->id ) );
+		$wpdb = DB::wpdb();
+		$sql  = $wpdb->prepare( 'UPDATE %i SET flag = 0 WHERE post_id = %d', Schema::table( 'uservotes' ), $post->id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		self::forget();
 		$this->posts->recount_flags( $post->id );
 		Counts::invalidate( Counts::FLAGGED );
@@ -380,16 +391,19 @@ final class Votes {
 	 * @param bool $flag    Whether the post is flagged.
 	 */
 	private function set_flag( int $post_id, int $user_id, bool $flag ): void {
-		DB::query(
-			DB::wpdb()->prepare(
-				'INSERT INTO %i (post_id, user_id, vote, flag) VALUES (%d, %d, 0, %d) ON DUPLICATE KEY UPDATE flag = %d',
-				Schema::table( 'uservotes' ),
-				$post_id,
-				$user_id,
-				(int) $flag,
-				(int) $flag
-			)
+		$wpdb = DB::wpdb();
+		$sql  = $wpdb->prepare(
+			'INSERT INTO %i (post_id, user_id, vote, flag) VALUES (%d, %d, 0, %d) ON DUPLICATE KEY UPDATE flag = %d',
+			Schema::table( 'uservotes' ),
+			$post_id,
+			$user_id,
+			(int) $flag,
+			(int) $flag
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		self::forget();
 	}
 

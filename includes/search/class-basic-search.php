@@ -48,15 +48,6 @@ final class Basic_Search implements Search_Provider {
 	public const MAX_WORD_LENGTH = 80;
 
 	/**
-	 * Marks where the union of match queries goes in the search query.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @var string
-	 */
-	private const UNION_MARKER = '/*easyq-union*/';
-
-	/**
 	 * Highest stored count of a word within one post.
 	 *
 	 * @since 0.1.0
@@ -112,37 +103,49 @@ final class Basic_Search implements Search_Provider {
 		$wpdb = DB::wpdb();
 
 		foreach ( $title_ids as $word_id ) {
-			DB::query( $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'titlewords' ), $post->post_id, $word_id ) );
+			$sql = $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'titlewords' ), $post->post_id, $word_id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		foreach ( $content_ids as $word_id => $count ) {
-			DB::query(
-				$wpdb->prepare(
-					'INSERT IGNORE INTO %i (post_id, word_id, count, type, question_id) VALUES (%d, %d, %d, %s, %d)',
-					Schema::table( 'contentwords' ),
-					$post->post_id,
-					$word_id,
-					$count,
-					substr( $post->type, 0, 1 ),
-					$post->question_id
-				)
+			$sql = $wpdb->prepare(
+				'INSERT IGNORE INTO %i (post_id, word_id, count, type, question_id) VALUES (%d, %d, %d, %s, %d)',
+				Schema::table( 'contentwords' ),
+				$post->post_id,
+				$word_id,
+				$count,
+				substr( $post->type, 0, 1 ),
+				$post->question_id
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		foreach ( $tag_ids as $word_id ) {
-			DB::query( $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'tagwords' ), $post->post_id, $word_id ) );
+			$sql = $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'tagwords' ), $post->post_id, $word_id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		foreach ( $whole_ids as $word_id ) {
-			DB::query(
-				$wpdb->prepare(
-					'INSERT IGNORE INTO %i (post_id, word_id, post_created) SELECT id, %d, created FROM %i WHERE id = %d',
-					Schema::table( 'posttags' ),
-					$word_id,
-					Schema::table( 'posts' ),
-					$post->post_id
-				)
+			$sql = $wpdb->prepare(
+				'INSERT IGNORE INTO %i (post_id, word_id, post_created) SELECT id, %d, created FROM %i WHERE id = %d',
+				Schema::table( 'posttags' ),
+				$word_id,
+				Schema::table( 'posts' ),
+				$post->post_id
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		$this->recount( 'titlewords', 'title_count', $title_ids );
@@ -168,11 +171,16 @@ final class Basic_Search implements Search_Provider {
 		);
 
 		foreach ( $indexes as $index => $count_column ) {
-			$table    = Schema::table( $index );
-			$word_ids = DB::get_int_col( $wpdb->prepare( 'SELECT word_id FROM %i WHERE post_id = %d', $table, $post_id ) );
+			$table = Schema::table( $index );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$word_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT word_id FROM %i WHERE post_id = %d', $table, $post_id ) ) );
 
 			if ( array() !== $word_ids ) {
-				DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', $table, $post_id ) );
+				$sql = $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', $table, $post_id );
+				if ( null !== $sql ) {
+					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+					$wpdb->query( $sql );
+				}
 				$this->recount( $index, $count_column, $word_ids );
 			}
 		}
@@ -208,60 +216,54 @@ final class Basic_Search implements Search_Provider {
 		$posts       = Schema::table( 'posts' );
 		$words_table = Schema::table( 'words' );
 		$parts       = array();
+		$params      = array();
 
 		if ( array() !== $words ) {
+			$word_list = implode( ',', array_fill( 0, count( $words ), '%s' ) );
+
 			// Title matches; duplicate words in a title count once.
-			$parts[] = $wpdb->prepare(
-				"(SELECT t.post_id AS question_id, LOG(%d / w.title_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . implode( ',', array_fill( 0, count( $words ), '%s' ) ) . ') AND w.title_count < %d)',
-				array_merge( array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'titlewords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) )
-			);
+			$parts[] = "(SELECT t.post_id AS question_id, LOG(%d / w.title_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . $word_list . ') AND w.title_count < %d)';
+			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'titlewords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) );
 
 			// Content matches: repeated words add less and less weight; answers count half, comments and notes a quarter.
-			$parts[] = $wpdb->prepare(
-				"(SELECT c.question_id, (1 - 1 / (1 + c.count)) * LOG(%d / w.content_count) * (CASE c.type WHEN 'Q' THEN 1.0 WHEN 'A' THEN 0.5 ELSE 0.25 END) AS score, c.type AS match_type, c.post_id AS match_post_id FROM %i AS c JOIN %i AS w ON c.word_id = w.id WHERE w.word IN (" . implode( ',', array_fill( 0, count( $words ), '%s' ) ) . ') AND w.content_count < %d)',
-				array_merge( array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'contentwords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) )
-			);
+			$parts[] = "(SELECT c.question_id, (1 - 1 / (1 + c.count)) * LOG(%d / w.content_count) * (CASE c.type WHEN 'Q' THEN 1.0 WHEN 'A' THEN 0.5 ELSE 0.25 END) AS score, c.type AS match_type, c.post_id AS match_post_id FROM %i AS c JOIN %i AS w ON c.word_id = w.id WHERE w.word IN (" . $word_list . ') AND w.content_count < %d)';
+			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'contentwords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) );
 
 			// Tag word matches count like two title matches, since tags express intent.
-			$parts[] = $wpdb->prepare(
-				"(SELECT t.post_id AS question_id, 2 * LOG(%d / w.tagword_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . implode( ',', array_fill( 0, count( $words ), '%s' ) ) . ') AND w.tagword_count < %d)',
-				array_merge( array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'tagwords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) )
-			);
+			$parts[] = "(SELECT t.post_id AS question_id, 2 * LOG(%d / w.tagword_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . $word_list . ') AND w.tagword_count < %d)';
+			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'tagwords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) );
 		}
 
 		// Questions by users whose public name is in the query, or is the whole query.
 		$author_ids = $this->author_ids( $words, trim( $query ) );
 		if ( array() !== $author_ids ) {
-			$parts[] = $wpdb->prepare(
-				"(SELECT p.id AS question_id, LOG(%d / GREATEST(u.questions, 1)) AS score, 'Q' AS match_type, p.id AS match_post_id FROM %i AS p JOIN %i AS u ON p.user_id = u.user_id WHERE p.user_id IN (" . implode( ',', array_fill( 0, count( $author_ids ), '%d' ) ) . ") AND p.type = 'Q')",
-				array_merge( array( self::IGNORED_WORDS_FREQUENCY, $posts, Schema::table( 'userpoints' ) ), $author_ids )
-			);
+			$parts[] = "(SELECT p.id AS question_id, LOG(%d / GREATEST(u.questions, 1)) AS score, 'Q' AS match_type, p.id AS match_post_id FROM %i AS p JOIN %i AS u ON p.user_id = u.user_id WHERE p.user_id IN (" . implode( ',', array_fill( 0, count( $author_ids ), '%d' ) ) . ") AND p.type = 'Q')";
+			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, $posts, Schema::table( 'userpoints' ) ), $author_ids );
 		}
 
-		$parts = array_filter( $parts, 'is_string' );
 		if ( array() === $parts ) {
 			return array();
 		}
 
 		// The hottest question gets a bonus equal to a unique tag match, the least hot none.
-		$hotness = DB::get_row( $wpdb->prepare( "SELECT MIN(hotness) AS min_hotness, MAX(hotness) AS max_hotness FROM %i WHERE type = 'Q'", $posts ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$hotness = DB::row( $wpdb->get_row( $wpdb->prepare( "SELECT MIN(hotness) AS min_hotness, MAX(hotness) AS max_hotness FROM %i WHERE type = 'Q'", $posts ) ) );
 		$min     = null === $hotness ? 0.0 : (float) Row::nullable_float( $hotness, 'min_hotness' );
 		$range   = ( null === $hotness ? 0.0 : (float) Row::nullable_float( $hotness, 'max_hotness' ) ) - $min;
 
-		$union = implode( ' UNION ALL ', $parts );
-		// The union consists of prepared statements; it is inserted after preparing the outer query.
-		$sql  = $wpdb->prepare(
-			"SELECT x.question_id, SUM(x.score) + IF(%f > 0, 2 * LOG(%d) * (COALESCE(MAX(p.hotness), %f) - %f) / %f, 0) + LOG(x.question_id) / 1000000 AS score, GROUP_CONCAT(CONCAT_WS(':', x.match_type, x.match_post_id, ROUND(x.score, 3))) AS match_parts FROM (/*easyq-union*/) AS x JOIN %i AS p ON p.id = x.question_id WHERE p.type = 'Q' GROUP BY x.question_id ORDER BY score DESC LIMIT %d, %d",
-			$range,
-			self::IGNORED_WORDS_FREQUENCY,
-			$min,
-			$min,
-			$range > 0 ? $range : 1,
-			$posts,
-			max( 0, $start ),
-			max( 0, $count )
+		$params = array_merge(
+			array( $range, self::IGNORED_WORDS_FREQUENCY, $min, $min, $range > 0 ? $range : 1 ),
+			$params,
+			array( $posts, max( 0, $start ), max( 0, $count ) )
 		);
-		$rows = null === $sql ? array() : DB::get_results( str_replace( self::UNION_MARKER, $union, $sql ) );
+
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The union consists of fixed SQL with placeholders; the values are passed as an array.
+				$wpdb->prepare( "SELECT x.question_id, SUM(x.score) + IF(%f > 0, 2 * LOG(%d) * (COALESCE(MAX(p.hotness), %f) - %f) / %f, 0) + LOG(x.question_id) / 1000000 AS score, GROUP_CONCAT(CONCAT_WS(':', x.match_type, x.match_post_id, ROUND(x.score, 3))) AS match_parts FROM (" . implode( ' UNION ALL ', $parts ) . ") AS x JOIN %i AS p ON p.id = x.question_id WHERE p.type = 'Q' GROUP BY x.question_id ORDER BY score DESC LIMIT %d, %d", $params )
+			)
+		);
 
 		$results = array();
 		foreach ( $rows as $row ) {
@@ -315,19 +317,24 @@ final class Basic_Search implements Search_Provider {
 
 		if ( $create ) {
 			// The unique key on the word column makes concurrent inserts safe.
-			DB::query(
-				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- One (%s) group per word.
-				$wpdb->prepare(
-					'INSERT IGNORE INTO %i (word) VALUES ' . implode( ',', array_fill( 0, count( $words ), '(%s)' ) ),
-					array_merge( array( $table ), $words )
-				)
+			// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- One (%s) group per word.
+			$sql = $wpdb->prepare(
+				'INSERT IGNORE INTO %i (word) VALUES ' . implode( ',', array_fill( 0, count( $words ), '(%s)' ) ),
+				array_merge( array( $table ), $words )
 			);
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
-		$rows = DB::get_results(
-			$wpdb->prepare(
-				'SELECT id, word FROM %i WHERE word IN (' . implode( ',', array_fill( 0, count( $words ), '%s' ) ) . ')',
-				array_merge( array( $table ), $words )
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT id, word FROM %i WHERE word IN (' . implode( ',', array_fill( 0, count( $words ), '%s' ) ) . ')',
+					array_merge( array( $table ), $words )
+				)
 			)
 		);
 
@@ -368,12 +375,14 @@ final class Basic_Search implements Search_Provider {
 
 		$wpdb = DB::wpdb();
 
-		DB::query(
-			$wpdb->prepare(
-				'UPDATE %i AS x, (SELECT w.id, COUNT(i.word_id) AS total FROM %i AS w LEFT JOIN %i AS i ON i.word_id = w.id WHERE w.id IN (' . implode( ',', array_fill( 0, count( $word_ids ), '%d' ) ) . ') GROUP BY w.id) AS a SET x.%i = a.total WHERE x.id = a.id',
-				array_merge( array( Schema::table( 'words' ), Schema::table( 'words' ), Schema::table( $index ) ), $word_ids, array( $count_column ) )
-			)
+		$sql = $wpdb->prepare(
+			'UPDATE %i AS x, (SELECT w.id, COUNT(i.word_id) AS total FROM %i AS w LEFT JOIN %i AS i ON i.word_id = w.id WHERE w.id IN (' . implode( ',', array_fill( 0, count( $word_ids ), '%d' ) ) . ') GROUP BY w.id) AS a SET x.%i = a.total WHERE x.id = a.id',
+			array_merge( array( Schema::table( 'words' ), Schema::table( 'words' ), Schema::table( $index ) ), $word_ids, array( $count_column ) )
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 	}
 
 	/**
@@ -393,10 +402,13 @@ final class Basic_Search implements Search_Provider {
 
 		$wpdb = DB::wpdb();
 
-		return DB::get_int_col(
-			$wpdb->prepare(
-				'SELECT ID FROM %i WHERE display_name IN (' . implode( ',', array_fill( 0, count( $names ), '%s' ) ) . ') OR user_nicename IN (' . implode( ',', array_fill( 0, count( $names ), '%s' ) ) . ')',
-				array_merge( array( $wpdb->users ), $names, $names )
+		return DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col(
+				$wpdb->prepare(
+					'SELECT ID FROM %i WHERE display_name IN (' . implode( ',', array_fill( 0, count( $names ), '%s' ) ) . ') OR user_nicename IN (' . implode( ',', array_fill( 0, count( $names ), '%s' ) ) . ')',
+					array_merge( array( $wpdb->users ), $names, $names )
+				)
 			)
 		);
 	}

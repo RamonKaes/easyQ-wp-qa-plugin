@@ -149,7 +149,8 @@ final class Question_Query {
 				);
 			}
 
-			$where[]  = 'p.' . $column . ' = %d';
+			$where[]  = 'p.%i = %d';
+			$params[] = $column;
 			$params[] = $category_id;
 		}
 
@@ -178,12 +179,16 @@ final class Question_Query {
 		$order      = self::ORDERS[ $source ] ?? self::ORDERS['recent'];
 
 		// The conditions and the order consist of fixed SQL with placeholders for the values.
-		$ids = DB::get_int_col(
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-			$wpdb->prepare( 'SELECT p.id FROM %i AS p WHERE ' . $conditions . ' ORDER BY ' . $order . ' LIMIT %d, %d', array_merge( $params, array( ( $page - 1 ) * $per_page, $per_page ) ) )
+		$ids = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col(
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
+				$wpdb->prepare( 'SELECT p.id FROM %i AS p WHERE ' . $conditions . ' ORDER BY ' . $order . ' LIMIT %d, %d', array_merge( $params, array( ( $page - 1 ) * $per_page, $per_page ) ) )
+			)
 		);
 
-		$total = DB::get_int(
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$total = (int) $wpdb->get_var(
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
 			$wpdb->prepare( 'SELECT COUNT(*) FROM %i AS p WHERE ' . $conditions, $params )
 		);

@@ -152,17 +152,7 @@ final class Activity_Query {
 	 * @return list<Activity_Item>
 	 */
 	private function select( string $kind, array $filters, int $offset, int $limit ): array {
-		$query = $this->query( $kind, $filters );
-		if ( null === $query ) {
-			return array();
-		}
-
-		[ $sql, $params ] = $query;
-
-		$rows = DB::get_results(
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-			DB::wpdb()->prepare( $sql . ' ORDER BY time DESC, post_id DESC LIMIT %d, %d', array_merge( $params, array( $offset, $limit ) ) )
-		);
+		$rows = $this->run( $kind, $filters, array( $offset, $limit ) );
 
 		$items = array();
 		foreach ( $rows as $row ) {
@@ -189,30 +179,25 @@ final class Activity_Query {
 	 * @return int
 	 */
 	private function count( string $kind, array $filters ): int {
-		$query = $this->query( $kind, $filters );
-		if ( null === $query ) {
-			return 0;
-		}
+		$rows = $this->run( $kind, $filters, null );
 
-		[ $sql, $params ] = $query;
-
-		return DB::get_int(
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-			DB::wpdb()->prepare( 'SELECT COUNT(*) FROM (' . $sql . ') AS activity', $params )
-		);
+		return array() === $rows ? 0 : Row::int( $rows[0], 'total' );
 	}
 
 	/**
-	 * Builds the query of one kind of activity. Only visible posts of visible questions are included.
+	 * Runs the query of one kind of activity. Only visible posts of visible questions are included.
+	 *
+	 * The statement is built and run in this method, so every part of it is visibly fixed SQL.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param string               $kind    Kind of activity, see KINDS.
 	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
-	 * @return array{0: string, 1: array<int, int|string>}|null SQL with placeholders and its values, or null if nothing can match.
-	 * @phpstan-return array{0: literal-string, 1: array<int, int|string>}|null
+	 * @param int[]|null           $page    Offset and number of rows, or null to count the rows instead.
+	 * @return object[] Activity rows, or one row with the `total` column when counting.
 	 */
-	private function query( string $kind, array $filters ): ?array {
+	private function run( string $kind, array $filters, ?array $page ): array {
+		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 
 		[ $select, $params ] = match ( $kind ) {
@@ -238,10 +223,11 @@ final class Activity_Query {
 		if ( null !== $category_id ) {
 			$column = Question_Query::category_column( $this->categories, $category_id );
 			if ( null === $column ) {
-				return null;
+				return array();
 			}
 
-			$select  .= ' AND p.' . $column . ' = %d';
+			$select  .= ' AND p.%i = %d';
+			$params[] = $column;
 			$params[] = $category_id;
 		}
 
@@ -251,7 +237,20 @@ final class Activity_Query {
 			$params[] = $user_id;
 		}
 
-		return array( $select, $params );
+		if ( null === $page ) {
+			$sql = 'SELECT COUNT(*) AS total FROM (' . $select . ') AS activity';
+		} else {
+			$sql    = $select . ' ORDER BY time DESC, post_id DESC LIMIT %d, %d';
+			$params = array_merge( $params, $page );
+		}
+
+		return DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Fixed SQL with placeholders, built above; the values are passed as an array.
+				$wpdb->prepare( $sql, $params )
+			)
+		);
 	}
 
 	/**

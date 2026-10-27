@@ -90,12 +90,14 @@ final class User_Query {
 	 * @return bool
 	 */
 	public function is_member( WP_User $user ): bool {
+		$wpdb = DB::wpdb();
 		if ( ! is_multisite() || is_user_member_of_blog( $user->ID ) ) {
 			return true;
 		}
 
-		return null !== DB::get_var(
-			DB::wpdb()->prepare( 'SELECT user_id FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user->ID )
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return null !== $wpdb->get_var(
+			$wpdb->prepare( 'SELECT user_id FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user->ID )
 		);
 	}
 
@@ -113,8 +115,10 @@ final class User_Query {
 		$table = Schema::table( 'userpoints' );
 
 		return array(
-			'ids'   => DB::get_int_col( $wpdb->prepare( 'SELECT user_id FROM %i ORDER BY points DESC, user_id ASC LIMIT %d, %d', $table, $offset, $limit ) ),
-			'total' => DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ),
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			'ids'   => DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT user_id FROM %i ORDER BY points DESC, user_id ASC LIMIT %d, %d', $table, $offset, $limit ) ) ),
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			'total' => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ),
 		);
 	}
 

@@ -207,25 +207,67 @@ final class User_Events {
 		$votes = Schema::table( 'uservotes' );
 
 		// Posts the user voted on or flagged need their counts updated afterwards.
-		$voted_ids = DB::get_int_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) );
-		$own_ids   = DB::get_int_col( $wpdb->prepare( 'SELECT id FROM %i WHERE user_id = %d', $posts, $user_id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$voted_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$own_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE user_id = %d', $posts, $user_id ) ) );
 
 		if ( null !== $reassign && $reassign > 0 ) {
-			DB::query( $wpdb->prepare( 'UPDATE %i SET user_id = %d WHERE user_id = %d', $posts, $reassign, $user_id ) );
+			$sql = $wpdb->prepare( 'UPDATE %i SET user_id = %d WHERE user_id = %d', $posts, $reassign, $user_id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		} else {
-			DB::query( $wpdb->prepare( 'UPDATE %i SET user_id = NULL WHERE user_id = %d', $posts, $user_id ) );
+			$sql = $wpdb->prepare( 'UPDATE %i SET user_id = NULL WHERE user_id = %d', $posts, $user_id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
-		DB::query( $wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', $posts, $user_id ) );
+		$sql = $wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', $posts, $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		Votes::forget();
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		$this->points->forget( $user_id );
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlevels' ), $user_id ) );
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlimits' ), $user_id ) );
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userevents' ), $user_id ) );
-		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'usernotices' ), $user_id ) );
-		DB::query( $wpdb->prepare( "DELETE FROM %i WHERE user_id = %d OR (entity_type = 'U' AND entity_id = %d)", Schema::table( 'userfavorites' ), $user_id, $user_id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlevels' ), $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlimits' ), $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userevents' ), $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'usernotices' ), $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$sql = $wpdb->prepare( "DELETE FROM %i WHERE user_id = %d OR (entity_type = 'U' AND entity_id = %d)", Schema::table( 'userfavorites' ), $user_id, $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		foreach ( array_unique( array_merge( $voted_ids, $own_ids ) ) as $post_id ) {
 			$this->posts->forget( $post_id );

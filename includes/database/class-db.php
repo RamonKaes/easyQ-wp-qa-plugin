@@ -13,10 +13,10 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Typed access to the WordPress database object and to the custom tables.
  *
- * Queries on the plugin's own tables cannot use the WordPress query APIs, so they
- * run through these methods. Callers build every statement with wpdb::prepare();
- * the methods accept null, which wpdb::prepare() returns for invalid statements,
- * and then do nothing.
+ * Queries on the plugin's own tables cannot use the WordPress query APIs. Callers
+ * run them on the database object with wpdb::prepare() at the place of the call,
+ * so the coding standards check every statement; these methods only give the
+ * results their types.
  *
  * @since 0.1.0
  */
@@ -52,110 +52,39 @@ final class DB {
 	}
 
 	/**
-	 * Runs a prepared statement that returns no rows.
+	 * Returns the row of a wpdb::get_row() call.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|null $sql Prepared statement.
-	 * @return int Number of affected rows, 0 on failure.
-	 */
-	public static function query( ?string $sql ): int {
-		if ( null === $sql ) {
-			return 0;
-		}
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared by the caller; custom tables.
-		$result = self::wpdb()->query( $sql );
-
-		return is_int( $result ) ? $result : 0;
-	}
-
-	/**
-	 * Returns a single value.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string|null $sql Prepared statement.
-	 * @return string|null
-	 */
-	public static function get_var( ?string $sql ): ?string {
-		if ( null === $sql ) {
-			return null;
-		}
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared by the caller; custom tables.
-		$value = self::wpdb()->get_var( $sql );
-
-		return is_scalar( $value ) ? (string) $value : null;
-	}
-
-	/**
-	 * Returns a single value as an integer.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string|null $sql Prepared statement.
-	 * @return int
-	 */
-	public static function get_int( ?string $sql ): int {
-		return (int) self::get_var( $sql );
-	}
-
-	/**
-	 * Returns a single row.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string|null $sql Prepared statement.
+	 * @param mixed $row Result of wpdb::get_row().
 	 * @return object|null
 	 */
-	public static function get_row( ?string $sql ): ?object {
-		if ( null === $sql ) {
-			return null;
-		}
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared by the caller; custom tables.
-		$row = self::wpdb()->get_row( $sql );
-
+	public static function row( mixed $row ): ?object {
 		return is_object( $row ) ? $row : null;
 	}
 
 	/**
-	 * Returns all rows.
+	 * Returns the rows of a wpdb::get_results() call.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|null $sql Prepared statement.
+	 * @param mixed $rows Result of wpdb::get_results().
 	 * @return object[]
 	 */
-	public static function get_results( ?string $sql ): array {
-		if ( null === $sql ) {
-			return array();
-		}
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared by the caller; custom tables.
-		$rows = self::wpdb()->get_results( $sql );
-
+	public static function rows( mixed $rows ): array {
 		return is_array( $rows ) ? array_filter( $rows, 'is_object' ) : array();
 	}
 
 	/**
-	 * Returns the first column of all rows as integers.
+	 * Returns the values of a wpdb::get_col() call as integers.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|null $sql Prepared statement.
+	 * @param mixed $values Result of wpdb::get_col().
 	 * @return int[]
 	 */
-	public static function get_int_col( ?string $sql ): array {
-		if ( null === $sql ) {
-			return array();
-		}
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared by the caller; custom tables.
-		$values = self::wpdb()->get_col( $sql );
-
-		return array_map( 'intval', array_filter( $values, 'is_numeric' ) );
+	public static function int_col( mixed $values ): array {
+		return is_array( $values ) ? array_map( 'intval', array_filter( $values, 'is_numeric' ) ) : array();
 	}
 
 	/**

@@ -182,21 +182,23 @@ final class Counts {
 		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 
-		$sql = match ( $name ) {
-			self::QUESTIONS         => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q'", $posts ),
-			self::ANSWERS           => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'A'", $posts ),
-			self::COMMENTS          => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'C'", $posts ),
-			self::UNANSWERED        => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND answer_count = 0 AND closed_by_id IS NULL", $posts ),
-			self::UNSELECTED        => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND selected_child_id IS NULL AND closed_by_id IS NULL", $posts ),
-			self::UNUPVOTED         => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND answer_max_votes = 0 AND closed_by_id IS NULL", $posts ),
-			self::QUEUED            => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type IN ('Q_QUEUED', 'A_QUEUED', 'C_QUEUED')", $posts ),
-			self::FLAGGED           => $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE flag_count > 0 AND type IN ('Q', 'A', 'C')", $posts ),
-			self::TAGS              => $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0', Schema::table( 'words' ) ),
-			self::USERS_WITH_POINTS => $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ),
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$count = match ( $name ) {
+			self::QUESTIONS         => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q'", $posts ) ),
+			self::ANSWERS           => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'A'", $posts ) ),
+			self::COMMENTS          => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'C'", $posts ) ),
+			self::UNANSWERED        => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND answer_count = 0 AND closed_by_id IS NULL", $posts ) ),
+			self::UNSELECTED        => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND selected_child_id IS NULL AND closed_by_id IS NULL", $posts ) ),
+			self::UNUPVOTED         => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND answer_max_votes = 0 AND closed_by_id IS NULL", $posts ) ),
+			self::QUEUED            => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type IN ('Q_QUEUED', 'A_QUEUED', 'C_QUEUED')", $posts ) ),
+			self::FLAGGED           => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE flag_count > 0 AND type IN ('Q', 'A', 'C')", $posts ) ),
+			self::TAGS              => $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0', Schema::table( 'words' ) ) ),
+			self::USERS_WITH_POINTS => $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
 			default                 => null,
 		};
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-		return DB::get_int( $sql );
+		return (int) $count;
 	}
 
 	/**

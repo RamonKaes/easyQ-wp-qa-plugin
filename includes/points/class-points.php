@@ -209,7 +209,8 @@ final class Points {
 			$values[ $column ] = $this->calculate( $user_id, $column );
 		}
 
-		$row     = DB::get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d', $table, $user_id ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$row     = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d', $table, $user_id ) ) );
 		$current = null === $row ? array() : get_object_vars( $row );
 		$merged  = array_merge( $current, $values );
 
@@ -258,15 +259,17 @@ final class Points {
 		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'userpoints' );
 
-		DB::query(
-			$wpdb->prepare(
-				'INSERT INTO %i (user_id, bonus) VALUES (%d, %d) ON DUPLICATE KEY UPDATE bonus = %d',
-				$table,
-				$user_id,
-				$bonus,
-				$bonus
-			)
+		$sql = $wpdb->prepare(
+			'INSERT INTO %i (user_id, bonus) VALUES (%d, %d) ON DUPLICATE KEY UPDATE bonus = %d',
+			$table,
+			$user_id,
+			$bonus,
+			$bonus
 		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 
 		$this->update( $user_id, array() );
 	}
@@ -280,9 +283,11 @@ final class Points {
 	 * @return int Points; the base points if the user has none stored.
 	 */
 	public function get( int $user_id ): int {
+		$wpdb = DB::wpdb();
 		if ( ! isset( $this->loaded[ $user_id ] ) ) {
-			$points = DB::get_var(
-				DB::wpdb()->prepare( 'SELECT points FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id )
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$points = $wpdb->get_var(
+				$wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id )
 			);
 
 			$this->loaded[ $user_id ] = null === $points ? Options::get_int( 'points', 'points_base' ) : (int) $points;
@@ -313,7 +318,9 @@ final class Points {
 	 * @return array<string, int> Points, bonus and every statistic column; zero for users without activity.
 	 */
 	public function stats( int $user_id ): array {
-		$row   = DB::get_row( DB::wpdb()->prepare( 'SELECT * FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$row   = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) ) );
 		$stats = array(
 			'points' => null === $row ? Options::get_int( 'points', 'points_base' ) : Row::int( $row, 'points' ),
 			'bonus'  => null === $row ? 0 : Row::int( $row, 'bonus' ),
@@ -335,14 +342,16 @@ final class Points {
 	 * @return int|null Rank starting at 1, or null if the user has no points stored.
 	 */
 	public function rank( int $user_id ): ?int {
-		$wpdb   = DB::wpdb();
-		$table  = Schema::table( 'userpoints' );
-		$points = DB::get_var( $wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', $table, $user_id ) );
+		$wpdb  = DB::wpdb();
+		$table = Schema::table( 'userpoints' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$points = $wpdb->get_var( $wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', $table, $user_id ) );
 		if ( null === $points ) {
 			return null;
 		}
 
-		return 1 + DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE points > %d', $table, (int) $points ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return 1 + (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE points > %d', $table, (int) $points ) );
 	}
 
 	/**
@@ -410,66 +419,77 @@ final class Points {
 			return 0;
 		}
 
-		return DB::get_int( $formulas[ $column ]( $user_id ) );
+		return (int) $formulas[ $column ]( $user_id );
 	}
 
 	/**
-	 * Returns the prepared query builders for every statistic column.
+	 * Returns the database queries that calculate every statistic column.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @return array<string, callable(int): (string|null)>
 	 */
 	private function formulas(): array {
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 		$votes = Schema::table( 'uservotes' );
 
-		$count_posts = static fn ( string $type ): callable => static fn ( int $user_id ): ?string => $wpdb->prepare(
-			'SELECT COUNT(*) FROM %i WHERE user_id = %d AND type = %s',
-			$posts,
-			$user_id,
-			$type
-		);
+		$count_posts = static fn ( string $type ): callable => static fn ( int $user_id ): ?string => $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i WHERE user_id = %d AND type = %s',
+				$posts,
+				$user_id,
+				$type
+			)
+);
 
-		$count_votes = static fn ( string $base_type, string $direction ): callable => static fn ( int $user_id ): ?string => $wpdb->prepare(
-			'SELECT COUNT(*) FROM %i AS v JOIN %i AS p ON v.post_id = p.id WHERE v.user_id = %d AND LEFT(p.type, 1) = %s AND v.vote * %d > 0',
-			$votes,
-			$posts,
-			$user_id,
-			$base_type,
-			'up' === $direction ? 1 : -1
-		);
+		$count_votes = static fn ( string $base_type, string $direction ): callable => static fn ( int $user_id ): ?string => $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT COUNT(*) FROM %i AS v JOIN %i AS p ON v.post_id = p.id WHERE v.user_id = %d AND LEFT(p.type, 1) = %s AND v.vote * %d > 0',
+				$votes,
+				$posts,
+				$user_id,
+				$base_type,
+				'up' === $direction ? 1 : -1
+			)
+);
 
 		$vote_points = static function ( string $base_type, string $prefix ) use ( $wpdb, $posts ): callable {
-			return static fn ( int $user_id ): ?string => $wpdb->prepare(
-				'SELECT COALESCE(SUM(LEAST(%d * CAST(upvotes AS SIGNED), %d) - LEAST(%d * CAST(downvotes AS SIGNED), %d)), 0) FROM %i WHERE LEFT(type, 1) = %s AND user_id = %d',
-				Options::get_int( 'points', "points_per_{$prefix}_voted_up" ),
-				Options::get_int( 'points', "points_{$prefix}_voted_max_gain" ),
-				Options::get_int( 'points', "points_per_{$prefix}_voted_down" ),
-				Options::get_int( 'points', "points_{$prefix}_voted_max_loss" ),
-				$posts,
-				$base_type,
-				$user_id
-			);
+			return static fn ( int $user_id ): ?string => $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COALESCE(SUM(LEAST(%d * CAST(upvotes AS SIGNED), %d) - LEAST(%d * CAST(downvotes AS SIGNED), %d)), 0) FROM %i WHERE LEFT(type, 1) = %s AND user_id = %d',
+					Options::get_int( 'points', "points_per_{$prefix}_voted_up" ),
+					Options::get_int( 'points', "points_{$prefix}_voted_max_gain" ),
+					Options::get_int( 'points', "points_per_{$prefix}_voted_down" ),
+					Options::get_int( 'points', "points_{$prefix}_voted_max_loss" ),
+					$posts,
+					$base_type,
+					$user_id
+				)
+);
 		};
 
 		return array(
 			self::QUESTIONS            => $count_posts( 'Q' ),
 			self::ANSWERS              => $count_posts( 'A' ),
 			self::COMMENTS             => $count_posts( 'C' ),
-			self::SELECTIONS           => static fn ( int $user_id ): ?string => $wpdb->prepare(
-				"SELECT COUNT(*) FROM %i WHERE user_id = %d AND type = 'Q' AND selected_child_id IS NOT NULL",
-				$posts,
-				$user_id
+			self::SELECTIONS           => static fn ( int $user_id ): ?string => $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i WHERE user_id = %d AND type = 'Q' AND selected_child_id IS NOT NULL",
+					$posts,
+					$user_id
+				)
 			),
 			// Answers selected by someone other than the answer's author.
-			self::ANSWERS_SELECTED     => static fn ( int $user_id ): ?string => $wpdb->prepare(
-				"SELECT COUNT(*) FROM %i AS a JOIN %i AS q ON q.selected_child_id = a.id WHERE a.user_id = %d AND a.type = 'A' AND NOT (q.user_id <=> a.user_id)",
-				$posts,
-				$posts,
-				$user_id
-			),
+			self::ANSWERS_SELECTED     => static fn ( int $user_id ): ?string => $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i AS a JOIN %i AS q ON q.selected_child_id = a.id WHERE a.user_id = %d AND a.type = 'A' AND NOT (q.user_id <=> a.user_id)",
+					$posts,
+					$posts,
+					$user_id
+				)
+),
 			self::QUESTION_UPVOTES     => $count_votes( 'Q', 'up' ),
 			self::QUESTION_DOWNVOTES   => $count_votes( 'Q', 'down' ),
 			self::ANSWER_UPVOTES       => $count_votes( 'A', 'up' ),
@@ -479,16 +499,21 @@ final class Points {
 			self::QUESTION_VOTE_POINTS => $vote_points( 'Q', 'q' ),
 			self::ANSWER_VOTE_POINTS   => $vote_points( 'A', 'a' ),
 			self::COMMENT_VOTE_POINTS  => $vote_points( 'C', 'c' ),
-			self::UPVOTES_RECEIVED     => static fn ( int $user_id ): ?string => $wpdb->prepare(
-				'SELECT COALESCE(SUM(upvotes), 0) FROM %i WHERE user_id = %d',
-				$posts,
-				$user_id
+			self::UPVOTES_RECEIVED     => static fn ( int $user_id ): ?string => $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COALESCE(SUM(upvotes), 0) FROM %i WHERE user_id = %d',
+					$posts,
+					$user_id
+				)
 			),
-			self::DOWNVOTES_RECEIVED   => static fn ( int $user_id ): ?string => $wpdb->prepare(
-				'SELECT COALESCE(SUM(downvotes), 0) FROM %i WHERE user_id = %d',
-				$posts,
-				$user_id
+			self::DOWNVOTES_RECEIVED   => static fn ( int $user_id ): ?string => $wpdb->get_var(
+				$wpdb->prepare(
+					'SELECT COALESCE(SUM(downvotes), 0) FROM %i WHERE user_id = %d',
+					$posts,
+					$user_id
+				)
 			),
 		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 }

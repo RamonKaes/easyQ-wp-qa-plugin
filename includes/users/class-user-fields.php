@@ -61,12 +61,14 @@ final class User_Fields {
 	 * @return User_Field[]
 	 */
 	public function all(): array {
+		$wpdb   = DB::wpdb();
 		$cached = wp_cache_get( 'all', self::CACHE_GROUP );
 		if ( is_array( $cached ) ) {
 			return array_values( array_filter( $cached, static fn ( $field ): bool => $field instanceof User_Field ) );
 		}
 
-		$rows   = DB::get_results( DB::wpdb()->prepare( 'SELECT * FROM %i ORDER BY position, id', Schema::table( 'userfields' ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$rows   = DB::rows( $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i ORDER BY position, id', Schema::table( 'userfields' ) ) ) );
 		$fields = array_map( array( User_Field::class, 'from_row' ), $rows );
 
 		wp_cache_set( 'all', $fields, self::CACHE_GROUP );
@@ -203,12 +205,17 @@ final class User_Fields {
 	 * @param int $id Field ID.
 	 */
 	public function delete( int $id ): void {
+		$wpdb  = DB::wpdb();
 		$field = $this->find( $id );
 		if ( null === $field ) {
 			return;
 		}
 
-		DB::query( DB::wpdb()->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'userfields' ), $id ) );
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'userfields' ), $id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
 		delete_metadata( 'user', 0, $field->meta_key(), '', true );
 
 		$this->forget();
@@ -302,7 +309,11 @@ final class User_Fields {
 		$wpdb = DB::wpdb();
 
 		foreach ( $ids as $index => $id ) {
-			DB::query( $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', Schema::table( 'userfields' ), $index + 1, $id ) );
+			$sql = $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', Schema::table( 'userfields' ), $index + 1, $id );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$wpdb->query( $sql );
+			}
 		}
 
 		$this->forget();

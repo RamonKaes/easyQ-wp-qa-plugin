@@ -40,8 +40,9 @@ final class Activity_Query_Test extends Test_Case {
 	 * @param int  $seconds Seconds ago.
 	 */
 	private function age( Post $post, int $seconds ): void {
+		$wpdb = DB::wpdb();
 		$time = gmdate( 'Y-m-d H:i:s', time() - $seconds );
-		DB::query( DB::wpdb()->prepare( 'UPDATE %i SET created = %s WHERE id = %d', Schema::table( 'posts' ), $time, $post->id ) );
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET created = %s WHERE id = %d', Schema::table( 'posts' ), $time, $post->id ) );
 		Services::posts()->forget( $post->id );
 	}
 
