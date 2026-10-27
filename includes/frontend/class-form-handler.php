@@ -3,11 +3,12 @@
  * Form submissions without JavaScript.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
 
-use EasyQ\Rest\Controller;
+use EasyQ\REST\Controller;
 use EasyQ\Services;
 use EasyQ\Users\Avatars;
 use WP_REST_Request;
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
  * Every form is sent to the REST API internally, so the same permission checks,
  * validation and rate limits apply. Afterwards the visitor is redirected
  * (post/redirect/get) with a message.
+ *
+ * @since 0.1.0
  */
 final class Form_Handler {
 
 	/**
 	 * Field with the form name.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -32,6 +37,8 @@ final class Form_Handler {
 
 	/**
 	 * Fields passed on to the REST API, per form.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string[]>
 	 */
@@ -48,12 +55,16 @@ final class Form_Handler {
 	/**
 	 * Prefix of the profile field inputs of the account form.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const PROFILE_FIELD_PREFIX = 'field_';
 
 	/**
 	 * Hooks the handler into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'template_redirect', array( $this, 'handle' ), 5 );
@@ -62,16 +73,22 @@ final class Form_Handler {
 	/**
 	 * Returns the hidden fields every form needs.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $form Form name.
 	 * @return string HTML.
 	 */
 	public static function hidden_fields( string $form ): string {
-		return sprintf( '<input type="hidden" name="%s" value="%s">', esc_attr( self::FIELD ), esc_attr( $form ) )
-			. wp_nonce_field( 'easyq_' . $form, '_easyq_nonce', true, false );
+		// Not wp_nonce_field(): its field has an ID, which repeats when a page has several forms.
+		return sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( self::FIELD ), esc_attr( $form ) )
+			. sprintf( '<input type="hidden" name="_easyq_nonce" value="%s" />', esc_attr( wp_create_nonce( 'easyq_' . $form ) ) )
+			. wp_referer_field( false );
 	}
 
 	/**
 	 * Handles a submitted form and redirects.
+	 *
+	 * @since 0.1.0
 	 */
 	public function handle(): void {
 		$url = $this->process();
@@ -90,6 +107,8 @@ final class Form_Handler {
 
 	/**
 	 * Processes a submitted form.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string|null The address to redirect to, or null if no easyQ form was submitted.
 	 */
@@ -161,6 +180,8 @@ final class Form_Handler {
 	/**
 	 * Returns the submitted values the REST API accepts for a form.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $form Form name.
 	 * @return array<string, string>
 	 */
@@ -172,8 +193,8 @@ final class Form_Handler {
 			if ( isset( $_POST[ $field ] ) && is_string( $_POST[ $field ] ) ) {
 				// The REST API validates and sanitizes the values; content keeps its line breaks.
 				$values[ $field ] = 'content' === $field || 'note' === $field
-					? sanitize_textarea_field( wp_unslash( $_POST[ $field ] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
-					: sanitize_text_field( wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					? sanitize_textarea_field( wp_unslash( $_POST[ $field ] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
+					: sanitize_text_field( wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
 			}
 		}
 
@@ -182,6 +203,8 @@ final class Form_Handler {
 
 	/**
 	 * Adds the profile fields and the uploaded avatar of the account form to a request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request to the REST API.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -195,14 +218,14 @@ final class Form_Handler {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
 			if ( isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ) {
 				// The field type decides how the value is sanitized; see User_Fields::set_value().
-				$fields[ $field->name ] = sanitize_textarea_field( wp_unslash( $_POST[ $name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$fields[ $field->name ] = sanitize_textarea_field( wp_unslash( $_POST[ $name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
 				$inputs[ $name ]        = $fields[ $field->name ];
 			}
 		}
 		$request->set_param( 'fields', $fields );
 
 		// The entry is checked here; the REST API validates the file itself (wp_handle_sideload() with image types only).
-		$file = Avatars::file_entry( $_FILES['avatar'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$file = Avatars::file_entry( $_FILES['avatar'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Verified in process(); file_entry() checks every field.
 		if ( null !== $file ) {
 			$request->set_file_params( array( 'avatar' => $file ) );
 		}
@@ -213,6 +236,8 @@ final class Form_Handler {
 	/**
 	 * Returns the ID of the post a form relates to.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return int
 	 */
 	private function target(): int {
@@ -222,6 +247,8 @@ final class Form_Handler {
 
 	/**
 	 * Returns the REST route to edit a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $id Post ID.
 	 * @return string
@@ -238,6 +265,8 @@ final class Form_Handler {
 
 	/**
 	 * Returns where to go after a successful submission.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $form Form name.
 	 * @param int    $id   ID of the created or changed post.
@@ -256,11 +285,13 @@ final class Form_Handler {
 			return $back . ( null === $post ? '' : '#easyq-post-' . $post->id );
 		}
 
-		return Urls::question( $question ) . ( $post->id !== $question->id ? '#easyq-post-' . $post->id : '' );
+		return URLs::question( $question ) . ( $post->id === $question->id ? '' : '#easyq-post-' . $post->id );
 	}
 
 	/**
 	 * Returns the message after a successful submission.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $form   Form name.
 	 * @param bool   $queued Whether the post waits for moderation.
@@ -284,6 +315,8 @@ final class Form_Handler {
 	/**
 	 * Returns the address of the page the form was submitted from.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	private function back_url(): string {
@@ -297,6 +330,8 @@ final class Form_Handler {
 
 	/**
 	 * Adds the message token to an address.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $url   Address, possibly with a fragment.
 	 * @param string $token Message token.

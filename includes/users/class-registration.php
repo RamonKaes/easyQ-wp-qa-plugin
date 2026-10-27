@@ -3,6 +3,7 @@
  * Q&A fields on the registration form.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -13,11 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Shows the profile fields marked for registration on the WordPress registration form.
+ *
+ * @since 0.1.0
  */
 final class Registration {
 
 	/**
 	 * Nonce action and field name.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -25,6 +30,8 @@ final class Registration {
 
 	/**
 	 * Hooks the fields into the registration form.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'register_form', array( $this, 'render' ) );
@@ -33,6 +40,8 @@ final class Registration {
 
 	/**
 	 * Outputs the registration fields.
+	 *
+	 * @since 0.1.0
 	 */
 	public function render(): void {
 		$fields = $this->fields();
@@ -50,7 +59,7 @@ final class Registration {
 				<?php if ( $field->is_multi_line() ) : ?>
 					<textarea name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" rows="3"></textarea>
 				<?php else : ?>
-					<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" size="25">
+					<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" size="25" />
 				<?php endif; ?>
 			</p>
 			<?php
@@ -59,6 +68,8 @@ final class Registration {
 
 	/**
 	 * Stores the registration fields of a new user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 */
@@ -79,6 +90,8 @@ final class Registration {
 
 	/**
 	 * Returns the fields shown on registration.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return User_Field[]
 	 */

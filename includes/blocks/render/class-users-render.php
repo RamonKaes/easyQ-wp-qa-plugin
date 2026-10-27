@@ -3,6 +3,7 @@
  * Rendering of user blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks\Render;
@@ -10,7 +11,7 @@ namespace EasyQ\Blocks\Render;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
 use EasyQ\Blocks\Render;
-use EasyQ\Frontend\Urls;
+use EasyQ\Frontend\URLs;
 use EasyQ\Points\Points;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -25,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Every part reads the user from the context `easyq/userId`, or uses the user
  * of the current profile page.
+ *
+ * @since 0.1.0
  */
 final class Users_Render {
 
 	/**
 	 * Renders a user with the inner blocks.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks (unused; rendered with the user).
@@ -54,6 +59,8 @@ final class Users_Render {
 	/**
 	 * Renders the user list container.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @return string
@@ -67,6 +74,8 @@ final class Users_Render {
 
 	/**
 	 * Renders each user of the list with the inner blocks.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks (unused; rendered per user).
@@ -108,6 +117,8 @@ final class Users_Render {
 	/**
 	 * Renders the name of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -124,12 +135,14 @@ final class Users_Render {
 		return sprintf(
 			'<div %s>%s</div>',
 			get_block_wrapper_attributes(),
-			( $attributes['isLink'] ?? true ) ? sprintf( '<a href="%s">%s</a>', esc_url( Urls::user( $user ) ), $name ) : $name
+			( $attributes['isLink'] ?? true ) ? sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name ) : $name
 		);
 	}
 
 	/**
 	 * Renders the avatar of a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -151,12 +164,14 @@ final class Users_Render {
 		return sprintf(
 			'<div %s>%s</div>',
 			get_block_wrapper_attributes(),
-			$is_link ? sprintf( '<a href="%s">%s</a>', esc_url( Urls::user( $user ) ), $avatar ) : $avatar
+			$is_link ? sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $avatar ) : $avatar
 		);
 	}
 
 	/**
 	 * Renders the points of a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -185,6 +200,8 @@ final class Users_Render {
 	/**
 	 * Renders the title of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -199,6 +216,8 @@ final class Users_Render {
 
 	/**
 	 * Renders the public profile of a user: biography, website and the profile fields the viewer may see.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -240,6 +259,8 @@ final class Users_Render {
 
 	/**
 	 * Renders membership, points, posts and votes of a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -293,6 +314,8 @@ final class Users_Render {
 	/**
 	 * Renders links to the sections of a profile.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -320,7 +343,7 @@ final class Users_Render {
 		foreach ( $links as $section => $label ) {
 			$items .= sprintf(
 				'<a href="%s"%s>%s</a>',
-				esc_url( Urls::user( $user, '' === $section ? null : $section ) ),
+				esc_url( URLs::user( $user, '' === $section ? null : $section ) ),
 				$current === $section ? ' aria-current="page"' : '',
 				esc_html( $label )
 			);
@@ -337,6 +360,8 @@ final class Users_Render {
 
 	/**
 	 * Returns the sort order of a user list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<mixed> $query Block query.
 	 * @return string One of the User_Query::SORTS keys.
@@ -355,17 +380,21 @@ final class Users_Render {
 	/**
 	 * Returns why the viewer may not see a user list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $sort Sort order.
 	 * @return string|null Permission error reason, or null if allowed.
 	 */
 	public static function permission_error( string $sort ): ?string {
 		$option = User_Query::SORTS[ $sort ] ?? null;
 
-		return Services::permissions()->error( $option ?? 'permit_view_q_page', Block_Context::viewer(), null, null, false, true );
+		return Services::permissions()->error( $option ?? 'permit_view_q_page', Block_Context::viewer(), check_blocks: false, maximum_level: true );
 	}
 
 	/**
 	 * Returns a term and its description.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $term Term, not escaped.
 	 * @param string $html Description, escaped HTML.
@@ -377,6 +406,8 @@ final class Users_Render {
 
 	/**
 	 * Formats up and down votes.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $up   Upvotes.
 	 * @param int $down Downvotes.

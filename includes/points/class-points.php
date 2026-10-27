@@ -3,11 +3,12 @@
  * User points.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Points;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
@@ -25,28 +26,170 @@ defined( 'ABSPATH' ) || exit;
  * Ported from Question2Answer `qa-include/db/points.php`. Question2Answer builds
  * one statement with MySQL user variables; easyQ runs one prepared query per
  * column, because assigning user variables in expressions is deprecated in MySQL 8.
+ *
+ * @since 0.1.0
  */
 final class Points {
 
-	public const QUESTIONS            = 'questions';
-	public const ANSWERS              = 'answers';
-	public const COMMENTS             = 'comments';
-	public const SELECTIONS           = 'selections';
-	public const ANSWERS_SELECTED     = 'answers_selected';
-	public const QUESTION_UPVOTES     = 'question_upvotes';
-	public const QUESTION_DOWNVOTES   = 'question_downvotes';
-	public const ANSWER_UPVOTES       = 'answer_upvotes';
-	public const ANSWER_DOWNVOTES     = 'answer_downvotes';
-	public const COMMENT_UPVOTES      = 'comment_upvotes';
-	public const COMMENT_DOWNVOTES    = 'comment_downvotes';
+	/**
+	 * Points of users loaded during the current request, keyed by user ID.
+	 *
+	 * Pages show the points of the same authors many times. Every write forgets them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<int, int>
+	 */
+	private array $loaded = array();
+
+	/**
+	 * Statistic column: questions the user asked.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const QUESTIONS = 'questions';
+
+	/**
+	 * Statistic column: answers the user wrote.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWERS = 'answers';
+
+	/**
+	 * Statistic column: comments the user wrote.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENTS = 'comments';
+
+	/**
+	 * Statistic column: best answers the user selected for own questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const SELECTIONS = 'selections';
+
+	/**
+	 * Statistic column: answers of the user selected as best answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWERS_SELECTED = 'answers_selected';
+
+	/**
+	 * Statistic column: upvotes the user gave to questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const QUESTION_UPVOTES = 'question_upvotes';
+
+	/**
+	 * Statistic column: downvotes the user gave to questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const QUESTION_DOWNVOTES = 'question_downvotes';
+
+	/**
+	 * Statistic column: upvotes the user gave to answers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWER_UPVOTES = 'answer_upvotes';
+
+	/**
+	 * Statistic column: downvotes the user gave to answers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWER_DOWNVOTES = 'answer_downvotes';
+
+	/**
+	 * Statistic column: upvotes the user gave to comments.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENT_UPVOTES = 'comment_upvotes';
+
+	/**
+	 * Statistic column: downvotes the user gave to comments.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENT_DOWNVOTES = 'comment_downvotes';
+
+	/**
+	 * Statistic column: net votes the questions of the user received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const QUESTION_VOTE_POINTS = 'question_vote_points';
-	public const ANSWER_VOTE_POINTS   = 'answer_vote_points';
-	public const COMMENT_VOTE_POINTS  = 'comment_vote_points';
-	public const UPVOTES_RECEIVED     = 'upvotes_received';
-	public const DOWNVOTES_RECEIVED   = 'downvotes_received';
+
+	/**
+	 * Statistic column: net votes the answers of the user received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWER_VOTE_POINTS = 'answer_vote_points';
+
+	/**
+	 * Statistic column: net votes the comments of the user received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENT_VOTE_POINTS = 'comment_vote_points';
+
+	/**
+	 * Statistic column: upvotes the posts of the user received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPVOTES_RECEIVED = 'upvotes_received';
+
+	/**
+	 * Statistic column: downvotes the posts of the user received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const DOWNVOTES_RECEIVED = 'downvotes_received';
 
 	/**
 	 * Updates statistic columns and the total points of a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $user_id User ID; nothing happens for null (anonymous authors).
 	 * @param string[] $columns Columns to recalculate; the total is always updated.
@@ -56,7 +199,9 @@ final class Points {
 			return;
 		}
 
-		$wpdb   = Db::wpdb();
+		$this->forget( $user_id );
+
+		$wpdb   = DB::wpdb();
 		$table  = Schema::table( 'userpoints' );
 		$values = array();
 
@@ -64,14 +209,14 @@ final class Points {
 			$values[ $column ] = $this->calculate( $user_id, $column );
 		}
 
-		$row     = Db::get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d', $table, $user_id ) );
+		$row     = DB::get_row( $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d', $table, $user_id ) );
 		$current = null === $row ? array() : get_object_vars( $row );
 		$merged  = array_merge( $current, $values );
 
 		$total = $this->total( $merged );
 
 		if ( null === $row ) {
-			Db::insert(
+			DB::insert(
 				$table,
 				array_merge(
 					$values,
@@ -93,6 +238,8 @@ final class Points {
 	/**
 	 * Recalculates all statistics and the total points of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 */
 	public function update_all( int $user_id ): void {
@@ -102,14 +249,16 @@ final class Points {
 	/**
 	 * Sets the bonus points of a user and updates the total.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @param int $bonus   Bonus points, may be negative.
 	 */
 	public function set_bonus( int $user_id, int $bonus ): void {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'userpoints' );
 
-		Db::query(
+		DB::query(
 			$wpdb->prepare(
 				'INSERT INTO %i (user_id, bonus) VALUES (%d, %d) ON DUPLICATE KEY UPDATE bonus = %d',
 				$table,
@@ -125,25 +274,46 @@ final class Points {
 	/**
 	 * Returns the stored points of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return int Points; the base points if the user has none stored.
 	 */
 	public function get( int $user_id ): int {
-		$points = Db::get_var(
-			Db::wpdb()->prepare( 'SELECT points FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id )
-		);
+		if ( ! isset( $this->loaded[ $user_id ] ) ) {
+			$points = DB::get_var(
+				DB::wpdb()->prepare( 'SELECT points FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id )
+			);
 
-		return null === $points ? Options::get_int( 'points', 'points_base' ) : (int) $points;
+			$this->loaded[ $user_id ] = null === $points ? Options::get_int( 'points', 'points_base' ) : (int) $points;
+		}
+
+		return $this->loaded[ $user_id ];
+	}
+
+	/**
+	 * Forgets the points of a user loaded during the current request.
+	 *
+	 * Call it after changing the userpoints table outside this class.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 */
+	public function forget( int $user_id ): void {
+		unset( $this->loaded[ $user_id ] );
 	}
 
 	/**
 	 * Returns the stored statistics of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return array<string, int> Points, bonus and every statistic column; zero for users without activity.
 	 */
 	public function stats( int $user_id ): array {
-		$row   = Db::get_row( Db::wpdb()->prepare( 'SELECT * FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
+		$row   = DB::get_row( DB::wpdb()->prepare( 'SELECT * FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
 		$stats = array(
 			'points' => null === $row ? Options::get_int( 'points', 'points_base' ) : Row::int( $row, 'points' ),
 			'bonus'  => null === $row ? 0 : Row::int( $row, 'bonus' ),
@@ -159,22 +329,26 @@ final class Points {
 	/**
 	 * Returns the rank of a user by points.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return int|null Rank starting at 1, or null if the user has no points stored.
 	 */
 	public function rank( int $user_id ): ?int {
-		$wpdb   = Db::wpdb();
+		$wpdb   = DB::wpdb();
 		$table  = Schema::table( 'userpoints' );
-		$points = Db::get_var( $wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', $table, $user_id ) );
+		$points = DB::get_var( $wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', $table, $user_id ) );
 		if ( null === $points ) {
 			return null;
 		}
 
-		return 1 + Db::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE points > %d', $table, (int) $points ) );
+		return 1 + DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE points > %d', $table, (int) $points ) );
 	}
 
 	/**
 	 * Returns the multiplier of every statistic column.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, int>
 	 */
@@ -205,10 +379,12 @@ final class Points {
 	/**
 	 * Calculates the total points from statistic values.
 	 *
-	 * @param array<int|string, mixed> $values Statistic values keyed by column; missing columns count as 0.
+	 * @since 0.1.0
+	 *
+	 * @param array<mixed> $values Statistic values keyed by column; missing columns count as 0.
 	 * @return int
 	 */
-	public function total( array $values ): int { // phpcs:ignore Squiz.Commenting.FunctionComment.IncorrectTypeHint
+	public function total( array $values ): int {
 		$number = static fn ( string $key ): int => isset( $values[ $key ] ) && is_numeric( $values[ $key ] ) ? (int) $values[ $key ] : 0;
 		$total  = Options::get_int( 'points', 'points_base' ) + $number( 'bonus' );
 
@@ -222,6 +398,8 @@ final class Points {
 	/**
 	 * Calculates one statistic column for a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int    $user_id User ID.
 	 * @param string $column  Column name.
 	 * @return int
@@ -232,16 +410,18 @@ final class Points {
 			return 0;
 		}
 
-		return Db::get_int( $formulas[ $column ]( $user_id ) );
+		return DB::get_int( $formulas[ $column ]( $user_id ) );
 	}
 
 	/**
 	 * Returns the prepared query builders for every statistic column.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return array<string, callable(int): (string|null)>
 	 */
 	private function formulas(): array {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 		$votes = Schema::table( 'uservotes' );
 

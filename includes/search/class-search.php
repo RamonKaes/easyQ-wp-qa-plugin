@@ -3,6 +3,7 @@
  * Search service.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Search;
@@ -14,11 +15,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Keeps all search providers informed about posts and runs searches.
+ *
+ * @since 0.1.0
  */
 final class Search {
 
 	/**
 	 * Nesting depth of suspend() calls.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -27,12 +32,16 @@ final class Search {
 	/**
 	 * Registered providers, built on first use.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var array<string, Search_Provider>|null
 	 */
 	private ?array $providers = null;
 
 	/**
 	 * Returns all registered search providers.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, Search_Provider> Providers keyed by ID.
 	 */
@@ -42,6 +51,8 @@ final class Search {
 			 * Filters the search providers.
 			 *
 			 * Add an instance of a class implementing EasyQ\Search\Search_Provider to offer another search engine.
+			 *
+			 * @since 0.1.0
 			 *
 			 * @param Search_Provider[] $providers Providers; the built-in search is always kept.
 			 */
@@ -65,6 +76,8 @@ final class Search {
 	/**
 	 * Returns the provider that answers searches.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Search_Provider
 	 */
 	public function provider(): Search_Provider {
@@ -75,6 +88,8 @@ final class Search {
 
 	/**
 	 * Stops indexing until resume() is called, e.g. during batch operations that reindex afterwards.
+	 *
+	 * @since 0.1.0
 	 */
 	public function suspend(): void {
 		++$this->suspended;
@@ -82,6 +97,8 @@ final class Search {
 
 	/**
 	 * Resumes indexing after suspend().
+	 *
+	 * @since 0.1.0
 	 */
 	public function resume(): void {
 		$this->suspended = max( 0, $this->suspended - 1 );
@@ -89,6 +106,8 @@ final class Search {
 
 	/**
 	 * Adds a post to the index of every provider.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post     $post        The post.
 	 * @param int      $question_id ID of the question the post belongs to.
@@ -118,6 +137,8 @@ final class Search {
 	/**
 	 * Removes a post from the index of every provider.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $post_id Post ID.
 	 */
 	public function unindex( int $post_id ): void {
@@ -133,6 +154,8 @@ final class Search {
 	/**
 	 * Tells every provider that posts moved to another category.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int[]    $post_ids    Post IDs.
 	 * @param int|null $category_id New category ID.
 	 */
@@ -146,6 +169,8 @@ final class Search {
 
 	/**
 	 * Searches questions with the selected provider.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string   $query   Search query.
 	 * @param int      $start   Offset of the first result.

@@ -3,11 +3,12 @@
  * Category management.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Categories;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Util\Text;
@@ -25,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
  * Ported from Question2Answer `qa-include/db/admin.php` and `pages/admin/admin-categories.php`.
  * Unlike Question2Answer, posts and counts are updated right away instead of by
  * a separate recalculation step.
+ *
+ * @since 0.1.0
  */
 final class Categories {
 
 	/**
 	 * Maximum depth of the category tree.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -38,12 +43,16 @@ final class Categories {
 	/**
 	 * Longest category name in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_TITLE_LENGTH = 80;
 
 	/**
 	 * Longest slug in characters.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -52,12 +61,16 @@ final class Categories {
 	/**
 	 * Longest description in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_DESCRIPTION_LENGTH = 800;
 
 	/**
 	 * Object cache group.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -66,6 +79,8 @@ final class Categories {
 	/**
 	 * Sets up the service.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post_Repository $posts Post storage.
 	 */
 	public function __construct( private readonly Post_Repository $posts ) {
@@ -73,6 +88,8 @@ final class Categories {
 
 	/**
 	 * Returns a category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $id Category ID.
 	 * @return Category|null
@@ -83,6 +100,8 @@ final class Categories {
 
 	/**
 	 * Returns all categories ordered by parent and position.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<int, Category> Categories keyed by ID.
 	 */
@@ -99,8 +118,8 @@ final class Categories {
 			return $categories;
 		}
 
-		$rows = Db::get_results(
-			Db::wpdb()->prepare( 'SELECT * FROM %i ORDER BY parent_id, position', Schema::table( 'categories' ) )
+		$rows = DB::get_results(
+			DB::wpdb()->prepare( 'SELECT * FROM %i ORDER BY parent_id, position', Schema::table( 'categories' ) )
 		);
 
 		$categories = array();
@@ -117,6 +136,8 @@ final class Categories {
 	/**
 	 * Returns the children of a category in order.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $parent_id Parent category ID, or null for the top level.
 	 * @return Category[]
 	 */
@@ -129,6 +150,8 @@ final class Categories {
 
 	/**
 	 * Returns a category and its ancestors, from the top level down.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $id Category ID.
 	 * @return Category[] Empty if the category does not exist.
@@ -154,6 +177,8 @@ final class Categories {
 	/**
 	 * Returns the IDs of a category and all categories below it.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Category ID.
 	 * @return int[]
 	 */
@@ -168,6 +193,8 @@ final class Categories {
 
 	/**
 	 * Returns the category with the given slugs from the top level down.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string[] $slugs Slugs, e.g. `array( 'software', 'WordPress' )`.
 	 * @return Category|null
@@ -187,6 +214,8 @@ final class Categories {
 	/**
 	 * Creates a category at the end of its siblings.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $parent_id   Parent category ID, or null for the top level.
 	 * @param string   $title       Name.
 	 * @param string   $slug        Slug; derived from the name if empty.
@@ -205,7 +234,7 @@ final class Categories {
 			return $errors;
 		}
 
-		$id = Db::insert(
+		$id = DB::insert(
 			Schema::table( 'categories' ),
 			array(
 				'parent_id'   => $parent_id,
@@ -225,6 +254,8 @@ final class Categories {
 
 	/**
 	 * Changes name, slug and description of a category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int    $id          Category ID.
 	 * @param string $title       Name.
@@ -246,7 +277,7 @@ final class Categories {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
-		Db::wpdb()->update(
+		DB::wpdb()->update(
 			Schema::table( 'categories' ),
 			array(
 				'title'       => $title,
@@ -269,6 +300,8 @@ final class Categories {
 	 *
 	 * Posts in the category and its subcategories get their new category path,
 	 * and the question counts of all affected categories are recalculated.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $id            Category ID.
 	 * @param int|null $new_parent_id New parent category ID, or null for the top level.
@@ -303,7 +336,7 @@ final class Categories {
 		$this->set_position( $id, PHP_INT_MAX );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
-		Db::wpdb()->update(
+		DB::wpdb()->update(
 			Schema::table( 'categories' ),
 			array(
 				'parent_id' => $new_parent_id,
@@ -325,6 +358,8 @@ final class Categories {
 	/**
 	 * Moves a category to a position among its siblings.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id       Category ID.
 	 * @param int $position New position, starting at 1; values out of range are clamped.
 	 */
@@ -344,6 +379,8 @@ final class Categories {
 
 	/**
 	 * Deletes a category without subcategories.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $id          Category ID.
 	 * @param int|null $reassign_to Category that receives the posts, or null to leave them without a category.
@@ -368,7 +405,7 @@ final class Categories {
 
 		$this->set_position( $id, PHP_INT_MAX );
 		Schema::delete_all_meta( 'easyq_category', $id );
-		Db::query( Db::wpdb()->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'categories' ), $id ) );
+		DB::query( DB::wpdb()->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'categories' ), $id ) );
 		$this->forget();
 
 		$targets = null === $reassign_to ? array() : array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $reassign_to ) );
@@ -380,18 +417,20 @@ final class Categories {
 	/**
 	 * Moves all posts of a category to another category.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $id          Category ID.
 	 * @param int|null $reassign_to Target category ID, or null for no category.
 	 */
 	public function reassign_posts( int $id, ?int $reassign_to ): void {
-		$wpdb     = Db::wpdb();
+		$wpdb     = DB::wpdb();
 		$table    = Schema::table( 'posts' );
-		$post_ids = Db::get_int_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id = %d', $table, $id ) );
+		$post_ids = DB::get_int_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id = %d', $table, $id ) );
 
 		if ( null === $reassign_to ) {
-			Db::query( $wpdb->prepare( 'UPDATE %i SET category_id = NULL WHERE category_id = %d', $table, $id ) );
+			DB::query( $wpdb->prepare( 'UPDATE %i SET category_id = NULL WHERE category_id = %d', $table, $id ) );
 		} else {
-			Db::query( $wpdb->prepare( 'UPDATE %i SET category_id = %d WHERE category_id = %d', $table, $reassign_to, $id ) );
+			DB::query( $wpdb->prepare( 'UPDATE %i SET category_id = %d WHERE category_id = %d', $table, $reassign_to, $id ) );
 		}
 
 		foreach ( $post_ids as $post_id ) {
@@ -402,15 +441,17 @@ final class Categories {
 	/**
 	 * Recalculates the number of visible questions in categories, including their subcategories.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int[] $ids Category IDs.
 	 */
 	public function recount( array $ids ): void {
-		$wpdb       = Db::wpdb();
+		$wpdb       = DB::wpdb();
 		$categories = Schema::table( 'categories' );
 		$posts      = Schema::table( 'posts' );
 
 		foreach ( array_unique( array_filter( $ids ) ) as $id ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					"UPDATE %i SET question_count = GREATEST((SELECT COUNT(*) FROM %i WHERE category_id = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_1 = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_2 = %d AND type = 'Q'), (SELECT COUNT(*) FROM %i WHERE category_path_3 = %d AND type = 'Q')) WHERE id = %d",
 					$categories,
@@ -433,14 +474,16 @@ final class Categories {
 	/**
 	 * Recalculates the backpaths of categories.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int[] $ids Category IDs.
 	 */
 	public function recalc_backpaths( array $ids ): void {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'categories' );
 
 		foreach ( $ids as $id ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					"UPDATE %i AS x, (SELECT c1.id, CONCAT_WS('/', c1.slug, c2.slug, c3.slug, c4.slug) AS backpath FROM %i AS c1 LEFT JOIN %i AS c2 ON c1.parent_id = c2.id LEFT JOIN %i AS c3 ON c2.parent_id = c3.id LEFT JOIN %i AS c4 ON c3.parent_id = c4.id WHERE c1.id = %d) AS a SET x.backpath = a.backpath WHERE x.id = a.id",
 					$table,
@@ -458,6 +501,8 @@ final class Categories {
 
 	/**
 	 * Clears the category cache.
+	 *
+	 * @since 0.1.0
 	 */
 	public function forget(): void {
 		wp_cache_delete( 'all', self::CACHE_GROUP );
@@ -465,6 +510,8 @@ final class Categories {
 
 	/**
 	 * Validates the fields of a category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $id          Category ID, or null for a new category.
 	 * @param int|null $parent_id   Parent category ID.
@@ -515,6 +562,8 @@ final class Categories {
 	/**
 	 * Checks whether a sibling already uses a slug.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $parent_id Parent category ID.
 	 * @param string   $slug      Slug.
 	 * @param int|null $except_id Category to ignore.
@@ -533,6 +582,8 @@ final class Categories {
 	/**
 	 * Returns the number of levels of a category and its subcategories.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Category ID.
 	 * @return int 1 for a category without subcategories.
 	 */
@@ -548,6 +599,8 @@ final class Categories {
 	/**
 	 * Returns the highest position among the children of a category.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $parent_id Parent category ID.
 	 * @return int 0 if there are no children.
 	 */
@@ -560,14 +613,16 @@ final class Categories {
 	/**
 	 * Stores positions 1, 2, 3, … for categories in the given order.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int[] $ids Category IDs in their new order.
 	 */
 	private function write_positions( array $ids ): void {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'categories' );
 
 		foreach ( $ids as $index => $id ) {
-			Db::query( $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', $table, $index + 1, $id ) );
+			DB::query( $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', $table, $index + 1, $id ) );
 		}
 
 		$this->forget();

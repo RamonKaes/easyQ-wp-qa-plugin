@@ -11,19 +11,24 @@ if ( function_exists( 'tests_add_filter' ) ) {
 	return;
 }
 
-add_filter(
-	'option_easyq_settings_spam',
-	static function ( $settings ) {
-		if ( ! is_array( $settings ) ) {
-			return $settings;
-		}
+add_filter( 'option_easyq_settings_spam', 'easyq_e2e_raise_limits' );
 
-		foreach ( array_keys( $settings ) as $key ) {
-			if ( is_string( $key ) && str_starts_with( $key, 'max_rate_' ) ) {
-				$settings[ $key ] = 1000;
-			}
-		}
-
+/**
+ * Raises every rate limit of the spam settings.
+ *
+ * @param mixed $settings Spam settings.
+ * @return mixed
+ */
+function easyq_e2e_raise_limits( $settings ) {
+	if ( ! is_array( $settings ) ) {
 		return $settings;
 	}
-);
+
+	foreach ( array_keys( $settings ) as $key ) {
+		if ( is_string( $key ) && str_starts_with( $key, 'max_rate_' ) ) {
+			$settings[ $key ] = 1000;
+		}
+	}
+
+	return $settings;
+}

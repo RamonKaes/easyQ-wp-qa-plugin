@@ -1,5 +1,7 @@
 /**
  * Loading easyQ data for previews in the editor.
+ *
+ * @since 0.1.0
  */
 import apiFetch from '@wordpress/api-fetch';
 import { useEffect, useState } from '@wordpress/element';
@@ -11,6 +13,8 @@ const ACTIVITY_SOURCES = [ 'activity', 'recent_answers', 'recent_comments' ];
 
 /**
  * Loads a REST path once per editor session.
+ *
+ * @since 0.1.0
  *
  * @param {string|null} path REST path below easyq/v1, or null to load nothing.
  * @return {Object|Array|undefined} Response data, or undefined while loading or on failure.
@@ -55,6 +59,8 @@ export function useEasyQ( path ) {
 /**
  * Returns the REST path of a question list query.
  *
+ * @since 0.1.0
+ *
  * @param {Object} query   Block query.
  * @param {number} perPage Number of questions.
  * @return {string} Path.
@@ -82,6 +88,8 @@ export function questionsPath( query = {}, perPage = 3 ) {
 
 /**
  * Returns the REST path of a user list query.
+ *
+ * @since 0.1.0
  *
  * @param {Object} query   Block query.
  * @param {number} perPage Number of users.

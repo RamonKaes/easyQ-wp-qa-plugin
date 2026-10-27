@@ -3,12 +3,14 @@
  * Votes and flags.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Votes;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
+use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Events\Events;
 use EasyQ\Points\Points;
@@ -26,11 +28,27 @@ defined( 'ABSPATH' ) || exit;
  *
  * Ported from Question2Answer `qa-include/app/votes.php` and `db/votes.php`.
  * Permission and rate limit checks happen in the callers.
+ *
+ * @since 0.1.0
  */
 final class Votes {
 
 	/**
+	 * Votes and flags of users on posts, loaded during the current request, keyed by `post:user`.
+	 *
+	 * A page asks for them many times, e.g. once per block of a post. Every write
+	 * clears them; see forget().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, array{vote: int, flag: int}>
+	 */
+	private static array $rows = array();
+
+	/**
 	 * Sets up the service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post_Repository $posts        Post storage.
 	 * @param Post_Service    $post_service Post operations, used to hide posts with too many flags.
@@ -45,6 +63,8 @@ final class Votes {
 
 	/**
 	 * Checks the rules of the post itself for voting: visibility, settings and own posts.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post     $post    Post.
 	 * @param int|null $user_id Voting user.
@@ -76,27 +96,98 @@ final class Votes {
 	/**
 	 * Returns the vote of a user on a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $post_id Post ID.
 	 * @param int $user_id User ID.
 	 * @return int -1, 0 or 1.
 	 */
 	public function vote_of( int $post_id, int $user_id ): int {
-		return Db::get_int( Db::wpdb()->prepare( 'SELECT vote FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post_id, $user_id ) );
+		return $this->row( $post_id, $user_id )['vote'];
 	}
 
 	/**
 	 * Checks whether a user flagged a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $post_id Post ID.
 	 * @param int $user_id User ID.
 	 * @return bool
 	 */
 	public function has_flagged( int $post_id, int $user_id ): bool {
-		return 1 === Db::get_int( Db::wpdb()->prepare( 'SELECT flag FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post_id, $user_id ) );
+		return 1 === $this->row( $post_id, $user_id )['flag'];
+	}
+
+	/**
+	 * Loads the votes and flags of a user on several posts with one query.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $post_ids Post IDs.
+	 * @param int   $user_id  User ID.
+	 */
+	public function prime( array $post_ids, int $user_id ): void {
+		$missing = array_values( array_filter( array_unique( array_map( 'intval', $post_ids ) ), static fn ( int $id ): bool => ! isset( self::$rows[ $id . ':' . $user_id ] ) ) );
+		if ( array() === $missing ) {
+			return;
+		}
+
+		foreach ( $missing as $post_id ) {
+			self::$rows[ $post_id . ':' . $user_id ] = array(
+				'vote' => 0,
+				'flag' => 0,
+			);
+		}
+
+		$wpdb = DB::wpdb();
+		$rows = DB::get_results(
+			$wpdb->prepare(
+				'SELECT post_id, vote, flag FROM %i WHERE user_id = %d AND post_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
+				array_merge( array( Schema::table( 'uservotes' ), $user_id ), $missing )
+			)
+		);
+		foreach ( $rows as $row ) {
+			self::$rows[ Row::int( $row, 'post_id' ) . ':' . $user_id ] = array(
+				'vote' => Row::int( $row, 'vote' ),
+				'flag' => Row::int( $row, 'flag' ),
+			);
+		}
+	}
+
+	/**
+	 * Clears the votes and flags loaded during the current request.
+	 *
+	 * Call it after changing the uservotes table.
+	 *
+	 * @since 0.1.0
+	 */
+	public static function forget(): void {
+		self::$rows = array();
+	}
+
+	/**
+	 * Returns the vote and flag of a user on a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $post_id Post ID.
+	 * @param int $user_id User ID.
+	 * @return array{vote: int, flag: int}
+	 */
+	private function row( int $post_id, int $user_id ): array {
+		$key = $post_id . ':' . $user_id;
+		if ( ! isset( self::$rows[ $key ] ) ) {
+			$this->prime( array( $post_id ), $user_id );
+		}
+
+		return self::$rows[ $key ];
 	}
 
 	/**
 	 * Sets the vote of a user on a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor Voting user.
 	 * @param Post  $post  Post.
@@ -119,9 +210,9 @@ final class Votes {
 			return true;
 		}
 
-		$now = Db::now();
-		Db::query(
-			Db::wpdb()->prepare(
+		$now = DB::now();
+		DB::query(
+			DB::wpdb()->prepare(
 				'INSERT INTO %i (post_id, user_id, vote, flag, vote_created) VALUES (%d, %d, %d, 0, %s) ON DUPLICATE KEY UPDATE vote = %d, vote_updated = %s',
 				Schema::table( 'uservotes' ),
 				$post->id,
@@ -132,6 +223,7 @@ final class Votes {
 				$now
 			)
 		);
+		self::forget();
 
 		$this->posts->recount_votes( $post->id );
 
@@ -181,6 +273,8 @@ final class Votes {
 	/**
 	 * Flags a post as inappropriate. When enough users flagged it, the post is hidden.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    Flagging user.
 	 * @param Post  $post     Post.
 	 * @param Post  $question Question the post belongs to.
@@ -199,7 +293,7 @@ final class Votes {
 			return false;
 		}
 
-		$this->set_flag( $post->id, $actor->user_id, true );
+		$this->set_flag( $post->id, $actor->user_id, flag: true );
 		$this->posts->recount_flags( $post->id );
 		Counts::invalidate( Counts::FLAGGED );
 
@@ -228,6 +322,8 @@ final class Votes {
 	/**
 	 * Removes the flag of a user from a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor Flagging user.
 	 * @param Post  $post  Post.
 	 */
@@ -236,7 +332,7 @@ final class Votes {
 			return;
 		}
 
-		$this->set_flag( $post->id, $actor->user_id, false );
+		$this->set_flag( $post->id, $actor->user_id, flag: false );
 		$this->posts->recount_flags( $post->id );
 		Counts::invalidate( Counts::FLAGGED );
 
@@ -253,11 +349,14 @@ final class Votes {
 	/**
 	 * Removes all flags from a post, e.g. after a moderator checked it.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor Moderator.
 	 * @param Post  $post  Post.
 	 */
 	public function clear_flags( Actor $actor, Post $post ): void {
-		Db::query( Db::wpdb()->prepare( 'UPDATE %i SET flag = 0 WHERE post_id = %d', Schema::table( 'uservotes' ), $post->id ) );
+		DB::query( DB::wpdb()->prepare( 'UPDATE %i SET flag = 0 WHERE post_id = %d', Schema::table( 'uservotes' ), $post->id ) );
+		self::forget();
 		$this->posts->recount_flags( $post->id );
 		Counts::invalidate( Counts::FLAGGED );
 
@@ -274,13 +373,15 @@ final class Votes {
 	/**
 	 * Stores or removes a flag.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int  $post_id Post ID.
 	 * @param int  $user_id User ID.
 	 * @param bool $flag    Whether the post is flagged.
 	 */
 	private function set_flag( int $post_id, int $user_id, bool $flag ): void {
-		Db::query(
-			Db::wpdb()->prepare(
+		DB::query(
+			DB::wpdb()->prepare(
 				'INSERT INTO %i (post_id, user_id, vote, flag) VALUES (%d, %d, 0, %d) ON DUPLICATE KEY UPDATE flag = %d',
 				Schema::table( 'uservotes' ),
 				$post_id,
@@ -289,10 +390,13 @@ final class Votes {
 				(int) $flag
 			)
 		);
+		self::forget();
 	}
 
 	/**
 	 * Hides a post that received too many flags.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post     Post.
 	 * @param Post $question Question the post belongs to.
@@ -310,6 +414,8 @@ final class Votes {
 	/**
 	 * Returns the statistic column for votes a user gave.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $prefix    Post type prefix: q, a or c.
 	 * @param string $direction up or down.
 	 * @return string
@@ -326,6 +432,8 @@ final class Votes {
 
 	/**
 	 * Returns the statistic column for vote points a user received.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $prefix Post type prefix: q, a or c.
 	 * @return string

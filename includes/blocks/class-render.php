@@ -3,6 +3,7 @@
  * Rendering helpers of the blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks;
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Markup reuses core class names (buttons, pagination, terms) so the active
  * theme styles it; easyQ ships no stylesheet.
+ *
+ * @since 0.1.0
  */
 final class Render {
 
 	/**
 	 * Renders the inner blocks of a block once with extra context, like core loops do.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Block             $block   Block whose inner blocks to render.
 	 * @param array<string, mixed> $context Context added for the inner blocks.
@@ -45,6 +50,8 @@ final class Render {
 	/**
 	 * Returns a form with one button that submits an action without JavaScript.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string                $form    Form name, see Form_Handler.
 	 * @param int                   $post_id Post the action is about.
 	 * @param string                $label   Button text.
@@ -53,9 +60,9 @@ final class Render {
 	 * @return string
 	 */
 	public static function action_button( string $form, int $post_id, string $label, array $fields = array(), array $button = array() ): string {
-		$hidden = Form_Handler::hidden_fields( $form ) . sprintf( '<input type="hidden" name="easyq_post" value="%d">', $post_id );
+		$hidden = Form_Handler::hidden_fields( $form ) . sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
 		foreach ( $fields as $name => $value ) {
-			$hidden .= sprintf( '<input type="hidden" name="%s" value="%s">', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
+			$hidden .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
 		}
 
 		$attributes = '';
@@ -74,6 +81,8 @@ final class Render {
 	/**
 	 * Returns the displayed name of a post's author.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $post Post.
 	 * @return string
 	 */
@@ -83,11 +92,13 @@ final class Render {
 			return $user->display_name;
 		}
 
-		return '' !== (string) $post->author_name ? (string) $post->author_name : __( 'Anonymous', 'easyq' );
+		return '' === (string) $post->author_name ? __( 'Anonymous', 'easyq' ) : (string) $post->author_name;
 	}
 
 	/**
 	 * Formats a time: relative within the configured number of days, otherwise as date.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $mysql_gmt Time in UTC, MySQL format.
 	 * @param string $display   `relative` ("5 minutes ago"), `absolute`, or empty for the site setting (relative for recent dates).
@@ -116,6 +127,8 @@ final class Render {
 	/**
 	 * Formats a count compactly if configured, e.g. 1.2k.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $count Count.
 	 * @return string
 	 */
@@ -130,6 +143,8 @@ final class Render {
 
 	/**
 	 * Returns the post rules of the viewer for a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Post.
 	 * @return array<string, bool>

@@ -3,9 +3,10 @@
  * REST endpoints for answers.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Post;
@@ -27,11 +28,15 @@ defined( 'ABSPATH' ) || exit;
  * - `POST /easyq/v1/questions/{question}/answers`
  * - `GET  /easyq/v1/answers/{id}`
  * - `PUT  /easyq/v1/answers/{id}`
+ *
+ * @since 0.1.0
  */
 final class Answers_Controller extends Controller {
 
 	/**
 	 * Route base.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -39,6 +44,8 @@ final class Answers_Controller extends Controller {
 
 	/**
 	 * Registers the routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		register_rest_route(
@@ -55,7 +62,7 @@ final class Answers_Controller extends Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => Post_Input::content_args( true ),
+					'args'                => Post_Input::content_args( required: true ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -75,7 +82,7 @@ final class Answers_Controller extends Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => Post_Input::content_args( false ) + array(
+					'args'                => Post_Input::content_args( required: false ) + array(
 						'silent' => array(
 							'description' => __( 'Whether to hide that the answer was edited.', 'easyq' ),
 							'type'        => 'boolean',
@@ -92,6 +99,8 @@ final class Answers_Controller extends Controller {
 	 * Lists the answers of a question the current user may see.
 	 *
 	 * Answers are sorted by time or votes as configured, optionally with the selected answer first.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -139,6 +148,8 @@ final class Answers_Controller extends Controller {
 	/**
 	 * Returns an answer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -157,6 +168,8 @@ final class Answers_Controller extends Controller {
 
 	/**
 	 * Checks whether the request may answer the question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -187,6 +200,8 @@ final class Answers_Controller extends Controller {
 	/**
 	 * Answers a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -194,13 +209,13 @@ final class Answers_Controller extends Controller {
 	public function create_item( $request ): WP_REST_Response|WP_Error {
 		$question = Services::posts()->find( (int) self::int_param( $request, 'question' ) );
 		if ( null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$input  = Post_Input::content( $request );
 		$errors = Services::validator()->validate_answer( Post_Input::validation_fields( $request, $input ) );
 		if ( $errors->has_errors() ) {
-			return Rest_Errors::invalid( $errors );
+			return REST_Errors::invalid( $errors );
 		}
 
 		$actor  = $this->actor();
@@ -222,6 +237,8 @@ final class Answers_Controller extends Controller {
 	/**
 	 * Checks whether the request may edit the answer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -239,11 +256,11 @@ final class Answers_Controller extends Controller {
 		}
 
 		if ( ! Services::permissions()->post_rules( $answer, $actor )['editable'] ) {
-			return Rest_Errors::permission( 'level' );
+			return REST_Errors::permission( 'level' );
 		}
 
 		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
-			return Rest_Errors::permission( 'level' );
+			return REST_Errors::permission( 'level' );
 		}
 
 		return true;
@@ -251,6 +268,8 @@ final class Answers_Controller extends Controller {
 
 	/**
 	 * Edits an answer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -261,7 +280,7 @@ final class Answers_Controller extends Controller {
 		$answer   = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		$question = null === $answer ? null : Services::post_service()->question_of( $answer );
 		if ( null === $answer || null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$input   = Post_Input::content( $request );
@@ -275,7 +294,7 @@ final class Answers_Controller extends Controller {
 			)
 		);
 		if ( $errors->has_errors() ) {
-			return Rest_Errors::invalid( $errors );
+			return REST_Errors::invalid( $errors );
 		}
 
 		$remoderate = Options::get_bool( 'spam', 'moderate_edited_again' ) && null !== Services::permissions()->moderation_reason( $actor );
@@ -285,11 +304,13 @@ final class Answers_Controller extends Controller {
 
 		$updated = Services::posts()->find( $answer->id );
 
-		return null === $updated ? Rest_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
+		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
 	}
 
 	/**
 	 * Returns the schema of an answer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<mixed>
 	 */

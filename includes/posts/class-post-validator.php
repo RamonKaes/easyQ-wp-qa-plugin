@@ -3,6 +3,7 @@
  * Post input validation.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Errors are keyed by field: title, content, tags, email. Ported from
  * Question2Answer `qa-include/plugins/qa-filter-basic.php`.
+ *
+ * @since 0.1.0
  */
 final class Post_Validator {
 
 	/**
 	 * Longest stored title in characters.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -31,12 +36,16 @@ final class Post_Validator {
 	/**
 	 * Longest stored content in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_CONTENT_LENGTH = 12000;
 
 	/**
 	 * Longest stored tag string in characters.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -45,6 +54,8 @@ final class Post_Validator {
 	/**
 	 * Longest name of an anonymous author in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_NAME_LENGTH = 40;
@@ -52,12 +63,16 @@ final class Post_Validator {
 	/**
 	 * Longest email address in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_EMAIL_LENGTH = 100;
 
 	/**
 	 * Validates a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $fields Fields: title, content, format, tags (string[]), notify (bool), email, name. When editing, missing fields are not checked.
 	 * @param bool                 $is_new Whether this is a new question; new questions need title and content.
@@ -103,6 +118,8 @@ final class Post_Validator {
 	/**
 	 * Validates an answer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $fields Fields: content, format, notify, email, name.
 	 * @return WP_Error Errors keyed by field; empty if the answer is valid.
 	 */
@@ -118,6 +135,8 @@ final class Post_Validator {
 	/**
 	 * Validates a comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $fields Fields: content, format, notify, email, name.
 	 * @return WP_Error Errors keyed by field; empty if the comment is valid.
 	 */
@@ -132,6 +151,8 @@ final class Post_Validator {
 
 	/**
 	 * Checks the stored length of the content and the length of its text.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Error             $errors     Errors to add to.
 	 * @param array<string, mixed> $fields     Fields.
@@ -154,6 +175,8 @@ final class Post_Validator {
 	/**
 	 * Checks the fields describing the author: notification address and name.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_Error             $errors Errors to add to.
 	 * @param array<string, mixed> $fields Fields.
 	 */
@@ -173,6 +196,8 @@ final class Post_Validator {
 
 	/**
 	 * Checks the length of a field if it is present.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Error             $errors Errors to add to.
 	 * @param array<string, mixed> $fields Fields.
@@ -202,6 +227,8 @@ final class Post_Validator {
 
 	/**
 	 * Returns the error message for a field that is too long.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $max Maximum length in characters.
 	 * @return string

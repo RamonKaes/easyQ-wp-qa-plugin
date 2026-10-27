@@ -3,11 +3,12 @@
  * User profile fields.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Util\Text;
 use WP_Error;
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
  * WordPress already has fields for the website and the biography, so the
  * Question2Answer fields "website" and "about" map to those; the only default
  * field is "location".
+ *
+ * @since 0.1.0
  */
 final class User_Fields {
 
 	/**
 	 * Longest field value in characters.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -33,6 +38,8 @@ final class User_Fields {
 	/**
 	 * Longest field name and label in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_NAME_LENGTH = 40;
@@ -40,12 +47,16 @@ final class User_Fields {
 	/**
 	 * Object cache key and group.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const CACHE_GROUP = 'easyq_userfields';
 
 	/**
 	 * Returns all fields in order.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return User_Field[]
 	 */
@@ -55,7 +66,7 @@ final class User_Fields {
 			return array_values( array_filter( $cached, static fn ( $field ): bool => $field instanceof User_Field ) );
 		}
 
-		$rows   = Db::get_results( Db::wpdb()->prepare( 'SELECT * FROM %i ORDER BY position, id', Schema::table( 'userfields' ) ) );
+		$rows   = DB::get_results( DB::wpdb()->prepare( 'SELECT * FROM %i ORDER BY position, id', Schema::table( 'userfields' ) ) );
 		$fields = array_map( array( User_Field::class, 'from_row' ), $rows );
 
 		wp_cache_set( 'all', $fields, self::CACHE_GROUP );
@@ -65,6 +76,8 @@ final class User_Fields {
 
 	/**
 	 * Returns a field.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $id Field ID.
 	 * @return User_Field|null
@@ -81,6 +94,8 @@ final class User_Fields {
 
 	/**
 	 * Adds the default fields if no fields exist.
+	 *
+	 * @since 0.1.0
 	 */
 	public function install_defaults(): void {
 		if ( array() === $this->all() ) {
@@ -90,6 +105,8 @@ final class User_Fields {
 
 	/**
 	 * Creates a field at the end of the list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string   $name   Internal name: lowercase letters, digits, hyphens and underscores.
 	 * @param string   $label  Label; empty to use the name.
@@ -105,7 +122,7 @@ final class User_Fields {
 		}
 
 		$fields = $this->all();
-		$id     = Db::insert(
+		$id     = DB::insert(
 			Schema::table( 'userfields' ),
 			array(
 				'name'     => $name,
@@ -125,6 +142,8 @@ final class User_Fields {
 	/**
 	 * Changes the label, flags and visibility of a field.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $id     Field ID.
 	 * @param string   $label  Label.
 	 * @param int      $flags  Flags.
@@ -143,7 +162,7 @@ final class User_Fields {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
-		Db::wpdb()->update(
+		DB::wpdb()->update(
 			Schema::table( 'userfields' ),
 			array(
 				'label'  => '' === $label ? null : $label,
@@ -161,6 +180,8 @@ final class User_Fields {
 	/**
 	 * Moves a field to a position.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id       Field ID.
 	 * @param int $position New position, starting at 1; values out of range are clamped.
 	 */
@@ -177,6 +198,8 @@ final class User_Fields {
 	/**
 	 * Deletes a field and the values users entered.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Field ID.
 	 */
 	public function delete( int $id ): void {
@@ -185,7 +208,7 @@ final class User_Fields {
 			return;
 		}
 
-		Db::query( Db::wpdb()->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'userfields' ), $id ) );
+		DB::query( DB::wpdb()->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'userfields' ), $id ) );
 		delete_metadata( 'user', 0, $field->meta_key(), '', true );
 
 		$this->forget();
@@ -194,6 +217,8 @@ final class User_Fields {
 
 	/**
 	 * Returns the value a user entered.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int        $user_id User ID.
 	 * @param User_Field $field   Field.
@@ -207,6 +232,8 @@ final class User_Fields {
 
 	/**
 	 * Stores the value of a field for a user, sanitized for the kind of field.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int        $user_id User ID.
 	 * @param User_Field $field   Field.
@@ -232,6 +259,8 @@ final class User_Fields {
 
 	/**
 	 * Validates the name and label of a field.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string   $name  Name.
 	 * @param string   $label Label.
@@ -265,13 +294,15 @@ final class User_Fields {
 	/**
 	 * Stores positions 1, 2, 3, … for fields in the given order.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int[] $ids Field IDs in their new order.
 	 */
 	private function write_positions( array $ids ): void {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		foreach ( $ids as $index => $id ) {
-			Db::query( $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', Schema::table( 'userfields' ), $index + 1, $id ) );
+			DB::query( $wpdb->prepare( 'UPDATE %i SET position = %d WHERE id = %d', Schema::table( 'userfields' ), $index + 1, $id ) );
 		}
 
 		$this->forget();
@@ -279,6 +310,8 @@ final class User_Fields {
 
 	/**
 	 * Clears the field cache.
+	 *
+	 * @since 0.1.0
 	 */
 	private function forget(): void {
 		wp_cache_delete( 'all', self::CACHE_GROUP );

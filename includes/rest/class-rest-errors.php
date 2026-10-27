@@ -3,9 +3,10 @@
  * REST error responses.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use WP_Error;
 
@@ -13,11 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Builds the error responses of the REST API.
+ *
+ * @since 0.1.0
  */
-final class Rest_Errors {
+final class REST_Errors {
 
 	/**
 	 * Converts a permission error reason into an error response.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $reason Reason from Permissions::error().
 	 * @return WP_Error
@@ -40,6 +45,8 @@ final class Rest_Errors {
 	/**
 	 * Returns the error for a missing or invisible resource.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return WP_Error
 	 */
 	public static function not_found(): WP_Error {
@@ -48,6 +55,8 @@ final class Rest_Errors {
 
 	/**
 	 * Adds the HTTP status and field details to validation errors.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Error $errors Errors keyed by field.
 	 * @return WP_Error
@@ -70,6 +79,8 @@ final class Rest_Errors {
 
 	/**
 	 * Adds an HTTP status to an error from a service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Error $error  Error.
 	 * @param int      $status HTTP status.

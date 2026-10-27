@@ -1,5 +1,7 @@
 /**
  * Registers the easyQ blocks in the editor.
+ *
+ * @since 0.1.0
  */
 import { registerBlockType } from '@wordpress/blocks';
 import { InnerBlocks } from '@wordpress/block-editor';
@@ -60,6 +62,8 @@ const CONTAINERS = [
 
 /**
  * Icons of the blocks, from the core icon library; blocks with a core counterpart use its icon.
+ *
+ * @since 0.1.0
  *
  * @type {Object<string, Element>}
  */

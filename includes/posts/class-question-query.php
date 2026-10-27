@@ -3,12 +3,13 @@
  * Question lists.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
 
 use EasyQ\Categories\Categories;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Search\Basic_Search;
 
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
  * Lists visible questions, sorted and filtered like the Question2Answer question lists.
  *
  * Ported from the selectspecs in Question2Answer `qa-include/db/selects.php`.
+ *
+ * @since 0.1.0
  */
 final class Question_Query {
 
 	/**
 	 * Sort orders and their SQL.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -37,6 +42,8 @@ final class Question_Query {
 	/**
 	 * Conditions of the unanswered lists.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var array<string, string>
 	 */
 	private const UNANSWERED = array(
@@ -48,12 +55,16 @@ final class Question_Query {
 	/**
 	 * Largest page size.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_PER_PAGE = 100;
 
 	/**
 	 * Sets up the query.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post_Repository $posts      Post storage.
 	 * @param Categories      $categories Categories.
@@ -67,6 +78,8 @@ final class Question_Query {
 	/**
 	 * Returns the available list sources.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string[]
 	 */
 	public static function sources(): array {
@@ -77,6 +90,8 @@ final class Question_Query {
 	 * Returns the posts column that filters by a category and its subcategories.
 	 *
 	 * Each depth has its own indexed column; the deepest level uses the category itself.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Categories $categories  Categories.
 	 * @param int        $category_id Category ID.
@@ -96,6 +111,8 @@ final class Question_Query {
 	/**
 	 * Lists questions.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $args {
 	 *     Query arguments.
 	 *
@@ -113,7 +130,7 @@ final class Question_Query {
 		$per_page = max( 1, min( self::MAX_PER_PAGE, is_numeric( $args['per_page'] ?? null ) ? (int) $args['per_page'] : 20 ) );
 		$page     = max( 1, is_numeric( $args['page'] ?? null ) ? (int) $args['page'] : 1 );
 
-		$wpdb   = Db::wpdb();
+		$wpdb   = DB::wpdb();
 		$where  = array( "p.type = 'Q'" );
 		$params = array( Schema::table( 'posts' ) );
 
@@ -138,7 +155,7 @@ final class Question_Query {
 
 		$tag = is_string( $args['tag'] ?? null ) ? (string) $args['tag'] : '';
 		if ( '' !== $tag ) {
-			$word_ids = ( new Basic_Search() )->word_ids( array( $tag ), false );
+			$word_ids = ( new Basic_Search() )->word_ids( array( $tag ), create: false );
 			if ( ! isset( $word_ids[ $tag ] ) ) {
 				return array(
 					'posts' => array(),
@@ -161,12 +178,12 @@ final class Question_Query {
 		$order      = self::ORDERS[ $source ] ?? self::ORDERS['recent'];
 
 		// The conditions and the order consist of fixed SQL with placeholders for the values.
-		$ids = Db::get_int_col(
+		$ids = DB::get_int_col(
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
 			$wpdb->prepare( 'SELECT p.id FROM %i AS p WHERE ' . $conditions . ' ORDER BY ' . $order . ' LIMIT %d, %d', array_merge( $params, array( ( $page - 1 ) * $per_page, $per_page ) ) )
 		);
 
-		$total = Db::get_int(
+		$total = DB::get_int(
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
 			$wpdb->prepare( 'SELECT COUNT(*) FROM %i AS p WHERE ' . $conditions, $params )
 		);

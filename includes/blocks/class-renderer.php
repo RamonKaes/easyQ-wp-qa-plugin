@@ -3,6 +3,7 @@
  * Block render dispatcher.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Routes the `render.php` of every block to the method that renders it.
+ *
+ * @since 0.1.0
  */
 final class Renderer {
 
 	/**
 	 * Renders a block.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $name       Block name without namespace.
 	 * @param array<string, mixed> $attributes Block attributes.

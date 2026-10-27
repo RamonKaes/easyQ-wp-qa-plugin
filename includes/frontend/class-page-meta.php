@@ -3,6 +3,7 @@
  * Document title, canonical address, structured data and view counting.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -11,7 +12,7 @@ use EasyQ\Blocks\Lists;
 use EasyQ\Blocks\Render\Widgets;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
-use EasyQ\Util\Ip;
+use EasyQ\Util\IP;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,11 +22,15 @@ defined( 'ABSPATH' ) || exit;
  * Views are counted once per visitor and hour. To tell visitors apart without
  * storing their IP address, a salted hash of the address and the question is
  * kept in a transient for an hour.
+ *
+ * @since 0.1.0
  */
 final class Page_Meta {
 
 	/**
 	 * Sets up the meta data.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Router $router Router of the current request.
 	 */
@@ -34,6 +39,8 @@ final class Page_Meta {
 
 	/**
 	 * Hooks the meta data into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_filter( 'document_title_parts', array( $this, 'title' ) );
@@ -44,6 +51,8 @@ final class Page_Meta {
 
 	/**
 	 * Sets the document title of Q&A pages.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, string> $parts Title parts.
 	 * @return array<string, string>
@@ -58,6 +67,8 @@ final class Page_Meta {
 
 	/**
 	 * Prints the canonical address of questions and profiles and the structured data of questions.
+	 *
+	 * @since 0.1.0
 	 */
 	public function head(): void {
 		$route = $this->router->current();
@@ -67,7 +78,7 @@ final class Page_Meta {
 
 		$user = $route->user();
 		if ( 'user' === $route->name && null !== $user ) {
-			printf( '<link rel="canonical" href="%s">' . "\n", esc_url( Urls::user( $user, $route->section ) ) );
+			printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( URLs::user( $user, $route->section ) ) );
 			return;
 		}
 
@@ -76,7 +87,7 @@ final class Page_Meta {
 			return;
 		}
 
-		printf( '<link rel="canonical" href="%s">' . "\n", esc_url( Urls::question( $question ) ) );
+		printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( URLs::question( $question ) ) );
 
 		if ( Post::QUESTION === $question->type ) {
 			printf( '<script type="application/ld+json">%s</script>' . "\n", wp_json_encode( $this->structured_data( $question ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
@@ -87,6 +98,8 @@ final class Page_Meta {
 	 * Keeps search engines away from search results, forms, the account page, empty lists and hidden or queued posts.
 	 *
 	 * Block templates are rendered before the document head, so the lists of the page are known here.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, bool|string> $robots Robots directives.
 	 * @return array<string, bool|string>
@@ -107,6 +120,8 @@ final class Page_Meta {
 
 	/**
 	 * Counts a view of the question page.
+	 *
+	 * @since 0.1.0
 	 */
 	public function count_view(): void {
 		$question = $this->router->current()?->question();
@@ -114,7 +129,7 @@ final class Page_Meta {
 			return;
 		}
 
-		$key = 'easyq_view_' . substr( hash_hmac( 'sha256', $question->id . '|' . (string) Ip::current(), wp_salt( 'nonce' ) ), 0, 32 );
+		$key = 'easyq_view_' . substr( hash_hmac( 'sha256', $question->id . '|' . (string) IP::current(), wp_salt( 'nonce' ) ), 0, 32 );
 		if ( false !== get_transient( $key ) ) {
 			return;
 		}
@@ -125,6 +140,8 @@ final class Page_Meta {
 
 	/**
 	 * Returns the schema.org data of a question page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 * @return array<string, mixed>
@@ -138,7 +155,7 @@ final class Page_Meta {
 			'text'        => wp_strip_all_tags( $renderer->html( (string) $answer->content, $answer->format ) ),
 			'dateCreated' => mysql_to_rfc3339( $answer->created ),
 			'upvoteCount' => $answer->net_votes,
-			'url'         => Urls::post( $answer ),
+			'url'         => URLs::post( $answer ),
 			'author'      => array(
 				'@type' => 'Person',
 				'name'  => \EasyQ\Blocks\Render::author_name( $answer ),

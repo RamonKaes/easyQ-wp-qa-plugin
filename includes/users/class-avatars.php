@@ -3,6 +3,7 @@
  * Uploaded avatars.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -22,6 +23,8 @@ defined( 'ABSPATH' ) || exit;
  * Uploaded avatars are attachments in the Media Library; the attachment ID is
  * stored in user meta. Gravatar and the default avatar remain governed by the
  * WordPress discussion settings.
+ *
+ * @since 0.1.0
  */
 final class Avatars {
 
@@ -30,6 +33,8 @@ final class Avatars {
 	 *
 	 * Attachments belong to a site, so the key is site-specific (see Site_Meta).
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const META = 'easyq_avatar_id';
@@ -37,12 +42,16 @@ final class Avatars {
 	/**
 	 * Post meta key that marks attachments uploaded as avatar, with the user ID.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const ATTACHMENT_META = '_easyq_avatar_user';
 
 	/**
 	 * Image types accepted as avatar.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -55,6 +64,8 @@ final class Avatars {
 
 	/**
 	 * Hooks the avatar lookup into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_filter( 'pre_get_avatar_data', array( $this, 'avatar_data' ), 10, 2 );
@@ -62,6 +73,8 @@ final class Avatars {
 
 	/**
 	 * Uses the uploaded avatar of a user, if there is one.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $args        Avatar arguments.
 	 * @param mixed                $id_or_email User ID, email, user, post or comment.
@@ -97,6 +110,8 @@ final class Avatars {
 	/**
 	 * Sets or removes the uploaded avatar of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $user_id       User ID.
 	 * @param int|null $attachment_id Attachment ID of an image, or null to remove the avatar.
 	 * @return bool False if the attachment is not an image.
@@ -121,6 +136,8 @@ final class Avatars {
 	 *
 	 * The image is cropped to a square of the configured size, which also drops
 	 * the metadata of the original file, and added to the Media Library.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $file    Entry of the uploaded file, see file_entry().
@@ -187,6 +204,8 @@ final class Avatars {
 	/**
 	 * Crops an image to a square, at most as large as the given side.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_Image_Editor $editor Image.
 	 * @param int             $side   Largest side length.
 	 * @return true|WP_Error
@@ -204,6 +223,8 @@ final class Avatars {
 
 	/**
 	 * Checks the entry of an uploaded file, as in `$_FILES`.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param mixed $file Entry of an uploaded file.
 	 * @return array|null The entry, or null if no file was sent.
@@ -236,6 +257,8 @@ final class Avatars {
 	/**
 	 * Removes the avatar of a user and deletes the image if it was uploaded as an avatar.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 */
 	public static function remove( int $user_id ): void {
@@ -253,6 +276,8 @@ final class Avatars {
 	/**
 	 * Returns the attachment ID of the uploaded avatar of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return int|null
 	 */
@@ -264,6 +289,8 @@ final class Avatars {
 
 	/**
 	 * Finds the user ID for the different ways get_avatar() identifies a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param mixed $id_or_email User ID, email, user, post or comment.
 	 * @return int|null

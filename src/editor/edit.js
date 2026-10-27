@@ -1,5 +1,7 @@
 /**
  * Editor components of the easyQ blocks.
+ *
+ * @since 0.1.0
  */
 import { __, _n, sprintf } from '@wordpress/i18n';
 import {
@@ -35,6 +37,8 @@ import {
 /**
  * Shows a short text in place of a block that only has content on Q&A pages.
  *
+ * @since 0.1.0
+ *
  * @param {Object} props       Properties.
  * @param {string} props.label Text.
  * @return {Element} Placeholder.
@@ -49,6 +53,8 @@ function Placeholder( { label } ) {
 
 /**
  * Preview of one field of the post from block context.
+ *
+ * @since 0.1.0
  *
  * @param {Object} props            Properties.
  * @param {string} props.name       Block name.
@@ -194,6 +200,8 @@ function FieldPreview( { name, attributes, context, title } ) {
 /**
  * Preview of one part of the user from block context.
  *
+ * @since 0.1.0
+ *
  * @param {Object} props            Properties.
  * @param {string} props.name       Block name.
  * @param {Object} props.attributes Attributes.
@@ -302,6 +310,8 @@ function UserFieldPreview( { name, attributes, context, title } ) {
 /**
  * Renders inner blocks with a user as context.
  *
+ * @since 0.1.0
+ *
  * @param {Object}           props          Properties.
  * @param {number|undefined} props.userId   User ID for the context.
  * @param {Array}            props.template Default inner blocks.
@@ -321,6 +331,8 @@ function UserContextBlocks( { userId, template } ) {
 
 /**
  * Renders inner blocks with a post as context.
+ *
+ * @since 0.1.0
  *
  * @param {Object}           props          Properties.
  * @param {number|undefined} props.postId   Post ID for the context.
@@ -344,6 +356,8 @@ function PostContextBlocks( { postId, template, tagName = 'div' } ) {
 /**
  * Container that gives its block a unique query ID.
  *
+ * @since 0.1.0
+ *
  * @param {Object}                       props               Properties.
  * @param {Object}                       props.attributes    Attributes.
  * @param {(attributes: Object) => void} props.setAttributes Updates attributes.
@@ -364,6 +378,8 @@ function ListContainer( { attributes, setAttributes, template } ) {
 
 /**
  * Returns the options of a category select, with subcategories indented below their parent.
+ *
+ * @since 0.1.0
  *
  * @param {Array|undefined} categories Categories from the REST API.
  * @param {number|null}     parent     Parent category.
@@ -388,6 +404,8 @@ function categoryOptions( categories, parent = null, depth = 0 ) {
 
 /**
  * Settings of a question list.
+ *
+ * @since 0.1.0
  *
  * @param {Object}                       props               Properties.
  * @param {Object}                       props.attributes    Attributes.
@@ -525,6 +543,8 @@ function QueryInspector( { attributes, setAttributes } ) {
 /**
  * Settings of a user list.
  *
+ * @since 0.1.0
+ *
  * @param {Object}                       props               Properties.
  * @param {Object}                       props.attributes    Attributes.
  * @param {(attributes: Object) => void} props.setAttributes Updates attributes.
@@ -590,6 +610,8 @@ function UserQueryInspector( { attributes, setAttributes } ) {
 
 /**
  * Returns the editor component of a block.
+ *
+ * @since 0.1.0
  *
  * @param {Object} metadata Block metadata.
  * @return {(props: Object) => Element} Edit component.
@@ -722,6 +744,8 @@ export default function editFor( metadata ) {
 /**
  * Editor of the comment list.
  *
+ * @since 0.1.0
+ *
  * @return {Element} Comment list.
  */
 function CommentListEdit() {
@@ -736,6 +760,8 @@ function CommentListEdit() {
 
 /**
  * Preview rendered by the server, for blocks that do not depend on a post.
+ *
+ * @since 0.1.0
  *
  * @param {Object} props            Properties.
  * @param {string} props.name       Block name.
@@ -752,6 +778,8 @@ function ServerRendered( { name, attributes } ) {
 
 /**
  * Editor of the question template: the first question of the list is shown with editable blocks.
+ *
+ * @since 0.1.0
  *
  * @param {Object} props         Properties.
  * @param {Object} props.context Block context with the query.
@@ -773,6 +801,8 @@ function QuestionTemplateEdit( { context } ) {
 /**
  * Editor of the question block: shows the latest question or the chosen one.
  *
+ * @since 0.1.0
+ *
  * @param {Object} props            Properties.
  * @param {number} props.questionId Chosen question, 0 for the question of the page.
  * @return {Element} Question.
@@ -787,6 +817,8 @@ function QuestionEdit( { questionId } ) {
 
 /**
  * Editor of answer and comment templates: shows the first answer or comment.
+ *
+ * @since 0.1.0
  *
  * @param {Object} props         Properties.
  * @param {Object} props.context Block context with the parent post.
@@ -809,6 +841,8 @@ function ChildTemplateEdit( { context, type } ) {
 /**
  * Editor of the user template: the first user of the list is shown with editable blocks.
  *
+ * @since 0.1.0
+ *
  * @param {Object} props         Properties.
  * @param {Object} props.context Block context with the query.
  * @return {Element} Template.
@@ -822,6 +856,8 @@ function UserTemplateEdit( { context } ) {
 
 /**
  * Editor of the user block: shows the chosen user, or the current user as an example.
+ *
+ * @since 0.1.0
  *
  * @param {Object} props        Properties.
  * @param {number} props.userId Chosen user, 0 for the user of the page.

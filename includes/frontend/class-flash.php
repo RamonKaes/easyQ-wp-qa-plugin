@@ -3,6 +3,7 @@
  * Messages after form submissions.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -14,11 +15,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * The data is stored for a few minutes under a random token that is passed in
  * the address of the page the visitor is redirected to.
+ *
+ * @since 0.1.0
  */
 final class Flash {
 
 	/**
 	 * Query parameter with the token.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -26,6 +31,8 @@ final class Flash {
 
 	/**
 	 * Stores a message and returns its token.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string                $type    `success` or `error`.
 	 * @param string                $message Message.
@@ -54,6 +61,8 @@ final class Flash {
 
 	/**
 	 * Returns the message of the current request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array{type: string, message: string, form: string, fields: array<string, string>, values: array<string, mixed>}|null
 	 */
@@ -95,6 +104,8 @@ final class Flash {
 	/**
 	 * Returns the submitted value of a field of a form after a failed submission.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $form  Form.
 	 * @param string $field Field.
 	 * @return string
@@ -112,6 +123,8 @@ final class Flash {
 
 	/**
 	 * Returns the error of a field of a form after a failed submission.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $form  Form.
 	 * @param string $field Field.

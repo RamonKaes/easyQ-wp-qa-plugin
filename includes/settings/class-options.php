@@ -3,6 +3,7 @@
  * Plugin settings storage.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Settings;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
  * Stored values are merged with the defaults, so new settings work without an
  * upgrade routine. Unknown stored keys are ignored. Setting names follow the
  * Question2Answer option names, see docs/feature-mapping.md.
+ *
+ * @since 0.1.0
  */
 final class Options {
 
 	/**
 	 * Prefix of the option names; the section name is appended.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -33,6 +38,8 @@ final class Options {
 	 *
 	 * Deviations from the Question2Answer defaults are privacy related: anonymous
 	 * posting and notifications are off by default.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, array<string, mixed>>
 	 */
@@ -247,6 +254,8 @@ final class Options {
 		/**
 		 * Filters the default settings.
 		 *
+		 * @since 0.1.0
+		 *
 		 * @param array<string, array<string, mixed>> $defaults Default values keyed by section and setting.
 		 */
 		return (array) apply_filters( 'easyq_default_settings', $defaults );
@@ -254,6 +263,8 @@ final class Options {
 
 	/**
 	 * Returns the names of all sections.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string[]
 	 */
@@ -264,6 +275,8 @@ final class Options {
 	/**
 	 * Returns the option name of a section.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $section Section name.
 	 * @return string
 	 */
@@ -273,6 +286,8 @@ final class Options {
 
 	/**
 	 * Returns all settings of a section, merged with the defaults.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $section Section name.
 	 * @return array<string, mixed>
@@ -295,6 +310,8 @@ final class Options {
 	/**
 	 * Returns a single setting.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $section Section name.
 	 * @param string $key     Setting name.
 	 * @return mixed The value, or null if the setting does not exist.
@@ -305,6 +322,8 @@ final class Options {
 
 	/**
 	 * Returns a setting as an integer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $section Section name.
 	 * @param string $key     Setting name.
@@ -319,6 +338,8 @@ final class Options {
 	/**
 	 * Returns a setting as a boolean.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $section Section name.
 	 * @param string $key     Setting name.
 	 * @return bool
@@ -329,6 +350,8 @@ final class Options {
 
 	/**
 	 * Returns a setting as a string.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $section Section name.
 	 * @param string $key     Setting name.
@@ -343,6 +366,8 @@ final class Options {
 	/**
 	 * Updates settings of a section; settings not passed keep their value.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string               $section Section name.
 	 * @param array<string, mixed> $values  New values keyed by setting name.
 	 */
@@ -352,6 +377,8 @@ final class Options {
 
 	/**
 	 * Adds the options of all sections with their defaults; existing values are kept.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function install(): void {
 		foreach ( self::defaults() as $section => $values ) {
@@ -361,6 +388,8 @@ final class Options {
 
 	/**
 	 * Deletes the options of all sections.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function delete_all(): void {
 		foreach ( self::sections() as $section ) {

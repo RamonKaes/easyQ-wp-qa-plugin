@@ -3,6 +3,7 @@
  * Q&A routes.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -17,11 +18,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * With pretty permalinks the pages live at `/{base}/…`, e.g. `/questions/42/my-question`;
  * without, query parameters are used, e.g. `/?easyq_route=question&easyq_id=42`.
+ *
+ * @since 0.1.0
  */
 final class Routes {
 
 	/**
 	 * Query variable with the route name.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -30,6 +35,8 @@ final class Routes {
 	/**
 	 * Query variable with a route argument, e.g. a question ID, tag or user name.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const ARG_VAR = 'easyq_arg';
@@ -37,12 +44,16 @@ final class Routes {
 	/**
 	 * Query variable with a second route argument, e.g. a profile section or the argument of a feed.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const SECTION_VAR = 'easyq_section';
 
 	/**
 	 * Routes without arguments and their path below the base slug.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -68,12 +79,16 @@ final class Routes {
 	/**
 	 * Sections of user profiles.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string[]
 	 */
 	public const USER_SECTIONS = array( 'questions', 'answers', 'activity', 'wall' );
 
 	/**
 	 * Returns the base slug of the Q&A area.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -85,6 +100,8 @@ final class Routes {
 
 	/**
 	 * Returns the rewrite rules of the Q&A area.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, string> Query strings keyed by regular expression.
 	 */
@@ -111,6 +128,8 @@ final class Routes {
 	/**
 	 * Checks whether the site uses pretty permalinks.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public static function pretty(): bool {
@@ -121,6 +140,8 @@ final class Routes {
 
 	/**
 	 * Returns the address of a route.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $route   Route name, e.g. `home`, `question` or `tag`.
 	 * @param string|int|null      $arg     Route argument.
@@ -147,9 +168,9 @@ final class Routes {
 			'question' => (string) $arg,
 			'tag'      => 'tag/' . rawurlencode( (string) $arg ),
 			'category' => 'categories/' . implode( '/', array_map( 'rawurlencode', explode( '/', (string) $arg ) ) ),
-			'user'     => 'user/' . rawurlencode( (string) $arg ) . ( null !== $section ? '/' . $section : '' ),
+			'user'     => 'user/' . rawurlencode( (string) $arg ) . ( null === $section ? '' : '/' . $section ),
 			'message'  => 'message/' . rawurlencode( (string) $arg ),
-			'feed'     => 'feed/' . rawurlencode( (string) $arg ) . ( null !== $section ? '/' . implode( '/', array_map( 'rawurlencode', explode( '/', $section ) ) ) : '' ),
+			'feed'     => 'feed/' . rawurlencode( (string) $arg ) . ( null === $section ? '' : '/' . implode( '/', array_map( 'rawurlencode', explode( '/', $section ) ) ) ),
 			default    => self::SIMPLE[ $route ] ?? '',
 		};
 

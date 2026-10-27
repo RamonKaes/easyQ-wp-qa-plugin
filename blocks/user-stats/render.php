@@ -3,6 +3,7 @@
  * Server-side rendering of the easyq/user-stats block.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 defined( 'ABSPATH' ) || exit;

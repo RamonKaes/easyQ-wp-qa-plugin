@@ -3,6 +3,7 @@
  * Lists rendered on the current page.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks;
@@ -15,11 +16,15 @@ defined( 'ABSPATH' ) || exit;
  * A list block (question query, answer list, comment list) gives its children a
  * list ID through block context. The template block that loops over the items
  * stores the result here, so pagination and "no results" blocks can use it.
+ *
+ * @since 0.1.0
  */
 final class Lists {
 
 	/**
 	 * Query parameter with the page number of the main list, the one that follows the route.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -28,12 +33,16 @@ final class Lists {
 	/**
 	 * Results keyed by list ID.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var array<string, array{ids: int[], total: int, page: int, per_page: int, page_var: string}>
 	 */
 	private static array $results = array();
 
 	/**
 	 * Stores the result of a list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $list_id  List ID.
 	 * @param int[]  $ids      IDs of the items on the current page.
@@ -55,6 +64,8 @@ final class Lists {
 	/**
 	 * Returns the result of a list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $list_id List ID.
 	 * @return array{ids: int[], total: int, page: int, per_page: int, page_var: string}|null
 	 */
@@ -66,6 +77,8 @@ final class Lists {
 	 * Checks whether the main list of the page, the one that follows the route, has no items.
 	 *
 	 * Also true for page numbers beyond the last page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return bool False if the page has no main list or it has items.
 	 */
@@ -82,6 +95,8 @@ final class Lists {
 	/**
 	 * Returns the page requested for a list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $page_var Query parameter that holds the page number.
 	 * @return int
 	 */
@@ -94,6 +109,8 @@ final class Lists {
 
 	/**
 	 * Forgets all results. Used by tests.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function reset(): void {
 		self::$results = array();

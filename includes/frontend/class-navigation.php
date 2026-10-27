@@ -3,6 +3,7 @@
  * Q&A pages in the Navigation block.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -21,11 +22,15 @@ defined( 'ABSPATH' ) || exit;
  * "Q&A: Ask a question". The address is taken from the route when the link is
  * rendered, so menus keep working after the base slug changed, and the link of
  * the current page is marked like core marks pages.
+ *
+ * @since 0.1.0
  */
 final class Navigation {
 
 	/**
 	 * Attribute value of `kind` that marks Q&A links.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -34,6 +39,8 @@ final class Navigation {
 	/**
 	 * Sets up the navigation links.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Router $router Router of the current request.
 	 */
 	public function __construct( private readonly Router $router ) {
@@ -41,6 +48,8 @@ final class Navigation {
 
 	/**
 	 * Hooks the navigation links into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_filter( 'get_block_type_variations', array( $this, 'variations' ), 10, 2 );
@@ -49,6 +58,8 @@ final class Navigation {
 
 	/**
 	 * Returns the Q&A pages offered as links, with their labels.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, string> Labels keyed by route name.
 	 */
@@ -68,6 +79,8 @@ final class Navigation {
 
 	/**
 	 * Adds the Q&A pages to the variations of the Navigation Link block.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<int, array<string, mixed>> $variations Variations.
 	 * @param WP_Block_Type                    $block_type Block type.
@@ -101,6 +114,8 @@ final class Navigation {
 
 	/**
 	 * Sets the current address of a Q&A link and marks the link of the current page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string       $content      Rendered link.
 	 * @param array<mixed> $parsed_block Parsed block with its attributes.

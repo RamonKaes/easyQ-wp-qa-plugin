@@ -3,12 +3,13 @@
  * Activity lists.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
 
 use EasyQ\Categories\Categories;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Ported from the selectspecs in Question2Answer `qa-include/db/selects.php` and
  * `qa_any_sort_and_dedupe()` in `qa-include/app/format.php`.
+ *
+ * @since 0.1.0
  */
 final class Activity_Query {
 
 	/**
 	 * Kinds of activity.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -33,12 +38,16 @@ final class Activity_Query {
 	/**
 	 * Events of the same post part that are this close (in seconds) count as one.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	private const CLOSE_EVENTS = 300;
 
 	/**
 	 * Sets up the query.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post_Repository $posts      Post storage.
 	 * @param Categories      $categories Categories.
@@ -51,6 +60,8 @@ final class Activity_Query {
 
 	/**
 	 * Lists the most recent activity, one item per question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string[]             $kinds   Kinds of activity to include, see KINDS.
 	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
@@ -70,6 +81,8 @@ final class Activity_Query {
 
 	/**
 	 * Lists answers or comments of a user page by page, one item per post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $kind     `questions`, `answers` or `comments`.
 	 * @param int    $user_id  Author.
@@ -98,6 +111,8 @@ final class Activity_Query {
 	 * Sorts items newest first and keeps one item per question.
 	 *
 	 * Creating a post and editing it shortly after by the same user shows as the creation.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Activity_Item[] $items Items.
 	 * @return list<Activity_Item>
@@ -128,6 +143,8 @@ final class Activity_Query {
 	/**
 	 * Selects activity of one kind.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string               $kind    Kind of activity, see KINDS.
 	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
 	 * @param int                  $offset  Rows to skip.
@@ -142,9 +159,9 @@ final class Activity_Query {
 
 		[ $sql, $params ] = $query;
 
-		$rows = Db::get_results(
+		$rows = DB::get_results(
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-			Db::wpdb()->prepare( $sql . ' ORDER BY time DESC, post_id DESC LIMIT %d, %d', array_merge( $params, array( $offset, $limit ) ) )
+			DB::wpdb()->prepare( $sql . ' ORDER BY time DESC, post_id DESC LIMIT %d, %d', array_merge( $params, array( $offset, $limit ) ) )
 		);
 
 		$items = array();
@@ -165,6 +182,8 @@ final class Activity_Query {
 	/**
 	 * Counts activity of one kind.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string               $kind    Kind of activity, see KINDS.
 	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
 	 * @return int
@@ -177,14 +196,16 @@ final class Activity_Query {
 
 		[ $sql, $params ] = $query;
 
-		return Db::get_int(
+		return DB::get_int(
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-			Db::wpdb()->prepare( 'SELECT COUNT(*) FROM (' . $sql . ') AS activity', $params )
+			DB::wpdb()->prepare( 'SELECT COUNT(*) FROM (' . $sql . ') AS activity', $params )
 		);
 	}
 
 	/**
 	 * Builds the query of one kind of activity. Only visible posts of visible questions are included.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $kind    Kind of activity, see KINDS.
 	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
@@ -235,6 +256,8 @@ final class Activity_Query {
 
 	/**
 	 * Loads the questions and posts of activity items.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Activity_Item[] $items Items.
 	 * @return array<int, Post> Posts keyed by ID.

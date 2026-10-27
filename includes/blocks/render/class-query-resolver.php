@@ -3,6 +3,7 @@
  * Question queries of blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks\Render;
@@ -19,11 +20,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Turns the query of a question list block, or the current page, into a list of questions.
+ *
+ * @since 0.1.0
  */
 final class Query_Resolver {
 
 	/**
 	 * Sort orders of the start page, selected with the `sort` parameter.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -32,12 +37,16 @@ final class Query_Resolver {
 	/**
 	 * Lists of the unanswered page, selected with the `by` parameter.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string[]
 	 */
 	public const UNANSWERED = array( 'unanswered', 'unselected', 'unupvoted' );
 
 	/**
 	 * Sources that list activity instead of questions, with the kinds of activity they include.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string[]>
 	 */
@@ -49,6 +58,8 @@ final class Query_Resolver {
 
 	/**
 	 * Lists the questions of a block and stores the result for pagination.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<mixed> $query   Block query: source, category, tag, perPage, inherit.
 	 * @param string       $list_id List ID.
@@ -92,6 +103,8 @@ final class Query_Resolver {
 
 	/**
 	 * Returns the query arguments of a block or of the current page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<mixed> $query Block query.
 	 * @return array<string, mixed>
@@ -154,6 +167,8 @@ final class Query_Resolver {
 	 * Answers of a user are listed page by page, one item per answer, like on
 	 * Question2Answer user pages; all other activity lists show the most recent
 	 * items, one per question, without further pages.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $source   Activity source, see ACTIVITY.
 	 * @param array<string, mixed> $args     Query arguments.

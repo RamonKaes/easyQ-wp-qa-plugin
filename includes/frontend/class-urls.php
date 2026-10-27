@@ -3,6 +3,7 @@
  * Addresses of Q&A objects.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Builds the addresses of questions, posts, tags, categories and users.
+ *
+ * @since 0.1.0
  */
-final class Urls {
+final class URLs {
 
 	/**
 	 * Returns the address of a question, with the title in the slug.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 * @return string
@@ -37,6 +42,8 @@ final class Urls {
 
 	/**
 	 * Returns the address of any post: the question, with an anchor for answers and comments.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Post.
 	 * @return string
@@ -53,6 +60,8 @@ final class Urls {
 	/**
 	 * Returns the address of a tag page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $tag Tag.
 	 * @return string
 	 */
@@ -62,6 +71,8 @@ final class Urls {
 
 	/**
 	 * Returns the address of a category page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Category $category Category.
 	 * @return string
@@ -73,6 +84,8 @@ final class Urls {
 	/**
 	 * Returns the address of a user profile.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_User     $user    User.
 	 * @param string|null $section Profile section.
 	 * @return string
@@ -83,6 +96,8 @@ final class Urls {
 
 	/**
 	 * Returns the slug of a question title: lowercase words joined by hyphens, limited in length.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $title Title.
 	 * @return string

@@ -3,6 +3,7 @@
  * Search result.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Search;
@@ -11,11 +12,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * A question found by a search, with the part that matched best.
+ *
+ * @since 0.1.0
  */
 final class Search_Result {
 
 	/**
 	 * Sets up the result.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int    $question_id   ID of the question.
 	 * @param float  $score         Relevance score.

@@ -3,18 +3,20 @@
  * User events and user deletion.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Events\Events;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Points\Points;
 use EasyQ\Stats\Counts;
 use WP_User;
+use EasyQ\Votes\Votes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
  * Ported from Question2Answer `qa-include/app/users-edit.php` (qa_delete_user).
  * Posts of deleted users stay; they are attributed to the user chosen when
  * deleting, or shown without author.
+ *
+ * @since 0.1.0
  */
 final class User_Events {
 
 	/**
 	 * Sets up the handler.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post_Repository $posts  Post storage.
 	 * @param Points          $points User points.
@@ -41,6 +47,8 @@ final class User_Events {
 
 	/**
 	 * Hooks the handler into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'user_register', array( $this, 'registered' ) );
@@ -57,6 +65,8 @@ final class User_Events {
 	/**
 	 * Reports a new user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 */
 	public function registered( int $user_id ): void {
@@ -66,15 +76,19 @@ final class User_Events {
 	/**
 	 * Reports a login.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string  $login User login.
 	 * @param WP_User $user  User.
 	 */
 	public function logged_in( string $login, WP_User $user ): void {
-		Events::dispatch( 'u_login', array( 'user_id' => $user->ID ), new Actor( $user->ID, null, \EasyQ\Util\Ip::current() ) );
+		Events::dispatch( 'u_login', array( 'user_id' => $user->ID ), new Actor( $user->ID, null, \EasyQ\Util\IP::current() ) );
 	}
 
 	/**
 	 * Reports a logout.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 */
@@ -85,6 +99,8 @@ final class User_Events {
 	/**
 	 * Reports a password reset through the emailed link.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_User $user User.
 	 */
 	public function password_reset( WP_User $user ): void {
@@ -93,6 +109,8 @@ final class User_Events {
 
 	/**
 	 * Reports a password change.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $password New password (not passed on).
 	 * @param int    $user_id  User ID.
@@ -103,6 +121,8 @@ final class User_Events {
 
 	/**
 	 * Reports a profile change: `u_save` by the user, `u_edit` by someone else.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 */
@@ -117,6 +137,8 @@ final class User_Events {
 	 *
 	 * On multisite, deleting a user from a site only removes them from that site;
 	 * their data is removed when they are deleted from the network.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $user_id  User ID.
 	 * @param int|null $reassign User who receives the posts, or null.
@@ -133,6 +155,8 @@ final class User_Events {
 	/**
 	 * Reports a deleted user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 */
 	public function deleted( int $user_id ): void {
@@ -145,6 +169,8 @@ final class User_Events {
 
 	/**
 	 * Removes the Q&A data of a user on every site of the network.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 */
@@ -170,32 +196,36 @@ final class User_Events {
 	/**
 	 * Removes the Q&A data of a user on the current site.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $user_id  User ID.
 	 * @param int|null $reassign User who receives the posts, or null to keep them without author.
 	 */
 	public function remove_data( int $user_id, ?int $reassign ): void {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 		$votes = Schema::table( 'uservotes' );
 
 		// Posts the user voted on or flagged need their counts updated afterwards.
-		$voted_ids = Db::get_int_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) );
-		$own_ids   = Db::get_int_col( $wpdb->prepare( 'SELECT id FROM %i WHERE user_id = %d', $posts, $user_id ) );
+		$voted_ids = DB::get_int_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) );
+		$own_ids   = DB::get_int_col( $wpdb->prepare( 'SELECT id FROM %i WHERE user_id = %d', $posts, $user_id ) );
 
 		if ( null !== $reassign && $reassign > 0 ) {
-			Db::query( $wpdb->prepare( 'UPDATE %i SET user_id = %d WHERE user_id = %d', $posts, $reassign, $user_id ) );
+			DB::query( $wpdb->prepare( 'UPDATE %i SET user_id = %d WHERE user_id = %d', $posts, $reassign, $user_id ) );
 		} else {
-			Db::query( $wpdb->prepare( 'UPDATE %i SET user_id = NULL WHERE user_id = %d', $posts, $user_id ) );
+			DB::query( $wpdb->prepare( 'UPDATE %i SET user_id = NULL WHERE user_id = %d', $posts, $user_id ) );
 		}
-		Db::query( $wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', $posts, $user_id ) );
+		DB::query( $wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', $posts, $user_id ) );
 
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id ) );
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlevels' ), $user_id ) );
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlimits' ), $user_id ) );
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userevents' ), $user_id ) );
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'usernotices' ), $user_id ) );
-		Db::query( $wpdb->prepare( "DELETE FROM %i WHERE user_id = %d OR (entity_type = 'U' AND entity_id = %d)", Schema::table( 'userfavorites' ), $user_id, $user_id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id ) );
+		Votes::forget();
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id ) );
+		$this->points->forget( $user_id );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlevels' ), $user_id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userlimits' ), $user_id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userevents' ), $user_id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'usernotices' ), $user_id ) );
+		DB::query( $wpdb->prepare( "DELETE FROM %i WHERE user_id = %d OR (entity_type = 'U' AND entity_id = %d)", Schema::table( 'userfavorites' ), $user_id, $user_id ) );
 
 		foreach ( array_unique( array_merge( $voted_ids, $own_ids ) ) as $post_id ) {
 			$this->posts->forget( $post_id );

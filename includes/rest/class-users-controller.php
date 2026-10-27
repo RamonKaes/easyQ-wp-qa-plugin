@@ -3,12 +3,13 @@
  * REST endpoints for Q&A user profiles.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Events\Events;
-use EasyQ\Frontend\Urls;
+use EasyQ\Frontend\URLs;
 use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
 use EasyQ\Services;
@@ -36,11 +37,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Profiles contain only public information: name, avatar, points, level,
  * activity counts and the profile fields the viewer may see.
+ *
+ * @since 0.1.0
  */
 final class Users_Controller extends Controller {
 
 	/**
 	 * Registers the routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		register_rest_route(
@@ -104,6 +109,8 @@ final class Users_Controller extends Controller {
 	/**
 	 * Checks whether the request may see the requested user list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -117,6 +124,8 @@ final class Users_Controller extends Controller {
 
 	/**
 	 * Lists users.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -132,7 +141,7 @@ final class Users_Controller extends Controller {
 		foreach ( $found['ids'] as $id ) {
 			$user = get_userdata( $id );
 			if ( false !== $user ) {
-				$items[] = $this->format( $user, false );
+				$items[] = $this->format( $user, details: false );
 			}
 		}
 
@@ -141,6 +150,8 @@ final class Users_Controller extends Controller {
 
 	/**
 	 * Checks whether the request may see the Q&A area.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -153,6 +164,8 @@ final class Users_Controller extends Controller {
 	/**
 	 * Returns a profile.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -160,25 +173,29 @@ final class Users_Controller extends Controller {
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$user = get_userdata( (int) self::int_param( $request, 'id' ) );
 		if ( false === $user || ! Services::user_query()->is_member( $user ) ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
-		return new WP_REST_Response( $this->format( $user, true ) );
+		return new WP_REST_Response( $this->format( $user, details: true ) );
 	}
 
 	/**
 	 * Checks whether the request comes from a logged-in user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
 	 */
 	public function current_item_permissions_check( $request ): bool|WP_Error {
-		return null === $this->actor()->user_id ? Rest_Errors::permission( 'login' ) : true;
+		return null === $this->actor()->user_id ? REST_Errors::permission( 'login' ) : true;
 	}
 
 	/**
 	 * Returns the profile of the current user, with all profile fields.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -187,14 +204,16 @@ final class Users_Controller extends Controller {
 	public function get_current_item( $request ): WP_REST_Response|WP_Error {
 		$user = get_userdata( (int) $this->actor()->user_id );
 		if ( false === $user ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
-		return new WP_REST_Response( $this->format( $user, true, true ) );
+		return new WP_REST_Response( $this->format( $user, details: true, all_fields: true ) );
 	}
 
 	/**
 	 * Checks whether the current user may change their profile.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -203,7 +222,7 @@ final class Users_Controller extends Controller {
 	public function update_current_item_permissions_check( $request ): bool|WP_Error {
 		$actor = $this->actor();
 		if ( null === $actor->user_id ) {
-			return Rest_Errors::permission( 'login' );
+			return REST_Errors::permission( 'login' );
 		}
 
 		$writable = $this->check_writable( $actor );
@@ -217,6 +236,8 @@ final class Users_Controller extends Controller {
 	/**
 	 * Changes the profile fields and the avatar of the current user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -226,13 +247,13 @@ final class Users_Controller extends Controller {
 		$user_id = (int) $actor->user_id;
 		$user    = get_userdata( $user_id );
 		if ( false === $user ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$file = $this->avatar_file( $request );
 		if ( null !== $file ) {
 			if ( ! Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
-				return Rest_Errors::permission( 'avatar' );
+				return REST_Errors::permission( 'avatar' );
 			}
 
 			$uploaded = Avatars::upload( $user_id, $file );
@@ -240,7 +261,7 @@ final class Users_Controller extends Controller {
 				$errors = new WP_Error();
 				$errors->add( 'avatar', $uploaded->get_error_message() );
 
-				return Rest_Errors::invalid( $errors );
+				return REST_Errors::invalid( $errors );
 			}
 
 			Services::limits()->increment( Limits::UPLOADS, $actor );
@@ -259,11 +280,13 @@ final class Users_Controller extends Controller {
 
 		Events::dispatch( 'u_save', array( 'user_id' => $user_id ), $actor );
 
-		return new WP_REST_Response( $this->format( $user, true, true ) );
+		return new WP_REST_Response( $this->format( $user, details: true, all_fields: true ) );
 	}
 
 	/**
 	 * Returns a profile.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_User $user       User.
 	 * @param bool    $details    Whether to include profile fields, rank and activity counts.
@@ -275,7 +298,7 @@ final class Users_Controller extends Controller {
 		$profile = array(
 			'id'     => $user->ID,
 			'name'   => $user->display_name,
-			'link'   => Urls::user( $user ),
+			'link'   => URLs::user( $user ),
 			'avatar' => get_avatar_url( $user->ID, array( 'size' => 192 ) ),
 			'level'  => Levels::labels()[ $level ] ?? '',
 			'title'  => Services::user_titles()->title( $user->ID ),
@@ -322,17 +345,21 @@ final class Users_Controller extends Controller {
 	/**
 	 * Checks a permission to view pages; blocked users may still view them.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $option Permission setting.
 	 * @return true|WP_Error
 	 */
 	private function check_view( string $option ): bool|WP_Error {
-		$reason = Services::permissions()->error( $option, $this->actor(), null, null, false, true );
+		$reason = Services::permissions()->error( $option, $this->actor(), check_blocks: false, maximum_level: true );
 
-		return null === $reason ? true : Rest_Errors::permission( $reason );
+		return null === $reason ? true : REST_Errors::permission( $reason );
 	}
 
 	/**
 	 * Returns the uploaded avatar of a request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request

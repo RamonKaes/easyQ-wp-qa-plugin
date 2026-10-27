@@ -3,6 +3,7 @@
  * Post model.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
@@ -16,32 +17,151 @@ defined( 'ABSPATH' ) || exit;
  * A question, answer, comment or close note, as stored in the posts table.
  *
  * Instances are immutable snapshots; services reload posts after changing them.
+ *
+ * @since 0.1.0
  */
 final class Post {
 
+	/**
+	 * Type of questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const QUESTION = 'Q';
-	public const ANSWER   = 'A';
-	public const COMMENT  = 'C';
-	public const NOTE     = 'NOTE';
 
+	/**
+	 * Type of answers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWER = 'A';
+
+	/**
+	 * Type of comments.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENT = 'C';
+
+	/**
+	 * Type of notes, e.g. the reason a question was closed.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const NOTE = 'NOTE';
+
+	/**
+	 * Status of visible posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const STATUS_NORMAL = 'normal';
+
+	/**
+	 * Status of hidden posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const STATUS_HIDDEN = 'hidden';
+
+	/**
+	 * Status of posts waiting for approval.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const STATUS_QUEUED = 'queued';
 
 	/**
-	 * Update types stored in the `update_type` column, as in Question2Answer.
+	 * Update type of a changed category. Update types are stored in the `update_type`
+	 * column, as in Question2Answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
 	 */
 	public const UPDATE_CATEGORY = 'A';
-	public const UPDATE_CLOSED   = 'C';
-	public const UPDATE_CONTENT  = 'E';
-	public const UPDATE_PARENT   = 'M';
+
+	/**
+	 * Update type of closing or reopening a question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPDATE_CLOSED = 'C';
+
+	/**
+	 * Update type of edited content.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPDATE_CONTENT = 'E';
+
+	/**
+	 * Update type of a post moved to another parent.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPDATE_PARENT = 'M';
+
+	/**
+	 * Update type of selecting the best answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const UPDATE_SELECTED = 'S';
-	public const UPDATE_TAGS     = 'T';
-	public const UPDATE_TYPE     = 'Y';
-	public const UPDATE_VISIBLE  = 'H';
+
+	/**
+	 * Update type of changed tags.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPDATE_TAGS = 'T';
+
+	/**
+	 * Update type of a post converted to another type, e.g. an answer into a comment.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPDATE_TYPE = 'Y';
+
+	/**
+	 * Update type of hiding or showing a post again.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPDATE_VISIBLE = 'H';
 
 	/**
 	 * Sets up the post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int                  $id                Post ID.
 	 * @param string               $type              Stored type, e.g. `Q`, `A_HIDDEN` or `C_QUEUED`.
@@ -109,6 +229,8 @@ final class Post {
 	/**
 	 * Creates a post from a database row.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param object $row Row of the posts table.
 	 * @return self
 	 */
@@ -153,6 +275,8 @@ final class Post {
 	/**
 	 * Returns the base type without status: Q, A, C or NOTE.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	public function base_type(): string {
@@ -161,6 +285,8 @@ final class Post {
 
 	/**
 	 * Returns the status: normal, hidden or queued.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -174,6 +300,8 @@ final class Post {
 
 	/**
 	 * Builds the stored type for a base type and status.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $base_type Q, A or C.
 	 * @param string $status    One of the STATUS_* constants.
@@ -190,6 +318,8 @@ final class Post {
 	/**
 	 * Checks whether the post is visible to everyone.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public function is_visible(): bool {
@@ -198,6 +328,8 @@ final class Post {
 
 	/**
 	 * Checks whether the post is hidden.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */
@@ -208,6 +340,8 @@ final class Post {
 	/**
 	 * Checks whether the post waits for moderation.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public function is_queued(): bool {
@@ -216,6 +350,8 @@ final class Post {
 
 	/**
 	 * Checks whether the question is closed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */
@@ -226,6 +362,8 @@ final class Post {
 	/**
 	 * Returns the tags of a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string[]
 	 */
 	public function tag_list(): array {
@@ -234,6 +372,8 @@ final class Post {
 
 	/**
 	 * Returns the plain text of the content.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */

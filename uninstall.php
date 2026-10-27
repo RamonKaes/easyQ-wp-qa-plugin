@@ -3,6 +3,7 @@
  * Runs when the plugin is deleted.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;

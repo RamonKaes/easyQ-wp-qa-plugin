@@ -3,6 +3,7 @@
  * Activity item.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
@@ -11,11 +12,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Something that happened to a question: it was asked, answered, commented on or changed.
+ *
+ * @since 0.1.0
  */
 final class Activity_Item {
 
 	/**
 	 * Sets up the item.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int         $question_id Question the activity belongs to.
 	 * @param int         $post_id     Post that was created or changed: the question, an answer or a comment.
@@ -37,6 +42,8 @@ final class Activity_Item {
 	/**
 	 * Returns the item as block context.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return array{postId: int, baseType: string, time: string, updateType: string|null, userId: int|null}
 	 */
 	public function to_context(): array {
@@ -51,6 +58,8 @@ final class Activity_Item {
 
 	/**
 	 * Creates an item from block context.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int   $question_id Question ID.
 	 * @param mixed $context     Context created by to_context().
@@ -74,6 +83,8 @@ final class Activity_Item {
 	/**
 	 * Returns the item for the creation of a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $post     Question, answer or comment.
 	 * @param int  $question Question ID.
 	 * @return self
@@ -86,6 +97,8 @@ final class Activity_Item {
 	 * Describes the activity, e.g. "answered" or "retagged".
 	 *
 	 * Ported from Question2Answer `qa_other_to_q_html_fields()`.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post|null $post The created or changed post, to tell closing from reopening.
 	 * @return string

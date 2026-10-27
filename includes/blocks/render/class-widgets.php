@@ -3,6 +3,7 @@
  * Rendering of navigation and overview blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks\Render;
@@ -13,7 +14,7 @@ use EasyQ\Categories\Category;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Routes;
-use EasyQ\Frontend\Urls;
+use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Tags;
 use EasyQ\Services;
@@ -25,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Renders page titles, sorting, tags, categories, related questions, statistics, breadcrumbs and notices.
+ *
+ * @since 0.1.0
  */
 final class Widgets {
 
 	/**
 	 * Renders the title of the current Q&A page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string
@@ -47,6 +52,8 @@ final class Widgets {
 
 	/**
 	 * Returns the title of the current Q&A page, also used for the document title.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -89,6 +96,8 @@ final class Widgets {
 	/**
 	 * Renders links to sort the question list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	public static function sort_navigation(): string {
@@ -112,7 +121,7 @@ final class Widgets {
 			$param   = 'sort';
 			$labels  = self::sort_labels();
 			$default = 'recent';
-			$base    = 'category' === $route?->name && null !== $route->category() ? Urls::category( $route->category() ) : Routes::url( 'home' );
+			$base    = 'category' === $route?->name && null !== $route->category() ? URLs::category( $route->category() ) : Routes::url( 'home' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Marks the current sort order.
@@ -138,6 +147,8 @@ final class Widgets {
 	/**
 	 * Renders popular tags.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string
 	 */
@@ -153,7 +164,7 @@ final class Widgets {
 		foreach ( $result['tags'] as $tag ) {
 			$items .= sprintf(
 				'<li><a href="%s" rel="tag">%s</a>%s</li>',
-				esc_url( Urls::tag( $tag['name'] ) ),
+				esc_url( URLs::tag( $tag['name'] ) ),
 				esc_html( Services::content_renderer()->text( $tag['name'] ) ),
 				$show_counts ? ' <span>(' . esc_html( number_format_i18n( $tag['count'] ) ) . ')</span>' : ''
 			);
@@ -164,6 +175,8 @@ final class Widgets {
 
 	/**
 	 * Renders the categories as nested list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string
@@ -185,6 +198,8 @@ final class Widgets {
 
 	/**
 	 * Renders questions similar to the current question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -208,7 +223,7 @@ final class Widgets {
 		$items = '';
 		foreach ( $ids as $id ) {
 			if ( isset( $posts[ $id ] ) ) {
-				$items .= sprintf( '<li><a href="%s">%s</a></li>', esc_url( Urls::question( $posts[ $id ] ) ), esc_html( Services::content_renderer()->text( (string) $posts[ $id ]->title ) ) );
+				$items .= sprintf( '<li><a href="%s">%s</a></li>', esc_url( URLs::question( $posts[ $id ] ) ), esc_html( Services::content_renderer()->text( (string) $posts[ $id ]->title ) ) );
 			}
 		}
 
@@ -217,6 +232,8 @@ final class Widgets {
 
 	/**
 	 * Renders the numbers of questions, answers, comments and users.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -243,6 +260,8 @@ final class Widgets {
 	/**
 	 * Renders the path to the current page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -262,7 +281,7 @@ final class Widgets {
 
 		if ( null !== $category ) {
 			foreach ( Services::categories()->path( $category->id ) as $ancestor ) {
-				$items[] = sprintf( '<a href="%s">%s</a>', esc_url( Urls::category( $ancestor ) ), esc_html( $ancestor->title ) );
+				$items[] = sprintf( '<a href="%s">%s</a>', esc_url( URLs::category( $ancestor ) ), esc_html( $ancestor->title ) );
 			}
 		}
 
@@ -280,6 +299,8 @@ final class Widgets {
 
 	/**
 	 * Renders the message after a form submission.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -306,6 +327,8 @@ final class Widgets {
 	/**
 	 * Returns a nested list of categories below a parent.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $parent_id   Parent category.
 	 * @param bool     $show_counts Whether to show question counts.
 	 * @return string
@@ -320,7 +343,7 @@ final class Widgets {
 		foreach ( $children as $category ) {
 			$items .= sprintf(
 				'<li><a href="%s">%s</a>%s%s</li>',
-				esc_url( Urls::category( $category ) ),
+				esc_url( URLs::category( $category ) ),
 				esc_html( $category->title ),
 				$show_counts ? ' <span>(' . esc_html( number_format_i18n( $category->question_count ) ) . ')</span>' : '',
 				self::category_list( $category->id, $show_counts )
@@ -332,6 +355,8 @@ final class Widgets {
 
 	/**
 	 * Returns the sort orders of question lists with their names.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, string>
 	 */
@@ -348,6 +373,8 @@ final class Widgets {
 	/**
 	 * Returns the sort orders of user lists with their names.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return array<string, string>
 	 */
 	private static function user_sort_labels(): array {
@@ -360,6 +387,8 @@ final class Widgets {
 
 	/**
 	 * Returns the title of a profile page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Route $route Route of a profile page.
 	 * @return string
@@ -380,6 +409,8 @@ final class Widgets {
 
 	/**
 	 * Returns the kinds of unanswered lists with their names.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, string>
 	 */

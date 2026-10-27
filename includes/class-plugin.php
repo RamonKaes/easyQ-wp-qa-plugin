@@ -3,6 +3,7 @@
  * Plugin bootstrap.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;
@@ -11,11 +12,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Wires the plugin components into WordPress.
+ *
+ * @since 0.1.0
  */
 final class Plugin {
 
 	/**
 	 * Registers all components. Runs on `plugins_loaded`.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		Database\Schema::register_meta_tables();
@@ -29,7 +34,7 @@ final class Plugin {
 		( new Users\User_Events( Services::posts(), Services::points() ) )->register();
 		( new Users\Avatars() )->register();
 		( new Users\Registration() )->register();
-		( new Rest\Rest_Api() )->register();
+		( new REST\REST_API() )->register();
 
 		$router = new Frontend\Router();
 		Blocks\Block_Context::set_router( $router );

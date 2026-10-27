@@ -3,9 +3,10 @@
  * REST endpoints for categories and tags.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Categories\Category;
 use EasyQ\Posts\Tags;
@@ -26,11 +27,15 @@ defined( 'ABSPATH' ) || exit;
  * - `GET /easyq/v1/categories`, optionally with `parent`
  * - `GET /easyq/v1/categories/{id}`
  * - `GET /easyq/v1/tags`, optionally with `search` for a prefix
+ *
+ * @since 0.1.0
  */
 final class Taxonomy_Controller extends Controller {
 
 	/**
 	 * Registers the routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		register_rest_route(
@@ -80,6 +85,8 @@ final class Taxonomy_Controller extends Controller {
 	/**
 	 * Checks whether the request may see the Q&A area.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -90,6 +97,8 @@ final class Taxonomy_Controller extends Controller {
 
 	/**
 	 * Lists categories.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -111,6 +120,8 @@ final class Taxonomy_Controller extends Controller {
 	/**
 	 * Returns a category.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -118,11 +129,13 @@ final class Taxonomy_Controller extends Controller {
 	public function get_category( $request ): WP_REST_Response|WP_Error {
 		$category = Services::categories()->find( (int) self::int_param( $request, 'id' ) );
 
-		return null === $category ? Rest_Errors::not_found() : new WP_REST_Response( $this->format_category( $category ) );
+		return null === $category ? REST_Errors::not_found() : new WP_REST_Response( $this->format_category( $category ) );
 	}
 
 	/**
 	 * Lists tags.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -137,6 +150,8 @@ final class Taxonomy_Controller extends Controller {
 
 	/**
 	 * Describes a category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Category $category Category.
 	 * @return array<string, mixed>

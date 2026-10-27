@@ -3,6 +3,7 @@
  * Permission thresholds.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -15,24 +16,123 @@ defined( 'ABSPATH' ) || exit;
  * Lower values are stricter. The points variants require a minimum number of
  * points, stored in the setting with the suffix `_points`. Values are those of
  * Question2Answer.
+ *
+ * @since 0.1.0
  */
 final class Permits {
 
-	public const ALL              = 150;
-	public const USERS            = 120;
-	public const CONFIRMED        = 110;
-	public const POINTS           = 106;
+	/**
+	 * Everybody, including visitors.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const ALL = 150;
+
+	/**
+	 * Registered users.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const USERS = 120;
+
+	/**
+	 * Registered users with a confirmed email address.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const CONFIRMED = 110;
+
+	/**
+	 * Registered users with enough points.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const POINTS = 106;
+
+	/**
+	 * Registered users with enough points and a confirmed email address.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
 	public const POINTS_CONFIRMED = 104;
-	public const APPROVED         = 103;
-	public const APPROVED_POINTS  = 102;
-	public const EXPERTS          = 100;
-	public const EDITORS          = 70;
-	public const MODERATORS       = 40;
-	public const ADMINS           = 20;
-	public const SUPERS           = 0;
+
+	/**
+	 * Approved users.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const APPROVED = 103;
+
+	/**
+	 * Approved users, or users with enough points.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const APPROVED_POINTS = 102;
+
+	/**
+	 * Experts and above.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const EXPERTS = 100;
+
+	/**
+	 * Editors and above.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const EDITORS = 70;
+
+	/**
+	 * Moderators and above.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MODERATORS = 40;
+
+	/**
+	 * Administrators and above.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const ADMINS = 20;
+
+	/**
+	 * Super administrators only.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const SUPERS = 0;
 
 	/**
 	 * Returns all thresholds with their names.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<int, string>
 	 */
@@ -55,6 +155,8 @@ final class Permits {
 
 	/**
 	 * Checks whether a threshold needs a minimum number of points.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $permit Threshold.
 	 * @return bool

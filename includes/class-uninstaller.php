@@ -3,11 +3,12 @@
  * Data removal on uninstall.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Frontend\Router;
@@ -21,11 +22,15 @@ defined( 'ABSPATH' ) || exit;
  * Removes the plugin data when the plugin is deleted.
  *
  * Data is only removed from sites whose owner enabled "Delete data on uninstall".
+ *
+ * @since 0.1.0
  */
 final class Uninstaller {
 
 	/**
 	 * Prefix of all user meta keys written by the plugin.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -33,6 +38,8 @@ final class Uninstaller {
 
 	/**
 	 * Removes the data of every site that opted in.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function run(): void {
 		if ( ! is_multisite() ) {
@@ -70,6 +77,8 @@ final class Uninstaller {
 	/**
 	 * Checks whether the current site asked for its data to be removed.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public static function site_opted_in(): bool {
@@ -78,6 +87,8 @@ final class Uninstaller {
 
 	/**
 	 * Removes tables and options of the current site.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function uninstall_site(): void {
 		Schema::drop();
@@ -90,6 +101,8 @@ final class Uninstaller {
 
 	/**
 	 * Removes the user meta of the current site, such as levels and blocks.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function delete_site_user_meta(): void {
 		self::delete_meta_with_prefix( Site_Meta::key( self::USER_META_PREFIX ) );
@@ -97,6 +110,8 @@ final class Uninstaller {
 
 	/**
 	 * Removes all user meta written by the plugin.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function delete_user_meta(): void {
 		self::delete_meta_with_prefix( self::USER_META_PREFIX );
@@ -105,10 +120,12 @@ final class Uninstaller {
 	/**
 	 * Deletes the user meta of all users whose key starts with a prefix.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $prefix Meta key prefix.
 	 */
 	private static function delete_meta_with_prefix( string $prefix ): void {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup on uninstall; no API deletes meta by key prefix.
 		$keys = $wpdb->get_col(

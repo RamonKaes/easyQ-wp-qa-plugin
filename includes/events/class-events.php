@@ -3,6 +3,7 @@
  * Event dispatching.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Events;
@@ -16,11 +17,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Every Question2Answer event `x` fires the action `easyq_x` and the generic
  * action `easyq_event`. See docs/hooks.md for the list of events.
+ *
+ * @since 0.1.0
  */
 final class Events {
 
 	/**
 	 * Fires an event.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $event  Event name, e.g. `q_post`.
 	 * @param array<string, mixed> $params Event parameters.
@@ -32,6 +37,8 @@ final class Events {
 		 *
 		 * The dynamic part of the hook name is the event name, e.g. `easyq_q_post`.
 		 *
+		 * @since 0.1.0
+		 *
 		 * @param array<string, mixed> $params Event parameters.
 		 * @param Actor                $actor  Who caused the event.
 		 */
@@ -39,6 +46,8 @@ final class Events {
 
 		/**
 		 * Fires for every easyQ event.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param string               $event  Event name.
 		 * @param array<string, mixed> $params Event parameters.

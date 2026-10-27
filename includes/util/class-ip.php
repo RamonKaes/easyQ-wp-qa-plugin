@@ -3,6 +3,7 @@
  * IP address helpers.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Util;
@@ -13,14 +14,18 @@ defined( 'ABSPATH' ) || exit;
  * Reads, converts, anonymizes and matches IP addresses.
  *
  * Block rule matching is ported from Question2Answer `qa-include/app/limits.php`.
+ *
+ * @since 0.1.0
  */
-final class Ip {
+final class IP {
 
 	/**
 	 * Returns the IP address of the current request.
 	 *
 	 * Only REMOTE_ADDR is trusted. Sites behind a proxy can use the filter to
 	 * return the client address from a trusted header.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string|null The address, or null if it is not available or invalid.
 	 */
@@ -29,6 +34,8 @@ final class Ip {
 
 		/**
 		 * Filters the IP address of the current request.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param string $ip IP address taken from REMOTE_ADDR.
 		 */
@@ -39,6 +46,8 @@ final class Ip {
 
 	/**
 	 * Converts an IP address into its binary form for storage.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|null $ip IP address.
 	 * @return string|null Packed address, or null for an empty or invalid address.
@@ -56,6 +65,8 @@ final class Ip {
 	/**
 	 * Converts a stored binary IP address back into its text form.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $binary Packed address.
 	 * @return string|null
 	 */
@@ -64,13 +75,20 @@ final class Ip {
 			return null;
 		}
 
-		$ip = @inet_ntop( $binary ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Invalid stored values are reported as null.
+		// Only IPv4 (4 bytes) and IPv6 (16 bytes) addresses can be converted; other values are reported as null.
+		if ( 4 !== strlen( $binary ) && 16 !== strlen( $binary ) ) {
+			return null;
+		}
+
+		$ip = inet_ntop( $binary );
 
 		return false === $ip ? null : $ip;
 	}
 
 	/**
 	 * Removes the host part of an IP address, as WordPress does for privacy exports.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $ip IP address.
 	 * @return string
@@ -81,6 +99,8 @@ final class Ip {
 
 	/**
 	 * Splits a block list into its rules.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $rules Rules separated by spaces, commas or new lines, e.g. `1.2.3.4`, `1.2.*.*` or `1.2.3.4 - 1.2.3.9`.
 	 * @return string[]
@@ -94,6 +114,8 @@ final class Ip {
 
 	/**
 	 * Checks whether an IP address is matched by any rule of a block list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|null $ip    IP address.
 	 * @param string      $rules Block list, see explode_rules().
@@ -115,6 +137,8 @@ final class Ip {
 
 	/**
 	 * Checks whether an IP address is matched by a single rule with an optional range or wildcards.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $ip   IP address.
 	 * @param string $rule Rule.
@@ -149,6 +173,8 @@ final class Ip {
 	/**
 	 * Checks whether an IP address lies within a range, byte by byte.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $ip    IP address.
 	 * @param string $start First address of the range.
 	 * @param string $end   Last address of the range.
@@ -175,6 +201,8 @@ final class Ip {
 	/**
 	 * Expands an IPv6 address, which may contain `*` wildcards, to eight groups of four digits.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $ip IPv6 address, e.g. `::ffff:1`.
 	 * @return string Expanded address, e.g. `0000:0000:0000:0000:0000:0000:ffff:0001`.
 	 */
@@ -192,7 +220,9 @@ final class Ip {
 			}
 		}
 
-		$packed = @inet_pton( implode( ':', $groups ) ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Invalid rules simply do not match.
+		// Invalid rules are kept as they are and simply do not match.
+		$address = implode( ':', $groups );
+		$packed  = false === filter_var( $address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ? false : inet_pton( $address );
 		if ( false === $packed ) {
 			return $ip;
 		}
@@ -209,11 +239,14 @@ final class Ip {
 	/**
 	 * Returns the bytes of an IP address.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $ip IP address.
 	 * @return int[]
 	 */
 	private static function bytes( string $ip ): array {
-		$packed = @inet_pton( $ip ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Invalid addresses yield no bytes.
+		// Invalid addresses yield no bytes.
+		$packed = false === filter_var( $ip, FILTER_VALIDATE_IP ) ? false : inet_pton( $ip );
 		if ( false === $packed ) {
 			return array();
 		}

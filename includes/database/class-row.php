@@ -3,6 +3,7 @@
  * Typed access to database rows.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Database;
@@ -14,11 +15,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * The wpdb object returns every column as a string or null; these helpers convert them
  * and fall back to a default for missing or unexpected values.
+ *
+ * @since 0.1.0
  */
 final class Row {
 
 	/**
 	 * Returns a column as an integer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param object $row Database row.
 	 * @param string $key Column name.
@@ -30,6 +35,8 @@ final class Row {
 
 	/**
 	 * Returns a column as an integer or null.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param object $row Database row.
 	 * @param string $key Column name.
@@ -44,6 +51,8 @@ final class Row {
 	/**
 	 * Returns a column as a float or null.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param object $row Database row.
 	 * @param string $key Column name.
 	 * @return float|null Null if the column is missing, null or not numeric.
@@ -57,6 +66,8 @@ final class Row {
 	/**
 	 * Returns a column as a string.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param object $row Database row.
 	 * @param string $key Column name.
 	 * @return string Empty if the column is missing or null.
@@ -67,6 +78,8 @@ final class Row {
 
 	/**
 	 * Returns a column as a string or null.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param object $row Database row.
 	 * @param string $key Column name.

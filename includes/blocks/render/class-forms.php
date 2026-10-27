@@ -3,6 +3,7 @@
  * Rendering of form blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks\Render;
@@ -13,7 +14,7 @@ use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
 use EasyQ\Posts\Post;
-use EasyQ\Rest\Post_Input;
+use EasyQ\REST\Post_Input;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
@@ -27,11 +28,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * The forms are plain HTML forms that work without JavaScript; they use core
  * class names so the theme styles them.
+ *
+ * @since 0.1.0
  */
 final class Forms {
 
 	/**
 	 * Forms that show their errors themselves, next to the fields.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -40,12 +45,16 @@ final class Forms {
 	/**
 	 * Forms on the question page that are sent in the background and update the page in place.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string[]
 	 */
 	public const IN_PLACE = array( 'answer', 'comment' );
 
 	/**
 	 * Renders the form to ask a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -84,6 +93,8 @@ final class Forms {
 	 *
 	 * Email address, password and name are edited in the WordPress profile.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	public static function account(): string {
@@ -95,7 +106,7 @@ final class Forms {
 		$fields = '';
 		foreach ( Services::user_fields()->all() as $field ) {
 			$name  = Form_Handler::PROFILE_FIELD_PREFIX . $field->name;
-			$value = '' !== Flash::value( 'account', $name ) ? Flash::value( 'account', $name ) : Services::user_fields()->value( $viewer->user_id, $field );
+			$value = '' === Flash::value( 'account', $name ) ? Services::user_fields()->value( $viewer->user_id, $field ) : Flash::value( 'account', $name );
 			$type  = match ( true ) {
 				$field->is_multi_line() => 'textarea',
 				$field->is_link()       => 'url',
@@ -121,13 +132,15 @@ final class Forms {
 	/**
 	 * Returns the avatar upload of the account form.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return string
 	 */
 	private static function avatar_fields( int $user_id ): string {
 		$current = (string) get_avatar( $user_id, 96, '', __( 'Your current avatar', 'easyq' ) );
 		$remove  = null === Avatars::attachment_id( $user_id ) ? '' : sprintf(
-			'<p><label><input type="checkbox" name="remove_avatar" value="1"> %s</label></p>',
+			'<p><label><input type="checkbox" name="remove_avatar" value="1" /> %s</label></p>',
 			esc_html__( 'Remove the uploaded image and use the default avatar', 'easyq' )
 		);
 
@@ -147,6 +160,8 @@ final class Forms {
 	/**
 	 * Renders the form to answer the question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -163,16 +178,16 @@ final class Forms {
 		}
 
 		$reason = Services::permissions()->error( 'permit_post_a', Block_Context::viewer(), $question );
-		$body   = null !== $reason
-			? self::permission_message( $reason )
-			: self::form(
+		$body   = null === $reason
+			? self::form(
 				'answer',
 				$question->id,
 				self::field( 'answer', 'content', __( 'Your answer', 'easyq' ), 'textarea', Flash::value( 'answer', 'content' ), array( 'required' => 'required' ) )
 				. self::author_fields( 'answer', __( 'Email me if my answer is selected or commented on', 'easyq' ) ),
 				__( 'Answer', 'easyq' ),
 				array()
-			);
+			)
+			: self::permission_message( $reason );
 
 		return sprintf(
 			'<section %s id="easyq-answer-form"><h2>%s</h2>%s</section>',
@@ -184,6 +199,8 @@ final class Forms {
 
 	/**
 	 * Renders the form to comment on the post from context.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -202,16 +219,16 @@ final class Forms {
 		}
 
 		$reason = Services::permissions()->error( 'permit_post_c', Block_Context::viewer(), $post );
-		$body   = null !== $reason
-			? self::permission_message( $reason )
-			: self::form(
+		$body   = null === $reason
+			? self::form(
 				'comment',
 				$post->id,
 				self::field( 'comment', 'content', __( 'Your comment', 'easyq' ), 'textarea', '', array( 'required' => 'required' ), '', 'easyq-comment-' . $post->id )
 				. self::author_fields( 'comment', __( 'Email me if a comment is added after mine', 'easyq' ), 'easyq-comment-' . $post->id ),
 				__( 'Add comment', 'easyq' ),
 				array()
-			);
+			)
+			: self::permission_message( $reason );
 
 		return sprintf(
 			'<details %s id="easyq-comment-form-%d"><summary>%s</summary>%s</details>',
@@ -225,6 +242,8 @@ final class Forms {
 	/**
 	 * Renders a field that starts asking a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string
 	 */
@@ -236,6 +255,8 @@ final class Forms {
 
 	/**
 	 * Renders the search field for questions.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string
@@ -250,6 +271,8 @@ final class Forms {
 
 	/**
 	 * Returns the form to edit a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Post.
 	 * @return string
@@ -270,7 +293,7 @@ final class Forms {
 		$viewer = Block_Context::viewer();
 		if ( null !== $viewer->user_id && user_can( $viewer->user_id, 'easyq_edit_silently' ) ) {
 			$fields .= sprintf(
-				'<p><label><input type="checkbox" name="silent" value="1"> %s</label></p>',
+				'<p><label><input type="checkbox" name="silent" value="1" /> %s</label></p>',
 				esc_html__( 'Do not show that the post was edited', 'easyq' )
 			);
 		}
@@ -283,12 +306,14 @@ final class Forms {
 	/**
 	 * Returns the form to close a question, folded until opened.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $question Question.
 	 * @return string
 	 */
 	public static function close_form( Post $question ): string {
 		$fields = Form_Handler::hidden_fields( 'action' )
-			. sprintf( '<input type="hidden" name="easyq_post" value="%d"><input type="hidden" name="easyq_action" value="close">', $question->id )
+			. sprintf( '<input type="hidden" name="easyq_post" value="%d" /><input type="hidden" name="easyq_action" value="close" />', $question->id )
 			. self::field( 'action', 'note', __( 'Reason for closing', 'easyq' ), 'textarea', '', array(), '', 'easyq-close-' . $question->id )
 			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', '', array( 'min' => '1' ), '', 'easyq-close-' . $question->id );
 
@@ -303,6 +328,8 @@ final class Forms {
 	/**
 	 * Returns a form with fields and a submit button.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string               $form    Form name.
 	 * @param int                  $post_id Post the form relates to; 0 for none.
 	 * @param string               $fields  Field HTML.
@@ -314,10 +341,10 @@ final class Forms {
 	private static function form( string $form, int $post_id, string $fields, string $label, array $hidden, string $after = '' ): string {
 		$hidden_html = Form_Handler::hidden_fields( $form );
 		if ( $post_id > 0 ) {
-			$hidden_html .= sprintf( '<input type="hidden" name="easyq_post" value="%d">', $post_id );
+			$hidden_html .= sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
 		}
 		foreach ( $hidden as $name => $value ) {
-			$hidden_html .= sprintf( '<input type="hidden" name="%s" value="%s">', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
+			$hidden_html .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
 		}
 
 		$wrapper = in_array( $form, array( 'ask', 'account' ), true ) ? get_block_wrapper_attributes() : '';
@@ -338,6 +365,8 @@ final class Forms {
 
 	/**
 	 * Returns a labeled form field with its error message.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string                $form       Form name.
 	 * @param string                $name       Field name.
@@ -372,20 +401,22 @@ final class Forms {
 
 		$input = 'textarea' === $type
 			? sprintf( '<textarea id="%s" name="%s" cols="45" rows="8"%s>%s</textarea>', esc_attr( $id ), esc_attr( $name ), $attrs, esc_textarea( $value ) )
-			: sprintf( '<input type="%s" id="%s" name="%s" value="%s"%s>', esc_attr( $type ), esc_attr( $id ), esc_attr( $name ), esc_attr( $value ), $attrs );
+			: sprintf( '<input type="%s" id="%s" name="%s" value="%s"%s />', esc_attr( $type ), esc_attr( $id ), esc_attr( $name ), esc_attr( $value ), $attrs );
 
 		return sprintf(
-			'<p><label for="%s">%s</label><br>%s%s%s</p>',
+			'<p><label for="%s">%s</label><br />%s%s%s</p>',
 			esc_attr( $id ),
 			esc_html( $label ),
 			$input,
-			'' === $hint ? '' : sprintf( '<br><small id="%s-hint">%s</small>', esc_attr( $id ), esc_html( $hint ) ),
-			'' === $error ? '' : sprintf( '<br><strong id="%s-error" role="alert">%s</strong>', esc_attr( $id ), esc_html( $error ) )
+			'' === $hint ? '' : sprintf( '<br /><small id="%s-hint">%s</small>', esc_attr( $id ), esc_html( $hint ) ),
+			'' === $error ? '' : sprintf( '<br /><strong id="%s-error" role="alert">%s</strong>', esc_attr( $id ), esc_html( $error ) )
 		);
 	}
 
 	/**
 	 * Returns the category selection of the ask form.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $selected Selected category ID.
 	 * @return string
@@ -406,15 +437,17 @@ final class Forms {
 		$error = Flash::error( 'ask', 'category' );
 
 		return sprintf(
-			'<p><label for="easyq-ask-category">%s</label><br><select id="easyq-ask-category" name="category">%s</select>%s</p>',
+			'<p><label for="easyq-ask-category">%s</label><br /><select id="easyq-ask-category" name="category">%s</select>%s</p>',
 			esc_html__( 'Category', 'easyq' ),
 			$options,
-			'' === $error ? '' : sprintf( '<br><strong role="alert">%s</strong>', esc_html( $error ) )
+			'' === $error ? '' : sprintf( '<br /><strong role="alert">%s</strong>', esc_html( $error ) )
 		);
 	}
 
 	/**
 	 * Returns the categories below a parent with their depth, depth first.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $parent_id Parent category.
 	 * @param int      $depth     Depth of the children.
@@ -433,6 +466,8 @@ final class Forms {
 	/**
 	 * Returns the notification and anonymous author fields.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $form      Form name.
 	 * @param string $notify    Label of the notification checkbox.
 	 * @param string $id_prefix Prefix of the field IDs.
@@ -441,7 +476,7 @@ final class Forms {
 	private static function author_fields( string $form, string $notify, string $id_prefix = '' ): string {
 		$viewer = Block_Context::viewer();
 		$html   = sprintf(
-			'<p><label><input type="checkbox" name="notify" value="1"%s> %s</label></p>',
+			'<p><label><input type="checkbox" name="notify" value="1"%s /> %s</label></p>',
 			checked( Options::get_bool( 'posting', 'notify_users_default' ), true, false ),
 			esc_html( $notify )
 		);
@@ -472,6 +507,8 @@ final class Forms {
 	/**
 	 * Returns the message after a failed or successful submission of a form.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $form Form name.
 	 * @return string
 	 */
@@ -486,6 +523,8 @@ final class Forms {
 
 	/**
 	 * Returns why the viewer cannot use a form, with login and registration links where they help.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $reason Permission error reason.
 	 * @return string
@@ -518,6 +557,8 @@ final class Forms {
 	/**
 	 * Returns a form with one field and a button, using the markup of the core search block.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $action      Form address.
 	 * @param string $name        Field name.
 	 * @param string $label       Field label.
@@ -536,12 +577,12 @@ final class Forms {
 		if ( '' !== $query ) {
 			wp_parse_str( $query, $params );
 			foreach ( $params as $param => $param_value ) {
-				$hidden .= sprintf( '<input type="hidden" name="%s" value="%s">', esc_attr( (string) $param ), esc_attr( is_string( $param_value ) ? $param_value : '' ) );
+				$hidden .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( (string) $param ), esc_attr( is_string( $param_value ) ? $param_value : '' ) );
 			}
 		}
 
 		return sprintf(
-			'<form method="get" action="%s" %s%s><label class="wp-block-search__label" for="%s">%s</label><div class="wp-block-search__inside-wrapper">%s<input class="wp-block-search__input" type="%s" id="%s" name="%s" value="%s" placeholder="%s" required><button type="submit" class="wp-block-search__button wp-element-button">%s</button></div></form>',
+			'<form method="get" action="%s" %s%s><label class="wp-block-search__label" for="%s">%s</label><div class="wp-block-search__inside-wrapper">%s<input class="wp-block-search__input" type="%s" id="%s" name="%s" value="%s" placeholder="%s" required /><button type="submit" class="wp-block-search__button wp-element-button">%s</button></div></form>',
 			esc_url( $action ),
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-search wp-block-search__button-outside wp-block-search__text-button' ) ),
 			'' === $role ? '' : sprintf( ' role="%s"', esc_attr( $role ) ),

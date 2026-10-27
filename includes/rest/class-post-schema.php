@@ -3,19 +3,24 @@
  * JSON schema of posts.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Builds the JSON schema of questions, answers and comments in REST responses.
+ *
+ * @since 0.1.0
  */
 final class Post_Schema {
 
 	/**
 	 * Returns the schema of a post type.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $type `question`, `answer` or `comment`.
 	 * @return array<string, mixed>

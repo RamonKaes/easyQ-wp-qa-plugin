@@ -3,13 +3,14 @@
  * Creating and changing posts.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
 
 use EasyQ\Actor;
 use EasyQ\Categories\Categories;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Events\Events;
@@ -19,6 +20,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Util\Text;
 use WP_Error;
+use EasyQ\Votes\Votes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -31,11 +33,15 @@ defined( 'ABSPATH' ) || exit;
  * Post_Validator.
  *
  * Ported from Question2Answer `qa-include/app/post-create.php` and `app/post-update.php`.
+ *
+ * @since 0.1.0
  */
 final class Post_Service {
 
 	/**
 	 * Post meta key of the extra question field.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -43,6 +49,8 @@ final class Post_Service {
 
 	/**
 	 * Sets up the service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post_Repository $posts      Post storage.
 	 * @param Search          $search     Search index.
@@ -60,6 +68,8 @@ final class Post_Service {
 	/**
 	 * Returns the value stored in the notify column.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor       $actor  Author.
 	 * @param bool        $notify Whether the author wants notifications.
 	 * @param string|null $email  Email address entered by an anonymous author.
@@ -74,7 +84,7 @@ final class Post_Service {
 			return $email;
 		}
 
-		return null !== $actor->user_id ? '@' : null;
+		return null === $actor->user_id ? null : '@';
 	}
 
 	/**
@@ -82,6 +92,8 @@ final class Post_Service {
 	 *
 	 * A question is closed by a duplicate or a note, or, if the site closes
 	 * questions with a selected answer, by selecting an answer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 * @return bool
@@ -92,6 +104,8 @@ final class Post_Service {
 
 	/**
 	 * Creates a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor       $actor         Author.
 	 * @param string      $title         Title.
@@ -153,6 +167,8 @@ final class Post_Service {
 	/**
 	 * Creates an answer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor       $actor    Author.
 	 * @param Post        $question Question.
 	 * @param string      $content  Content.
@@ -203,6 +219,8 @@ final class Post_Service {
 
 	/**
 	 * Creates a comment on a question or an answer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor       $actor    Author.
 	 * @param Post        $question Question the comment belongs to.
@@ -257,6 +275,8 @@ final class Post_Service {
 
 	/**
 	 * Changes title, content and tags of a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor       $actor      Editor.
 	 * @param Post        $question   Question before the change.
@@ -350,6 +370,8 @@ final class Post_Service {
 	/**
 	 * Changes the content of an answer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor       $actor      Editor.
 	 * @param Post        $answer     Answer before the change.
 	 * @param Post        $question   Question of the answer.
@@ -409,6 +431,8 @@ final class Post_Service {
 	/**
 	 * Changes the content of a comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor       $actor      Editor.
 	 * @param Post        $comment    Comment before the change.
 	 * @param Post        $question   Question the comment belongs to.
@@ -466,6 +490,8 @@ final class Post_Service {
 	/**
 	 * Changes the status of a question, which also affects the visibility of its answers and comments.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor  $actor    Who changes the status.
 	 * @param Post   $question Question before the change.
 	 * @param string $status   One of the Post::STATUS_* constants.
@@ -484,7 +510,7 @@ final class Post_Service {
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
 			// Approving: the post appears as new, or as edited now.
-			$this->posts->update( $question->id, array( $was_requeued ? 'updated' : 'created' => Db::now() ) );
+			$this->posts->update( $question->id, array( $was_requeued ? 'updated' : 'created' => DB::now() ) );
 			if ( ! $was_requeued ) {
 				$this->posts->update_hotness( $question->id );
 			}
@@ -513,6 +539,8 @@ final class Post_Service {
 	/**
 	 * Changes the status of an answer, which also affects the visibility of its comments.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor  $actor    Who changes the status.
 	 * @param Post   $answer   Answer before the change.
 	 * @param Post   $question Question of the answer.
@@ -539,7 +567,7 @@ final class Post_Service {
 		$this->posts->update( $answer->id, array( 'type' => Post::type_for( Post::ANSWER, $status ) ), $record ? $actor : null, Post::UPDATE_VISIBLE );
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
-			$this->posts->update( $answer->id, array( $was_requeued ? 'updated' : 'created' => Db::now() ) );
+			$this->posts->update( $answer->id, array( $was_requeued ? 'updated' : 'created' => DB::now() ) );
 		}
 
 		$this->answers_changed( $question );
@@ -570,6 +598,8 @@ final class Post_Service {
 	/**
 	 * Changes the status of a comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor  $actor    Who changes the status.
 	 * @param Post   $comment  Comment before the change.
 	 * @param Post   $question Question the comment belongs to.
@@ -588,7 +618,7 @@ final class Post_Service {
 		$this->posts->update( $comment->id, array( 'type' => Post::type_for( Post::COMMENT, $status ) ), $record ? $actor : null, Post::UPDATE_VISIBLE );
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
-			$this->posts->update( $comment->id, array( $was_requeued ? 'updated' : 'created' => Db::now() ) );
+			$this->posts->update( $comment->id, array( $was_requeued ? 'updated' : 'created' => DB::now() ) );
 		}
 
 		Counts::invalidate( Counts::COMMENTS, Counts::QUEUED, Counts::FLAGGED );
@@ -619,6 +649,8 @@ final class Post_Service {
 
 	/**
 	 * Permanently deletes a hidden question without answers or comments.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor    Who deletes the question.
 	 * @param Post  $question Question.
@@ -666,6 +698,8 @@ final class Post_Service {
 	/**
 	 * Permanently deletes a hidden answer without comments or follow-on questions.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    Who deletes the answer.
 	 * @param Post  $answer   Answer.
 	 * @param Post  $question Question of the answer.
@@ -711,6 +745,8 @@ final class Post_Service {
 	/**
 	 * Permanently deletes a hidden comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    Who deletes the comment.
 	 * @param Post  $comment  Comment.
 	 * @param Post  $question Question the comment belongs to.
@@ -748,6 +784,8 @@ final class Post_Service {
 
 	/**
 	 * Selects the best answer of a question, or clears the selection.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor    $actor     Who selects the answer.
 	 * @param Post     $question  Question.
@@ -820,6 +858,8 @@ final class Post_Service {
 	/**
 	 * Closes a question as a duplicate of another question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor       Who closes the question.
 	 * @param Post  $question    Question.
 	 * @param int   $original_id ID of the original question.
@@ -844,6 +884,8 @@ final class Post_Service {
 
 	/**
 	 * Closes a question with a note explaining why.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor  $actor    Who closes the question.
 	 * @param Post   $question Question.
@@ -879,6 +921,8 @@ final class Post_Service {
 	/**
 	 * Reopens a closed question; a close note is deleted.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    Who reopens the question.
 	 * @param Post  $question Question.
 	 * @return Post The question after the change.
@@ -913,6 +957,8 @@ final class Post_Service {
 
 	/**
 	 * Moves a question with its answers and comments to another category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor    $actor       Who moves the question.
 	 * @param Post     $question    Question.
@@ -957,6 +1003,8 @@ final class Post_Service {
 	 * Converts an answer into a comment on the question or another answer.
 	 *
 	 * Comments and follow-on questions of the answer move to the new parent.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor       $actor      Who converts the answer.
 	 * @param Post        $answer     Answer before the change.
@@ -1039,6 +1087,8 @@ final class Post_Service {
 	 *
 	 * Votes of the new author on the post are removed, since users cannot vote on their own posts.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor   The user claiming the post.
 	 * @param Post  $post    Post.
 	 */
@@ -1047,9 +1097,9 @@ final class Post_Service {
 			return;
 		}
 
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
-		Db::query(
+		DB::query(
 			$wpdb->prepare(
 				'UPDATE %i SET user_id = %d, last_user_id = IF(updated IS NULL, last_user_id, COALESCE(last_user_id, %d)) WHERE id = %d',
 				Schema::table( 'posts' ),
@@ -1058,7 +1108,8 @@ final class Post_Service {
 				$post->id
 			)
 		);
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post->id, $actor->user_id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post->id, $actor->user_id ) );
+		Votes::forget();
 
 		$this->posts->forget( $post->id );
 		$this->posts->recount_votes( $post->id );
@@ -1087,6 +1138,8 @@ final class Post_Service {
 	/**
 	 * Counts a view of a question and updates its hotness if the site wants that.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $question Question.
 	 */
 	public function record_view( Post $question ): void {
@@ -1103,6 +1156,8 @@ final class Post_Service {
 
 	/**
 	 * Returns the question a post belongs to.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Question, answer, comment or note.
 	 * @return Post|null
@@ -1127,6 +1182,8 @@ final class Post_Service {
 	/**
 	 * Determines the event and whether to record the change for a status change.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $prefix     Event prefix: q, a or c.
 	 * @param string $status     New status.
 	 * @param bool   $was_hidden Whether the post was hidden.
@@ -1147,6 +1204,8 @@ final class Post_Service {
 
 	/**
 	 * Updates content columns of an answer or comment.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor       $actor       Editor.
 	 * @param Post        $post        Post.
@@ -1172,6 +1231,8 @@ final class Post_Service {
 	/**
 	 * Updates the cached values that depend on a question's visibility.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $question Question.
 	 */
 	private function question_counts_changed( Post $question ): void {
@@ -1181,6 +1242,8 @@ final class Post_Service {
 
 	/**
 	 * Updates the cached values that depend on the visible answers of a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 */
@@ -1192,6 +1255,8 @@ final class Post_Service {
 
 	/**
 	 * Removes the answers, comments and close note of a question from the index.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 */
@@ -1212,6 +1277,8 @@ final class Post_Service {
 
 	/**
 	 * Indexes a visible question with its visible answers, comments and close note.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 */
@@ -1241,6 +1308,8 @@ final class Post_Service {
 	/**
 	 * Returns the comments of a question and its answers, optionally only those on one post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post     $question  Question.
 	 * @param int|null $parent_id Only comments on this post.
 	 * @return Post[]
@@ -1257,6 +1326,8 @@ final class Post_Service {
 	/**
 	 * Checks whether a comment can be indexed: its question and parent must be visible.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $question Question.
 	 * @param Post $parent_post   Question or answer the comment is on.
 	 * @return bool
@@ -1267,6 +1338,8 @@ final class Post_Service {
 
 	/**
 	 * Returns the IDs of the visible comments on a post, without one comment.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $parent_post     Question or answer.
 	 * @param int  $comment_id Comment to leave out.
@@ -1286,6 +1359,8 @@ final class Post_Service {
 	/**
 	 * Checks whether a post has children other than the given one.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $id        Post ID.
 	 * @param int|null $except_id Child to ignore, e.g. a close note.
 	 * @return bool
@@ -1303,12 +1378,14 @@ final class Post_Service {
 	/**
 	 * Returns the non-zero votes on a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $post_id Post ID.
 	 * @return array<int, int> Votes keyed by user ID.
 	 */
 	private function voters( int $post_id ): array {
-		$rows = Db::get_results(
-			Db::wpdb()->prepare( 'SELECT user_id, vote FROM %i WHERE post_id = %d AND vote != 0', Schema::table( 'uservotes' ), $post_id )
+		$rows = DB::get_results(
+			DB::wpdb()->prepare( 'SELECT user_id, vote FROM %i WHERE post_id = %d AND vote != 0', Schema::table( 'uservotes' ), $post_id )
 		);
 
 		$votes = array();
@@ -1321,6 +1398,8 @@ final class Post_Service {
 
 	/**
 	 * Returns the event parameters describing a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Post.
 	 * @return array<string, mixed>
@@ -1342,6 +1421,8 @@ final class Post_Service {
 	/**
 	 * Returns the extra parameters of a creation event reported after approval.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $post Post as it was queued.
 	 * @return array<string, mixed>
 	 */
@@ -1355,6 +1436,8 @@ final class Post_Service {
 	/**
 	 * Returns the author of a post as an actor.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post $post Post.
 	 * @return Actor
 	 */
@@ -1365,6 +1448,8 @@ final class Post_Service {
 	/**
 	 * Loads a post that must exist.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Post ID.
 	 * @return Post
 	 * @throws \RuntimeException If the post does not exist.
@@ -1372,7 +1457,7 @@ final class Post_Service {
 	private function require_post( int $id ): Post {
 		$post = $this->posts->find( $id );
 		if ( null === $post ) {
-			throw new \RuntimeException( sprintf( 'Post %d does not exist.', $id ) ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Not output.
+			throw new \RuntimeException( esc_html( sprintf( 'Post %d does not exist.', $id ) ) );
 		}
 
 		return $post;

@@ -3,6 +3,7 @@
  * Block layouts shared by templates and patterns.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks;
@@ -12,11 +13,15 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Builds the block markup of the Q&A layouts, so the block templates and the block
  * patterns stay alike.
+ *
+ * @since 0.1.0
  */
 final class Layouts {
 
 	/**
 	 * Returns the markup of the start page: title, ask box, sort links and the question list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -26,6 +31,8 @@ final class Layouts {
 
 	/**
 	 * Returns the markup of a question list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $query    Query of the list, see the easyq/question-query block.
 	 * @param int                  $query_id ID of the list, unique on the page.
@@ -60,6 +67,8 @@ final class Layouts {
 	/**
 	 * Returns the markup of a compact question list: title, answers and last activity in one line.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $query    Query of the list, see the easyq/question-query block.
 	 * @param int                  $query_id ID of the list, unique on the page.
 	 * @return string
@@ -86,6 +95,8 @@ final class Layouts {
 
 	/**
 	 * Returns the markup of the question page: the question with answers, comments and forms.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -136,6 +147,8 @@ final class Layouts {
 	/**
 	 * Returns the markup of a user list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $query    Query of the list, see the easyq/user-query block.
 	 * @param int                  $query_id ID of the list, unique on the page.
 	 * @return string
@@ -165,6 +178,8 @@ final class Layouts {
 	/**
 	 * Returns the markup of a compact user list: avatar, name and points, one user per line.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $query    Query of the list, see the easyq/user-query block.
 	 * @param int                  $query_id ID of the list, unique on the page.
 	 * @return string
@@ -190,6 +205,8 @@ final class Layouts {
 	/**
 	 * Returns the markup of a profile page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $content Blocks below the profile header and navigation.
 	 * @return string
 	 */
@@ -210,6 +227,8 @@ final class Layouts {
 
 	/**
 	 * Encodes block attributes for block comments.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string

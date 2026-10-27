@@ -3,6 +3,7 @@
  * User profile field model.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -13,15 +14,42 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * A profile field defined by the site owner, e.g. "Location".
+ *
+ * @since 0.1.0
  */
 final class User_Field {
 
-	public const FLAG_MULTI_LINE  = 1;
-	public const FLAG_LINK        = 2;
+	/**
+	 * Flag of fields with several lines of text.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const FLAG_MULTI_LINE = 1;
+
+	/**
+	 * Flag of fields that contain a link.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const FLAG_LINK = 2;
+
+	/**
+	 * Flag of fields shown on the registration form.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
 	public const FLAG_ON_REGISTER = 4;
 
 	/**
 	 * Sets up the field.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $id       Field ID.
 	 * @param string   $name     Internal name, also used in the user meta key.
@@ -43,6 +71,8 @@ final class User_Field {
 	/**
 	 * Creates a field from a database row.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param object $row Row of the userfields table.
 	 * @return self
 	 */
@@ -60,6 +90,8 @@ final class User_Field {
 	/**
 	 * Returns the label to show.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	public function display_label(): string {
@@ -68,6 +100,8 @@ final class User_Field {
 
 	/**
 	 * Returns the user meta key that stores the values.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
@@ -78,6 +112,8 @@ final class User_Field {
 	/**
 	 * Checks whether the field holds several lines of text.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public function is_multi_line(): bool {
@@ -87,6 +123,8 @@ final class User_Field {
 	/**
 	 * Checks whether the field holds a web address.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public function is_link(): bool {
@@ -95,6 +133,8 @@ final class User_Field {
 
 	/**
 	 * Checks whether the field is shown on the registration form.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */

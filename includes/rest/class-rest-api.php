@@ -3,19 +3,24 @@
  * REST API registration.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Registers the controllers of the `easyq/v1` namespace.
+ *
+ * @since 0.1.0
  */
-final class Rest_Api {
+final class REST_API {
 
 	/**
 	 * Hooks the registration into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
@@ -23,6 +28,8 @@ final class Rest_Api {
 
 	/**
 	 * Registers all routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		$controllers = array(

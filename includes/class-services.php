@@ -3,6 +3,7 @@
  * Shared service instances.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;
@@ -31,11 +32,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Extensions use these accessors to work with easyQ data, e.g.
  * `EasyQ\Services::posts()->find( $id )`.
+ *
+ * @since 0.1.0
  */
 final class Services {
 
 	/**
 	 * Created services keyed by name.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, object>
 	 */
@@ -43,6 +48,8 @@ final class Services {
 
 	/**
 	 * Returns the post storage.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Post_Repository
 	 */
@@ -52,6 +59,8 @@ final class Services {
 
 	/**
 	 * Returns the post operations.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Post_Service
 	 */
@@ -65,6 +74,8 @@ final class Services {
 	/**
 	 * Returns the post validator.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Post_Validator
 	 */
 	public static function validator(): Post_Validator {
@@ -73,6 +84,8 @@ final class Services {
 
 	/**
 	 * Returns the votes and flags service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Votes
 	 */
@@ -83,6 +96,8 @@ final class Services {
 	/**
 	 * Returns the search service.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Search
 	 */
 	public static function search(): Search {
@@ -91,6 +106,8 @@ final class Services {
 
 	/**
 	 * Returns the points service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Points
 	 */
@@ -101,6 +118,8 @@ final class Services {
 	/**
 	 * Returns the categories service.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Categories
 	 */
 	public static function categories(): Categories {
@@ -109,6 +128,8 @@ final class Services {
 
 	/**
 	 * Returns the rate limits service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Limits
 	 */
@@ -119,6 +140,8 @@ final class Services {
 	/**
 	 * Returns the user levels service.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return User_Levels
 	 */
 	public static function user_levels(): User_Levels {
@@ -127,6 +150,8 @@ final class Services {
 
 	/**
 	 * Returns the permission checks.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Permissions
 	 */
@@ -140,6 +165,8 @@ final class Services {
 	/**
 	 * Returns the user profile fields service.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return User_Fields
 	 */
 	public static function user_fields(): User_Fields {
@@ -148,6 +175,8 @@ final class Services {
 
 	/**
 	 * Returns the content renderer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Content_Renderer
 	 */
@@ -158,6 +187,8 @@ final class Services {
 	/**
 	 * Returns the question lists.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Question_Query
 	 */
 	public static function question_query(): Question_Query {
@@ -166,6 +197,8 @@ final class Services {
 
 	/**
 	 * Returns the activity lists.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Activity_Query
 	 */
@@ -176,6 +209,8 @@ final class Services {
 	/**
 	 * Returns the user lists.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return User_Query
 	 */
 	public static function user_query(): User_Query {
@@ -185,6 +220,8 @@ final class Services {
 	/**
 	 * Returns the user titles.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return User_Titles
 	 */
 	public static function user_titles(): User_Titles {
@@ -193,13 +230,18 @@ final class Services {
 
 	/**
 	 * Forgets all created services, so the next call creates new ones. Used by tests.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function reset(): void {
 		self::$instances = array();
+		Votes::forget();
 	}
 
 	/**
 	 * Returns a shared service, creating it on first use.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @template T of object
 	 * @param string   $name    Service class.

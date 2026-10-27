@@ -33,5 +33,5 @@ tests_add_filter(
 );
 
 require $easyq_tests_dir . '/includes/bootstrap.php';
-require_once __DIR__ . '/class-testcase.php';
-require_once __DIR__ . '/class-rest-testcase.php';
+require_once __DIR__ . '/class-test-case.php';
+require_once __DIR__ . '/class-rest-test-case.php';

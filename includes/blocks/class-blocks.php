@@ -3,6 +3,7 @@
  * Block registration.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Every block is server-side rendered from `blocks/{name}/render.php`. The
  * editor script and the interactivity module are shared by all blocks.
+ *
+ * @since 0.1.0
  */
 final class Blocks {
 
 	/**
 	 * Blocks that render their inner blocks themselves, once per item.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -30,6 +35,8 @@ final class Blocks {
 
 	/**
 	 * Hooks the registration into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'init', array( $this, 'register_blocks' ) );
@@ -38,6 +45,8 @@ final class Blocks {
 
 	/**
 	 * Registers scripts, blocks and the bindings source.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_blocks(): void {
 		$this->register_scripts();
@@ -71,6 +80,8 @@ final class Blocks {
 	/**
 	 * Adds the block category.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<int, array<string, mixed>> $categories Block categories.
 	 * @return array<int, array<string, mixed>>
 	 */
@@ -89,6 +100,8 @@ final class Blocks {
 	 *
 	 * Supported keys: title, content, excerpt, url, author, date.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $source_args Binding arguments with the key.
 	 * @param WP_Block             $block       Bound block.
 	 * @return string|null
@@ -105,7 +118,7 @@ final class Blocks {
 			'title'   => esc_html( $renderer->text( (string) $post->title ) ),
 			'content' => $renderer->html( (string) $post->content, $post->format ),
 			'excerpt' => esc_html( $renderer->text( \EasyQ\Util\Text::shorten_line( $post->text(), 200 ) ) ),
-			'url'     => esc_url( \EasyQ\Frontend\Urls::post( $post ) ),
+			'url'     => esc_url( \EasyQ\Frontend\URLs::post( $post ) ),
 			'author'  => esc_html( Render::author_name( $post ) ),
 			'date'    => esc_html( Render::date( $post->created ) ),
 			default   => null,
@@ -116,6 +129,8 @@ final class Blocks {
 	 * Returns a value of the current user for a bound block attribute.
 	 *
 	 * Supported keys: name, url, avatar, points, title, description.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $source_args Binding arguments with the key.
 	 * @param WP_Block             $block       Bound block.
@@ -129,7 +144,7 @@ final class Blocks {
 
 		return match ( $source_args['key'] ?? '' ) {
 			'name'        => esc_html( $user->display_name ),
-			'url'         => esc_url( \EasyQ\Frontend\Urls::user( $user ) ),
+			'url'         => esc_url( \EasyQ\Frontend\URLs::user( $user ) ),
 			'avatar'      => esc_url( (string) get_avatar_url( $user->ID, array( 'size' => 192 ) ) ),
 			'points'      => esc_html( Render::number( Services::points()->get( $user->ID ) ) ),
 			'title'       => esc_html( Services::user_titles()->title( $user->ID ) ),
@@ -140,6 +155,8 @@ final class Blocks {
 
 	/**
 	 * Registers the shared editor script and interactivity module.
+	 *
+	 * @since 0.1.0
 	 */
 	private function register_scripts(): void {
 		$editor = $this->asset( 'editor' );
@@ -165,6 +182,8 @@ final class Blocks {
 	/**
 	 * Returns the module dependencies of a built module: IDs, or arrays with ID and import type.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<int, mixed> $dependencies Dependencies from the asset file.
 	 * @return array<int, string|array<string, string>>
 	 */
@@ -189,6 +208,8 @@ final class Blocks {
 
 	/**
 	 * Reads the dependencies and version of a built script.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $name Script name.
 	 * @return array{dependencies: array<int, mixed>, version: string}

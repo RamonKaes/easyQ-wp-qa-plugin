@@ -3,12 +3,13 @@
  * Cookie of anonymous authors.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 
 defined( 'ABSPATH' ) || exit;
@@ -19,11 +20,15 @@ defined( 'ABSPATH' ) || exit;
  * The cookie is set only when a visitor posts anonymously, never for visitors
  * who only read. It contains a random number and is listed in the privacy
  * policy text of the plugin.
+ *
+ * @since 0.1.0
  */
 final class Visitor_Cookie {
 
 	/**
 	 * Cookie name.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -31,6 +36,8 @@ final class Visitor_Cookie {
 
 	/**
 	 * Returns the ID of the visitor cookie of the current request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return int|null Null if the visitor has no valid cookie.
 	 */
@@ -40,13 +47,15 @@ final class Visitor_Cookie {
 			return null;
 		}
 
-		$exists = Db::get_var( Db::wpdb()->prepare( 'SELECT id FROM %i WHERE id = %d', Schema::table( 'cookies' ), $value ) );
+		$exists = DB::get_var( DB::wpdb()->prepare( 'SELECT id FROM %i WHERE id = %d', Schema::table( 'cookies' ), $value ) );
 
 		return null === $exists ? null : (int) $value;
 	}
 
 	/**
 	 * Returns the cookie ID of the current visitor, creating the cookie if needed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor The visitor.
 	 * @return int
@@ -58,11 +67,11 @@ final class Visitor_Cookie {
 		}
 
 		$id = random_int( 1, PHP_INT_MAX );
-		Db::insert(
+		DB::insert(
 			Schema::table( 'cookies' ),
 			array(
 				'id'         => $id,
-				'created'    => Db::now(),
+				'created'    => DB::now(),
 				'created_ip' => $actor->stored_ip(),
 			),
 			array( '%d', '%s', '%s' )

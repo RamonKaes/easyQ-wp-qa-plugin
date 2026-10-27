@@ -3,6 +3,7 @@
  * Confirmation, approval and blocking of users.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -25,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
  *   unconfirmed if the site confirms email addresses, and as waiting for
  *   approval if the site approves new users.
  * - Setting the password through the link WordPress emails confirms the address.
+ *
+ * @since 0.1.0
  */
 final class User_Status {
 
 	/**
 	 * User meta key set while the email address is not confirmed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -38,12 +43,16 @@ final class User_Status {
 	/**
 	 * User meta key set while the user waits for approval.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const UNAPPROVED_META = 'easyq_unapproved';
 
 	/**
 	 * User meta key set once a moderator approved the user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -52,12 +61,16 @@ final class User_Status {
 	/**
 	 * User meta key set while the user is blocked.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const BLOCKED_META = 'easyq_blocked';
 
 	/**
 	 * Hooks the status handling into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'register_new_user', array( $this, 'mark_new_registration' ) );
@@ -66,6 +79,8 @@ final class User_Status {
 
 	/**
 	 * Marks a user who registered through the registration form.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 */
@@ -82,6 +97,8 @@ final class User_Status {
 	/**
 	 * Confirms the email address of a user who set a password through the emailed link.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_User $user User.
 	 */
 	public function confirm_after_password_reset( WP_User $user ): void {
@@ -90,6 +107,8 @@ final class User_Status {
 
 	/**
 	 * Checks whether the email address of a user is confirmed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 * @return bool
@@ -101,6 +120,8 @@ final class User_Status {
 	/**
 	 * Checks whether a user waits for approval.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return bool
 	 */
@@ -110,6 +131,8 @@ final class User_Status {
 
 	/**
 	 * Checks whether a moderator approved a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 * @return bool
@@ -121,6 +144,8 @@ final class User_Status {
 	/**
 	 * Checks whether a user is blocked.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return bool
 	 */
@@ -130,6 +155,8 @@ final class User_Status {
 
 	/**
 	 * Marks the email address of a user as confirmed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor   Who confirms.
 	 * @param int   $user_id User ID.
@@ -146,6 +173,8 @@ final class User_Status {
 	/**
 	 * Marks the email address of a user as not confirmed, e.g. after it changed.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 */
 	public static function unconfirm( int $user_id ): void {
@@ -154,6 +183,8 @@ final class User_Status {
 
 	/**
 	 * Approves a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor   Moderator.
 	 * @param int   $user_id User ID.
@@ -179,6 +210,8 @@ final class User_Status {
 	/**
 	 * Blocks a user from posting, voting and changing anything.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor   Moderator.
 	 * @param int   $user_id User ID.
 	 */
@@ -193,6 +226,8 @@ final class User_Status {
 
 	/**
 	 * Unblocks a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor   Moderator.
 	 * @param int   $user_id User ID.

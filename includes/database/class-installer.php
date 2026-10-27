@@ -3,6 +3,7 @@
  * Installation and upgrades.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Database;
@@ -15,11 +16,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Installs and upgrades the plugin data on single sites and multisite networks.
+ *
+ * @since 0.1.0
  */
 final class Installer {
 
 	/**
 	 * Current database schema version. Increase it with every schema change.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -28,12 +33,16 @@ final class Installer {
 	/**
 	 * Option that stores the installed schema version of a site.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const DB_VERSION_OPTION = 'easyq_db_version';
 
 	/**
 	 * Hooks the installer into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'wp_initialize_site', array( self::class, 'initialize_site' ), 200 );
@@ -47,6 +56,8 @@ final class Installer {
 	 *
 	 * On network activation the sites are installed right away unless the network
 	 * is large; remaining sites are installed on their next request by maybe_upgrade().
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param bool $network_wide Whether the plugin is being activated for the whole network.
 	 */
@@ -78,6 +89,8 @@ final class Installer {
 	 * Runs on plugin deactivation.
 	 *
 	 * Data is kept; it is only removed on uninstall when the site owner asked for it.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function deactivate(): void {
 		// WordPress rebuilds the rewrite rules without the Q&A routes on the next request.
@@ -87,6 +100,8 @@ final class Installer {
 
 	/**
 	 * Creates or upgrades tables and default options of the current site.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function install_site(): void {
 		Schema::install();
@@ -102,6 +117,8 @@ final class Installer {
 
 	/**
 	 * Installs or upgrades the current site if its schema version is outdated.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function maybe_upgrade(): void {
 		if ( self::installed_version() < self::DB_VERSION ) {
@@ -111,6 +128,8 @@ final class Installer {
 
 	/**
 	 * Returns the schema version installed on the current site.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return int The version, or 0 if the plugin has not been installed.
 	 */
@@ -122,6 +141,8 @@ final class Installer {
 
 	/**
 	 * Installs a new site of the network if the plugin is network-activated.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Site $site The new site.
 	 */
@@ -138,18 +159,22 @@ final class Installer {
 	/**
 	 * Adds the tables of a site that is being deleted to the list of tables to drop.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string[] $tables  Tables WordPress drops.
 	 * @param int      $site_id ID of the deleted site.
 	 * @return string[]
 	 */
 	public static function filter_drop_tables( array $tables, int $site_id ): array {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		return array_merge( $tables, Schema::table_names( $wpdb->get_blog_prefix( $site_id ) ) );
 	}
 
 	/**
 	 * Checks whether the plugin is activated for the whole network.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */

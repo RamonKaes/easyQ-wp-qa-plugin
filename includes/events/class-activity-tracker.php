@@ -3,12 +3,13 @@
  * Write activity tracking.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Events;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 
 defined( 'ABSPATH' ) || exit;
@@ -19,11 +20,15 @@ defined( 'ABSPATH' ) || exit;
  * Ported from Question2Answer `qa-event-limits.php`, which stores the time and
  * IP address of the last write action. easyQ stores the time for users (no IP
  * address) and both for anonymous visitor cookies.
+ *
+ * @since 0.1.0
  */
 final class Activity_Tracker {
 
 	/**
 	 * User meta key with the time of the last write action (Unix timestamp).
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -31,6 +36,8 @@ final class Activity_Tracker {
 
 	/**
 	 * Event name suffixes and names that count as write actions.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -69,6 +76,8 @@ final class Activity_Tracker {
 
 	/**
 	 * Hooks the tracker into the easyQ events.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'easyq_event', array( $this, 'track' ), 10, 3 );
@@ -76,6 +85,8 @@ final class Activity_Tracker {
 
 	/**
 	 * Records a write action.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $event  Event name.
 	 * @param array<string, mixed> $params Event parameters.
@@ -94,10 +105,10 @@ final class Activity_Tracker {
 
 		if ( null !== $actor->cookie_id ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
-			Db::wpdb()->update(
+			DB::wpdb()->update(
 				Schema::table( 'cookies' ),
 				array(
-					'written'    => Db::now(),
+					'written'    => DB::now(),
 					'written_ip' => $actor->stored_ip(),
 				),
 				array( 'id' => $actor->cookie_id )

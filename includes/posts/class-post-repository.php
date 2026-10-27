@@ -3,14 +3,16 @@
  * Post storage.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
+use EasyQ\Votes\Votes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,11 +21,27 @@ defined( 'ABSPATH' ) || exit;
  *
  * Ported from Question2Answer `qa-include/db/post-create.php`, `db/post-update.php`,
  * `db/votes.php` and `db/hotness.php`.
+ *
+ * @since 0.1.0
  */
 final class Post_Repository {
 
 	/**
+	 * Children of posts loaded during the current request, keyed by parent ID.
+	 *
+	 * Pages ask for the answers and comments of a post many times. Every write clears
+	 * them, since all writes go through forget() or forget_range().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<int, array<int, Post>>
+	 */
+	private array $children = array();
+
+	/**
 	 * Object cache group for posts.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -31,6 +49,8 @@ final class Post_Repository {
 
 	/**
 	 * Returns a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $id Post ID.
 	 * @return Post|null
@@ -41,7 +61,7 @@ final class Post_Repository {
 			return $cached;
 		}
 
-		$row = Db::get_row( Db::wpdb()->prepare( 'SELECT * FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) );
+		$row = DB::get_row( DB::wpdb()->prepare( 'SELECT * FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) );
 		if ( null === $row ) {
 			return null;
 		}
@@ -54,6 +74,8 @@ final class Post_Repository {
 
 	/**
 	 * Returns several posts.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int[] $ids Post IDs.
 	 * @return array<int, Post> Posts keyed by ID, in ID order.
@@ -70,8 +92,8 @@ final class Post_Repository {
 
 		$missing = array_values( array_diff( $ids, array_keys( $posts ) ) );
 		if ( array() !== $missing ) {
-			$rows = Db::get_results(
-				Db::wpdb()->prepare(
+			$rows = DB::get_results(
+				DB::wpdb()->prepare(
 					'SELECT * FROM %i WHERE id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
 					array_merge( array( Schema::table( 'posts' ) ), $missing )
 				)
@@ -91,19 +113,66 @@ final class Post_Repository {
 	/**
 	 * Returns the direct children of a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $parent_id Parent post ID.
 	 * @return array<int, Post> Posts keyed by ID, in ID order.
 	 */
 	public function children( int $parent_id ): array {
-		$rows = Db::get_results(
-			Db::wpdb()->prepare( 'SELECT * FROM %i WHERE parent_id = %d ORDER BY id', Schema::table( 'posts' ), $parent_id )
-		);
+		if ( ! isset( $this->children[ $parent_id ] ) ) {
+			$rows = DB::get_results(
+				DB::wpdb()->prepare( 'SELECT * FROM %i WHERE parent_id = %d ORDER BY id', Schema::table( 'posts' ), $parent_id )
+			);
 
-		return $this->to_posts( $rows );
+			$this->children[ $parent_id ] = $this->to_posts( $rows );
+		}
+
+		return $this->children[ $parent_id ];
+	}
+
+	/**
+	 * Loads the children of a question, its answers and comments, and their comments with three queries.
+	 *
+	 * The question page asks for the children of every post it shows.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $question_id Question ID.
+	 */
+	public function prime_children( int $question_id ): void {
+		$parent_ids = array_keys( $this->children( $question_id ) );
+
+		// Answers and comments of the question, then the comments below those.
+		for ( $level = 0; $level < 2 && array() !== $parent_ids; $level++ ) {
+			$missing = array_values( array_filter( $parent_ids, fn ( int $id ): bool => ! isset( $this->children[ $id ] ) ) );
+			if ( array() === $missing ) {
+				return;
+			}
+
+			$rows = DB::get_results(
+				DB::wpdb()->prepare(
+					'SELECT * FROM %i WHERE parent_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ') ORDER BY id',
+					array_merge( array( Schema::table( 'posts' ) ), $missing )
+				)
+			);
+
+			foreach ( $missing as $id ) {
+				$this->children[ $id ] = array();
+			}
+			$parent_ids = array();
+			foreach ( $this->to_posts( $rows ) as $post ) {
+				if ( null !== $post->parent_id ) {
+					$this->children[ $post->parent_id ][ $post->id ] = $post;
+					$parent_ids[]                                    = $post->id;
+				}
+			}
+		}
 	}
 
 	/**
 	 * Returns all answers of a question, whatever their status.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $question_id Question ID.
 	 * @return array<int, Post> Answers keyed by ID.
@@ -118,14 +187,16 @@ final class Post_Repository {
 	/**
 	 * Returns comments and follow-on questions of a question and of its answers, whatever their status.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $question_id Question ID.
 	 * @return array<int, Post> Posts keyed by ID.
 	 */
 	public function comments_and_follows_of( int $question_id ): array {
 		$parent_ids = array_merge( array( $question_id ), array_keys( $this->answers_of( $question_id ) ) );
-		$wpdb       = Db::wpdb();
+		$wpdb       = DB::wpdb();
 
-		$rows = Db::get_results(
+		$rows = DB::get_results(
 			$wpdb->prepare(
 				'SELECT * FROM %i WHERE parent_id IN (' . implode( ',', array_fill( 0, count( $parent_ids ), '%d' ) ) . ") AND LEFT(type, 1) IN ('C', 'Q') ORDER BY id",
 				array_merge( array( Schema::table( 'posts' ) ), $parent_ids )
@@ -137,6 +208,8 @@ final class Post_Repository {
 
 	/**
 	 * Returns the note a question was closed with, if it was closed for another reason than a duplicate.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $question Question.
 	 * @return Post|null
@@ -154,6 +227,8 @@ final class Post_Repository {
 	/**
 	 * Inserts a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string      $type        Stored type, e.g. `Q` or `A_QUEUED`.
 	 * @param int|null    $parent_id   Parent post ID.
 	 * @param int|null    $category_id Category ID.
@@ -169,7 +244,7 @@ final class Post_Repository {
 	public function insert( string $type, ?int $parent_id, ?int $category_id, Actor $actor, ?string $title, string $content, string $format, ?string $tags, ?string $notify, ?string $author_name ): int {
 		$is_user = null !== $actor->user_id;
 
-		$id = Db::insert(
+		$id = DB::insert(
 			Schema::table( 'posts' ),
 			array(
 				'type'        => $type,
@@ -184,7 +259,7 @@ final class Post_Repository {
 				'tags'        => $tags,
 				'notify'      => $notify,
 				'author_name' => $is_user ? null : $author_name,
-				'created'     => Db::now(),
+				'created'     => DB::now(),
 			),
 			array( '%s', '%d', '%d', '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' )
 		);
@@ -199,6 +274,8 @@ final class Post_Repository {
 	/**
 	 * Changes columns of a post and records who changed it, if an actor is given.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int                  $id          Post ID.
 	 * @param array<string, mixed> $columns     New column values.
 	 * @param Actor|null           $actor       Who made the change, or null to leave the change metadata untouched.
@@ -206,7 +283,7 @@ final class Post_Repository {
 	 */
 	public function update( int $id, array $columns, ?Actor $actor = null, ?string $update_type = null ): void {
 		if ( null !== $actor ) {
-			$columns['updated']      = Db::now();
+			$columns['updated']      = DB::now();
 			$columns['update_type']  = $update_type;
 			$columns['last_user_id'] = $actor->user_id;
 			$columns['last_ip']      = $actor->stored_ip();
@@ -217,7 +294,7 @@ final class Post_Repository {
 		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
-		Db::wpdb()->update( Schema::table( 'posts' ), $columns, array( 'id' => $id ) );
+		DB::wpdb()->update( Schema::table( 'posts' ), $columns, array( 'id' => $id ) );
 		$this->forget( $id );
 	}
 
@@ -226,16 +303,18 @@ final class Post_Repository {
 	 *
 	 * The previous answer loses its "selected" change metadata; the new answer records who selected it.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post       $question    Question.
 	 * @param int|null   $selected_id Answer ID, or null to clear the selection.
 	 * @param Actor|null $actor       Who selected the answer.
 	 */
 	public function set_selected_answer( Post $question, ?int $selected_id, ?Actor $actor ): void {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'posts' );
 
 		if ( null !== $question->selected_child_id ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					'UPDATE %i SET updated = NULL, update_type = NULL, last_user_id = NULL, last_ip = NULL WHERE id = %d AND update_type = %s',
 					$table,
@@ -258,20 +337,25 @@ final class Post_Repository {
 	 *
 	 * The search index must be cleared before, see Search\Index::unindex_post().
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Post ID.
 	 */
 	public function delete( int $id ): void {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', Schema::table( 'uservotes' ), $id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', Schema::table( 'uservotes' ), $id ) );
+		Votes::forget();
 		Schema::delete_all_meta( 'easyq_post', $id );
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'posts' ), $id ) );
 
 		$this->forget( $id );
 	}
 
 	/**
 	 * Recalculates the category path columns of a range of posts from their category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $first_id First post ID.
 	 * @param int|null $last_id  Last post ID, or null for a single post.
@@ -281,8 +365,8 @@ final class Post_Repository {
 		$posts      = Schema::table( 'posts' );
 		$categories = Schema::table( 'categories' );
 
-		Db::query(
-			Db::wpdb()->prepare(
+		DB::query(
+			DB::wpdb()->prepare(
 				'UPDATE %i AS x, (SELECT p.id, '
 				. 'COALESCE(c2.parent_id, c1.parent_id, c0.parent_id, c0.id) AS path_1, '
 				. 'IF(c2.parent_id IS NOT NULL, c1.parent_id, IF(c1.parent_id IS NOT NULL, c0.parent_id, IF(c0.parent_id IS NOT NULL, c0.id, NULL))) AS path_2, '
@@ -306,6 +390,8 @@ final class Post_Repository {
 	/**
 	 * Recalculates the category path columns of all posts in the given categories.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int[] $category_ids Category IDs.
 	 */
 	public function calc_category_paths_in( array $category_ids ): void {
@@ -313,8 +399,8 @@ final class Post_Repository {
 			return;
 		}
 
-		$wpdb     = Db::wpdb();
-		$post_ids = Db::get_int_col(
+		$wpdb     = DB::wpdb();
+		$post_ids = DB::get_int_col(
 			$wpdb->prepare(
 				'SELECT id FROM %i WHERE category_id IN (' . implode( ',', array_fill( 0, count( $category_ids ), '%d' ) ) . ')',
 				array_merge( array( Schema::table( 'posts' ) ), $category_ids )
@@ -328,6 +414,8 @@ final class Post_Repository {
 
 	/**
 	 * Returns the category and its ancestors of a post, from the category itself upwards.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $id Post ID.
 	 * @return int[] Category IDs; empty if the post has no category.
@@ -343,6 +431,8 @@ final class Post_Repository {
 
 	/**
 	 * Copies category and category path of a question to other posts, e.g. its answers and comments.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int[] $ids      Post IDs.
 	 * @param Post  $question Question with the new category.
@@ -364,13 +454,15 @@ final class Post_Repository {
 	/**
 	 * Recalculates the answer count and the highest answer vote of a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $question_id Question ID.
 	 */
 	public function recount_answers( int $question_id ): void {
 		$table = Schema::table( 'posts' );
 
-		Db::query(
-			Db::wpdb()->prepare(
+		DB::query(
+			DB::wpdb()->prepare(
 				"UPDATE %i AS x, (SELECT COUNT(*) AS answer_count, COALESCE(GREATEST(MAX(net_votes), 0), 0) AS answer_max_votes FROM %i WHERE parent_id = %d AND type = 'A') AS a "
 				. 'SET x.answer_count = a.answer_count, x.answer_max_votes = a.answer_max_votes WHERE x.id = %d',
 				$table,
@@ -386,11 +478,13 @@ final class Post_Repository {
 	/**
 	 * Recalculates the vote counts of a post from the stored votes.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Post ID.
 	 */
 	public function recount_votes( int $id ): void {
-		Db::query(
-			Db::wpdb()->prepare(
+		DB::query(
+			DB::wpdb()->prepare(
 				'UPDATE %i AS x, (SELECT COALESCE(SUM(GREATEST(0, vote)), 0) AS upvotes, -COALESCE(SUM(LEAST(0, vote)), 0) AS downvotes FROM %i WHERE post_id = %d) AS a '
 				. 'SET x.upvotes = a.upvotes, x.downvotes = a.downvotes, x.net_votes = a.upvotes - a.downvotes WHERE x.id = %d',
 				Schema::table( 'posts' ),
@@ -406,11 +500,13 @@ final class Post_Repository {
 	/**
 	 * Recalculates the flag count of a post from the stored flags.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Post ID.
 	 */
 	public function recount_flags( int $id ): void {
-		Db::query(
-			Db::wpdb()->prepare(
+		DB::query(
+			DB::wpdb()->prepare(
 				'UPDATE %i AS x, (SELECT COUNT(*) AS flag_count FROM %i WHERE post_id = %d AND flag = 1) AS a SET x.flag_count = a.flag_count WHERE x.id = %d',
 				Schema::table( 'posts' ),
 				Schema::table( 'uservotes' ),
@@ -428,6 +524,8 @@ final class Post_Repository {
 	 * Hotness combines question age, latest answer age, answer count, net votes and
 	 * views, weighted by the site settings. The zero point is 1 January 2010.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $first_id First post ID.
 	 * @param int|null $last_id  Last post ID, or null for a single post.
 	 */
@@ -436,8 +534,8 @@ final class Post_Repository {
 		$table   = Schema::table( 'posts' );
 
 		// The multipliers come from Question2Answer and give the factors roughly equal influence.
-		Db::query(
-			Db::wpdb()->prepare(
+		DB::query(
+			DB::wpdb()->prepare(
 				'UPDATE %i AS x, (SELECT parents.id, MAX(parents.created) AS q_created, COALESCE(MAX(children.created), MAX(parents.created)) AS a_created, '
 				. 'COUNT(children.id) AS answers, MAX(parents.net_votes) AS net_votes, MAX(parents.views) AS views '
 				. "FROM %i AS parents LEFT JOIN %i AS children ON parents.id = children.parent_id AND children.type = 'A' "
@@ -465,29 +563,38 @@ final class Post_Repository {
 	/**
 	 * Increments the view counter of a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Question ID.
 	 */
 	public function increment_views( int $id ): void {
-		Db::query( Db::wpdb()->prepare( 'UPDATE %i SET views = views + 1 WHERE id = %d', Schema::table( 'posts' ), $id ) );
+		DB::query( DB::wpdb()->prepare( 'UPDATE %i SET views = views + 1 WHERE id = %d', Schema::table( 'posts' ), $id ) );
 		$this->forget( $id );
 	}
 
 	/**
 	 * Removes a post from the object cache.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $id Post ID.
 	 */
 	public function forget( int $id ): void {
 		wp_cache_delete( $id, self::CACHE_GROUP );
+		$this->children = array();
 	}
 
 	/**
 	 * Removes a range of posts from the object cache.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $first_id First post ID.
 	 * @param int $last_id  Last post ID.
 	 */
 	private function forget_range( int $first_id, int $last_id ): void {
+		$this->children = array();
+
 		if ( $last_id - $first_id > 100 && wp_cache_supports( 'flush_group' ) ) {
 			wp_cache_flush_group( self::CACHE_GROUP );
 			return;
@@ -501,6 +608,8 @@ final class Post_Repository {
 	/**
 	 * Converts rows into posts keyed by ID.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param object[] $rows Rows of the posts table.
 	 * @return array<int, Post>
 	 */
@@ -509,6 +618,8 @@ final class Post_Repository {
 		foreach ( $rows as $row ) {
 			$post               = Post::from_row( $row );
 			$posts[ $post->id ] = $post;
+			// Later find() calls for the same post need no query.
+			wp_cache_set( $post->id, $post, self::CACHE_GROUP );
 		}
 
 		return $posts;

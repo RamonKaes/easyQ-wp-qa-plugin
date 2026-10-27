@@ -3,9 +3,10 @@
  * REST representation of posts.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Actor;
 use EasyQ\Capabilities;
@@ -13,18 +14,22 @@ use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Services;
-use EasyQ\Util\Ip;
+use EasyQ\Util\IP;
 use EasyQ\Util\Text;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
  * Converts posts into the arrays returned by the REST API.
+ *
+ * @since 0.1.0
  */
 final class Post_Formatter {
 
 	/**
 	 * Names of the post types in responses.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -38,6 +43,8 @@ final class Post_Formatter {
 	/**
 	 * Sets up the formatter.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Content_Renderer $renderer Content output.
 	 */
 	public function __construct( private readonly Content_Renderer $renderer ) {
@@ -45,6 +52,8 @@ final class Post_Formatter {
 
 	/**
 	 * Returns the name of a post type in responses.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Post.
 	 * @return string
@@ -55,6 +64,8 @@ final class Post_Formatter {
 
 	/**
 	 * Converts a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post   $post     Post.
 	 * @param Actor  $viewer   Who requests the post.
@@ -135,7 +146,7 @@ final class Post_Formatter {
 		}
 
 		if ( null === $post->user_id && null !== $viewer->user_id && user_can( $viewer->user_id, 'easyq_view_ips' ) ) {
-			$data['ip'] = Ip::from_binary( $post->created_ip );
+			$data['ip'] = IP::from_binary( $post->created_ip );
 		}
 
 		return $data;
@@ -143,6 +154,8 @@ final class Post_Formatter {
 
 	/**
 	 * Describes the author of a post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post $post Post.
 	 * @return array<string, mixed>
@@ -153,7 +166,7 @@ final class Post_Formatter {
 		if ( false === $user ) {
 			return array(
 				'id'     => null,
-				'name'   => '' !== (string) $post->author_name ? (string) $post->author_name : __( 'Anonymous', 'easyq' ),
+				'name'   => '' === (string) $post->author_name ? __( 'Anonymous', 'easyq' ) : (string) $post->author_name,
 				'avatar' => get_avatar_url( 0, array( 'size' => 96 ) ),
 				'points' => null,
 			);
@@ -169,6 +182,8 @@ final class Post_Formatter {
 
 	/**
 	 * Describes a category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $category_id Category ID.
 	 * @return array<string, mixed>|null

@@ -3,6 +3,7 @@
  * A resolved route.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -15,11 +16,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * The Q&A page a request asks for, with the object it is about.
+ *
+ * @since 0.1.0
  */
 final class Route {
 
 	/**
 	 * Sets up the route.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string                            $name    Route name, e.g. `question`.
 	 * @param Post|Category|WP_User|string|null $subject Question, category, user or tag the page is about.
@@ -35,6 +40,8 @@ final class Route {
 	/**
 	 * Returns the route for addresses below the base slug that match nothing.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return self
 	 */
 	public static function not_found(): self {
@@ -43,6 +50,8 @@ final class Route {
 
 	/**
 	 * Returns the question of a question page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Post|null
 	 */
@@ -53,6 +62,8 @@ final class Route {
 	/**
 	 * Returns the category of a category page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Category|null
 	 */
 	public function category(): ?Category {
@@ -61,6 +72,8 @@ final class Route {
 
 	/**
 	 * Returns the user of a profile or conversation page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return WP_User|null
 	 */
@@ -71,6 +84,8 @@ final class Route {
 	/**
 	 * Returns the tag of a tag page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string|null
 	 */
 	public function tag(): ?string {
@@ -79,6 +94,8 @@ final class Route {
 
 	/**
 	 * Returns the slug of the block template for the route.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */

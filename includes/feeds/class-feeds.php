@@ -3,6 +3,7 @@
  * RSS feeds of the Q&A lists.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Feeds;
@@ -12,7 +13,7 @@ use EasyQ\Categories\Category;
 use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Router;
 use EasyQ\Frontend\Routes;
-use EasyQ\Frontend\Urls;
+use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Activity_Item;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
@@ -29,11 +30,15 @@ defined( 'ABSPATH' ) || exit;
  * and no author names.
  *
  * Ported from Question2Answer `qa-feed.php`.
+ *
+ * @since 0.1.0
  */
 final class Feeds {
 
 	/**
 	 * Name of the feed, as in `?feed=easyq`.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -41,6 +46,8 @@ final class Feeds {
 
 	/**
 	 * Feed types and the setting that enables them.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -59,12 +66,16 @@ final class Feeds {
 	/**
 	 * Feed types that need an argument: the tag or the search terms.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string[]
 	 */
 	public const WITH_ARGUMENT = array( 'tag', 'search' );
 
 	/**
 	 * Kinds of activity of the activity feed types, see Activity_Query::KINDS.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string[]>
 	 */
@@ -78,6 +89,8 @@ final class Feeds {
 	/**
 	 * Sets up the feeds.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Router $router Router of the current request.
 	 */
 	public function __construct( private readonly Router $router ) {
@@ -85,6 +98,8 @@ final class Feeds {
 
 	/**
 	 * Hooks the feeds into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'init', array( $this, 'add_feed' ) );
@@ -99,6 +114,8 @@ final class Feeds {
 	 * WordPress compares the client's cache headers with the last change of its own
 	 * posts and comments, which says nothing about questions and answers. Runs after
 	 * the router resolved the route.
+	 *
+	 * @since 0.1.0
 	 */
 	public function ignore_conditional_get(): void {
 		if ( 'feed' === $this->router->current()?->name ) {
@@ -108,6 +125,8 @@ final class Feeds {
 
 	/**
 	 * Removes the cache headers WordPress derives from its own posts from Q&A feeds.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, string|false> $headers HTTP headers.
 	 * @return array<string, string|false>
@@ -123,6 +142,8 @@ final class Feeds {
 
 	/**
 	 * Registers the feed.
+	 *
+	 * @since 0.1.0
 	 */
 	public function add_feed(): void {
 		add_feed( self::FEED, array( $this, 'render' ) );
@@ -130,6 +151,8 @@ final class Feeds {
 
 	/**
 	 * Returns the address of a feed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string      $type     Feed type, see TYPES.
 	 * @param string|null $argument Tag, search terms or category path (slugs joined by `/`).
@@ -141,6 +164,8 @@ final class Feeds {
 
 	/**
 	 * Returns the feed that belongs to a Q&A page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Route  $route Route of the page.
 	 * @param string $query Search terms of a search page.
@@ -168,6 +193,8 @@ final class Feeds {
 	/**
 	 * Checks whether a feed type is enabled.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $type        Feed type.
 	 * @param bool   $in_category Whether the feed is limited to a category.
 	 * @return bool
@@ -183,6 +210,8 @@ final class Feeds {
 
 	/**
 	 * Prints the autodiscovery link of the feed of the current Q&A page.
+	 *
+	 * @since 0.1.0
 	 */
 	public function discovery_link(): void {
 		$route = $this->router->current();
@@ -203,7 +232,7 @@ final class Feeds {
 		}
 
 		printf(
-			'<link rel="alternate" type="%s" title="%s" href="%s">' . "\n",
+			'<link rel="alternate" type="%s" title="%s" href="%s" />' . "\n",
 			esc_attr( feed_content_type( 'rss2' ) ),
 			esc_attr( $channel['title'] ),
 			esc_url( self::url( $feed[0], $feed[1] ) )
@@ -212,6 +241,8 @@ final class Feeds {
 
 	/**
 	 * Returns title, address and items of a feed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string      $type     Feed type, see TYPES.
 	 * @param string|null $argument Tag, search terms or category path.
@@ -234,7 +265,7 @@ final class Feeds {
 			}
 		}
 
-		if ( ! self::enabled( $type, null !== $category ) || null !== Services::permissions()->error( 'permit_view_q_page', $viewer, null, null, false ) ) {
+		if ( ! self::enabled( $type, null !== $category ) || null !== Services::permissions()->error( 'permit_view_q_page', $viewer, check_blocks: false ) ) {
 			return null;
 		}
 
@@ -254,6 +285,8 @@ final class Feeds {
 
 	/**
 	 * Prints the feed of the current request.
+	 *
+	 * @since 0.1.0
 	 */
 	public function render(): void {
 		$route   = $this->router->current();
@@ -279,6 +312,8 @@ final class Feeds {
 
 	/**
 	 * Returns the RSS 2.0 document of a feed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array{title: string, link: string, items: list<array{title: string, link: string, description: string|null, category: string|null, date: string}>} $channel Feed, see channel().
 	 * @return string
@@ -323,6 +358,8 @@ final class Feeds {
 	/**
 	 * Returns the title of a feed, without the site name.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string        $type     Feed type.
 	 * @param string        $argument Tag or search terms.
 	 * @param Category|null $category Category.
@@ -350,6 +387,8 @@ final class Feeds {
 	/**
 	 * Returns the address of the Q&A page a feed belongs to.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string        $type     Feed type.
 	 * @param string        $argument Tag or search terms.
 	 * @param Category|null $category Category.
@@ -357,7 +396,7 @@ final class Feeds {
 	 */
 	private function link( string $type, string $argument, ?Category $category ): string {
 		if ( null !== $category && in_array( $type, array( 'questions', 'hot', 'unanswered' ), true ) ) {
-			return Urls::category( $category );
+			return URLs::category( $category );
 		}
 
 		return match ( $type ) {
@@ -370,6 +409,8 @@ final class Feeds {
 
 	/**
 	 * Returns questions as feed items.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $args     Question query arguments.
 	 * @param Category|null        $category Category.
@@ -388,6 +429,8 @@ final class Feeds {
 
 	/**
 	 * Returns activity as feed items, one per question, newest first.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string[]      $kinds    Kinds of activity.
 	 * @param Category|null $category Category.
@@ -414,6 +457,8 @@ final class Feeds {
 	/**
 	 * Returns search results as feed items, by relevance.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $query Search terms.
 	 * @param int    $count Number of items.
 	 * @return list<array{title: string, link: string, description: string|null, category: string|null, date: string}>
@@ -432,6 +477,8 @@ final class Feeds {
 
 	/**
 	 * Returns a feed item.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post               $question Question.
 	 * @param Post               $post     Question, answer or comment the item is about.
@@ -452,7 +499,7 @@ final class Feeds {
 
 		return array(
 			'title'       => $title,
-			'link'        => $post->id === $question->id ? Urls::question( $question ) : Urls::post( $post ),
+			'link'        => $post->id === $question->id ? URLs::question( $question ) : URLs::post( $post ),
 			'description' => Options::get_bool( 'feeds', 'feed_full_text' ) ? $renderer->html( (string) $post->content, $post->format ) : null,
 			'category'    => $category?->title,
 			'date'        => null === $activity ? $question->created : $activity->time,

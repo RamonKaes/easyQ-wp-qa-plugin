@@ -3,9 +3,10 @@
  * Base REST controller.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Actor;
 use EasyQ\Capabilities;
@@ -25,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Authentication uses the WordPress REST API: cookies with the `wp_rest` nonce
  * for the blocks, application passwords for other clients.
+ *
+ * @since 0.1.0
  */
 abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Route namespace.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -37,6 +42,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Sets up the controller.
+	 *
+	 * @since 0.1.0
 	 */
 	public function __construct() {
 		$this->namespace = self::NAMESPACE;
@@ -44,6 +51,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Returns the actor of the request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Actor
 	 */
@@ -54,6 +63,8 @@ abstract class Controller extends WP_REST_Controller {
 	/**
 	 * Returns the formatter for posts.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Post_Formatter
 	 */
 	protected function formatter(): Post_Formatter {
@@ -62,6 +73,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Checks a permission and returns the error response if it is not granted.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|null $option       Permission setting.
 	 * @param Actor       $actor        The actor.
@@ -72,18 +85,20 @@ abstract class Controller extends WP_REST_Controller {
 	protected function check( ?string $option, Actor $actor, ?Post $post = null, ?string $limit_action = null ): bool|WP_Error {
 		$reason = Services::permissions()->error( $option, $actor, $post, $limit_action );
 
-		return null === $reason ? true : Rest_Errors::permission( $reason );
+		return null === $reason ? true : REST_Errors::permission( $reason );
 	}
 
 	/**
 	 * Refuses changes while the Q&A area is read-only, except for plugin administrators.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor The actor.
 	 * @return true|WP_Error
 	 */
 	protected function check_writable( Actor $actor ): bool|WP_Error {
 		if ( Options::get_bool( 'general', 'read_only' ) && ( null === $actor->user_id || ! user_can( $actor->user_id, Capabilities::MANAGE ) ) ) {
-			return Rest_Errors::permission( 'read_only' );
+			return REST_Errors::permission( 'read_only' );
 		}
 
 		return true;
@@ -91,6 +106,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Loads a post the actor may see.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int         $id    Post ID.
 	 * @param Actor       $actor The actor.
@@ -101,12 +118,12 @@ abstract class Controller extends WP_REST_Controller {
 		$post = Services::posts()->find( $id );
 
 		if ( null === $post || ( null !== $type && $post->base_type() !== $type ) ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$question = Services::post_service()->question_of( $post );
 		if ( null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$view = $this->check( 'permit_view_q_page', $actor, $question );
@@ -118,7 +135,7 @@ abstract class Controller extends WP_REST_Controller {
 		foreach ( array_unique( array( $question->id, $post->id ) ) as $check_id ) {
 			$check = $check_id === $post->id ? $post : $question;
 			if ( ! $permissions->post_rules( $check, $actor )['viewable'] ) {
-				return Rest_Errors::not_found();
+				return REST_Errors::not_found();
 			}
 		}
 
@@ -127,6 +144,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Returns a response with the pagination headers.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<mixed> $items    Items of the page.
 	 * @param int          $total    Number of items on all pages.
@@ -143,6 +162,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Returns the arguments for page and page size.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $default_per_page Default page size.
 	 * @return array<string, array<string, mixed>>
@@ -168,6 +189,8 @@ abstract class Controller extends WP_REST_Controller {
 	/**
 	 * Returns an integer request parameter.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @param string          $key     Parameter name.
@@ -182,6 +205,8 @@ abstract class Controller extends WP_REST_Controller {
 	/**
 	 * Returns a string request parameter.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @param string          $key     Parameter name.
@@ -195,6 +220,8 @@ abstract class Controller extends WP_REST_Controller {
 
 	/**
 	 * Returns a boolean request parameter.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request

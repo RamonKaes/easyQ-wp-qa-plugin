@@ -71,7 +71,9 @@ test.describe( 'Q&A frontend', () => {
 
 		await expect( up ).toHaveAttribute( 'aria-pressed', 'false' );
 		await up.click();
-		await expect( votes.getByLabel( 'Votes' ) ).toHaveText( '1' );
+		await expect(
+			votes.locator( '[data-wp-text="context.net"]' )
+		).toHaveText( '1' );
 		await expect( up ).toHaveAttribute( 'aria-pressed', 'true' );
 
 		await page.reload();
@@ -79,7 +81,7 @@ test.describe( 'Q&A frontend', () => {
 			page
 				.locator( '.wp-block-easyq-post-votes' )
 				.first()
-				.getByLabel( 'Votes' )
+				.locator( '[data-wp-text="context.net"]' )
 		).toHaveText( '1' );
 
 		await context.close();

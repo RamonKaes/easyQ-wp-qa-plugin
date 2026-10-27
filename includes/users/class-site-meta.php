@@ -3,11 +3,12 @@
  * Site-specific user meta.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -17,21 +18,27 @@ defined( 'ABSPATH' ) || exit;
  * Users are shared by all sites of a network, but each site has its own Q&A
  * community. Like user roles, these values are stored under a meta key with the
  * table prefix of the site, e.g. `wp_2_easyq_level`.
+ *
+ * @since 0.1.0
  */
 final class Site_Meta {
 
 	/**
 	 * Returns the meta key of a value on the current site.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $key Key without the site prefix, e.g. `easyq_level`.
 	 * @return string
 	 */
 	public static function key( string $key ): string {
-		return Db::wpdb()->get_blog_prefix() . $key;
+		return DB::wpdb()->get_blog_prefix() . $key;
 	}
 
 	/**
 	 * Returns a value.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int    $user_id User ID.
 	 * @param string $key     Key without the site prefix.
@@ -44,6 +51,8 @@ final class Site_Meta {
 	/**
 	 * Sets a value.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int    $user_id User ID.
 	 * @param string $key     Key without the site prefix.
 	 * @param mixed  $value   Value.
@@ -54,6 +63,8 @@ final class Site_Meta {
 
 	/**
 	 * Removes a value.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int    $user_id User ID.
 	 * @param string $key     Key without the site prefix.

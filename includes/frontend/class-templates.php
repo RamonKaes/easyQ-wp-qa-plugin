@@ -3,6 +3,7 @@
  * Block templates of the Q&A pages.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -17,11 +18,15 @@ defined( 'ABSPATH' ) || exit;
  * The templates consist of core blocks and easyQ blocks and use the theme's
  * header and footer template parts. Site owners can change them in the Site
  * Editor; themes can provide their own `templates/easyq-*.html` files.
+ *
+ * @since 0.1.0
  */
 final class Templates {
 
 	/**
 	 * Rendered Q&A page for classic themes.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -30,6 +35,8 @@ final class Templates {
 	/**
 	 * Sets up the templates.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Router $router Router of the current request.
 	 */
 	public function __construct( private readonly Router $router ) {
@@ -37,6 +44,8 @@ final class Templates {
 
 	/**
 	 * Hooks the templates into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'init', array( $this, 'register_templates' ) );
@@ -45,6 +54,8 @@ final class Templates {
 
 	/**
 	 * Registers the block templates.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_templates(): void {
 		foreach ( $this->definitions() as $slug => $definition ) {
@@ -61,6 +72,8 @@ final class Templates {
 
 	/**
 	 * Uses the block template of the route for Q&A requests.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $template Template file chosen by WordPress.
 	 * @return string
@@ -98,6 +111,8 @@ final class Templates {
 	 * rendered here, before the document head, and printed between the theme's header
 	 * and footer. Themes can provide their own `easyq/classic.php`.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $slug Template slug, e.g. `easyq-question`.
 	 * @return string Template file.
 	 */
@@ -109,6 +124,8 @@ final class Templates {
 		 *
 		 * Block themes edit the templates in the Site Editor instead.
 		 *
+		 * @since 0.1.0
+		 *
 		 * @param string $content Block markup.
 		 * @param string $slug    Template slug, e.g. `easyq-question`.
 		 */
@@ -118,11 +135,13 @@ final class Templates {
 
 		$theme_file = locate_template( array( 'easyq/classic.php' ) );
 
-		return '' !== $theme_file ? $theme_file : \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php';
+		return '' === $theme_file ? \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php' : $theme_file;
 	}
 
 	/**
 	 * Returns the rendered Q&A page for classic themes, see classic_template().
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string HTML.
 	 */
@@ -132,6 +151,8 @@ final class Templates {
 
 	/**
 	 * Returns the templates with title, description and content.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, array{title: string, description: string, content: string}>
 	 */
@@ -239,6 +260,8 @@ final class Templates {
 
 	/**
 	 * Wraps page content with the theme's header and footer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $content Block markup of the page.
 	 * @return string

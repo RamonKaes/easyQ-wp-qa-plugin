@@ -3,9 +3,10 @@
  * REST endpoints for questions.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Post;
@@ -29,11 +30,15 @@ defined( 'ABSPATH' ) || exit;
  * - `GET  /easyq/v1/questions/similar`
  * - `GET  /easyq/v1/questions/{id}`
  * - `PUT  /easyq/v1/questions/{id}`
+ *
+ * @since 0.1.0
  */
 final class Questions_Controller extends Controller {
 
 	/**
 	 * Route base.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -41,6 +46,8 @@ final class Questions_Controller extends Controller {
 
 	/**
 	 * Registers the routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		register_rest_route(
@@ -57,7 +64,7 @@ final class Questions_Controller extends Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => $this->question_args( true ),
+					'args'                => $this->question_args( is_new: true ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -96,7 +103,7 @@ final class Questions_Controller extends Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => $this->question_args( false ) + array(
+					'args'                => $this->question_args( is_new: false ) + array(
 						'silent' => array(
 							'description' => __( 'Whether to hide that the question was edited.', 'easyq' ),
 							'type'        => 'boolean',
@@ -112,6 +119,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Checks whether the request may list questions.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -122,6 +131,8 @@ final class Questions_Controller extends Controller {
 
 	/**
 	 * Lists questions.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -149,6 +160,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Returns a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -168,6 +181,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Checks whether the request may ask a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -182,6 +197,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Asks a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -193,7 +210,7 @@ final class Questions_Controller extends Controller {
 		$category_id = Post_Input::uses_categories() ? self::int_param( $request, 'category' ) : null;
 
 		if ( null !== $category_id && null === Services::categories()->find( $category_id ) ) {
-			return Rest_Errors::invalid( new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) ) );
+			return REST_Errors::invalid( new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) ) );
 		}
 
 		$fields = array(
@@ -207,7 +224,7 @@ final class Questions_Controller extends Controller {
 
 		$errors = Services::validator()->validate_question( Post_Input::validation_fields( $request, $fields ) );
 		if ( $errors->has_errors() ) {
-			return Rest_Errors::invalid( $errors );
+			return REST_Errors::invalid( $errors );
 		}
 
 		$actor  = $this->actor();
@@ -216,7 +233,7 @@ final class Questions_Controller extends Controller {
 		if ( null !== $answer ) {
 			$follow = Services::posts()->find( $answer );
 			if ( null === $follow || ! Services::permissions()->post_rules( $follow, $actor )['followable'] ) {
-				return Rest_Errors::invalid( new WP_Error( 'follow', __( 'Questions can only follow on from visible answers.', 'easyq' ) ) );
+				return REST_Errors::invalid( new WP_Error( 'follow', __( 'Questions can only follow on from visible answers.', 'easyq' ) ) );
 			}
 		}
 
@@ -244,6 +261,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Checks whether the request may edit a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -265,11 +284,11 @@ final class Questions_Controller extends Controller {
 		$changes_meta = $request->has_param( 'tags' ) || $request->has_param( 'category' );
 
 		if ( ( $changes_text && ! $rules['editable'] ) || ( $changes_meta && ! $rules['retaggable'] && ! $rules['editable'] ) ) {
-			return Rest_Errors::permission( 'level' );
+			return REST_Errors::permission( 'level' );
 		}
 
 		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
-			return Rest_Errors::permission( 'level' );
+			return REST_Errors::permission( 'level' );
 		}
 
 		return true;
@@ -277,6 +296,8 @@ final class Questions_Controller extends Controller {
 
 	/**
 	 * Edits a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -286,7 +307,7 @@ final class Questions_Controller extends Controller {
 		$actor    = $this->actor();
 		$question = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$input   = Post_Input::content( $request );
@@ -307,16 +328,16 @@ final class Questions_Controller extends Controller {
 			$fields['tags'] = $tags;
 		}
 
-		$errors = Services::validator()->validate_question( $fields, false );
+		$errors = Services::validator()->validate_question( $fields, is_new: false );
 		if ( $errors->has_errors() ) {
-			return Rest_Errors::invalid( $errors );
+			return REST_Errors::invalid( $errors );
 		}
 
 		$category_id = $question->category_id;
 		if ( $request->has_param( 'category' ) && Post_Input::uses_categories() ) {
 			$category_id = self::int_param( $request, 'category' );
 			if ( null !== $category_id && null === Services::categories()->find( $category_id ) ) {
-				return Rest_Errors::invalid( new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) ) );
+				return REST_Errors::invalid( new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) ) );
 			}
 		}
 
@@ -335,11 +356,13 @@ final class Questions_Controller extends Controller {
 
 		$updated = Services::posts()->find( $question->id );
 
-		return null === $updated ? Rest_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
+		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
 	}
 
 	/**
 	 * Finds questions similar to a title and suggests tags, for the ask form.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -402,6 +425,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Returns the arguments for listing questions.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return array<string, array<string, mixed>>
 	 */
 	public function get_collection_params(): array {
@@ -430,6 +455,8 @@ final class Questions_Controller extends Controller {
 	/**
 	 * Returns the schema of a question.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return array<mixed>
 	 */
 	public function get_item_schema(): array {
@@ -444,6 +471,8 @@ final class Questions_Controller extends Controller {
 
 	/**
 	 * Returns the arguments of new and edited questions.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param bool $is_new Whether the question is new.
 	 * @return array<string, array<string, mixed>>
@@ -472,11 +501,13 @@ final class Questions_Controller extends Controller {
 				'description' => __( 'Answer the new question follows on from.', 'easyq' ),
 				'type'        => 'integer',
 			),
-		) + Post_Input::content_args( false );
+		) + Post_Input::content_args( required: false );
 	}
 
 	/**
 	 * Returns the response for a new post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int          $id     Post ID, 0 on failure.
 	 * @param \EasyQ\Actor $actor  Author.
@@ -497,6 +528,8 @@ final class Questions_Controller extends Controller {
 
 	/**
 	 * Converts the "match" setting (1–5) into the minimum search score, as in Question2Answer.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $setting Setting value.
 	 * @return float

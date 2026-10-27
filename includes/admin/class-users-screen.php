@@ -3,6 +3,7 @@
  * Q&A additions to the users list.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Admin;
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Adds level and points columns, views for users awaiting approval and blocked
  * users, and bulk actions to approve, block and unblock users.
+ *
+ * @since 0.1.0
  */
 final class Users_Screen {
 
 	/**
 	 * Query argument that selects a view.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -32,6 +37,8 @@ final class Users_Screen {
 
 	/**
 	 * Hooks the additions into the users screen.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_filter( 'manage_users_columns', array( $this, 'columns' ) );
@@ -46,18 +53,23 @@ final class Users_Screen {
 	/**
 	 * Adds the level and points columns.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, string> $columns Columns.
 	 * @return array<string, string>
 	 */
 	public function columns( array $columns ): array {
-		$columns['easyq_level']  = __( 'Q&A level', 'easyq' );
-		$columns['easyq_points'] = __( 'Points', 'easyq' );
+		// Core prints column labels as HTML.
+		$columns['easyq_level']  = esc_html__( 'Q&A level', 'easyq' );
+		$columns['easyq_points'] = esc_html__( 'Points', 'easyq' );
 
 		return $columns;
 	}
 
 	/**
 	 * Returns the value of a Q&A column.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $output  Output so far.
 	 * @param string $column  Column name.
@@ -88,6 +100,8 @@ final class Users_Screen {
 
 	/**
 	 * Adds the views "Awaiting approval" and "Blocked".
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, string> $views Views as HTML links.
 	 * @return array<string, string>
@@ -124,6 +138,8 @@ final class Users_Screen {
 	/**
 	 * Limits the users list to the selected view.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_User_Query $query Users query.
 	 */
 	public function filter_query( WP_User_Query $query ): void {
@@ -148,6 +164,8 @@ final class Users_Screen {
 	/**
 	 * Adds the bulk actions.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, string> $actions Bulk actions.
 	 * @return array<string, string>
 	 */
@@ -163,6 +181,8 @@ final class Users_Screen {
 
 	/**
 	 * Performs a bulk action. WordPress has verified the nonce of the users list before.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $redirect Address to redirect to.
 	 * @param string $action   Bulk action.
@@ -201,6 +221,8 @@ final class Users_Screen {
 
 	/**
 	 * Confirms a bulk action.
+	 *
+	 * @since 0.1.0
 	 */
 	public function notice(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Only displays the result of a verified action.
@@ -233,6 +255,8 @@ final class Users_Screen {
 	/**
 	 * Returns the selected view.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	private function current_view(): string {
@@ -242,6 +266,8 @@ final class Users_Screen {
 
 	/**
 	 * Counts users with a meta key.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $meta_key Meta key.
 	 * @return int

@@ -3,6 +3,7 @@
  * Data of easyQ blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks;
@@ -19,11 +20,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Resolves the post, route and viewer a block is rendered for.
+ *
+ * @since 0.1.0
  */
 final class Block_Context {
 
 	/**
 	 * Router of the current request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var Router|null
 	 */
@@ -31,6 +36,8 @@ final class Block_Context {
 
 	/**
 	 * Sets the router, once the plugin is loaded.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Router $router Router.
 	 */
@@ -40,6 +47,8 @@ final class Block_Context {
 
 	/**
 	 * Returns the router.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return Router
 	 */
@@ -54,6 +63,8 @@ final class Block_Context {
 	/**
 	 * Returns the viewer of the page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Actor
 	 */
 	public static function viewer(): Actor {
@@ -64,6 +75,8 @@ final class Block_Context {
 	 * Returns the post a block shows: from block context, or the question of the page.
 	 *
 	 * Posts the viewer may not see are not returned.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Block $block Block.
 	 * @return Post|null
@@ -82,6 +95,8 @@ final class Block_Context {
 	/**
 	 * Returns the user a block shows: from block context, or the user of the page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_Block $block Block.
 	 * @return WP_User|null
 	 */
@@ -98,6 +113,8 @@ final class Block_Context {
 
 	/**
 	 * Returns the list ID from block context.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Block $block Block.
 	 * @return string

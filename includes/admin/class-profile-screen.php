@@ -3,6 +3,7 @@
  * Q&A section of the user profile screen.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Admin;
@@ -23,11 +24,15 @@ defined( 'ABSPATH' ) || exit;
  * Everyone who may edit a user can change the profile fields. Moderators can
  * confirm, approve and block users; administrators of the plugin can set levels
  * and bonus points, but never above their own level.
+ *
+ * @since 0.1.0
  */
 final class Profile_Screen {
 
 	/**
 	 * Nonce action prefix; the user ID is appended.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -36,12 +41,16 @@ final class Profile_Screen {
 	/**
 	 * Name of the nonce field.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const NONCE_FIELD = 'easyq_profile_nonce';
 
 	/**
 	 * Hooks the section into the profile screens.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'show_user_profile', array( $this, 'render' ) );
@@ -52,6 +61,8 @@ final class Profile_Screen {
 
 	/**
 	 * Outputs the Q&A section.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_User $user The user being edited.
 	 */
@@ -71,7 +82,7 @@ final class Profile_Screen {
 						<?php if ( $field->is_multi_line() ) : ?>
 							<textarea id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" rows="5" cols="30"><?php echo esc_textarea( Services::user_fields()->value( $user->ID, $field ) ); ?></textarea>
 						<?php else : ?>
-							<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" class="regular-text" id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" value="<?php echo esc_attr( Services::user_fields()->value( $user->ID, $field ) ); ?>">
+							<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" class="regular-text" id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" value="<?php echo esc_attr( Services::user_fields()->value( $user->ID, $field ) ); ?>" />
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -84,7 +95,7 @@ final class Profile_Screen {
 					<?php if ( current_user_can( Capabilities::MANAGE ) ) : ?>
 						<p>
 							<label for="easyq-bonus"><?php esc_html_e( 'Bonus points', 'easyq' ); ?></label>
-							<input type="number" class="small-text" id="easyq-bonus" name="easyq_bonus" value="<?php echo esc_attr( (string) $this->bonus( $user->ID ) ); ?>" step="1">
+							<input type="number" class="small-text" id="easyq-bonus" name="easyq_bonus" value="<?php echo esc_attr( (string) $this->bonus( $user->ID ) ); ?>" step="1" />
 						</p>
 					<?php endif; ?>
 				</td>
@@ -123,9 +134,9 @@ final class Profile_Screen {
 					<td>
 						<fieldset>
 							<legend class="screen-reader-text"><?php esc_html_e( 'Status', 'easyq' ); ?></legend>
-							<label><input type="checkbox" name="easyq_confirmed" value="1" <?php checked( User_Status::is_confirmed( $user->ID ) ); ?>> <?php esc_html_e( 'Email address confirmed', 'easyq' ); ?></label><br>
-							<label><input type="checkbox" name="easyq_approved" value="1" <?php checked( ! User_Status::awaits_approval( $user->ID ) ); ?>> <?php esc_html_e( 'Approved', 'easyq' ); ?></label><br>
-							<label><input type="checkbox" name="easyq_blocked" value="1" <?php checked( User_Status::is_blocked( $user->ID ) ); ?>> <?php esc_html_e( 'Blocked from posting, voting and flagging', 'easyq' ); ?></label>
+							<label><input type="checkbox" name="easyq_confirmed" value="1" <?php checked( User_Status::is_confirmed( $user->ID ) ); ?> /> <?php esc_html_e( 'Email address confirmed', 'easyq' ); ?></label><br />
+							<label><input type="checkbox" name="easyq_approved" value="1" <?php checked( ! User_Status::awaits_approval( $user->ID ) ); ?> /> <?php esc_html_e( 'Approved', 'easyq' ); ?></label><br />
+							<label><input type="checkbox" name="easyq_blocked" value="1" <?php checked( User_Status::is_blocked( $user->ID ) ); ?> /> <?php esc_html_e( 'Blocked from posting, voting and flagging', 'easyq' ); ?></label>
 						</fieldset>
 					</td>
 				</tr>
@@ -136,6 +147,8 @@ final class Profile_Screen {
 
 	/**
 	 * Saves the Q&A section after verifying the nonce.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id ID of the edited user.
 	 */
@@ -157,6 +170,8 @@ final class Profile_Screen {
 
 	/**
 	 * Saves the Q&A section from sanitized input, checking every change against the editor's capabilities.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int                  $user_id ID of the edited user.
 	 * @param array<string, mixed> $input   Submitted values.
@@ -195,6 +210,8 @@ final class Profile_Screen {
 	/**
 	 * Saves the level and category levels.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int                  $user_id User ID.
 	 * @param array<string, mixed> $input   Submitted values.
 	 * @param Actor                $editor  Who saves the profile.
@@ -229,6 +246,8 @@ final class Profile_Screen {
 	/**
 	 * Saves the confirmation, approval and block status.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int                  $user_id User ID.
 	 * @param array<string, mixed> $input   Submitted values.
 	 * @param Actor                $editor  Who saves the profile.
@@ -259,6 +278,8 @@ final class Profile_Screen {
 	/**
 	 * Outputs the category level rows.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor   $editor Who edits the profile.
 	 * @param WP_User $user   The user being edited.
 	 */
@@ -278,7 +299,7 @@ final class Profile_Screen {
 					<?php foreach ( $categories as $category ) : ?>
 						<?php $select_id = 'easyq-category-level-' . $category->id; ?>
 						<p>
-							<label for="<?php echo esc_attr( $select_id ); ?>"><?php echo esc_html( implode( ' › ', array_map( static fn ( $ancestor ): string => $ancestor->title, Services::categories()->path( $category->id ) ) ) ); ?></label><br>
+							<label for="<?php echo esc_attr( $select_id ); ?>"><?php echo esc_html( implode( ' › ', array_map( static fn ( $ancestor ): string => $ancestor->title, Services::categories()->path( $category->id ) ) ) ); ?></label><br />
 							<select id="<?php echo esc_attr( $select_id ); ?>" name="easyq_category_levels[<?php echo esc_attr( (string) $category->id ); ?>]">
 								<option value=""><?php esc_html_e( '— No special level —', 'easyq' ); ?></option>
 								<?php foreach ( $this->assignable_levels( $editor ) as $level => $label ) : ?>
@@ -301,6 +322,8 @@ final class Profile_Screen {
 	 *
 	 * Nobody can change their own level, and the edited user's level must not be above the editor's.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $editor  Who edits the profile.
 	 * @param int   $user_id The user being edited.
 	 * @return bool
@@ -316,6 +339,8 @@ final class Profile_Screen {
 	/**
 	 * Returns the levels an editor may assign: up to their own level.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $editor Who edits the profile.
 	 * @return array<int, string>
 	 */
@@ -327,6 +352,8 @@ final class Profile_Screen {
 
 	/**
 	 * Returns the level of the editor; WordPress administrators count as Q&A administrators.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $editor Who edits the profile.
 	 * @return int
@@ -340,19 +367,23 @@ final class Profile_Screen {
 	/**
 	 * Returns the bonus points of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return int
 	 */
 	private function bonus( int $user_id ): int {
-		$wpdb = \EasyQ\Database\Db::wpdb();
+		$wpdb = \EasyQ\Database\DB::wpdb();
 
-		return \EasyQ\Database\Db::get_int(
+		return \EasyQ\Database\DB::get_int(
 			$wpdb->prepare( 'SELECT bonus FROM %i WHERE user_id = %d', \EasyQ\Database\Schema::table( 'userpoints' ), $user_id )
 		);
 	}
 
 	/**
 	 * Returns the name of a level.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $level Level.
 	 * @return string

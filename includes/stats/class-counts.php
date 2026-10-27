@@ -3,11 +3,12 @@
  * Site-wide counters.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Stats;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 
 defined( 'ABSPATH' ) || exit;
@@ -18,29 +19,114 @@ defined( 'ABSPATH' ) || exit;
  * Question2Answer updates these counts incrementally on every change. easyQ
  * invalidates them instead and recalculates a count the next time it is read,
  * which keeps them correct without bookkeeping in every code path.
+ *
+ * @since 0.1.0
  */
 final class Counts {
 
 	/**
 	 * Option that stores the cached counts.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const OPTION = 'easyq_counts';
 
-	public const QUESTIONS         = 'questions';
-	public const ANSWERS           = 'answers';
-	public const COMMENTS          = 'comments';
-	public const UNANSWERED        = 'unanswered';
-	public const UNSELECTED        = 'unselected';
-	public const UNUPVOTED         = 'unupvoted';
-	public const QUEUED            = 'queued';
-	public const FLAGGED           = 'flagged';
-	public const TAGS              = 'tags';
+	/**
+	 * Count of visible questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const QUESTIONS = 'questions';
+
+	/**
+	 * Count of visible answers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWERS = 'answers';
+
+	/**
+	 * Count of visible comments.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENTS = 'comments';
+
+	/**
+	 * Count of questions without answers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UNANSWERED = 'unanswered';
+
+	/**
+	 * Count of questions without a selected answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UNSELECTED = 'unselected';
+
+	/**
+	 * Count of questions without upvoted answers.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UNUPVOTED = 'unupvoted';
+
+	/**
+	 * Count of posts waiting for approval.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const QUEUED = 'queued';
+
+	/**
+	 * Count of flagged posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const FLAGGED = 'flagged';
+
+	/**
+	 * Count of tags used by visible questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const TAGS = 'tags';
+
+	/**
+	 * Count of users who took part in the Q&A area.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const USERS_WITH_POINTS = 'users_with_points';
 
 	/**
 	 * Counts that depend on visible questions.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -48,6 +134,8 @@ final class Counts {
 
 	/**
 	 * Returns a count, calculating it if it is not cached.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $name One of the class constants.
 	 * @return int
@@ -66,6 +154,8 @@ final class Counts {
 	/**
 	 * Marks counts as outdated.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string ...$names Count names; all counts if none are given.
 	 */
 	public static function invalidate( string ...$names ): void {
@@ -83,11 +173,13 @@ final class Counts {
 	/**
 	 * Calculates a count from the database.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $name One of the class constants.
 	 * @return int
 	 */
 	public static function calculate( string $name ): int {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 
 		$sql = match ( $name ) {
@@ -104,11 +196,13 @@ final class Counts {
 			default                 => null,
 		};
 
-		return Db::get_int( $sql );
+		return DB::get_int( $sql );
 	}
 
 	/**
 	 * Returns the cached counts.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, int>
 	 */

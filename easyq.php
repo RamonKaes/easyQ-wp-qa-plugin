@@ -14,15 +14,39 @@
  * Domain Path:       /languages
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION     = '0.1.0';
+/**
+ * Version of the plugin.
+ *
+ * @since 0.1.0
+ *
+ * @var string
+ */
+const VERSION = '0.1.0';
+
+/**
+ * Path of the main plugin file.
+ *
+ * @since 0.1.0
+ *
+ * @var string
+ */
 const PLUGIN_FILE = __FILE__;
-const PLUGIN_DIR  = __DIR__;
+
+/**
+ * Directory of the plugin.
+ *
+ * @since 0.1.0
+ *
+ * @var string
+ */
+const PLUGIN_DIR = __DIR__;
 
 require_once PLUGIN_DIR . '/includes/class-autoloader.php';
 

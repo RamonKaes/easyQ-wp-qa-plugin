@@ -1,5 +1,7 @@
 /**
  * Settings sidebar generated from the block attributes.
+ *
+ * @since 0.1.0
  */
 import { __ } from '@wordpress/i18n';
 import { InspectorControls } from '@wordpress/block-editor';
@@ -16,6 +18,8 @@ import { useEasyQ } from './data';
 
 /**
  * Labels of the attributes shown in the sidebar.
+ *
+ * @since 0.1.0
  *
  * @type {Object<string, string>}
  */
@@ -56,6 +60,8 @@ const LABELS = {
 /**
  * Labels that differ for some blocks.
  *
+ * @since 0.1.0
+ *
  * @type {Object<string, Object<string, string>>}
  */
 const BLOCK_LABELS = {
@@ -72,6 +78,8 @@ const BLOCK_LABELS = {
 
 /**
  * Help texts of the attributes.
+ *
+ * @since 0.1.0
  *
  * @type {Object<string, string>}
  */
@@ -94,6 +102,8 @@ const SITE_DEFAULT = { value: '', label: __( 'Site default', 'easyq' ) };
 
 /**
  * Readable options of the attributes with a fixed set of values.
+ *
+ * @since 0.1.0
  *
  * @type {Object<string, Array<{value: string, label: string}>>}
  */
@@ -137,6 +147,8 @@ const OPTIONS = {
 /**
  * Lets editors pick a question by its title.
  *
+ * @since 0.1.0
+ *
  * @param {Object}                  props          Properties.
  * @param {string}                  props.label    Label.
  * @param {string}                  props.help     Help text.
@@ -179,6 +191,8 @@ function QuestionPicker( { label, help, value, onChange } ) {
 /**
  * Lets editors pick a user by name.
  *
+ * @since 0.1.0
+ *
  * @param {Object}                  props          Properties.
  * @param {string}                  props.label    Label.
  * @param {string}                  props.help     Help text.
@@ -215,6 +229,8 @@ export function UserPicker( { label, help, value, onChange } ) {
 
 /**
  * Returns the control of one attribute.
+ *
+ * @since 0.1.0
  *
  * @param {Object}                       props               Properties.
  * @param {string}                       props.blockName     Block name.
@@ -328,6 +344,8 @@ function AttributeControl( {
 
 /**
  * Sidebar with a control for every simple attribute of a block.
+ *
+ * @since 0.1.0
  *
  * @param {Object}                       props               Properties.
  * @param {Object}                       props.metadata      Block metadata.

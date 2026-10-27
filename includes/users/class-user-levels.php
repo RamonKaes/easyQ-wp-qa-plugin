@@ -3,12 +3,13 @@
  * Q&A levels of users.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Events\Events;
@@ -29,11 +30,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Within a category, a user can have a higher level, e.g. be an expert only
  * for one topic. Category levels also apply to all subcategories.
+ *
+ * @since 0.1.0
  */
 final class User_Levels {
 
 	/**
 	 * User meta key of the level set for a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -42,12 +47,16 @@ final class User_Levels {
 	/**
 	 * Entity type of category levels in the userlevels table.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const ENTITY_CATEGORY = 'C';
 
 	/**
 	 * Returns the level of a user, without category levels.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $user_id User ID, or null for visitors.
 	 * @return int|null The level, or null for visitors.
@@ -88,6 +97,8 @@ final class User_Levels {
 	/**
 	 * Returns the level of a user within categories.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $user_id      User ID, or null for visitors.
 	 * @param int[]    $category_ids Categories, usually a category and its ancestors.
 	 * @return int|null The level, or null for visitors.
@@ -110,6 +121,8 @@ final class User_Levels {
 	/**
 	 * Returns the level of a user for a post, taking its category into account.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int|null $user_id User ID, or null for visitors.
 	 * @param Post     $post    Post.
 	 * @return int|null
@@ -122,6 +135,8 @@ final class User_Levels {
 
 	/**
 	 * Returns the highest level a user has anywhere, including category levels.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int|null $user_id User ID, or null for visitors.
 	 * @return int|null
@@ -140,6 +155,8 @@ final class User_Levels {
 	/**
 	 * Returns the level set for a user in their profile.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return int|null Null if no level is set.
 	 */
@@ -151,6 +168,8 @@ final class User_Levels {
 
 	/**
 	 * Sets the level of a user, or removes it.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor    $actor   Who changes the level.
 	 * @param int      $user_id User ID.
@@ -182,6 +201,8 @@ final class User_Levels {
 	/**
 	 * Returns the category levels of a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $user_id User ID.
 	 * @return array<int, int> Levels keyed by category ID.
 	 */
@@ -198,8 +219,8 @@ final class User_Levels {
 			return $levels;
 		}
 
-		$rows = Db::get_results(
-			Db::wpdb()->prepare(
+		$rows = DB::get_results(
+			DB::wpdb()->prepare(
 				'SELECT entity_id, level FROM %i WHERE user_id = %d AND entity_type = %s AND level IS NOT NULL',
 				Schema::table( 'userlevels' ),
 				$user_id,
@@ -220,19 +241,21 @@ final class User_Levels {
 	/**
 	 * Sets the level of a user within a category, or removes it.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor    $actor       Who changes the level.
 	 * @param int      $user_id     User ID.
 	 * @param int      $category_id Category ID.
 	 * @param int|null $level       New level, or null to remove it.
 	 */
 	public function set_category_level( Actor $actor, int $user_id, int $category_id, ?int $level ): void {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'userlevels' );
 
 		if ( null === $level || ! Levels::is_valid( $level ) ) {
-			Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d AND entity_type = %s AND entity_id = %d', $table, $user_id, self::ENTITY_CATEGORY, $category_id ) );
+			DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d AND entity_type = %s AND entity_id = %d', $table, $user_id, self::ENTITY_CATEGORY, $category_id ) );
 		} else {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					'INSERT INTO %i (user_id, entity_type, entity_id, level) VALUES (%d, %s, %d, %d) ON DUPLICATE KEY UPDATE level = %d',
 					$table,
@@ -261,15 +284,17 @@ final class User_Levels {
 	/**
 	 * Returns the users with a special level: an assigned level of expert or higher, or a category level.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return int[] User IDs.
 	 */
 	public function special_user_ids(): array {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
-		$assigned = Db::get_int_col(
+		$assigned = DB::get_int_col(
 			$wpdb->prepare( 'SELECT user_id FROM %i WHERE meta_key = %s AND CAST(meta_value AS UNSIGNED) >= %d', $wpdb->usermeta, Site_Meta::key( self::LEVEL_META ), Levels::EXPERT )
 		);
-		$category = Db::get_int_col(
+		$category = DB::get_int_col(
 			$wpdb->prepare( 'SELECT DISTINCT user_id FROM %i WHERE level IS NOT NULL', Schema::table( 'userlevels' ) )
 		);
 
@@ -278,6 +303,8 @@ final class User_Levels {
 
 	/**
 	 * Returns the level of each role from the settings.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<string, int>
 	 */

@@ -3,6 +3,7 @@
  * Class autoloader following the WordPress file naming conventions.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;
@@ -14,11 +15,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * `EasyQ\Database\Schema_Manager` resolves to `includes/database/class-schema-manager.php`.
  * Interfaces, traits and enums use the `interface-`, `trait-` and `enum-` prefixes.
+ *
+ * @since 0.1.0
  */
 final class Autoloader {
 
 	/**
 	 * File name prefixes tried for every symbol, in order.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string[]
 	 */
@@ -27,6 +32,8 @@ final class Autoloader {
 	/**
 	 * Root namespace without trailing separator.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private string $root_namespace;
@@ -34,12 +41,16 @@ final class Autoloader {
 	/**
 	 * Base directory without trailing slash.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private string $base_dir;
 
 	/**
 	 * Sets up the autoloader.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $root_namespace Root namespace handled by this autoloader.
 	 * @param string $base_dir       Directory that holds the root namespace.
@@ -51,6 +62,8 @@ final class Autoloader {
 
 	/**
 	 * Creates an autoloader and registers it with PHP.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $root_namespace Root namespace handled by the autoloader.
 	 * @param string $base_dir       Directory that holds the root namespace.
@@ -66,6 +79,8 @@ final class Autoloader {
 	/**
 	 * Loads the file for a symbol if it belongs to the root namespace.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $symbol Fully qualified class, interface, trait or enum name.
 	 */
 	public function load( string $symbol ): void {
@@ -79,6 +94,8 @@ final class Autoloader {
 
 	/**
 	 * Lists the files that may contain a symbol.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $symbol Fully qualified class, interface, trait or enum name.
 	 * @return string[] Absolute file paths; empty if the symbol is outside the root namespace.
@@ -109,6 +126,8 @@ final class Autoloader {
 
 	/**
 	 * Converts a namespace segment or class name into a file name slug.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $name Segment such as `Schema_Manager`.
 	 * @return string Slug such as `schema-manager`.

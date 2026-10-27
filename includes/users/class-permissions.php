@@ -3,6 +3,7 @@
  * Permission checks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -32,11 +33,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Ported from Question2Answer `qa-include/app/users.php` and the post rules in
  * `pages/question-view.php`.
+ *
+ * @since 0.1.0
  */
 final class Permissions {
 
 	/**
 	 * Sets up the service.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param User_Levels $levels User levels.
 	 * @param Points      $points User points.
@@ -53,6 +58,8 @@ final class Permissions {
 
 	/**
 	 * Checks whether an actor may perform an action.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|null $option        Permission setting, e.g. `permit_post_q`; null for actions anybody may perform.
 	 * @param Actor       $actor         The actor.
@@ -105,6 +112,8 @@ final class Permissions {
 	/**
 	 * Checks whether an actor may perform an action.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $option Permission setting, e.g. `permit_post_q`.
 	 * @param Actor       $actor  The actor.
 	 * @param Post|null   $post   Post the action relates to.
@@ -117,18 +126,22 @@ final class Permissions {
 	/**
 	 * Checks whether an actor meets a threshold directly, e.g. the visibility of a profile field.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int   $permit Threshold, see Permits.
 	 * @param Actor $actor  The actor.
 	 * @return bool
 	 */
 	public function meets( int $permit, Actor $actor ): bool {
-		return null === $this->permit_error( $permit, $actor->user_id, $this->levels->level( $actor->user_id ), false );
+		return null === $this->permit_error( $permit, $actor->user_id, $this->levels->level( $actor->user_id ), check_blocks: false );
 	}
 
 	/**
 	 * Returns why a new post of an actor needs moderation.
 	 *
 	 * Experts and users who may moderate posts themselves are never moderated.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor $actor Author.
 	 * @return string|null `approve`, `confirm`, `points` or `login`, or null if the post can be published right away.
@@ -163,6 +176,8 @@ final class Permissions {
 	/**
 	 * Checks whether a post was written by the actor.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post  $post  Post.
 	 * @param Actor $actor The actor.
 	 * @return bool
@@ -181,6 +196,8 @@ final class Permissions {
 	 * Rules ending in `button` mean the action is offered, possibly with a hint
 	 * that the user must log in or confirm first; the others mean the action is
 	 * possible right away.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Post      $post        The post.
 	 * @param Actor     $actor       The actor.
@@ -312,6 +329,8 @@ final class Permissions {
 
 	/**
 	 * Checks a threshold against a user's level and status.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $permit       Threshold, see Permits.
 	 * @param int|null $user_id      User ID, or null for visitors.

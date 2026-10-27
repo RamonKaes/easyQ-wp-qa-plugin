@@ -3,11 +3,12 @@
  * User lists.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use WP_User;
 use WP_User_Query;
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
  * - `points`: users who took part in the Q&A area, by points.
  * - `newest`: the newest users of the site.
  * - `special`: users with a level of expert or higher.
+ *
+ * @since 0.1.0
  */
 final class User_Query {
 
 	/**
 	 * Sort orders and the permission option needed to see them.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string|null>
 	 */
@@ -37,12 +42,16 @@ final class User_Query {
 	/**
 	 * Largest page size.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_PER_PAGE = 100;
 
 	/**
 	 * Sets up the query.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param User_Levels $levels User levels.
 	 */
@@ -51,6 +60,8 @@ final class User_Query {
 
 	/**
 	 * Lists users.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $sort     One of the SORTS keys.
 	 * @param int    $page     Page number, starting at 1.
@@ -73,6 +84,8 @@ final class User_Query {
 	 *
 	 * On a network, users of other sites only have a profile here once they took part.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_User $user User.
 	 * @return bool
 	 */
@@ -81,30 +94,34 @@ final class User_Query {
 			return true;
 		}
 
-		return null !== Db::get_var(
-			Db::wpdb()->prepare( 'SELECT user_id FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user->ID )
+		return null !== DB::get_var(
+			DB::wpdb()->prepare( 'SELECT user_id FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user->ID )
 		);
 	}
 
 	/**
 	 * Lists users by points.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $offset Users to skip.
 	 * @param int $limit  Maximum number of users.
 	 * @return array{ids: int[], total: int}
 	 */
 	private function by_points( int $offset, int $limit ): array {
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'userpoints' );
 
 		return array(
-			'ids'   => Db::get_int_col( $wpdb->prepare( 'SELECT user_id FROM %i ORDER BY points DESC, user_id ASC LIMIT %d, %d', $table, $offset, $limit ) ),
-			'total' => Db::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ),
+			'ids'   => DB::get_int_col( $wpdb->prepare( 'SELECT user_id FROM %i ORDER BY points DESC, user_id ASC LIMIT %d, %d', $table, $offset, $limit ) ),
+			'total' => DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table ) ),
 		);
 	}
 
 	/**
 	 * Lists the newest users of the site.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $offset Users to skip.
 	 * @param int $limit  Maximum number of users.
@@ -133,6 +150,8 @@ final class User_Query {
 	/**
 	 * Returns the numeric user IDs of a query result.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<mixed> $results User IDs as returned by WordPress, usually strings.
 	 * @return list<int>
 	 */
@@ -149,6 +168,8 @@ final class User_Query {
 
 	/**
 	 * Lists users with a special level, highest level first.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $offset Users to skip.
 	 * @param int $limit  Maximum number of users.

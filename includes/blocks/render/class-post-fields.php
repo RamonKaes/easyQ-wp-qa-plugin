@@ -3,6 +3,7 @@
  * Rendering of post field blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks\Render;
@@ -10,7 +11,7 @@ namespace EasyQ\Blocks\Render;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Routes;
-use EasyQ\Frontend\Urls;
+use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Activity_Item;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
@@ -26,11 +27,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Every block reads the post from the context `easyq/postId`, or uses the
  * question of the current page.
+ *
+ * @since 0.1.0
  */
 final class Post_Fields {
 
 	/**
 	 * Renders the title of a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -47,7 +52,7 @@ final class Post_Fields {
 		$title = esc_html( Services::content_renderer()->text( (string) $post->title ) );
 
 		if ( ! empty( $attributes['isLink'] ) ) {
-			$title = sprintf( '<a href="%s">%s</a>', esc_url( Urls::question( $post ) ), $title );
+			$title = sprintf( '<a href="%s">%s</a>', esc_url( URLs::question( $post ) ), $title );
 		}
 
 		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes(), $title );
@@ -55,6 +60,8 @@ final class Post_Fields {
 
 	/**
 	 * Renders the content of a post, or its edit form when the viewer edits it.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -83,6 +90,8 @@ final class Post_Fields {
 	/**
 	 * Renders a short plain-text excerpt.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -108,6 +117,8 @@ final class Post_Fields {
 	 *
 	 * The buttons are forms that work without JavaScript; with JavaScript the
 	 * interactivity module sends the vote in the background.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -157,16 +168,17 @@ final class Post_Fields {
 		// Up and down votes separately (Q2A `votes_separated`) or their difference; the block can override the site setting.
 		$display   = is_string( $attributes['display'] ?? null ) ? $attributes['display'] : '';
 		$separated = in_array( $display, array( 'net', 'separated' ), true ) ? 'separated' === $display : Options::get_bool( 'viewing', 'votes_separated' );
-		$count     = static fn ( string $key, int $value, string $label ): string => sprintf(
-			'<span data-wp-text="context.%s" aria-label="%s">%s</span>',
+		// The label is for screen readers; ARIA does not allow aria-label on a plain span.
+		$count = static fn ( string $key, int $value, string $label ): string => sprintf(
+			'<span><span class="screen-reader-text">%s </span><span data-wp-text="context.%s">%s</span></span>',
+			esc_html( $label ),
 			$key,
-			esc_attr( $label ),
 			esc_html( number_format_i18n( $value ) )
 		);
 
 		$html = $separated
-			? $up . $count( 'up', $post->upvotes, __( 'Upvotes', 'easyq' ) ) . $down . $count( 'down', $post->downvotes, __( 'Downvotes', 'easyq' ) )
-			: $up . $count( 'net', $post->net_votes, __( 'Votes', 'easyq' ) ) . $down;
+			? $up . $count( 'up', $post->upvotes, __( 'Upvotes:', 'easyq' ) ) . $down . $count( 'down', $post->downvotes, __( 'Downvotes:', 'easyq' ) )
+			: $up . $count( 'net', $post->net_votes, __( 'Votes:', 'easyq' ) ) . $down;
 
 		return sprintf(
 			'<div %s data-wp-interactive="easyq" %s>%s</div>',
@@ -178,6 +190,8 @@ final class Post_Fields {
 
 	/**
 	 * Renders the number of answers.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -205,6 +219,8 @@ final class Post_Fields {
 	/**
 	 * Renders the number of views.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -227,6 +243,8 @@ final class Post_Fields {
 
 	/**
 	 * Renders when a post was written, and when and by whom it was last changed.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -266,6 +284,8 @@ final class Post_Fields {
 	/**
 	 * Renders the author with avatar and points.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -286,7 +306,7 @@ final class Post_Fields {
 			$html .= get_avatar( false === $user ? '' : $user->ID, $size, '', '' );
 		}
 
-		$html .= false === $user ? sprintf( '<span>%s</span>', $name ) : sprintf( '<a href="%s">%s</a>', esc_url( Urls::user( $user ) ), $name );
+		$html .= false === $user ? sprintf( '<span>%s</span>', $name ) : sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name );
 
 		if ( false !== $user && ( $attributes['showPoints'] ?? true ) && Options::get_bool( 'viewing', 'show_user_points' ) ) {
 			$points = Services::points()->get( $user->ID );
@@ -305,6 +325,8 @@ final class Post_Fields {
 	 *
 	 * In activity lists the item comes from the context `easyq/activity`;
 	 * otherwise the creation of the post is shown.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -325,7 +347,7 @@ final class Post_Fields {
 
 		$what = esc_html( $item->label( $other ) );
 		if ( $other->id !== $post->id ) {
-			$what = sprintf( '<a href="%s">%s</a>', esc_url( Urls::post( $other ) ), $what );
+			$what = sprintf( '<a href="%s">%s</a>', esc_url( URLs::post( $other ) ), $what );
 		}
 
 		$when = sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $item->time ) ), esc_html( Render::date( $item->time ) ) );
@@ -346,6 +368,8 @@ final class Post_Fields {
 	/**
 	 * Returns who created or changed a post, linked to their profile.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Activity_Item $item        Activity.
 	 * @param Post          $post        The created or changed post.
 	 * @param bool          $show_points Whether to show the points of users.
@@ -357,7 +381,7 @@ final class Post_Fields {
 			return null === $item->update_type ? esc_html( Render::author_name( $post ) ) : '';
 		}
 
-		$html = sprintf( '<a href="%s">%s</a>', esc_url( Urls::user( $user ) ), esc_html( $user->display_name ) );
+		$html = sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), esc_html( $user->display_name ) );
 		if ( $show_points && Options::get_bool( 'viewing', 'show_user_points' ) ) {
 			$points = Services::points()->get( $user->ID );
 			/* translators: %s: number of points. */
@@ -369,6 +393,8 @@ final class Post_Fields {
 
 	/**
 	 * Renders the tags of a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -383,7 +409,7 @@ final class Post_Fields {
 
 		$renderer = Services::content_renderer();
 		$links    = array_map(
-			static fn ( string $tag ): string => sprintf( '<a href="%s" rel="tag">%s</a>', esc_url( Urls::tag( $tag ) ), esc_html( $renderer->text( $tag ) ) ),
+			static fn ( string $tag ): string => sprintf( '<a href="%s" rel="tag">%s</a>', esc_url( URLs::tag( $tag ) ), esc_html( $renderer->text( $tag ) ) ),
 			$post->tag_list()
 		);
 
@@ -398,6 +424,8 @@ final class Post_Fields {
 
 	/**
 	 * Renders the category of a question.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -414,12 +442,14 @@ final class Post_Fields {
 		return sprintf(
 			'<div %s>%s</div>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms' ) ),
-			self::affixed( $attributes, sprintf( '<a href="%s">%s</a>', esc_url( Urls::category( $category ) ), esc_html( $category->title ) ) )
+			self::affixed( $attributes, sprintf( '<a href="%s">%s</a>', esc_url( URLs::category( $category ) ), esc_html( $category->title ) ) )
 		);
 	}
 
 	/**
 	 * Renders status notes: closed, best answer, hidden or waiting for approval.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -446,7 +476,7 @@ final class Post_Fields {
 				$notes[] = sprintf(
 					/* translators: %s: link to the original question. */
 					esc_html__( 'Closed as a duplicate of %s', 'easyq' ),
-					sprintf( '<a href="%s">%s</a>', esc_url( Urls::question( $closer ) ), esc_html( (string) $closer->title ) )
+					sprintf( '<a href="%s">%s</a>', esc_url( URLs::question( $closer ) ), esc_html( (string) $closer->title ) )
 				);
 			} elseif ( null !== $closer && Post::NOTE === $closer->type ) {
 				/* translators: %s: reason the question was closed. */
@@ -477,6 +507,8 @@ final class Post_Fields {
 	/**
 	 * Renders buttons for the actions the viewer can perform on a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -494,7 +526,7 @@ final class Post_Fields {
 
 		if ( $rules['editable'] ) {
 			$buttons[] = self::link_button(
-				add_query_arg( 'easyq_edit', $post->id, Urls::post( $post ) ) . '#easyq-post-' . $post->id,
+				add_query_arg( 'easyq_edit', $post->id, URLs::post( $post ) ) . '#easyq-post-' . $post->id,
 				__( 'Edit', 'easyq' )
 			);
 		}
@@ -551,6 +583,8 @@ final class Post_Fields {
 	/**
 	 * Returns a vote button form.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int    $post_id   Post ID.
 	 * @param int    $direction Direction of the button: 1 for up, -1 for down.
 	 * @param bool   $pressed   Whether the viewer's current vote is in this direction.
@@ -579,6 +613,8 @@ final class Post_Fields {
 	/**
 	 * Returns a link styled as button.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $url   Address.
 	 * @param string $label Text.
 	 * @return string
@@ -593,6 +629,8 @@ final class Post_Fields {
 
 	/**
 	 * Adds the prefix and suffix of a block to its content, with the markup of the core Post Terms block.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes with `prefix` and `suffix`.
 	 * @param string               $html       Content, escaped HTML.

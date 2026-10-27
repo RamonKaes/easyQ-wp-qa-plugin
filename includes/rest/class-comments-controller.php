@@ -3,9 +3,10 @@
  * REST endpoints for comments.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Post;
@@ -27,11 +28,15 @@ defined( 'ABSPATH' ) || exit;
  * - `POST /easyq/v1/posts/{parent}/comments`
  * - `GET  /easyq/v1/comments/{id}`
  * - `PUT  /easyq/v1/comments/{id}`
+ *
+ * @since 0.1.0
  */
 final class Comments_Controller extends Controller {
 
 	/**
 	 * Route base.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -39,6 +44,8 @@ final class Comments_Controller extends Controller {
 
 	/**
 	 * Registers the routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		register_rest_route(
@@ -54,7 +61,7 @@ final class Comments_Controller extends Controller {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
-					'args'                => Post_Input::content_args( true ),
+					'args'                => Post_Input::content_args( required: true ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -74,7 +81,7 @@ final class Comments_Controller extends Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => Post_Input::content_args( false ) + array(
+					'args'                => Post_Input::content_args( required: false ) + array(
 						'silent' => array(
 							'description' => __( 'Whether to hide that the comment was edited.', 'easyq' ),
 							'type'        => 'boolean',
@@ -89,6 +96,8 @@ final class Comments_Controller extends Controller {
 
 	/**
 	 * Lists the comments on a post that the current user may see, oldest first.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -116,6 +125,8 @@ final class Comments_Controller extends Controller {
 	/**
 	 * Returns a comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -134,6 +145,8 @@ final class Comments_Controller extends Controller {
 
 	/**
 	 * Checks whether the request may comment on the post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -164,6 +177,8 @@ final class Comments_Controller extends Controller {
 	/**
 	 * Comments on a question or answer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -172,13 +187,13 @@ final class Comments_Controller extends Controller {
 		$parent   = Services::posts()->find( (int) self::int_param( $request, 'parent' ) );
 		$question = null === $parent ? null : Services::post_service()->question_of( $parent );
 		if ( null === $parent || null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$input  = Post_Input::content( $request );
 		$errors = Services::validator()->validate_comment( Post_Input::validation_fields( $request, $input ) );
 		if ( $errors->has_errors() ) {
-			return Rest_Errors::invalid( $errors );
+			return REST_Errors::invalid( $errors );
 		}
 
 		$actor  = $this->actor();
@@ -200,6 +215,8 @@ final class Comments_Controller extends Controller {
 	/**
 	 * Checks whether the request may edit the comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return true|WP_Error
@@ -217,11 +234,11 @@ final class Comments_Controller extends Controller {
 		}
 
 		if ( ! Services::permissions()->post_rules( $comment, $actor )['editable'] ) {
-			return Rest_Errors::permission( 'level' );
+			return REST_Errors::permission( 'level' );
 		}
 
 		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
-			return Rest_Errors::permission( 'level' );
+			return REST_Errors::permission( 'level' );
 		}
 
 		return true;
@@ -229,6 +246,8 @@ final class Comments_Controller extends Controller {
 
 	/**
 	 * Edits a comment.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -240,7 +259,7 @@ final class Comments_Controller extends Controller {
 		$parent   = null === $comment || null === $comment->parent_id ? null : Services::posts()->find( $comment->parent_id );
 		$question = null === $parent ? null : Services::post_service()->question_of( $parent );
 		if ( null === $comment || null === $parent || null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$input   = Post_Input::content( $request );
@@ -254,7 +273,7 @@ final class Comments_Controller extends Controller {
 			)
 		);
 		if ( $errors->has_errors() ) {
-			return Rest_Errors::invalid( $errors );
+			return REST_Errors::invalid( $errors );
 		}
 
 		$remoderate = Options::get_bool( 'spam', 'moderate_edited_again' ) && null !== Services::permissions()->moderation_reason( $actor );
@@ -264,11 +283,13 @@ final class Comments_Controller extends Controller {
 
 		$updated = Services::posts()->find( $comment->id );
 
-		return null === $updated ? Rest_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
+		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
 	}
 
 	/**
 	 * Returns the schema of a comment.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<mixed>
 	 */

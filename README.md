@@ -78,7 +78,7 @@ To test against another WordPress or PHP version, create `.wp-env.test.override.
 (`.wp-env.override.json` for the development site) and start the environment again:
 
 ```json
-{ "core": "WordPress/WordPress#6.7", "phpVersion": "8.4" }
+{ "core": "WordPress/WordPress#6.7", "phpVersion": "8.5" }
 ```
 
 ### Continuous integration
@@ -87,9 +87,9 @@ CI runs locally, not on GitHub. `bin/ci.sh` checks a commit (default `HEAD`) in 
 worktree in `~/easyq-wp-audit/easyq`, with its own instance of the test environment on
 port 8891 (`CI_PORT`), so the development and test sites keep running. It runs the coding standards,
 static analysis, JavaScript, Markdown and `package.json` linting, the unit tests on PHP
-8.1 to 8.4 (Docker images), the integration tests on single site and multisite, the
+8.4 and 8.5 (Docker images), the integration tests on single site and multisite, the
 end-to-end tests and Plugin Check. `--full` runs the integration tests on WordPress 6.7
-and the latest version, each with PHP 8.1 and 8.4. A commit that only changes Markdown
+and the latest version with PHP 8.4 and 8.5 (WordPress 6.7 with PHP 8.4 only). A commit that only changes Markdown
 files is only linted. The result is written to `~/easyq-wp-audit/logs/{commit}/result.txt`.
 
 Run it before every push through the pre-push hook:
@@ -121,6 +121,16 @@ ln -sf ../../bin/pre-push.sh .git/hooks/pre-push
 - Classes live in the `EasyQ` namespace and follow the WordPress file naming
   conventions (`class-*.php`, lowercase directories).
 - Every change keeps PHPCS, PHPStan (level max), all tests and Plugin Check clean.
+- The [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/)
+  apply in full, including the rules PHPCS cannot check:
+    - every file, class, method, function, property, constant and hook has a docblock
+      with `@since`;
+    - hooks get named callbacks, no closures;
+    - calls pass boolean flags as named arguments, e.g. `error( $option, $actor, check_blocks: false )`;
+    - HTML is valid, with self-closing void elements (`<br />`) and unique IDs;
+    - no `@` error suppression;
+    - test classes use capitalized words separated by underscores (`Feeds_Test`), in a
+      file named like the class.
 - Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## License

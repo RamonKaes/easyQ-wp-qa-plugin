@@ -3,6 +3,7 @@
  * Rendering of list blocks.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Blocks\Render;
@@ -19,11 +20,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Renders question lists, the question block and the answer and comment lists.
+ *
+ * @since 0.1.0
  */
 final class Lists_Render {
 
 	/**
 	 * Query parameter with the post whose comments are all shown.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -31,6 +36,8 @@ final class Lists_Render {
 
 	/**
 	 * Renders the question list container.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -43,6 +50,8 @@ final class Lists_Render {
 	/**
 	 * Renders each question of the list with the inner blocks.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks (unused; rendered per question).
 	 * @param WP_Block             $block      Block.
@@ -53,6 +62,12 @@ final class Lists_Render {
 		$query   = is_array( $block->context['easyq/query'] ?? null ) ? $block->context['easyq/query'] : array();
 		$result  = Query_Resolver::questions( $query, $list_id );
 		$items   = array();
+
+		// The blocks of every item ask for the votes and flags of the viewer; load them at once.
+		$viewer = Block_Context::viewer();
+		if ( null !== $viewer->user_id ) {
+			Services::votes()->prime( $result['ids'], $viewer->user_id );
+		}
 
 		foreach ( $result['ids'] as $index => $id ) {
 			$activity = $result['activity'][ $index ] ?? null;
@@ -70,6 +85,8 @@ final class Lists_Render {
 
 	/**
 	 * Renders pagination links for the nearest list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -135,6 +152,8 @@ final class Lists_Render {
 	/**
 	 * Renders the content shown for an empty list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -154,6 +173,8 @@ final class Lists_Render {
 	/**
 	 * Renders the question of the page with the inner blocks.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks (unused; rendered with the question).
 	 * @param WP_Block             $block      Block.
@@ -167,6 +188,18 @@ final class Lists_Render {
 			return '';
 		}
 
+		// The blocks of the question, its answers and comments ask for the votes and flags of the viewer; load them at once.
+		$viewer = Block_Context::viewer();
+		if ( null !== $viewer->user_id ) {
+			$posts = Services::posts();
+			$posts->prime_children( $question->id );
+			$ids = array( $question->id );
+			foreach ( $posts->children( $question->id ) as $child ) {
+				$ids = array_merge( $ids, array( $child->id ), array_keys( $posts->children( $child->id ) ) );
+			}
+			Services::votes()->prime( $ids, $viewer->user_id );
+		}
+
 		// A router region: answering and loading comments update it in place, see src/view.
 		return sprintf(
 			'<article %s data-wp-interactive="easyq" data-wp-router-region="%s">%s</article>',
@@ -178,6 +211,8 @@ final class Lists_Render {
 
 	/**
 	 * Renders the answer list container.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
@@ -202,6 +237,8 @@ final class Lists_Render {
 
 	/**
 	 * Renders each answer with the inner blocks.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks (unused).
@@ -252,6 +289,8 @@ final class Lists_Render {
 	/**
 	 * Renders the comment list container.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks.
 	 * @param WP_Block             $block      Block.
@@ -265,6 +304,8 @@ final class Lists_Render {
 
 	/**
 	 * Renders each comment with the inner blocks.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<string, mixed> $attributes Attributes.
 	 * @param string               $content    Inner blocks (unused).
@@ -312,6 +353,8 @@ final class Lists_Render {
 	/**
 	 * Renders the inner blocks once per post inside a list.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_Block $block Template block.
 	 * @param int[]    $ids   Post IDs.
 	 * @param string   $tag   Element of each item.
@@ -333,6 +376,8 @@ final class Lists_Render {
 
 	/**
 	 * Renders the inner blocks once per item inside a list.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_Block                                             $block Template block.
 	 * @param array<array{id: int, context: array<string, mixed>}> $items Items with the post ID of the element and the block context.
@@ -359,6 +404,8 @@ final class Lists_Render {
 
 	/**
 	 * Returns a positive whole number from a block setting.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param mixed $value Setting.
 	 * @return int|null The number, or null if the setting is empty, 0 or invalid.

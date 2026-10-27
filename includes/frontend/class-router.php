@@ -3,6 +3,7 @@
  * Request routing.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
@@ -20,11 +21,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Q&A pages are virtual: WordPress does not query posts for them, and the
  * page content comes from the block template of the route.
+ *
+ * @since 0.1.0
  */
 final class Router {
 
 	/**
 	 * Option that remembers a hash of the rewrite rules WordPress has stored.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -33,12 +38,16 @@ final class Router {
 	/**
 	 * Route of the current request, once resolved.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var Route|null
 	 */
 	private ?Route $current = null;
 
 	/**
 	 * Hooks the router into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
@@ -51,6 +60,8 @@ final class Router {
 
 	/**
 	 * Adds the rewrite rules.
+	 *
+	 * @since 0.1.0
 	 */
 	public function add_rewrite_rules(): void {
 		foreach ( Routes::rewrite_rules() as $regex => $query ) {
@@ -60,6 +71,8 @@ final class Router {
 
 	/**
 	 * Rebuilds the rewrite rules after they changed: a new base slug or new routes after an update.
+	 *
+	 * @since 0.1.0
 	 */
 	public function maybe_flush_rules(): void {
 		$hash = md5( (string) wp_json_encode( Routes::rewrite_rules() ) );
@@ -73,6 +86,8 @@ final class Router {
 	/**
 	 * Registers the query variables.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string[] $vars Public query variables.
 	 * @return string[]
 	 */
@@ -82,6 +97,8 @@ final class Router {
 
 	/**
 	 * Resolves the route of a Q&A request.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP $wp Request.
 	 */
@@ -100,6 +117,8 @@ final class Router {
 
 	/**
 	 * Prevents the posts query on Q&A pages; they have no WordPress posts.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param array<mixed>|null $posts Posts, or null to run the query.
 	 * @param WP_Query          $query Query.
@@ -120,6 +139,8 @@ final class Router {
 	/**
 	 * Tells WordPress that Q&A pages exist even though no posts were found.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param bool $handled Whether the 404 handling was already done.
 	 * @return bool
 	 */
@@ -136,6 +157,8 @@ final class Router {
 	/**
 	 * Returns the route of the current request.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return Route|null Null if the request is not a Q&A page.
 	 */
 	public function current(): ?Route {
@@ -145,6 +168,8 @@ final class Router {
 	/**
 	 * Sets the current route, e.g. for tests or blocks previewed in the editor.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Route|null $route Route.
 	 */
 	public function set_current( ?Route $route ): void {
@@ -153,6 +178,8 @@ final class Router {
 
 	/**
 	 * Resolves a route from the request variables.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string      $name    Route name.
 	 * @param string|null $arg     Route argument.

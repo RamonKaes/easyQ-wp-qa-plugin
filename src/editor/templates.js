@@ -1,5 +1,7 @@
 /**
  * Default inner blocks of the container blocks, matching the server templates.
+ *
+ * @since 0.1.0
  */
 
 const meta = [

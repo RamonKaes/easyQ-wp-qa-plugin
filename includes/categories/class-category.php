@@ -3,6 +3,7 @@
  * Category model.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Categories;
@@ -13,11 +14,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * A question category.
+ *
+ * @since 0.1.0
  */
 final class Category {
 
 	/**
 	 * Sets up the category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int      $id             Category ID.
 	 * @param int|null $parent_id      Parent category ID, or null for a top-level category.
@@ -43,6 +48,8 @@ final class Category {
 	/**
 	 * Creates a category from a database row.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param object $row Row of the categories table.
 	 * @return self
 	 */
@@ -61,6 +68,8 @@ final class Category {
 
 	/**
 	 * Returns the slugs from the top level down to this category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string[]
 	 */

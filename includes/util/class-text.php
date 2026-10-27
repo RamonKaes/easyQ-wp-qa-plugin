@@ -3,6 +3,7 @@
  * Text processing helpers.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Util;
@@ -15,11 +16,15 @@ defined( 'ABSPATH' ) || exit;
  * Ported from Question2Answer `qa-include/util/string.php` and the basic viewer.
  * The functions work on UTF-8 strings; the regular expressions match bytes, as
  * in Question2Answer, which is safe because all separators are ASCII.
+ *
+ * @since 0.1.0
  */
 final class Text {
 
 	/**
 	 * Characters that separate words in the search index. `$ & - _ # % @` are not separators.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -28,12 +33,16 @@ final class Text {
 	/**
 	 * Characters that separate words in block word lists. `*` is a wildcard, not a separator.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const BLOCK_WORD_SEPARATOR = '[\n\r\t\ \!\"\\\'\(\)\+\,\.\/\:\;\<\=\>\?\[\\\\\]\^\`\{\|\}\~\$\&\-\_\#\%\@]';
 
 	/**
 	 * Thai, Chinese, Japanese and Korean ideographs in UTF-8; each one is treated as a word.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -42,6 +51,8 @@ final class Text {
 	/**
 	 * HTML elements that end a line when extracting text.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const HTML_LINE_SEPARATORS = 'br|option';
@@ -49,12 +60,16 @@ final class Text {
 	/**
 	 * HTML elements that end a paragraph when extracting text.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const HTML_PARAGRAPH_SEPARATORS = 'address|applet|blockquote|center|cite|col|div|dd|dl|dt|embed|form|frame|frameset|h1|h2|h3|h4|h5|h6|hr|iframe|input|li|marquee|ol|p|pre|samp|select|spacer|table|tbody|td|textarea|tfoot|th|thead|tr|ul';
 
 	/**
 	 * Unicode punctuation converted to ASCII before splitting words.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -116,6 +131,8 @@ final class Text {
 	/**
 	 * Splits a string into words.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text            Input text.
 	 * @param bool   $lowercase       Whether to convert the words to lowercase.
 	 * @param bool   $delimiters      Whether to keep the delimiters after each word.
@@ -157,6 +174,8 @@ final class Text {
 	/**
 	 * Parses tags as entered by a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $input           Tags entered in a form field.
 	 * @param bool   $comma_separated Whether tags are separated by commas (and may contain spaces).
 	 * @return string[] Unique lowercase tags.
@@ -168,11 +187,13 @@ final class Text {
 			return array_values( array_unique( false === $tags ? array() : $tags ) );
 		}
 
-		return array_values( array_unique( self::to_words( $input, true, false, false, false ) ) );
+		return array_values( array_unique( self::to_words( $input, lowercase: true, delimiters: false, split_ideographs: false, split_hyphens: false ) ) );
 	}
 
 	/**
 	 * Normalizes tags passed programmatically as an array or comma-separated string.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|string[] $tags Tags.
 	 * @return string[] Unique lowercase tags.
@@ -190,6 +211,8 @@ final class Text {
 	/**
 	 * Converts tags into the string stored in the database.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string[] $tags Tags.
 	 * @return string
 	 */
@@ -200,6 +223,8 @@ final class Text {
 	/**
 	 * Converts a stored tag string into tags.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $tag_string Stored tag string.
 	 * @return string[]
 	 */
@@ -209,6 +234,8 @@ final class Text {
 
 	/**
 	 * Extracts the plain text of post content, used for indexing and length checks.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $content Stored content.
 	 * @param string $format  Content format: '' for plain text or 'html'.
@@ -222,7 +249,7 @@ final class Text {
 		$text = strtr( $content, "\n\r\t", '   ' );
 		$text = (string) preg_replace( '/<\s*(' . self::HTML_LINE_SEPARATORS . ')[^A-Za-z0-9]/i', "\n\\0", $text );
 		$text = (string) preg_replace( '/<\s*(' . self::HTML_PARAGRAPH_SEPARATORS . ')[^A-Za-z0-9]/i', "\n\n\\0", $text );
-		$text = self::strip_tags( $text );
+		$text = wp_strip_all_tags( $text );
 		$text = (string) preg_replace( '/  +/', ' ', $text );
 		$text = (string) preg_replace( '/ *\n */', "\n", $text );
 		$text = (string) preg_replace( '/\n\n\n+/', "\n\n", $text );
@@ -248,6 +275,8 @@ final class Text {
 	/**
 	 * Splits a block word list as entered by the site owner.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $words Block words separated by spaces, commas or other punctuation; `*` is a wildcard.
 	 * @return string[]
 	 */
@@ -259,6 +288,8 @@ final class Text {
 
 	/**
 	 * Builds a regular expression fragment that matches the block words.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $words Block words, see block_words_explode().
 	 * @return string Fragment for block_words_match_all(), or '' if there are no block words.
@@ -285,6 +316,8 @@ final class Text {
 
 	/**
 	 * Finds all block words in a string.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $text  Text to search.
 	 * @param string $regex Fragment from block_words_to_regex().
@@ -317,6 +350,8 @@ final class Text {
 	/**
 	 * Replaces block words with a repeated character.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text      Text to censor.
 	 * @param string $regex     Fragment from block_words_to_regex().
 	 * @param string $character Replacement character.
@@ -337,6 +372,8 @@ final class Text {
 	/**
 	 * Shortens a string to a single line, removing words from about two thirds into it.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text     Text to shorten.
 	 * @param int    $length   Maximum length in characters.
 	 * @param string $ellipsis Text that replaces the removed words.
@@ -350,7 +387,7 @@ final class Text {
 		}
 
 		$remaining = $length - self::length( $ellipsis );
-		$words     = self::to_words( $text, false, true );
+		$words     = self::to_words( $text, lowercase: false, delimiters: true );
 		$count     = count( $words );
 		$prefix    = '';
 		$suffix    = '';
@@ -380,6 +417,8 @@ final class Text {
 	/**
 	 * Returns the length of a string in characters.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text Input string.
 	 * @return int
 	 */
@@ -390,20 +429,12 @@ final class Text {
 	/**
 	 * Converts a string to lowercase.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text Input string.
 	 * @return string
 	 */
 	public static function lowercase( string $text ): string {
 		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $text, 'UTF-8' ) : strtolower( $text );
-	}
-
-	/**
-	 * Removes HTML tags; uses the WordPress function when available.
-	 *
-	 * @param string $html HTML.
-	 * @return string
-	 */
-	private static function strip_tags( string $html ): string {
-		return function_exists( 'wp_strip_all_tags' ) ? wp_strip_all_tags( $html ) : strip_tags( $html ); // phpcs:ignore WordPress.WP.AlternativeFunctions.strip_tags_strip_tags -- Fallback for unit tests without WordPress.
 	}
 }

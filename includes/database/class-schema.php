@@ -3,6 +3,7 @@
  * Database schema.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Database;
@@ -29,11 +30,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Definitions are written in the format dbDelta() expects: one column per line,
  * lowercase types, named keys and two spaces after `PRIMARY KEY`.
+ *
+ * @since 0.1.0
  */
 final class Schema {
 
 	/**
 	 * Prefix of every easyQ table, appended to the WordPress table prefix.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -44,6 +49,8 @@ final class Schema {
 	 *
 	 * Each type `easyq_x` uses the table `easyq_xmeta` with the object ID column `easyq_x_id`.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string[]
 	 */
 	public const META_TYPES = array( 'easyq_post', 'easyq_category', 'easyq_tag' );
@@ -51,17 +58,21 @@ final class Schema {
 	/**
 	 * Returns the full name of an easyQ table for the current site.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $name Table name without prefixes, e.g. `posts`.
 	 * @return string
 	 */
 	public static function table( string $name ): string {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		return $wpdb->prefix . self::TABLE_PREFIX . $name;
 	}
 
 	/**
 	 * Returns the full names of all easyQ tables for a table prefix.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $prefix WordPress table prefix of a site.
 	 * @return string[]
@@ -72,6 +83,8 @@ final class Schema {
 
 	/**
 	 * Returns the CREATE TABLE statements of all tables.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $prefix          WordPress table prefix of the site.
 	 * @param string $charset_collate Charset and collation clause, see wpdb::get_charset_collate().
@@ -330,10 +343,12 @@ KEY meta_key (meta_key(191))";
 	/**
 	 * Creates or updates all tables of the current site.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string[] Messages describing the changes dbDelta() made.
 	 */
 	public static function install(): array {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -345,10 +360,12 @@ KEY meta_key (meta_key(191))";
 	 *
 	 * An empty result means the installed schema matches the definitions.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string[]
 	 */
 	public static function pending_changes(): array {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
@@ -357,9 +374,11 @@ KEY meta_key (meta_key(191))";
 
 	/**
 	 * Drops all tables of the current site.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function drop(): void {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		foreach ( self::table_names( $wpdb->prefix ) as $table ) {
 			$sql = $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table );
@@ -375,13 +394,15 @@ KEY meta_key (meta_key(191))";
 	 *
 	 * The metadata API needs a meta key to delete, so this removes the rows directly and clears the meta cache.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $meta_type One of META_TYPES.
 	 * @param int    $object_id Object ID.
 	 */
 	public static function delete_all_meta( string $meta_type, int $object_id ): void {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
-		Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE %i = %d', $wpdb->prefix . $meta_type . 'meta', $meta_type . '_id', $object_id ) );
+		DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE %i = %d', $wpdb->prefix . $meta_type . 'meta', $meta_type . '_id', $object_id ) );
 		wp_cache_delete( $object_id, $meta_type . '_meta' );
 	}
 
@@ -389,9 +410,11 @@ KEY meta_key (meta_key(191))";
 	 * Registers the meta tables on the wpdb object so the metadata API finds them.
 	 *
 	 * Must run again whenever the current site changes on multisite.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function register_meta_tables(): void {
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		foreach ( self::META_TYPES as $meta_type ) {
 			$property          = $meta_type . 'meta';

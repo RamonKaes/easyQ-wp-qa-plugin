@@ -3,6 +3,7 @@
  * Database access.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Database;
@@ -16,11 +17,15 @@ defined( 'ABSPATH' ) || exit;
  * run through these methods. Callers build every statement with wpdb::prepare();
  * the methods accept null, which wpdb::prepare() returns for invalid statements,
  * and then do nothing.
+ *
+ * @since 0.1.0
  */
-final class Db {
+final class DB {
 
 	/**
 	 * Returns the WordPress database object.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return \wpdb
 	 */
@@ -38,6 +43,8 @@ final class Db {
 	/**
 	 * Returns the current time in UTC, in MySQL format.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return string
 	 */
 	public static function now(): string {
@@ -46,6 +53,8 @@ final class Db {
 
 	/**
 	 * Runs a prepared statement that returns no rows.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|null $sql Prepared statement.
 	 * @return int Number of affected rows, 0 on failure.
@@ -64,6 +73,8 @@ final class Db {
 	/**
 	 * Returns a single value.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $sql Prepared statement.
 	 * @return string|null
 	 */
@@ -81,6 +92,8 @@ final class Db {
 	/**
 	 * Returns a single value as an integer.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $sql Prepared statement.
 	 * @return int
 	 */
@@ -90,6 +103,8 @@ final class Db {
 
 	/**
 	 * Returns a single row.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string|null $sql Prepared statement.
 	 * @return object|null
@@ -108,6 +123,8 @@ final class Db {
 	/**
 	 * Returns all rows.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $sql Prepared statement.
 	 * @return object[]
 	 */
@@ -125,6 +142,8 @@ final class Db {
 	/**
 	 * Returns the first column of all rows as integers.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $sql Prepared statement.
 	 * @return int[]
 	 */
@@ -141,6 +160,8 @@ final class Db {
 
 	/**
 	 * Inserts a row.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string                    $table  Full table name.
 	 * @param array<string, mixed>      $data   Column values.

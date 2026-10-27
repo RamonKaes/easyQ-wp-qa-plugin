@@ -3,6 +3,8 @@
  *
  * Every interactive element is a regular form that works without JavaScript;
  * this module sends it in the background and updates the page in place.
+ *
+ * @since 0.1.0
  */
 import { store, getContext, getElement } from '@wordpress/interactivity';
 
@@ -11,6 +13,8 @@ import { store, getContext, getElement } from '@wordpress/interactivity';
  * page (the question and the notices) are replaced, the rest of the page stays.
  * Afterwards the element of the address's anchor gets the focus, and a notice
  * is announced to screen readers.
+ *
+ * @since 0.1.0
  *
  * @param {string} url Address to load.
  */
@@ -48,6 +52,8 @@ const { state } = store( 'easyq', {
 		/**
 		 * Whether the vote button of the current context matches the visitor's vote.
 		 *
+		 * @since 0.1.0
+		 *
 		 * @return {boolean} Whether the button is pressed.
 		 */
 		get isPressed() {
@@ -59,6 +65,8 @@ const { state } = store( 'easyq', {
 		/**
 		 * Follows a link within the Q&A area without reloading the page, e.g.
 		 * "Show previous comments". Links opened in a new tab work as usual.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param {MouseEvent} event Click event of the link.
 		 */
@@ -81,6 +89,8 @@ const { state } = store( 'easyq', {
 		 * it like a regular submission and returns the address to show, which
 		 * contains the new post or the form with its errors. Without a usable
 		 * response the form is submitted normally.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param {SubmitEvent} event Submit event of the form.
 		 */
@@ -127,6 +137,8 @@ const { state } = store( 'easyq', {
 		 * Sends a vote and updates the count. If the vote is refused, for
 		 * example because the visitor must log in, the form is submitted
 		 * normally so the page explains why.
+		 *
+		 * @since 0.1.0
 		 *
 		 * @param {SubmitEvent} event Submit event of the vote form.
 		 */

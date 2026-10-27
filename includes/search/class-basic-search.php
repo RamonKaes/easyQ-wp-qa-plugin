@@ -3,11 +3,12 @@
  * Built-in search engine.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Search;
 
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Util\Text;
@@ -23,11 +24,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Ported from Question2Answer `qa-include/plugins/qa-search-basic.php` and the
  * search query in `qa-include/db/selects.php`.
+ *
+ * @since 0.1.0
  */
 final class Basic_Search implements Search_Provider {
 
 	/**
 	 * Words that appear in this many posts or more are ignored.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
@@ -36,12 +41,16 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * Longest indexed word in characters; longer words are truncated.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	public const MAX_WORD_LENGTH = 80;
 
 	/**
 	 * Marks where the union of match queries goes in the search query.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -50,12 +59,16 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * Highest stored count of a word within one post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var int
 	 */
 	private const MAX_WORD_COUNT = 255;
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @since 0.1.0
 	 */
 	public function id(): string {
 		return 'basic';
@@ -63,6 +76,8 @@ final class Basic_Search implements Search_Provider {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @since 0.1.0
 	 */
 	public function label(): string {
 		return __( 'Built-in search', 'easyq' );
@@ -70,6 +85,8 @@ final class Basic_Search implements Search_Provider {
 
 	/**
 	 * {@inheritDoc}
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Indexed_Post $post Post data to index.
 	 */
@@ -79,7 +96,7 @@ final class Basic_Search implements Search_Provider {
 		$tag_words     = array_unique( $this->words( (string) $post->tags ) );
 		$whole_tags    = array_unique( array_map( array( $this, 'truncate' ), Text::string_to_tags( $post->tags ) ) );
 
-		$word_ids = $this->word_ids( array_merge( $title_words, array_map( 'strval', array_keys( $content_count ) ), $tag_words, $whole_tags ), true );
+		$word_ids = $this->word_ids( array_merge( $title_words, array_map( 'strval', array_keys( $content_count ) ), $tag_words, $whole_tags ), create: true );
 
 		$title_ids = $this->pick( $word_ids, $title_words );
 		$tag_ids   = $this->pick( $word_ids, $tag_words );
@@ -92,14 +109,14 @@ final class Basic_Search implements Search_Provider {
 			}
 		}
 
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
 		foreach ( $title_ids as $word_id ) {
-			Db::query( $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'titlewords' ), $post->post_id, $word_id ) );
+			DB::query( $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'titlewords' ), $post->post_id, $word_id ) );
 		}
 
 		foreach ( $content_ids as $word_id => $count ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					'INSERT IGNORE INTO %i (post_id, word_id, count, type, question_id) VALUES (%d, %d, %d, %s, %d)',
 					Schema::table( 'contentwords' ),
@@ -113,11 +130,11 @@ final class Basic_Search implements Search_Provider {
 		}
 
 		foreach ( $tag_ids as $word_id ) {
-			Db::query( $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'tagwords' ), $post->post_id, $word_id ) );
+			DB::query( $wpdb->prepare( 'INSERT IGNORE INTO %i (post_id, word_id) VALUES (%d, %d)', Schema::table( 'tagwords' ), $post->post_id, $word_id ) );
 		}
 
 		foreach ( $whole_ids as $word_id ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					'INSERT IGNORE INTO %i (post_id, word_id, post_created) SELECT id, %d, created FROM %i WHERE id = %d',
 					Schema::table( 'posttags' ),
@@ -137,10 +154,12 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $post_id Post ID.
 	 */
 	public function unindex_post( int $post_id ): void {
-		$wpdb    = Db::wpdb();
+		$wpdb    = DB::wpdb();
 		$indexes = array(
 			'titlewords'   => 'title_count',
 			'contentwords' => 'content_count',
@@ -150,10 +169,10 @@ final class Basic_Search implements Search_Provider {
 
 		foreach ( $indexes as $index => $count_column ) {
 			$table    = Schema::table( $index );
-			$word_ids = Db::get_int_col( $wpdb->prepare( 'SELECT word_id FROM %i WHERE post_id = %d', $table, $post_id ) );
+			$word_ids = DB::get_int_col( $wpdb->prepare( 'SELECT word_id FROM %i WHERE post_id = %d', $table, $post_id ) );
 
 			if ( array() !== $word_ids ) {
-				Db::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', $table, $post_id ) );
+				DB::query( $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', $table, $post_id ) );
 				$this->recount( $index, $count_column, $word_ids );
 			}
 		}
@@ -164,6 +183,8 @@ final class Basic_Search implements Search_Provider {
 	 *
 	 * The built-in search ignores categories.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int      $post_id     Post ID.
 	 * @param int|null $category_id New category ID.
 	 */
@@ -173,6 +194,8 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string   $query   Search query as entered by the user.
 	 * @param int      $start   Offset of the first result.
 	 * @param int      $count   Maximum number of results.
@@ -180,7 +203,7 @@ final class Basic_Search implements Search_Provider {
 	 * @return Search_Result[]
 	 */
 	public function search( string $query, int $start, int $count, ?int $user_id ): array {
-		$wpdb        = Db::wpdb();
+		$wpdb        = DB::wpdb();
 		$words       = array_values( array_unique( $this->words( $query ) ) );
 		$posts       = Schema::table( 'posts' );
 		$words_table = Schema::table( 'words' );
@@ -221,7 +244,7 @@ final class Basic_Search implements Search_Provider {
 		}
 
 		// The hottest question gets a bonus equal to a unique tag match, the least hot none.
-		$hotness = Db::get_row( $wpdb->prepare( "SELECT MIN(hotness) AS min_hotness, MAX(hotness) AS max_hotness FROM %i WHERE type = 'Q'", $posts ) );
+		$hotness = DB::get_row( $wpdb->prepare( "SELECT MIN(hotness) AS min_hotness, MAX(hotness) AS max_hotness FROM %i WHERE type = 'Q'", $posts ) );
 		$min     = null === $hotness ? 0.0 : (float) Row::nullable_float( $hotness, 'min_hotness' );
 		$range   = ( null === $hotness ? 0.0 : (float) Row::nullable_float( $hotness, 'max_hotness' ) ) - $min;
 
@@ -238,7 +261,7 @@ final class Basic_Search implements Search_Provider {
 			max( 0, $start ),
 			max( 0, $count )
 		);
-		$rows = null === $sql ? array() : Db::get_results( str_replace( self::UNION_MARKER, $union, $sql ) );
+		$rows = null === $sql ? array() : DB::get_results( str_replace( self::UNION_MARKER, $union, $sql ) );
 
 		$results = array();
 		foreach ( $rows as $row ) {
@@ -251,6 +274,8 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * Splits text into lowercase index words of limited length.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text Text.
 	 * @return string[]
 	 */
@@ -260,6 +285,8 @@ final class Basic_Search implements Search_Provider {
 
 	/**
 	 * Truncates a word to the longest length the index stores.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $word Word.
 	 * @return string
@@ -271,6 +298,8 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * Maps words to their IDs in the words table.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string[] $words  Words.
 	 * @param bool     $create Whether to add missing words.
 	 * @return array<string, int> IDs keyed by word.
@@ -281,12 +310,12 @@ final class Basic_Search implements Search_Provider {
 			return array();
 		}
 
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'words' );
 
 		if ( $create ) {
 			// The unique key on the word column makes concurrent inserts safe.
-			Db::query(
+			DB::query(
 				// phpcs:ignore WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- One (%s) group per word.
 				$wpdb->prepare(
 					'INSERT IGNORE INTO %i (word) VALUES ' . implode( ',', array_fill( 0, count( $words ), '(%s)' ) ),
@@ -295,7 +324,7 @@ final class Basic_Search implements Search_Provider {
 			);
 		}
 
-		$rows = Db::get_results(
+		$rows = DB::get_results(
 			$wpdb->prepare(
 				'SELECT id, word FROM %i WHERE word IN (' . implode( ',', array_fill( 0, count( $words ), '%s' ) ) . ')',
 				array_merge( array( $table ), $words )
@@ -313,6 +342,8 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * Picks the IDs of some words.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param array<string, int> $word_ids IDs keyed by word.
 	 * @param string[]           $words    Words to pick.
 	 * @return int[]
@@ -324,6 +355,8 @@ final class Basic_Search implements Search_Provider {
 	/**
 	 * Recalculates how many posts use each word in an index.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $index        Index table name without prefix.
 	 * @param string $count_column Count column in the words table.
 	 * @param int[]  $word_ids     Words to recount.
@@ -333,9 +366,9 @@ final class Basic_Search implements Search_Provider {
 			return;
 		}
 
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
-		Db::query(
+		DB::query(
 			$wpdb->prepare(
 				'UPDATE %i AS x, (SELECT w.id, COUNT(i.word_id) AS total FROM %i AS w LEFT JOIN %i AS i ON i.word_id = w.id WHERE w.id IN (' . implode( ',', array_fill( 0, count( $word_ids ), '%d' ) ) . ') GROUP BY w.id) AS a SET x.%i = a.total WHERE x.id = a.id',
 				array_merge( array( Schema::table( 'words' ), Schema::table( 'words' ), Schema::table( $index ) ), $word_ids, array( $count_column ) )
@@ -345,6 +378,8 @@ final class Basic_Search implements Search_Provider {
 
 	/**
 	 * Finds users whose public name matches query words or the whole query.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string[] $words Query words.
 	 * @param string   $query Whole query, for names with spaces.
@@ -356,9 +391,9 @@ final class Basic_Search implements Search_Provider {
 			return array();
 		}
 
-		$wpdb = Db::wpdb();
+		$wpdb = DB::wpdb();
 
-		return Db::get_int_col(
+		return DB::get_int_col(
 			$wpdb->prepare(
 				'SELECT ID FROM %i WHERE display_name IN (' . implode( ',', array_fill( 0, count( $names ), '%s' ) ) . ') OR user_nicename IN (' . implode( ',', array_fill( 0, count( $names ), '%s' ) ) . ')',
 				array_merge( array( $wpdb->users ), $names, $names )
@@ -368,6 +403,8 @@ final class Basic_Search implements Search_Provider {
 
 	/**
 	 * Converts a result row and picks the best matching part.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param object $row Result row with question_id, score and match_parts.
 	 * @return Search_Result

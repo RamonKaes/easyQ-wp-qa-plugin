@@ -3,9 +3,10 @@
  * REST endpoints for actions on posts.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Actor;
 use EasyQ\Limits\Limits;
@@ -27,11 +28,15 @@ defined( 'ABSPATH' ) || exit;
  * - `POST /easyq/v1/posts/{id}/actions/{action}`
  *
  * Every action responds with the changed post, or with the question if the post was deleted.
+ *
+ * @since 0.1.0
  */
 final class Actions_Controller extends Controller {
 
 	/**
 	 * Actions and the post rule that allows each.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -55,6 +60,8 @@ final class Actions_Controller extends Controller {
 
 	/**
 	 * Registers the routes.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register_routes(): void {
 		register_rest_route(
@@ -125,6 +132,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Returns any post the viewer may see, whatever its type.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -138,6 +147,8 @@ final class Actions_Controller extends Controller {
 
 	/**
 	 * Checks whether the request may vote on the post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -172,6 +183,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Sets the vote of the current user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
@@ -180,12 +193,12 @@ final class Actions_Controller extends Controller {
 		$actor = $this->actor();
 		$post  = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $post ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$result = Services::votes()->vote( $actor, $post, self::int_param( $request, 'vote' ) ?? 0 );
 		if ( $result instanceof WP_Error ) {
-			return Rest_Errors::with_status( $result, 403 );
+			return REST_Errors::with_status( $result, 403 );
 		}
 
 		return $this->respond( $post->id, $actor );
@@ -193,6 +206,8 @@ final class Actions_Controller extends Controller {
 
 	/**
 	 * Checks whether the request may perform the action.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -215,18 +230,20 @@ final class Actions_Controller extends Controller {
 		$rules       = Services::permissions()->post_rules( $post, $actor, $parent_post, $parent_post ? Services::posts()->children( $parent_post->id ) : array(), Services::posts()->children( $post->id ) );
 
 		if ( ! ( $rules[ self::ACTIONS[ $action ] ?? '' ] ?? false ) ) {
-			return Rest_Errors::permission( null === $actor->user_id && 'claim' !== $action ? 'login' : 'level' );
+			return REST_Errors::permission( null === $actor->user_id && 'claim' !== $action ? 'login' : 'level' );
 		}
 
 		return match ( $action ) {
 			'flag'    => $this->check( 'permit_flag', $actor, $post, Limits::FLAGS ),
-			'convert' => Post::ANSWER === $post->type ? $this->check( 'permit_post_c', $actor, $post ) : Rest_Errors::permission( 'level' ),
+			'convert' => Post::ANSWER === $post->type ? $this->check( 'permit_post_c', $actor, $post ) : REST_Errors::permission( 'level' ),
 			default   => true,
 		};
 	}
 
 	/**
 	 * Performs an action.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
@@ -238,7 +255,7 @@ final class Actions_Controller extends Controller {
 		$post     = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		$question = null === $post ? null : $service->question_of( $post );
 		if ( null === $post || null === $question ) {
-			return Rest_Errors::not_found();
+			return REST_Errors::not_found();
 		}
 
 		$parent_post = null === $post->parent_id ? $question : ( Services::posts()->find( $post->parent_id ) ?? $question );
@@ -258,7 +275,7 @@ final class Actions_Controller extends Controller {
 			'claim'              => $this->run( static fn () => $service->claim( $actor, $post ) ),
 			'convert'            => $this->convert( $actor, $post, $question, self::int_param( $request, 'parent' ) ?? $question->id ),
 			'move'               => $this->move( $actor, $post, $request ),
-			default              => Rest_Errors::not_found(),
+			default              => REST_Errors::not_found(),
 		};
 
 		if ( $result instanceof WP_Error ) {
@@ -270,6 +287,8 @@ final class Actions_Controller extends Controller {
 
 	/**
 	 * Selects an answer of a question, or clears the selection.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor    $actor     The actor.
 	 * @param Post     $question  Question.
@@ -296,6 +315,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Flags a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    The actor.
 	 * @param Post  $post     Post.
 	 * @param Post  $question Question of the post.
@@ -304,11 +325,13 @@ final class Actions_Controller extends Controller {
 	private function flag( Actor $actor, Post $post, Post $question ): bool|WP_Error {
 		$result = Services::votes()->flag( $actor, $post, $question );
 
-		return $result instanceof WP_Error ? Rest_Errors::with_status( $result, 403 ) : true;
+		return $result instanceof WP_Error ? REST_Errors::with_status( $result, 403 ) : true;
 	}
 
 	/**
 	 * Changes the status of any kind of post.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor  $actor    The actor.
 	 * @param Post   $post     Post.
@@ -332,6 +355,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Shows a hidden post again; it goes to moderation if the actor's posts are moderated.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    The actor.
 	 * @param Post  $post     Post.
 	 * @param Post  $question Question of the post.
@@ -348,6 +373,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Deletes a hidden post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor    The actor.
 	 * @param Post  $post     Post.
 	 * @param Post  $question Question of the post.
@@ -363,11 +390,13 @@ final class Actions_Controller extends Controller {
 			default        => $service->delete_comment( $actor, $post, $question, $parent_post ),
 		};
 
-		return $result instanceof WP_Error ? Rest_Errors::with_status( $result, 409 ) : true;
+		return $result instanceof WP_Error ? REST_Errors::with_status( $result, 409 ) : true;
 	}
 
 	/**
 	 * Closes a question as duplicate or with a note.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor           $actor    The actor.
 	 * @param Post            $question Question.
@@ -402,6 +431,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Converts an answer into a comment.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor     The actor.
 	 * @param Post  $answer    Answer.
 	 * @param Post  $question  Question of the answer.
@@ -421,6 +452,8 @@ final class Actions_Controller extends Controller {
 
 	/**
 	 * Moves a question to another category.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor           $actor    The actor.
 	 * @param Post            $question Question.
@@ -442,6 +475,8 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Runs an action without result.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param callable $action Action.
 	 * @return true
 	 */
@@ -454,16 +489,20 @@ final class Actions_Controller extends Controller {
 	/**
 	 * Returns a validation error for one field.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $field   Field.
 	 * @param string $message Message.
 	 * @return WP_Error
 	 */
 	private function invalid( string $field, string $message ): WP_Error {
-		return Rest_Errors::invalid( new WP_Error( $field, $message ) );
+		return REST_Errors::invalid( new WP_Error( $field, $message ) );
 	}
 
 	/**
 	 * Responds with a post as the actor sees it now.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int   $id    Post ID.
 	 * @param Actor $actor The actor.
@@ -473,6 +512,6 @@ final class Actions_Controller extends Controller {
 		Services::posts()->forget( $id );
 		$post = Services::posts()->find( $id );
 
-		return null === $post ? Rest_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $post, $actor ) );
+		return null === $post ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $post, $actor ) );
 	}
 }

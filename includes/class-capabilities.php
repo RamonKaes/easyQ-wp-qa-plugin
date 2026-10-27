@@ -3,6 +3,7 @@
  * Capabilities.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ;
@@ -23,11 +24,15 @@ defined( 'ABSPATH' ) || exit;
  * Capabilities that relate to a post take the post ID as argument. Rate limits
  * and blocked IP addresses are not part of capabilities; the REST API checks
  * them for the current request.
+ *
+ * @since 0.1.0
  */
 final class Capabilities {
 
 	/**
 	 * Manage the plugin: settings, categories, points, tools.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
@@ -36,12 +41,16 @@ final class Capabilities {
 	/**
 	 * Access the moderation screens.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	public const MODERATE = 'easyq_moderate';
 
 	/**
 	 * Capabilities without arguments, mapped to a permission setting.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -58,6 +67,8 @@ final class Capabilities {
 
 	/**
 	 * Capabilities about a post, mapped to the post rule that decides them.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -79,6 +90,8 @@ final class Capabilities {
 
 	/**
 	 * Hooks the capability mapping into WordPress.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_filter( 'map_meta_cap', array( $this, 'map_meta_cap' ), 10, 4 );
@@ -86,6 +99,8 @@ final class Capabilities {
 
 	/**
 	 * Resolves easyQ capabilities.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string[] $caps    Primitive capabilities required so far.
 	 * @param string   $cap     Capability being checked.
@@ -109,6 +124,8 @@ final class Capabilities {
 	/**
 	 * Decides an easyQ capability.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string  $cap     Capability.
 	 * @param int     $user_id User ID; 0 for visitors.
 	 * @param mixed[] $args    Further arguments.
@@ -124,12 +141,12 @@ final class Capabilities {
 
 		if ( self::MODERATE === $cap ) {
 			return user_can( $user_id, 'manage_options' )
-				|| null === $permissions->error( 'permit_moderate', $actor, null, null, true, true )
-				|| null === $permissions->error( 'permit_hide_show', $actor, null, null, true, true );
+				|| null === $permissions->error( 'permit_moderate', $actor, maximum_level: true )
+				|| null === $permissions->error( 'permit_hide_show', $actor, maximum_level: true );
 		}
 
 		if ( isset( self::GENERAL[ $cap ] ) ) {
-			return null === $permissions->error( self::GENERAL[ $cap ], $actor, null, null, true, true );
+			return null === $permissions->error( self::GENERAL[ $cap ], $actor, maximum_level: true );
 		}
 
 		$post = $this->post_argument( $args );
@@ -158,6 +175,8 @@ final class Capabilities {
 	/**
 	 * Checks whether a user may vote on a post.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Post  $post  Post.
 	 * @param Actor $actor User.
 	 * @param bool  $down  Whether the vote is a downvote.
@@ -182,6 +201,8 @@ final class Capabilities {
 
 	/**
 	 * Loads the post passed as first capability argument.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param mixed[] $args Capability arguments.
 	 * @return Post|null

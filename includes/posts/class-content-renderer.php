@@ -3,6 +3,7 @@
  * Post content output.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Posts;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
  * Ported from the Question2Answer basic viewer: plain text is escaped, line
  * breaks become paragraphs and web addresses become links; HTML content is
  * filtered with the WordPress post filter.
+ *
+ * @since 0.1.0
  */
 final class Content_Renderer {
 
 	/**
 	 * Returns the HTML of post content.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $content Stored content.
 	 * @param string $format  Content format: '' or 'html'.
@@ -46,6 +51,8 @@ final class Content_Renderer {
 	/**
 	 * Returns a title or other plain text with block words censored.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $text Text.
 	 * @return string
 	 */
@@ -57,6 +64,8 @@ final class Content_Renderer {
 
 	/**
 	 * Censors block words in the text between HTML tags.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $html HTML.
 	 * @return string
@@ -84,6 +93,8 @@ final class Content_Renderer {
 	/**
 	 * Adds the link attributes the site wants to links created from addresses.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $html HTML with links.
 	 * @return string
 	 */
@@ -95,6 +106,8 @@ final class Content_Renderer {
 
 	/**
 	 * Returns the regular expression for the block words of the site.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return string
 	 */

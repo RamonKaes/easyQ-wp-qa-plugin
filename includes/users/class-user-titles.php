@@ -3,6 +3,7 @@
  * User titles.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Users;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
  * Users with a level of expert or higher are shown with their level. Everybody
  * else gets the title of the highest points threshold they reached, as set in
  * the points settings (Question2Answer "User titles").
+ *
+ * @since 0.1.0
  */
 final class User_Titles {
 
 	/**
 	 * Sets up the titles.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param User_Levels $levels User levels.
 	 * @param Points      $points Points.
@@ -35,6 +40,8 @@ final class User_Titles {
 
 	/**
 	 * Returns the title of a user.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 * @return string Title, or an empty string if the user has none.
@@ -50,6 +57,8 @@ final class User_Titles {
 
 	/**
 	 * Returns the title earned with a number of points.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $points Points.
 	 * @return string Title, or an empty string if no threshold is reached.
@@ -70,6 +79,8 @@ final class User_Titles {
 
 	/**
 	 * Returns the titles from the settings.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return array<int, string> Titles keyed by the points needed.
 	 */

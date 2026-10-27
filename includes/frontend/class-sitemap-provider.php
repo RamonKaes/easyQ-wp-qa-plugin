@@ -3,12 +3,13 @@
  * Q&A pages in the WordPress sitemaps.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Frontend;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Tags;
@@ -25,11 +26,15 @@ defined( 'ABSPATH' ) || exit;
  *
  * Only what visitors may see is listed. Profiles are left out by default because they
  * are pages about people (privacy by default); the setting `sitemap_users` adds them.
+ *
+ * @since 0.1.0
  */
 final class Sitemap_Provider extends WP_Sitemaps_Provider {
 
 	/**
 	 * Sets up the provider.
+	 *
+	 * @since 0.1.0
 	 */
 	public function __construct() {
 		$this->name        = 'easyq';
@@ -38,23 +43,33 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 
 	/**
 	 * Registers the provider with the core sitemaps.
+	 *
+	 * @since 0.1.0
 	 */
 	public static function register(): void {
-		add_action(
-			'wp_sitemaps_init',
-			static function ( WP_Sitemaps $sitemaps ): void {
-				$sitemaps->registry->add_provider( 'easyq', new self() );
-			}
-		);
+		add_action( 'wp_sitemaps_init', array( self::class, 'add_to' ) );
+	}
+
+	/**
+	 * Adds the provider to the core sitemaps.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_Sitemaps $sitemaps Core sitemaps.
+	 */
+	public static function add_to( WP_Sitemaps $sitemaps ): void {
+		$sitemaps->registry->add_provider( 'easyq', new self() );
 	}
 
 	/**
 	 * Returns the subtypes: one sitemap per kind of Q&A page.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return array<string, object> Subtypes keyed by name.
 	 */
 	public function get_object_subtypes(): array {
-		if ( null !== Services::permissions()->error( 'permit_view_q_page', new Actor(), null, null, false ) ) {
+		if ( null !== Services::permissions()->error( 'permit_view_q_page', new Actor(), check_blocks: false ) ) {
 			return array();
 		}
 
@@ -73,6 +88,8 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 
 	/**
 	 * Returns the addresses of a sitemap page.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int    $page_num       Page number, starting at 1.
 	 * @param string $object_subtype Subtype, see get_object_subtypes().
@@ -98,6 +115,8 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	/**
 	 * Returns the number of pages of a sitemap.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $object_subtype Subtype.
 	 * @return int
 	 */
@@ -106,12 +125,12 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 			return 0;
 		}
 
-		$wpdb  = Db::wpdb();
+		$wpdb  = DB::wpdb();
 		$total = match ( $object_subtype ) {
-			'questions'  => Db::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE type = %s', Schema::table( 'posts' ), Post::QUESTION ) ),
+			'questions'  => DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE type = %s', Schema::table( 'posts' ), Post::QUESTION ) ),
 			'tags'       => ( new Tags() )->popular( '', 1, 1 )['total'],
 			'categories' => count( Services::categories()->all() ),
-			'users'      => Db::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
+			'users'      => DB::get_int( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
 			default      => 0,
 		};
 
@@ -121,12 +140,14 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	/**
 	 * Returns visible questions, oldest first, so pages stay stable when questions are added.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $offset Questions to skip.
 	 * @param int $limit  Maximum number of questions.
 	 * @return array<int, array<string, string>>
 	 */
 	private function questions( int $offset, int $limit ): array {
-		$ids   = Db::get_int_col( Db::wpdb()->prepare( 'SELECT id FROM %i WHERE type = %s ORDER BY created, id LIMIT %d, %d', Schema::table( 'posts' ), Post::QUESTION, $offset, $limit ) );
+		$ids   = DB::get_int_col( DB::wpdb()->prepare( 'SELECT id FROM %i WHERE type = %s ORDER BY created, id LIMIT %d, %d', Schema::table( 'posts' ), Post::QUESTION, $offset, $limit ) );
 		$posts = Services::posts()->find_many( $ids );
 
 		$entries = array();
@@ -136,7 +157,7 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 				continue;
 			}
 
-			$entry = array( 'loc' => Urls::question( $question ) );
+			$entry = array( 'loc' => URLs::question( $question ) );
 			$time  = strtotime( ( $question->updated ?? $question->created ) . ' UTC' );
 			if ( false !== $time ) {
 				$entry['lastmod'] = gmdate( DATE_W3C, $time );
@@ -150,19 +171,23 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	/**
 	 * Returns tags used by visible questions, most used first.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $page  Page number.
 	 * @param int $limit Tags per page.
 	 * @return array<int, array<string, string>>
 	 */
 	private function tags( int $page, int $limit ): array {
 		return array_map(
-			static fn ( array $tag ): array => array( 'loc' => Urls::tag( $tag['name'] ) ),
+			static fn ( array $tag ): array => array( 'loc' => URLs::tag( $tag['name'] ) ),
 			( new Tags() )->popular( '', $page, $limit )['tags']
 		);
 	}
 
 	/**
 	 * Returns the categories.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int $offset Categories to skip.
 	 * @param int $limit  Maximum number of categories.
@@ -171,7 +196,7 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	private function categories( int $offset, int $limit ): array {
 		$entries = array();
 		foreach ( array_slice( Services::categories()->all(), $offset, $limit ) as $category ) {
-			$entries[] = array( 'loc' => Urls::category( $category ) );
+			$entries[] = array( 'loc' => URLs::category( $category ) );
 		}
 
 		return $entries;
@@ -180,19 +205,21 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	/**
 	 * Returns the profiles of users who took part in the Q&A area, by points.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param int $offset Users to skip.
 	 * @param int $limit  Maximum number of users.
 	 * @return array<int, array<string, string>>
 	 */
 	private function users( int $offset, int $limit ): array {
-		$ids = Db::get_int_col( Db::wpdb()->prepare( 'SELECT user_id FROM %i ORDER BY user_id LIMIT %d, %d', Schema::table( 'userpoints' ), $offset, $limit ) );
+		$ids = DB::get_int_col( DB::wpdb()->prepare( 'SELECT user_id FROM %i ORDER BY user_id LIMIT %d, %d', Schema::table( 'userpoints' ), $offset, $limit ) );
 		cache_users( $ids );
 
 		$entries = array();
 		foreach ( $ids as $id ) {
 			$user = get_userdata( $id );
 			if ( false !== $user && Services::user_query()->is_member( $user ) ) {
-				$entries[] = array( 'loc' => Urls::user( $user ) );
+				$entries[] = array( 'loc' => URLs::user( $user ) );
 			}
 		}
 

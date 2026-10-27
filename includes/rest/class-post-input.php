@@ -3,9 +3,10 @@
  * Post input of the REST API.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
-namespace EasyQ\Rest;
+namespace EasyQ\REST;
 
 use EasyQ\Actor;
 use EasyQ\Posts\Post_Service;
@@ -18,11 +19,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Reads and sanitizes the fields of new and edited posts.
+ *
+ * @since 0.1.0
  */
 final class Post_Input {
 
 	/**
 	 * Returns the argument definitions shared by all post types.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param bool $required Whether the content is required.
 	 * @return array<string, array<string, mixed>>
@@ -59,6 +64,8 @@ final class Post_Input {
 	/**
 	 * Returns the content of a request, filtered for its format.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return array{content: string, format: string}
@@ -77,6 +84,8 @@ final class Post_Input {
 	/**
 	 * Returns the tags of a request, as an array or as text entered by a user.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param mixed $value Tags parameter.
 	 * @return string[]
 	 */
@@ -91,6 +100,8 @@ final class Post_Input {
 	/**
 	 * Checks whether the site uses tags.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @return bool
 	 */
 	public static function uses_tags(): bool {
@@ -99,6 +110,8 @@ final class Post_Input {
 
 	/**
 	 * Checks whether the site uses categories.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return bool
 	 */
@@ -110,6 +123,8 @@ final class Post_Input {
 	 * Describes the author of a new post.
 	 *
 	 * Anonymous authors get a visitor cookie, so they can edit and claim their post later.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor           $actor   The actor.
 	 * @param WP_REST_Request $request Request.
@@ -143,6 +158,8 @@ final class Post_Input {
 
 	/**
 	 * Returns the fields for the validator.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request      $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request

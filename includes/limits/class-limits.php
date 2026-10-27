@@ -3,16 +3,17 @@
  * Rate limits.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Limits;
 
 use EasyQ\Actor;
-use EasyQ\Database\Db;
+use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
-use EasyQ\Util\Ip;
+use EasyQ\Util\IP;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,22 +22,105 @@ defined( 'ABSPATH' ) || exit;
  *
  * Ported from Question2Answer `qa-include/app/limits.php`, `db/limits.php` and
  * the event module `qa-event-limits.php`.
+ *
+ * @since 0.1.0
  */
 final class Limits {
 
-	public const QUESTIONS     = 'Q';
-	public const ANSWERS       = 'A';
-	public const COMMENTS      = 'C';
-	public const VOTES         = 'V';
+	/**
+	 * Rate limit of asking questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const QUESTIONS = 'Q';
+
+	/**
+	 * Rate limit of answering.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWERS = 'A';
+
+	/**
+	 * Rate limit of commenting.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENTS = 'C';
+
+	/**
+	 * Rate limit of voting.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const VOTES = 'V';
+
+	/**
+	 * Rate limit of registrations.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
 	public const REGISTRATIONS = 'R';
-	public const LOGINS        = 'L';
-	public const UPLOADS       = 'U';
-	public const FLAGS         = 'F';
-	public const MESSAGES      = 'M';
-	public const WALL_POSTS    = 'W';
+
+	/**
+	 * Rate limit of logins.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const LOGINS = 'L';
+
+	/**
+	 * Rate limit of uploads.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const UPLOADS = 'U';
+
+	/**
+	 * Rate limit of flagging posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const FLAGS = 'F';
+
+	/**
+	 * Rate limit of private messages.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const MESSAGES = 'M';
+
+	/**
+	 * Rate limit of wall posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const WALL_POSTS = 'W';
 
 	/**
 	 * Settings with the maximum per user and per IP address for each action.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, array{0: string|null, 1: string}>
 	 */
@@ -55,6 +139,8 @@ final class Limits {
 
 	/**
 	 * Events that count towards a limit.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
@@ -87,6 +173,8 @@ final class Limits {
 
 	/**
 	 * Hooks the limit counting into the easyQ events.
+	 *
+	 * @since 0.1.0
 	 */
 	public function register(): void {
 		add_action( 'easyq_event', array( $this, 'count_event' ), 10, 3 );
@@ -96,6 +184,8 @@ final class Limits {
 	 * Counts an event towards its limit.
 	 *
 	 * Delayed events, e.g. `q_post` after a queued question was approved, were counted when they were first reported.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string               $event  Event name.
 	 * @param array<string, mixed> $params Event parameters.
@@ -114,6 +204,8 @@ final class Limits {
 	 *
 	 * The lower of the user limit and the IP address limit applies.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $action One of the class constants.
 	 * @param Actor  $actor  The actor.
 	 * @return int
@@ -126,7 +218,7 @@ final class Limits {
 		[ $user_setting, $ip_setting ] = self::SETTINGS[ $action ];
 
 		$period    = self::period();
-		$wpdb      = Db::wpdb();
+		$wpdb      = DB::wpdb();
 		$remaining = array( Options::get_int( 'spam', $ip_setting ) - $this->used( $wpdb->prepare( 'SELECT period, count FROM %i WHERE ip = %s AND action = %s', Schema::table( 'iplimits' ), (string) $actor->stored_ip(), $action ), $period ) );
 
 		if ( null !== $user_setting ) {
@@ -140,15 +232,17 @@ final class Limits {
 	/**
 	 * Records that an actor performed an action.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string $action One of the class constants.
 	 * @param Actor  $actor  The actor.
 	 */
 	public function increment( string $action, Actor $actor ): void {
 		$period = self::period();
-		$wpdb   = Db::wpdb();
+		$wpdb   = DB::wpdb();
 
 		if ( null !== $actor->user_id ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					'INSERT INTO %i (user_id, action, period, count) VALUES (%d, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
 					Schema::table( 'userlimits' ),
@@ -163,7 +257,7 @@ final class Limits {
 
 		$ip = $actor->stored_ip();
 		if ( null !== $ip ) {
-			Db::query(
+			DB::query(
 				$wpdb->prepare(
 					'INSERT INTO %i (ip, action, period, count) VALUES (%s, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
 					Schema::table( 'iplimits' ),
@@ -180,15 +274,19 @@ final class Limits {
 	/**
 	 * Checks whether the IP address of an actor is blocked from writing.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param Actor $actor The actor.
 	 * @return bool
 	 */
 	public function is_ip_blocked( Actor $actor ): bool {
-		return Ip::is_blocked( $actor->ip, Options::get_string( 'spam', 'block_ips_write' ) );
+		return IP::is_blocked( $actor->ip, Options::get_string( 'spam', 'block_ips_write' ) );
 	}
 
 	/**
 	 * Returns the current period: the number of hours since the Unix epoch.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @return int
 	 */
@@ -199,12 +297,14 @@ final class Limits {
 	/**
 	 * Returns how often an action was performed in the current period.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @param string|null $sql    Prepared query for the period and count columns.
 	 * @param int         $period Current period.
 	 * @return int
 	 */
 	private function used( ?string $sql, int $period ): int {
-		$row = Db::get_row( $sql );
+		$row = DB::get_row( $sql );
 
 		return null !== $row && Row::int( $row, 'period' ) === $period ? Row::int( $row, 'count' ) : 0;
 	}

@@ -3,6 +3,7 @@
  * Data of a post to index.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 namespace EasyQ\Search;
@@ -11,11 +12,15 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Everything a search provider needs to index a post.
+ *
+ * @since 0.1.0
  */
 final class Indexed_Post {
 
 	/**
 	 * Sets up the data.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param int         $post_id     Post ID.
 	 * @param string      $type        Base type: Q, A, C or NOTE.

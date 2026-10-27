@@ -5,6 +5,7 @@
  * Themes can replace this file with `easyq/classic.php`.
  *
  * @package easyQ
+ * @since 0.1.0
  */
 
 defined( 'ABSPATH' ) || exit;
