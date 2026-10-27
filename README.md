@@ -1,35 +1,95 @@
 # easyQ
 
-A complete question and answer platform for WordPress, built from blocks.
-easyQ is a port of [Question2Answer](https://www.question2answer.org/) 1.8.8 to
-WordPress.
+A complete question and answer community for WordPress, built from blocks.
 
-> **Status:** early development. The foundation and the core domain (posts,
-> moderation, votes, flags, points, categories, search index, rate limits and
-> events), users and permissions (levels, capabilities, profile integration), the
-> REST API and the frontend (block templates, blocks, patterns, feeds, sitemaps,
-> navigation links and a fallback for classic themes) are in place; features are
-> added phase by phase, see
-> [docs/feature-mapping.md](docs/feature-mapping.md#13-phases).
+Visitors ask questions, the community answers, comments and votes, and the asker
+picks the best answer. easyQ brings the proven feature set of
+[Question2Answer](https://www.question2answer.org/) 1.8.8 to WordPress, rebuilt
+the WordPress way: every page is a block template, every part of it a block, and
+your theme decides how it looks.
 
-## Principles
+> **Status: early development, not ready for live sites yet.** Asking, answering,
+> voting, moderation, profiles and all Q&A pages work. The settings screen, emails
+> and notifications, the privacy tools and translations are still to come, see
+> [what is next](#what-is-next).
 
-- **WordPress core guidelines without exception.** Coding standards, Plugin Handbook,
-  Block Editor Handbook, accessibility, internationalization and the wordpress.org
-  plugin guidelines.
-- **No plugin CSS.** All styling comes from the active block theme.
-- **Privacy by design and by default.**
-- **High compatibility.** Everything is extensible through documented hooks.
+## Features
 
-The full mapping of Question2Answer features to WordPress is documented in
-[docs/feature-mapping.md](docs/feature-mapping.md), the public hooks in
-[docs/hooks.md](docs/hooks.md) and the REST API in [docs/rest-api.md](docs/rest-api.md).
+### Questions and answers
+
+- Questions with title, text, category and tags; answers and comments on both
+- Up and down votes, best answer selection, related questions
+- Question lists: recent, hot, unanswered, most votes, most answers, most views and
+  recent activity
+- Nested categories, a tag cloud and a full-text search with relevance ranking
+- Editing, closing (as a duplicate or with a reason), hiding and restoring posts
+
+### Community and moderation
+
+- Points for questions, answers, votes and best answers, with user ranks and titles
+- User levels from registered user to super administrator, mapped to WordPress roles
+  and capabilities
+- Flags, an approval queue, user approval and blocking, rate limits per user and IP
+  address, a list of words that are censored
+- Posting without an account, if you allow it
+- User profiles with custom fields, uploaded avatars and activity lists
+
+### Made for WordPress
+
+- Over 40 blocks (question list, voting, answer form, user profile and more) and block
+  patterns, arranged and styled in the Site Editor like any other template
+- No stylesheet of its own: the Q&A area takes on the look of your block theme; classic
+  themes are supported too
+- Voting, answering and commenting without page reloads, built on the Interactivity API
+- RSS feeds, XML sitemaps, search engine metadata and Q&A links for the Navigation
+  block
+- Users, roles, avatars and media are those of WordPress; works on multisite
+- Accessible markup, checked automatically with axe
+- A REST API for every action and documented hooks for extensions
+- Privacy by design: no external requests, no tracking
+
+## What is next
+
+easyQ is built in phases, see the
+[phase plan](docs/feature-mapping.md#13-phases):
+
+1. **Admin:** a settings screen for all Question2Answer options (until then easyQ runs
+   with the Question2Answer defaults)
+2. **Communication:** emails and notifications, private messages, the user wall,
+   favorites and the updates page
+3. **Privacy and tooling:** personal data export and erasure, IP address retention,
+   WP-CLI commands and Site Health checks
+4. **Release:** translations (German included), screenshots and the wordpress.org
+   release
+
+## Try it
+
+easyQ is not in the plugin directory yet. To try it on a test site:
+
+1. Build the plugin archive from the source, see [Development](#development)
+   (`npm run plugin-zip`), or start the bundled development site with `wp-env`.
+2. Upload and activate it on a site with a block theme, e.g. Twenty Twenty-Five.
+3. Open `/questions/` on your site. Add the Q&A pages to your menu with the Navigation
+   block, and adjust the page templates under Appearance → Editor → Templates.
 
 ## Requirements
 
 - WordPress 6.7 or later
 - PHP 8.4 or later
 - A MySQL or MariaDB version supported by WordPress
+
+## Principles
+
+- **WordPress core guidelines without exception.** Coding standards, Plugin Handbook,
+  Block Editor Handbook, accessibility, internationalization and the wordpress.org
+  plugin guidelines.
+- **No plugin CSS.** All styling comes from the active theme.
+- **Privacy by design and by default.**
+- **High compatibility.** Everything is extensible through documented hooks.
+
+The full mapping of Question2Answer features to WordPress is documented in
+[docs/feature-mapping.md](docs/feature-mapping.md), the public hooks in
+[docs/hooks.md](docs/hooks.md) and the REST API in [docs/rest-api.md](docs/rest-api.md).
 
 ## Development
 
@@ -105,7 +165,7 @@ ln -sf ../../bin/pre-push.sh .git/hooks/pre-push
 | `easyq.php` | Plugin bootstrap |
 | `uninstall.php` | Data removal when the plugin is deleted |
 | `includes/` | PHP classes; `EasyQ\Database\Schema` lives in `includes/database/class-schema.php` |
-| `blocks/` | Block metadata (`block.json`) and server-side rendering of every block |
+| `blocks/` | Block metadata (`block.json`) of every block; they are rendered by `includes/blocks/` |
 | `src/` | JavaScript sources: block editor (`src/editor`) and frontend interactivity (`src/view`) |
 | `build/` | Built JavaScript, created by `npm run build` |
 | `languages/` | Translation template and bundled translations |
