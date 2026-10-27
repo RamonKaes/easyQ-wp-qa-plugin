@@ -1,0 +1,162 @@
+# Checks every push to main and every pull request: coding standards, static analysis,
+# unit, integration and end-to-end tests, and Plugin Check on the release archive.
+# Commits that only change Markdown are linted by docs.yml instead.
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  pull_request:
+    paths-ignore: ['**.md']
+
+# A newer push cancels the run of the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    # The plugin folder must be called `easyq`: it is the plugin slug and the text domain.
+    working-directory: easyq
+
+jobs:
+  lint:
+    name: Coding standards and static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: easyq
+      - run: composer lint
+      - run: composer analyse
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint:js
+      - run: npm run lint:md
+      - run: npm run lint:pkg-json
+
+  unit:
+    name: Unit tests (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: easyq
+      - run: composer test:unit
+
+  integration:
+    name: Integration (WP ${{ matrix.wp }}, PHP ${{ matrix.php }}${{ matrix.multisite && ', multisite' || '' }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # WordPress 6.7 predates PHP 8.5.
+        include:
+          - { wp: latest, php: '8.4', multisite: false }
+          - { wp: latest, php: '8.4', multisite: true }
+          - { wp: latest, php: '8.5', multisite: false }
+          - { wp: latest, php: '8.5', multisite: true }
+          - { wp: '6.7', php: '8.4', multisite: false }
+          - { wp: '6.7', php: '8.4', multisite: true }
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Start the test environment
+        run: |
+          if [ "${{ matrix.wp }}" = latest ]; then core=null; else core='"WordPress/WordPress#${{ matrix.wp }}"'; fi
+          echo "{ \"core\": $core, \"phpVersion\": \"${{ matrix.php }}\" }" > .wp-env.test.override.json
+          npx wp-env start --config=.wp-env.test.json
+      - run: npm run test:php
+        if: ${{ ! matrix.multisite }}
+      - run: npm run test:php:multisite
+        if: ${{ matrix.multisite }}
+
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npx playwright install chromium --with-deps
+      - run: npx wp-env start --config=.wp-env.test.json
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: e2e-artifacts
+          path: easyq/artifacts
+          retention-days: 7
+
+  plugin-check:
+    name: Plugin Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Build the release archive
+        run: |
+          npm run build
+          npm run plugin-zip
+          unzip -q easyq.zip -d dist
+      # Checks exactly what is published on wordpress.org; warnings fail the run as well.
+      - uses: WordPress/plugin-check-action@v1
+        with:
+          build-dir: easyq/dist/easyq
+          include-experimental: true
+          strict: true

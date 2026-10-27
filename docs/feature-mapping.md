@@ -645,7 +645,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | Accessibility | axe in Playwright | |
 | Theme compatibility | Playwright screenshots with Twenty Twenty-Five, Twenty Twenty-Four, Twenty Twenty-Three and at least two popular third-party block themes | Verifies the no-CSS approach, especially forms |
 | Plugin review | Plugin Check (official) | wordpress.org requirements |
-| CI | Local, `bin/ci.sh` before every push | PHP 8.4 and 8.5 × latest WordPress, PHP 8.4 × WordPress 6.7; single site and multisite |
+| CI | GitHub Actions on every push and pull request | PHP 8.4 and 8.5 × latest WordPress, PHP 8.4 × WordPress 6.7; single site and multisite; Plugin Check on the release archive |
 
 **CSS exceptions:** none so far. Any exception is listed here with reason and approval.
 
@@ -703,3 +703,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 29 | Counts in question lists keep their width through core flex child sizing, and text areas use `cols="45"` like the core comment form, so themes without form styles stay usable without plugin CSS | 2026-10-26 |
 | 30 | Block settings with a Q2A counterpart default to the site setting (empty or 0) instead of copying its value, so changing the site setting later reaches every block that was not changed | 2026-10-27 |
 | 31 | Minimum PHP version 8.4: PHP 8.1 has no security fixes since December 2025, PHP 8.2 loses them in December 2026 | 2026-10-27 |
+| 32 | CI runs on GitHub Actions only, now that the repository is public: runs are free, pull requests from contributors are checked, and Plugin Check uses the official action on the release archive | 2026-10-27 |

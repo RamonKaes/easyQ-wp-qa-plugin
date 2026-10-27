@@ -1,5 +1,7 @@
 # easyQ
 
+[![CI](https://github.com/RamonKaes/easyQ-wp-qa-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/RamonKaes/easyQ-wp-qa-plugin/actions/workflows/ci.yml)
+
 A complete question and answer community for WordPress, built from blocks.
 
 Visitors ask questions, the community answers, comments and votes, and the asker
@@ -132,7 +134,6 @@ test site with `npm run env:test -- <command>`, e.g. `npm run env:test -- run cl
 | `npm run plugin-check` | Official Plugin Check on the development site (`WP_ENV_CONFIG=.wp-env.test.json` for the test site) |
 | `npm run i18n:pot` | Regenerate `languages/easyq.pot` |
 | `npm run plugin-zip` | Build the release archive |
-| `bash bin/ci.sh [--full] [commit]` | Local CI for a commit, see below |
 
 To test against another WordPress or PHP version, create `.wp-env.test.override.json`
 (`.wp-env.override.json` for the development site) and start the environment again:
@@ -143,20 +144,22 @@ To test against another WordPress or PHP version, create `.wp-env.test.override.
 
 ### Continuous integration
 
-CI runs locally, not on GitHub. `bin/ci.sh` checks a commit (default `HEAD`) in its own
-worktree in `~/easyq-wp-audit/easyq`, with its own instance of the test environment on
-port 8891 (`CI_PORT`), so the development and test sites keep running. It runs the coding standards,
-static analysis, JavaScript, Markdown and `package.json` linting, the unit tests on PHP
-8.4 and 8.5 (Docker images), the integration tests on single site and multisite, the
-end-to-end tests and Plugin Check. `--full` runs the integration tests on WordPress 6.7
-and the latest version with PHP 8.4 and 8.5 (WordPress 6.7 with PHP 8.4 only). A commit that only changes Markdown
-files is only linted. The result is written to `~/easyq-wp-audit/logs/{commit}/result.txt`.
+GitHub Actions checks every push to `main` and every pull request
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
-Run it before every push through the pre-push hook:
+- coding standards (WPCS, PHPCompatibilityWP) and PHPStan, JavaScript, Markdown and
+  `package.json` linting;
+- unit tests on PHP 8.4 and 8.5;
+- integration tests on single site and multisite with the latest WordPress on PHP 8.4 and
+  8.5, and WordPress 6.7 on PHP 8.4;
+- end-to-end tests with Playwright and axe; the artifacts of a failed run are attached to it;
+- [Plugin Check](https://github.com/WordPress/plugin-check-action) on the release archive,
+  including experimental checks, with warnings failing the run.
 
-```bash
-ln -sf ../../bin/pre-push.sh .git/hooks/pre-push
-```
+Commits that only change Markdown files are linted by
+[`.github/workflows/docs.yml`](.github/workflows/docs.yml). Before pushing, run the
+commands above for the parts you changed, at least `composer lint`, `composer analyse`
+and the tests.
 
 ### Project structure
 
@@ -173,7 +176,7 @@ ln -sf ../../bin/pre-push.sh .git/hooks/pre-push
 | `tests/integration/` | Integration tests with the WordPress test suite |
 | `tests/e2e/` | Playwright end-to-end tests |
 | `docs/` | Project documentation |
-| `bin/` | Local CI and the pre-push hook |
+| `.github/workflows/` | Continuous integration |
 
 ### Conventions
 

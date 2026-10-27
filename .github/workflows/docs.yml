@@ -1,0 +1,30 @@
+# Lints the Markdown documentation. Commits that change other files as well run ci.yml,
+# which lints Markdown too.
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['**.md']
+  pull_request:
+    paths: ['**.md']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-md:
+    name: Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint:md
