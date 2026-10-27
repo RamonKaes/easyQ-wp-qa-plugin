@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name:       easyQ
- * Plugin URI:        https://easyq.info
+ * Plugin Name:       easyQ Q&A
+ * Plugin URI:        https://github.com/RamonKaes/easyQ-wp-qa-plugin
  * Description:       A complete question and answer platform built from blocks, based on Question2Answer.
  * Version:           0.1.0
  * Requires at least: 6.7
  * Requires PHP:      8.2
  * Author:            easyQ
- * Author URI:        https://easyq.info
+ * Author URI:        https://github.com/RamonKaes
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       easyq

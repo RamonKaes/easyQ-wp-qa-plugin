@@ -1,4 +1,4 @@
-=== easyQ ===
+=== easyQ Q&A ===
 Tags: questions, answers, q&a, community, forum
 Requires at least: 6.7
 Tested up to: 7.1
@@ -11,7 +11,7 @@ A question and answer community built from blocks, with the features of Question
 
 == Description ==
 
-easyQ adds a question and answer community to your WordPress site. Visitors ask questions, the community answers, comments and votes, and the asker picks the best answer.
+easyQ Q&A adds a question and answer community to your WordPress site. Visitors ask questions, the community answers, comments and votes, and the asker picks the best answer.
 
 easyQ brings the proven feature set of the open source platform [Question2Answer](https://www.question2answer.org/) to WordPress, rebuilt the WordPress way: every Q&A page is a block template, every part of it a block, and your theme decides how it looks.
 

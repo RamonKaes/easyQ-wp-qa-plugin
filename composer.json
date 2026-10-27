@@ -3,7 +3,7 @@
 	"description": "Question and answer platform for WordPress, based on Question2Answer.",
 	"type": "wordpress-plugin",
 	"license": "GPL-2.0-or-later",
-	"homepage": "https://easyq.info",
+	"homepage": "https://github.com/RamonKaes/easyQ-wp-qa-plugin",
 	"require": {
 		"php": ">=8.2"
 	},

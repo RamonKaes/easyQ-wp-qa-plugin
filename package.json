@@ -12,7 +12,7 @@
 		"q-and-a",
 		"blocks"
 	],
-	"homepage": "https://easyq.info",
+	"homepage": "https://github.com/RamonKaes/easyQ-wp-qa-plugin",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/RamonKaes/easyQ-wp-qa-plugin.git"
