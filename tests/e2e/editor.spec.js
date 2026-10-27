@@ -73,4 +73,51 @@ test.describe( 'Block editor', () => {
 		).toHaveCount( 0 );
 		expect( errors ).toEqual( [] );
 	} );
+
+	test( 'gives every easyQ block an icon of its own', async ( {
+		admin,
+		page,
+	} ) => {
+		await admin.createNewPost();
+
+		const withoutIcon = await page.evaluate( () =>
+			window.wp.blocks
+				.getBlockTypes()
+				.filter( ( type ) => type.name.startsWith( 'easyq/' ) )
+				.filter(
+					( type ) =>
+						! type.icon?.src || type.icon.src === 'block-default'
+				)
+				.map( ( type ) => type.name )
+		);
+
+		expect( withoutIcon ).toEqual( [] );
+	} );
+
+	test( 'changes block settings in the sidebar', async ( {
+		admin,
+		editor,
+		page,
+	} ) => {
+		await admin.createNewPost();
+		await editor.insertBlock( { name: 'easyq/answer-list' } );
+		await editor.openDocumentSettingsSidebar();
+
+		const order = page
+			.getByRole( 'region', { name: 'Editor settings' } )
+			.getByRole( 'combobox', { name: 'Order' } );
+		await expect( order ).toHaveValue( '' );
+		await order.selectOption( { label: 'Most votes first' } );
+
+		await expect
+			.poll( () =>
+				page.evaluate(
+					() =>
+						window.wp.data
+							.select( 'core/block-editor' )
+							.getSelectedBlock()?.attributes.order
+				)
+			)
+			.toBe( 'votes' );
+	} );
 } );
