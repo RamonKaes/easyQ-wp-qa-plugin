@@ -11,8 +11,9 @@
 #   environments on 8888/8889 keep running. It is stopped after the run.
 # - Scope from the difference to the last GREEN run: only Markdown changed → Markdown lint only;
 #   otherwise everything. `--full` additionally runs the integration tests on the whole matrix
-#   (WordPress 6.7 and latest × PHP 8.1 and 8.4); the default run uses latest WordPress with PHP 8.1.
-# - Unit tests run on PHP 8.1 to 8.4 in Docker images (php:<version>-cli), like the former workflow matrix.
+#   (latest WordPress with PHP 8.4 and 8.5, WordPress 6.7 with PHP 8.4, which predates PHP 8.5); the default
+#   run uses latest WordPress with PHP 8.4.
+# - Unit tests run on PHP 8.4 and 8.5 in Docker images (php:<version>-cli).
 # - Failing steps are collected instead of stopping at the first one.
 #
 # Result: `result.txt` in the log folder of the commit, last line `GREEN <commit>` or `RED <commit> at …`.
@@ -103,7 +104,7 @@ setup() {
 
 unit() {
 	local php code=0
-	for php in 8.1 8.2 8.3 8.4; do
+	for php in 8.4 8.5; do
 		echo "== PHP $php"
 		docker run --rm -u "$(id -u):$(id -g)" -v "$TREE:/app" -w /app "php:$php-cli" \
 			vendor/bin/phpunit -c phpunit-unit.xml.dist || code=1
@@ -138,9 +139,9 @@ step lint-pkg-json npm run lint:pkg-json
 step unit unit
 
 if [ "$FULL" = true ]; then
-	MATRIX="null:8.1 null:8.4 \"WordPress/WordPress#6.7\":8.1 \"WordPress/WordPress#6.7\":8.4"
+	MATRIX="null:8.4 null:8.5 \"WordPress/WordPress#6.7\":8.4"
 else
-	MATRIX="null:8.1"
+	MATRIX="null:8.4"
 fi
 
 for entry in $MATRIX; do
@@ -152,7 +153,7 @@ for entry in $MATRIX; do
 	step "multisite-$label" npm run test:php:multisite
 done
 
-# End-to-end tests and Plugin Check on the last environment (latest WordPress and PHP 8.1 in the default run).
+# End-to-end tests and Plugin Check on the last environment (latest WordPress and PHP 8.4 in the default run).
 # The integration tests reinstalled the test site; the end-to-end tests activate the plugin themselves.
 step e2e npx wp-scripts test-playwright --output="$LOGS/playwright"
 step plugin-check plugin_check

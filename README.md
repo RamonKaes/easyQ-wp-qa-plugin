@@ -28,14 +28,14 @@ The full mapping of Question2Answer features to WordPress is documented in
 ## Requirements
 
 - WordPress 6.7 or later
-- PHP 8.1 or later
+- PHP 8.4 or later
 - A MySQL or MariaDB version supported by WordPress
 
 ## Development
 
 ### Prerequisites
 
-- PHP 8.1+ and [Composer](https://getcomposer.org/)
+- PHP 8.4+ and [Composer](https://getcomposer.org/)
 - Node.js 20+ and npm
 - Docker (for [`wp-env`](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/))
 
