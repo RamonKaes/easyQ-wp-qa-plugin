@@ -153,6 +153,12 @@ jobs:
           npm run build
           npm run plugin-zip
           unzip -q easyq.zip -d dist
+      # The action starts WordPress with the PHP version of a .wp-env.json in the workspace
+      # (outside the checked folder); its own default is older than the minimum of easyQ.
+      - name: Use the minimum PHP version for Plugin Check
+        working-directory: .
+        run: |
+          echo '{ "phpVersion": "8.4" }' > .wp-env.json
       # Checks exactly what is published on wordpress.org; warnings fail the run as well.
       - uses: WordPress/plugin-check-action@v1
         with:
