@@ -31,7 +31,7 @@ final class Users_Screen_Test extends Test_Case {
 	}
 
 	public function tear_down(): void {
-		unset( $_GET[ Users_Screen::VIEW_ARG ], $_GET['easyq_done'], $_GET['easyq_count'] );
+		unset( $_GET[ Users_Screen::VIEW_ARG ], $_GET['easyq_done'], $_GET['easyq_count'], $_REQUEST['_wpnonce'] );
 		parent::tear_down();
 	}
 
@@ -46,7 +46,8 @@ final class Users_Screen_Test extends Test_Case {
 	}
 
 	public function test_bulk_actions_approve_and_block(): void {
-		$users = self::factory()->user->create_many( 2 );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'bulk-users' );
+		$users                = self::factory()->user->create_many( 2 );
 		foreach ( $users as $user ) {
 			Site_Meta::update( $user, User_Status::UNAPPROVED_META, 1 );
 		}
@@ -58,6 +59,18 @@ final class Users_Screen_Test extends Test_Case {
 		$this->assertFalse( User_Status::awaits_approval( $users[1] ) );
 		$this->assertTrue( User_Status::is_blocked( $users[0] ) );
 		$this->assertSame( 'users.php', $this->screen->handle_bulk_action( 'users.php', 'delete', $users ) );
+	}
+
+	public function test_bulk_actions_need_the_nonce_of_the_users_list(): void {
+		// A crafted link, e.g. users.php?action=easyq_block&users[]=5, must not change anything.
+		$user = self::factory()->user->create();
+
+		$this->screen->handle_bulk_action( 'users.php', 'easyq_block', array( $user ) );
+		$this->assertFalse( User_Status::is_blocked( $user ) );
+
+		$_REQUEST['_wpnonce'] = 'invalid';
+		$this->screen->handle_bulk_action( 'users.php', 'easyq_block', array( $user ) );
+		$this->assertFalse( User_Status::is_blocked( $user ) );
 	}
 
 	public function test_subscribers_get_no_bulk_actions(): void {

@@ -180,7 +180,10 @@ final class Users_Screen {
 	}
 
 	/**
-	 * Performs a bulk action. WordPress has verified the nonce of the users list before.
+	 * Performs a bulk action.
+	 *
+	 * WordPress does not verify the nonce of the users list before it runs custom bulk
+	 * actions (see the `default` branch of wp-admin/users.php), so this method does.
 	 *
 	 * @since 0.1.0
 	 *
@@ -191,6 +194,11 @@ final class Users_Screen {
 	 */
 	public function handle_bulk_action( string $redirect, string $action, array $user_ids ): string {
 		if ( ! in_array( $action, array( 'easyq_approve', 'easyq_block', 'easyq_unblock' ), true ) || ! current_user_can( Capabilities::MODERATE ) ) {
+			return $redirect;
+		}
+
+		$nonce = isset( $_REQUEST['_wpnonce'] ) && is_string( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ) : '';
+		if ( ! wp_verify_nonce( $nonce, 'bulk-users' ) ) {
 			return $redirect;
 		}
 
