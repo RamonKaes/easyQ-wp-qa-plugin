@@ -1,14 +1,12 @@
-# Checks every push to main and every pull request: coding standards, static analysis,
-# unit, integration and end-to-end tests, and Plugin Check on the release archive.
-# Markdown is linted by docs.yml, which runs whenever a Markdown file changes.
+# Checks every push to main and every pull request: Markdown lint, coding standards, static
+# analysis, unit, integration and end-to-end tests, and Plugin Check on the release archive.
+# Commits that only change Markdown run the Markdown lint alone; the other jobs are skipped.
 name: CI
 
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md']
   pull_request:
-    paths-ignore: ['**.md']
 
 # A newer push cancels the run of the older one.
 concurrency:
@@ -24,8 +22,50 @@ defaults:
     working-directory: easyq
 
 jobs:
+  changes:
+    name: Changed files
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.files.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+          fetch-depth: 0
+      # Code changed unless every changed file is Markdown. Without a known base (a new
+      # branch or a force push) everything runs.
+      - id: files
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if ! git cat-file -e "$BASE^{commit}" 2> /dev/null; then
+            code=true
+          elif git diff --name-only "$BASE" HEAD | grep -qv '\.md$'; then
+            code=true
+          else
+            code=false
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+  lint-md:
+    name: Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint:md
+
   lint:
     name: Coding standards and static analysis
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,6 +91,8 @@ jobs:
 
   unit:
     name: Unit tests (PHP ${{ matrix.php }})
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -71,6 +113,8 @@ jobs:
 
   integration:
     name: Integration (WP ${{ matrix.wp }}, PHP ${{ matrix.php }}${{ matrix.multisite && ', multisite' || '' }})
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -118,6 +162,8 @@ jobs:
 
   e2e:
     name: End-to-end tests
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -142,6 +188,8 @@ jobs:
 
   plugin-check:
     name: Plugin Check
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
