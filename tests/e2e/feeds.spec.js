@@ -56,15 +56,37 @@ test.describe( 'Feeds and sitemaps', () => {
 		request,
 		requestUtils,
 	} ) => {
+		const question = await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/questions',
+			data: {
+				title: `Sitemap question ${ Date.now() }`,
+				content: 'Listed in the sitemap.',
+			},
+		} );
+
+		// The addresses depend on the permalink setting, so they are taken from the index.
 		const index = await request.get(
 			`${ requestUtils.baseURL }/?sitemap=index`
 		);
-		expect( await index.text() ).toContain( 'sitemap=easyq' );
+		const locations = [
+			...( await index.text() ).matchAll( /<loc>([^<]+)<\/loc>/g ),
+		]
+			.map( ( match ) => match[ 1 ].replaceAll( '&amp;', '&' ) )
+			.filter(
+				( url ) =>
+					/sitemap[-=]easyq/.test( url ) &&
+					url.includes( 'questions' )
+			);
+		expect( locations.length ).toBeGreaterThan( 0 );
 
-		const questions = await request.get(
-			`${ requestUtils.baseURL }/?sitemap=easyq&sitemap-subtype=questions&paged=1`
-		);
+		const questions = await request.get( locations[ 0 ] );
 		expect( questions.ok() ).toBe( true );
-		expect( await questions.text() ).toContain( 'easyq_route=question' );
+		// The new question, in the address form of the current permalink setting.
+		expect( await questions.text() ).toContain(
+			locations[ 0 ].includes( '?' )
+				? `easyq_route=question&amp;easyq_arg=${ question.id }</loc>`
+				: `/questions/${ question.id }/`
+		);
 	} );
 } );
