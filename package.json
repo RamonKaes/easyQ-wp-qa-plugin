@@ -3,7 +3,7 @@
 	"version": "0.1.0",
 	"private": true,
 	"description": "Question and answer platform for WordPress, based on Question2Answer.",
-	"author": "easyQ",
+	"author": "Ramon Kaes",
 	"license": "GPL-2.0-or-later",
 	"keywords": [
 		"wordpress",
