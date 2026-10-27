@@ -30,6 +30,5 @@
 	},
 	"example": {},
 	"editorScript": "easyq-editor",
-	"render": "file:./render.php",
 	"style": "wp-block-search"
 }

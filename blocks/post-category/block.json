@@ -36,6 +36,5 @@
 		}
 	},
 	"editorScript": "easyq-editor",
-	"render": "file:./render.php",
 	"style": "wp-block-post-terms"
 }

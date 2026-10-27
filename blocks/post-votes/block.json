@@ -50,6 +50,5 @@
 	},
 	"editorScript": "easyq-editor",
 	"viewScriptModule": "easyq-view",
-	"render": "file:./render.php",
 	"style": "wp-block-button"
 }

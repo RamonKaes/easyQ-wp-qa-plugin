@@ -18,11 +18,25 @@ use WP_Block;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Routes the `render.php` of every block to the method that renders it.
+ * Routes the render callback of every block to the method that renders it.
  *
  * @since 0.1.0
  */
 final class Renderer {
+
+	/**
+	 * Renders a block; the render callback of every easyQ block.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @param string               $content    Rendered inner blocks.
+	 * @param WP_Block             $block      Block instance.
+	 * @return string HTML.
+	 */
+	public static function render_callback( array $attributes, string $content, WP_Block $block ): string {
+		return self::render( substr( $block->name ?? '', strlen( 'easyq/' ) ), $attributes, $content, $block );
+	}
 
 	/**
 	 * Renders a block.

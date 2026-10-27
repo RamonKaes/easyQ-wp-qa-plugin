@@ -38,6 +38,5 @@
 	"style": [
 		"wp-block-buttons",
 		"wp-block-button"
-	],
-	"render": "file:./render.php"
+	]
 }

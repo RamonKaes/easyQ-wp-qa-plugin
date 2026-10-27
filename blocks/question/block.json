@@ -32,6 +32,5 @@
 	},
 	"example": {},
 	"editorScript": "easyq-editor",
-	"viewScriptModule": "easyq-view",
-	"render": "file:./render.php"
+	"viewScriptModule": "easyq-view"
 }

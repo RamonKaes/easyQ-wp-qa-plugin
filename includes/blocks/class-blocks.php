@@ -17,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Registers the easyQ blocks, their scripts and the block bindings source.
  *
- * Every block is server-side rendered from `blocks/{name}/render.php`. The
+ * Every block is server-side rendered by Renderer::render_callback(). The
  * editor script and the interactivity module are shared by all blocks.
  *
  * @since 0.1.0
@@ -53,7 +53,10 @@ final class Blocks {
 
 		foreach ( (array) glob( \EasyQ\PLUGIN_DIR . '/blocks/*/block.json' ) as $file ) {
 			$dir  = dirname( (string) $file );
-			$args = in_array( basename( $dir ), self::LOOPS, true ) ? array( 'skip_inner_blocks' => true ) : array();
+			$args = array( 'render_callback' => array( Renderer::class, 'render_callback' ) );
+			if ( in_array( basename( $dir ), self::LOOPS, true ) ) {
+				$args['skip_inner_blocks'] = true;
+			}
 
 			register_block_type( $dir, $args );
 		}

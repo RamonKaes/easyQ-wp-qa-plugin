@@ -25,6 +25,5 @@
 			"padding": true
 		}
 	},
-	"editorScript": "easyq-editor",
-	"render": "file:./render.php"
+	"editorScript": "easyq-editor"
 }
