@@ -2,13 +2,14 @@
  * Answering and loading comments without reloading the question page.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 
 const questionUrl = ( id ) => `/?easyq_route=question&easyq_arg=${ id }`;
 
 test.describe( 'Question page in place', () => {
 	test.beforeAll( async ( { requestUtils } ) => {
 		// The PHP integration tests reinstall the test site, which deactivates the plugin.
-		await requestUtils.activatePlugin( 'easyq' );
+		await activatePlugin( requestUtils );
 		await requestUtils.activateTheme( 'twentytwentyfive' );
 	} );
 

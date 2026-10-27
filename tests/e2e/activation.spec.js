@@ -2,10 +2,11 @@
  * Activation smoke test.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { PLUGIN_NAME, activatePlugin, deactivatePlugin } = require( './plugin' );
 
 test.describe( 'Plugin activation', () => {
 	test.afterAll( async ( { requestUtils } ) => {
-		await requestUtils.activatePlugin( 'easyq' );
+		await activatePlugin( requestUtils );
 	} );
 
 	test( 'activates and deactivates from the Plugins screen without errors', async ( {
@@ -13,11 +14,14 @@ test.describe( 'Plugin activation', () => {
 		page,
 		requestUtils,
 	} ) => {
-		await requestUtils.deactivatePlugin( 'easyq' );
+		await deactivatePlugin( requestUtils );
 		await admin.visitAdminPage( 'plugins.php' );
 
 		await page
-			.getByRole( 'link', { name: 'Activate easyQ', exact: true } )
+			.getByRole( 'link', {
+				name: `Activate ${ PLUGIN_NAME }`,
+				exact: true,
+			} )
 			.click();
 		await expect( page.locator( '#message' ) ).toContainText(
 			'Plugin activated.'
@@ -27,7 +31,10 @@ test.describe( 'Plugin activation', () => {
 		);
 
 		await page
-			.getByRole( 'link', { name: 'Deactivate easyQ', exact: true } )
+			.getByRole( 'link', {
+				name: `Deactivate ${ PLUGIN_NAME }`,
+				exact: true,
+			} )
 			.click();
 		await expect( page.locator( '#message' ) ).toContainText(
 			'Plugin deactivated.'

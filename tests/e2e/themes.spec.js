@@ -3,6 +3,7 @@
  * content, accessibility of the easyQ blocks and a screenshot per page for review.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 const AxeBuilder = require( '@axe-core/playwright' ).default;
 
 const THEMES = [
@@ -23,7 +24,7 @@ test.describe( 'Themes', () => {
 
 	test.beforeAll( async ( { requestUtils } ) => {
 		// The PHP integration tests reinstall the test site, which deactivates the plugin.
-		await requestUtils.activatePlugin( 'easyq' );
+		await activatePlugin( requestUtils );
 
 		question = await requestUtils.rest( {
 			method: 'POST',

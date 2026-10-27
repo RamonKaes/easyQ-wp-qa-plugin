@@ -2,6 +2,7 @@
  * Q&A pages in the browser: asking, voting and accessibility.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 const AxeBuilder = require( '@axe-core/playwright' ).default;
 
 const route = ( name, arg ) =>
@@ -10,7 +11,7 @@ const route = ( name, arg ) =>
 test.describe( 'Q&A frontend', () => {
 	test.beforeAll( async ( { requestUtils } ) => {
 		// The PHP integration tests reinstall the test site, which deactivates the plugin.
-		await requestUtils.activatePlugin( 'easyq' );
+		await activatePlugin( requestUtils );
 		await requestUtils.activateTheme( 'twentytwentyfive' );
 	} );
 

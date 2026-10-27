@@ -2,6 +2,7 @@
  * Users page, profile pages and the account page in the browser.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 const AxeBuilder = require( '@axe-core/playwright' ).default;
 
 const route = ( name, arg, section ) =>
@@ -12,7 +13,7 @@ const route = ( name, arg, section ) =>
 test.describe( 'Q&A users, profiles and account', () => {
 	test.beforeAll( async ( { requestUtils } ) => {
 		// The PHP integration tests reinstall the test site, which deactivates the plugin.
-		await requestUtils.activatePlugin( 'easyq' );
+		await activatePlugin( requestUtils );
 		await requestUtils.activateTheme( 'twentytwentyfive' );
 	} );
 

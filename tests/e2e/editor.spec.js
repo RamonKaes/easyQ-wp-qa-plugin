@@ -3,11 +3,12 @@
  * and the lists preview real questions and users.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 
 test.describe( 'Block editor', () => {
 	test.beforeAll( async ( { requestUtils } ) => {
 		// The PHP integration tests reinstall the test site, which deactivates the plugin.
-		await requestUtils.activatePlugin( 'easyq' );
+		await activatePlugin( requestUtils );
 		await requestUtils.activateTheme( 'twentytwentyfive' );
 		await requestUtils.rest( {
 			method: 'POST',
