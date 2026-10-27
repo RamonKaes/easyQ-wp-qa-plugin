@@ -10,6 +10,14 @@
 		"separator": {
 			"type": "string",
 			"default": ", "
+		},
+		"prefix": {
+			"type": "string",
+			"default": ""
+		},
+		"suffix": {
+			"type": "string",
+			"default": ""
 		}
 	},
 	"usesContext": [
@@ -32,6 +40,6 @@
 		}
 	},
 	"editorScript": "easyq-editor",
-	"style": "wp-block-post-terms",
-	"render": "file:./render.php"
+	"render": "file:./render.php",
+	"style": "wp-block-post-terms"
 }

@@ -157,6 +157,8 @@ const { state } = store( 'easyq', {
 
 			const post = yield response.json();
 			context.net = post.votes.net;
+			context.up = post.votes.up;
+			context.down = post.votes.down;
 			context.vote = post.votes.user;
 		},
 	},

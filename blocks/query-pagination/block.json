@@ -6,6 +6,25 @@
 	"category": "easyq",
 	"description": "Links to the other pages of a question or answer list.",
 	"textdomain": "easyq",
+	"attributes": {
+		"showNumbers": {
+			"type": "boolean",
+			"default": true
+		},
+		"arrow": {
+			"type": "string",
+			"enum": [
+				"none",
+				"arrow",
+				"chevron"
+			],
+			"default": "none"
+		},
+		"showLabel": {
+			"type": "boolean",
+			"default": true
+		}
+	},
 	"usesContext": [
 		"easyq/listId"
 	],
@@ -26,6 +45,6 @@
 		}
 	},
 	"editorScript": "easyq-editor",
-	"style": "wp-block-query-pagination",
-	"render": "file:./render.php"
+	"render": "file:./render.php",
+	"style": "wp-block-query-pagination"
 }

@@ -135,12 +135,14 @@ final class Query_Resolver {
 
 		$category = is_numeric( $query['category'] ?? null ) && (int) $query['category'] > 0 ? (int) $query['category'] : null;
 		$tag      = is_string( $query['tag'] ?? null ) && '' !== $query['tag'] ? $query['tag'] : null;
+		$author   = is_numeric( $query['author'] ?? null ) && (int) $query['author'] > 0 ? (int) $query['author'] : null;
 
 		return array_filter(
 			array(
 				'source'      => is_string( $query['source'] ?? null ) ? $query['source'] : 'recent',
 				'category_id' => $category,
 				'tag'         => $tag,
+				'user_id'     => $author,
 			),
 			static fn ( $value ): bool => null !== $value
 		);

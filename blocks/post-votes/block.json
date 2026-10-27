@@ -6,6 +6,17 @@
 	"category": "easyq",
 	"description": "Vote count with buttons to vote up and down.",
 	"textdomain": "easyq",
+	"attributes": {
+		"display": {
+			"type": "string",
+			"enum": [
+				"",
+				"net",
+				"separated"
+			],
+			"default": ""
+		}
+	},
 	"usesContext": [
 		"easyq/postId"
 	],

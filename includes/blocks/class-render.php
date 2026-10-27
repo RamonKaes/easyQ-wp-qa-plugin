@@ -90,13 +90,19 @@ final class Render {
 	 * Formats a time: relative within the configured number of days, otherwise as date.
 	 *
 	 * @param string $mysql_gmt Time in UTC, MySQL format.
+	 * @param string $display   `relative` ("5 minutes ago"), `absolute`, or empty for the site setting (relative for recent dates).
 	 * @return string
 	 */
-	public static function date( string $mysql_gmt ): string {
+	public static function date( string $mysql_gmt, string $display = '' ): string {
 		$timestamp = (int) strtotime( $mysql_gmt . ' UTC' );
 		$days      = Options::get_int( 'viewing', 'show_full_date_days' );
+		$relative  = match ( $display ) {
+			'relative' => true,
+			'absolute' => false,
+			default    => time() - $timestamp < $days * DAY_IN_SECONDS,
+		};
 
-		if ( time() - $timestamp < $days * DAY_IN_SECONDS ) {
+		if ( $relative ) {
 			/* translators: %s: time difference, e.g. "5 minutes". */
 			return sprintf( __( '%s ago', 'easyq' ), human_time_diff( $timestamp ) );
 		}

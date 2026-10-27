@@ -9,13 +9,38 @@
 	"attributes": {
 		"queryId": {
 			"type": "number"
+		},
+		"order": {
+			"type": "string",
+			"enum": [
+				"",
+				"votes",
+				"created"
+			],
+			"default": ""
+		},
+		"selectedFirst": {
+			"type": "string",
+			"enum": [
+				"",
+				"yes",
+				"no"
+			],
+			"default": ""
+		},
+		"perPage": {
+			"type": "number",
+			"default": 0
 		}
 	},
 	"usesContext": [
 		"easyq/postId"
 	],
 	"providesContext": {
-		"easyq/listId": "queryId"
+		"easyq/listId": "queryId",
+		"easyq/answerOrder": "order",
+		"easyq/answerSelectedFirst": "selectedFirst",
+		"easyq/answersPerPage": "perPage"
 	},
 	"supports": {
 		"html": false,

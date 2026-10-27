@@ -7,6 +7,8 @@ import { addQueryArgs } from '@wordpress/url';
 
 const cache = new Map();
 
+const ACTIVITY_SOURCES = [ 'activity', 'recent_answers', 'recent_comments' ];
+
 /**
  * Loads a REST path once per editor session.
  *
@@ -60,7 +62,13 @@ export function useEasyQ( path ) {
 export function questionsPath( query = {}, perPage = 3 ) {
 	const args = { per_page: perPage };
 	if ( ! query.inherit ) {
-		args.source = query.source || 'recent';
+		// Activity lists are previewed with the newest questions; the REST API lists questions only.
+		args.source = ACTIVITY_SOURCES.includes( query.source )
+			? 'recent'
+			: query.source || 'recent';
+		if ( query.author ) {
+			args.author = query.author;
+		}
 		if ( query.category ) {
 			args.category = query.category;
 		}

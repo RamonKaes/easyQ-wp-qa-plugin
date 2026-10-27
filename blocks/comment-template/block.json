@@ -10,7 +10,9 @@
 		"easyq/comment-list"
 	],
 	"usesContext": [
-		"easyq/postId"
+		"easyq/postId",
+		"easyq/commentsFewerFrom",
+		"easyq/commentsFewerCount"
 	],
 	"supports": {
 		"html": false,

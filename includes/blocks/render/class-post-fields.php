@@ -146,25 +146,33 @@ final class Post_Fields {
 		$context = array(
 			'postId' => $post->id,
 			'net'    => $post->net_votes,
+			'up'     => $post->upvotes,
+			'down'   => $post->downvotes,
 			'vote'   => $user,
-		);
-
-		$count = sprintf(
-			'<span data-wp-text="context.net" aria-label="%s">%s</span>',
-			esc_attr__( 'Votes', 'easyq' ),
-			esc_html( number_format_i18n( $post->net_votes ) )
 		);
 
 		$up   = $can_vote ? self::vote_button( $post->id, 1, 1 === $user, __( 'Vote up', 'easyq' ), '▲' ) : '';
 		$down = $can_vote && $can_down ? self::vote_button( $post->id, -1, -1 === $user, __( 'Vote down', 'easyq' ), '▼' ) : '';
 
+		// Up and down votes separately (Q2A `votes_separated`) or their difference; the block can override the site setting.
+		$display   = is_string( $attributes['display'] ?? null ) ? $attributes['display'] : '';
+		$separated = in_array( $display, array( 'net', 'separated' ), true ) ? 'separated' === $display : Options::get_bool( 'viewing', 'votes_separated' );
+		$count     = static fn ( string $key, int $value, string $label ): string => sprintf(
+			'<span data-wp-text="context.%s" aria-label="%s">%s</span>',
+			$key,
+			esc_attr( $label ),
+			esc_html( number_format_i18n( $value ) )
+		);
+
+		$html = $separated
+			? $up . $count( 'up', $post->upvotes, __( 'Upvotes', 'easyq' ) ) . $down . $count( 'down', $post->downvotes, __( 'Downvotes', 'easyq' ) )
+			: $up . $count( 'net', $post->net_votes, __( 'Votes', 'easyq' ) ) . $down;
+
 		return sprintf(
-			'<div %s data-wp-interactive="easyq" %s>%s%s%s</div>',
+			'<div %s data-wp-interactive="easyq" %s>%s</div>',
 			get_block_wrapper_attributes(),
 			wp_interactivity_data_wp_context( $context ),
-			$up,
-			$count,
-			$down
+			$html
 		);
 	}
 
@@ -231,10 +239,11 @@ final class Post_Fields {
 			return '';
 		}
 
-		$html = sprintf(
+		$display = is_string( $attributes['display'] ?? null ) ? $attributes['display'] : '';
+		$html    = sprintf(
 			'<time datetime="%s">%s</time>',
 			esc_attr( mysql_to_rfc3339( $post->created ) ),
-			esc_html( Render::date( $post->created ) )
+			esc_html( Render::date( $post->created, $display ) )
 		);
 
 		$show_modified = ( $attributes['showModified'] ?? true ) && Options::get_bool( 'viewing', 'show_post_update_meta' );
@@ -243,7 +252,7 @@ final class Post_Fields {
 			$html  .= ' · ' . sprintf(
 				/* translators: %s: time of the change. */
 				esc_html__( 'edited %s', 'easyq' ),
-				sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated ) ) )
+				sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated, $display ) ) )
 			);
 			if ( false !== $editor && $editor->ID !== $post->user_id ) {
 				/* translators: %s: name of the user who changed the post. */
@@ -383,7 +392,7 @@ final class Post_Fields {
 		return sprintf(
 			'<div %s>%s</div>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms' ) ),
-			implode( sprintf( '<span class="wp-block-post-terms__separator">%s</span>', esc_html( $separator ) ), $links )
+			self::affixed( $attributes, implode( sprintf( '<span class="wp-block-post-terms__separator">%s</span>', esc_html( $separator ) ), $links ) )
 		);
 	}
 
@@ -403,10 +412,9 @@ final class Post_Fields {
 		}
 
 		return sprintf(
-			'<div %s><a href="%s">%s</a></div>',
+			'<div %s>%s</div>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms' ) ),
-			esc_url( Urls::category( $category ) ),
-			esc_html( $category->title )
+			self::affixed( $attributes, sprintf( '<a href="%s">%s</a>', esc_url( Urls::category( $category ) ), esc_html( $category->title ) ) )
 		);
 	}
 
@@ -581,5 +589,21 @@ final class Post_Fields {
 			esc_url( $url ),
 			esc_html( $label )
 		);
+	}
+
+	/**
+	 * Adds the prefix and suffix of a block to its content, with the markup of the core Post Terms block.
+	 *
+	 * @param array<string, mixed> $attributes Attributes with `prefix` and `suffix`.
+	 * @param string               $html       Content, escaped HTML.
+	 * @return string
+	 */
+	private static function affixed( array $attributes, string $html ): string {
+		$prefix = is_string( $attributes['prefix'] ?? null ) ? $attributes['prefix'] : '';
+		$suffix = is_string( $attributes['suffix'] ?? null ) ? $attributes['suffix'] : '';
+
+		return ( '' === $prefix ? '' : sprintf( '<span class="wp-block-post-terms__prefix">%s</span>', wp_kses_post( $prefix ) ) )
+			. $html
+			. ( '' === $suffix ? '' : sprintf( '<span class="wp-block-post-terms__suffix">%s</span>', wp_kses_post( $suffix ) ) );
 	}
 }

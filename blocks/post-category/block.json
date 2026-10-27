@@ -6,6 +6,16 @@
 	"category": "easyq",
 	"description": "Category of a question, linked to its page.",
 	"textdomain": "easyq",
+	"attributes": {
+		"prefix": {
+			"type": "string",
+			"default": ""
+		},
+		"suffix": {
+			"type": "string",
+			"default": ""
+		}
+	},
 	"usesContext": [
 		"easyq/postId"
 	],
@@ -26,6 +36,6 @@
 		}
 	},
 	"editorScript": "easyq-editor",
-	"style": "wp-block-post-terms",
-	"render": "file:./render.php"
+	"render": "file:./render.php",
+	"style": "wp-block-post-terms"
 }

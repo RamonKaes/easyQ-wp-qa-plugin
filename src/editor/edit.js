@@ -19,7 +19,7 @@ import { useInstanceId } from '@wordpress/compose';
 import { RawHTML, useEffect } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
 
-import Inspector from './inspector';
+import Inspector, { UserPicker } from './inspector';
 import { questionsPath, usersPath, useEasyQ } from './data';
 import {
 	ANSWER_LIST,
@@ -88,7 +88,14 @@ function FieldPreview( { name, attributes, context, title } ) {
 		case 'easyq/post-excerpt':
 			return <p { ...blockProps }>{ post.excerpt }</p>;
 		case 'easyq/post-votes':
-			return (
+			return attributes.display === 'separated' ? (
+				<div { ...blockProps }>
+					<span aria-hidden="true">▲</span>
+					<span>{ post.votes.up }</span>
+					<span aria-hidden="true">▼</span>
+					<span>{ post.votes.down }</span>
+				</div>
+			) : (
 				<div { ...blockProps }>
 					<span aria-hidden="true">▲</span>
 					<span>{ post.votes.net }</span>
@@ -145,12 +152,18 @@ function FieldPreview( { name, attributes, context, title } ) {
 		case 'easyq/post-tags':
 			return post.tags?.length ? (
 				<div { ...blockProps }>
+					{ attributes.prefix }
 					{ post.tags.join( attributes.separator ?? ', ' ) }
+					{ attributes.suffix }
 				</div>
 			) : null;
 		case 'easyq/post-category':
 			return post.category ? (
-				<div { ...blockProps }>{ post.category.title }</div>
+				<div { ...blockProps }>
+					{ attributes.prefix }
+					{ post.category.title }
+					{ attributes.suffix }
+				</div>
 			) : null;
 		case 'easyq/post-activity':
 			return (
@@ -350,6 +363,30 @@ function ListContainer( { attributes, setAttributes, template } ) {
 }
 
 /**
+ * Returns the options of a category select, with subcategories indented below their parent.
+ *
+ * @param {Array|undefined} categories Categories from the REST API.
+ * @param {number|null}     parent     Parent category.
+ * @param {number}          depth      Depth of the parent.
+ * @return {Array<{value: string, label: string}>} Options.
+ */
+function categoryOptions( categories, parent = null, depth = 0 ) {
+	if ( ! Array.isArray( categories ) ) {
+		return [];
+	}
+
+	return categories
+		.filter( ( category ) => ( category.parent ?? null ) === parent )
+		.flatMap( ( category ) => [
+			{
+				value: String( category.id ),
+				label: '— '.repeat( depth ) + category.title,
+			},
+			...categoryOptions( categories, category.id, depth + 1 ),
+		] );
+}
+
+/**
  * Settings of a question list.
  *
  * @param {Object}                       props               Properties.
@@ -359,6 +396,7 @@ function ListContainer( { attributes, setAttributes, template } ) {
  */
 function QueryInspector( { attributes, setAttributes } ) {
 	const query = attributes.query ?? {};
+	const categories = useEasyQ( 'categories' );
 	const update = ( change ) =>
 		setAttributes( { query: { ...query, ...change } } );
 
@@ -418,17 +456,45 @@ function QueryInspector( { attributes, setAttributes } ) {
 									),
 									value: 'unupvoted',
 								},
+								{
+									label: __( 'Recent activity', 'easyq' ),
+									value: 'activity',
+								},
+								{
+									label: __( 'Recently answered', 'easyq' ),
+									value: 'recent_answers',
+								},
+								{
+									label: __( 'Recently commented', 'easyq' ),
+									value: 'recent_comments',
+								},
 							] }
 							onChange={ ( source ) => update( { source } ) }
 						/>
-						<RangeControl
+						<SelectControl
 							__nextHasNoMarginBottom
 							__next40pxDefaultSize
-							label={ __( 'Category ID (0 for all)', 'easyq' ) }
-							value={ query.category ?? 0 }
-							min={ 0 }
-							max={ 10000 }
-							onChange={ ( category ) => update( { category } ) }
+							label={ __( 'Category', 'easyq' ) }
+							value={ String( query.category ?? 0 ) }
+							options={ [
+								{
+									value: '0',
+									label: __( 'All categories', 'easyq' ),
+								},
+								...categoryOptions( categories ),
+							] }
+							onChange={ ( category ) =>
+								update( { category: Number( category ) } )
+							}
+						/>
+						<UserPicker
+							label={ __( 'Author', 'easyq' ) }
+							help={ __(
+								'Empty shows the questions of everyone.',
+								'easyq'
+							) }
+							value={ query.author ?? 0 }
+							onChange={ ( author ) => update( { author } ) }
 						/>
 						<TextControl
 							__nextHasNoMarginBottom
@@ -562,11 +628,21 @@ export default function editFor( metadata ) {
 					</>
 				);
 			case 'easyq/answer-list':
-				return <ListContainer { ...props } template={ ANSWER_LIST } />;
+				return (
+					<>
+						{ inspector }
+						<ListContainer { ...props } template={ ANSWER_LIST } />
+					</>
+				);
 			case 'easyq/answer-template':
 				return <ChildTemplateEdit context={ context } type="answers" />;
 			case 'easyq/comment-list':
-				return <CommentListEdit />;
+				return (
+					<>
+						{ inspector }
+						<CommentListEdit />
+					</>
+				);
 			case 'easyq/comment-template':
 				return (
 					<ChildTemplateEdit context={ context } type="comments" />

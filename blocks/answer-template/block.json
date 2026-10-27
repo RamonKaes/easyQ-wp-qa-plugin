@@ -11,7 +11,10 @@
 	],
 	"usesContext": [
 		"easyq/postId",
-		"easyq/listId"
+		"easyq/listId",
+		"easyq/answerOrder",
+		"easyq/answerSelectedFirst",
+		"easyq/answersPerPage"
 	],
 	"supports": {
 		"html": false,

@@ -9,6 +9,20 @@
 	"usesContext": [
 		"easyq/postId"
 	],
+	"attributes": {
+		"showFewerFrom": {
+			"type": "number",
+			"default": 0
+		},
+		"showFewerCount": {
+			"type": "number",
+			"default": 0
+		}
+	},
+	"providesContext": {
+		"easyq/commentsFewerFrom": "showFewerFrom",
+		"easyq/commentsFewerCount": "showFewerCount"
+	},
 	"supports": {
 		"html": false,
 		"color": {

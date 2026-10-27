@@ -82,31 +82,52 @@ final class Lists_Render {
 			return '';
 		}
 
-		$pages = (int) ceil( $result['total'] / $result['per_page'] );
-		$links = paginate_links(
-			array(
-				'base'      => add_query_arg( $result['page_var'], '%#%' ),
-				'format'    => '',
-				'current'   => $result['page'],
-				'total'     => $pages,
-				'prev_next' => false,
-				'type'      => 'plain',
-			)
+		$pages  = (int) ceil( $result['total'] / $result['per_page'] );
+		$arrows = array(
+			'arrow'   => array( '←', '→' ),
+			'chevron' => array( '«', '»' ),
 		);
+		$style  = is_string( $attributes['arrow'] ?? null ) && isset( $arrows[ $attributes['arrow'] ] ) ? $attributes['arrow'] : null;
+		$arrow  = null === $style ? null : $arrows[ $style ];
+		// Like the core Query Pagination block: without labels the arrows are shown and the text is for screen readers.
+		$labels = ( $attributes['showLabel'] ?? true ) || null === $arrow;
 
-		$previous = $result['page'] > 1
-			? sprintf( '<a class="wp-block-query-pagination-previous" href="%s">%s</a>', esc_url( add_query_arg( $result['page_var'], $result['page'] - 1 ) ), esc_html__( 'Previous', 'easyq' ) )
-			: '';
-		$next     = $result['page'] < $pages
-			? sprintf( '<a class="wp-block-query-pagination-next" href="%s">%s</a>', esc_url( add_query_arg( $result['page_var'], $result['page'] + 1 ) ), esc_html__( 'Next', 'easyq' ) )
-			: '';
+		$link = static function ( string $direction, int $page, string $label, string $symbol ) use ( $result, $style, $labels ): string {
+			$arrow_html = null === $style ? '' : sprintf( '<span class="wp-block-query-pagination-%1$s-arrow is-arrow-%2$s" aria-hidden="true">%3$s</span>', $direction, $style, $symbol );
+			$text       = $labels ? esc_html( $label ) : sprintf( '<span class="screen-reader-text">%s</span>', esc_html( $label ) );
+
+			return sprintf(
+				'<a class="wp-block-query-pagination-%s" href="%s">%s</a>',
+				$direction,
+				esc_url( add_query_arg( $result['page_var'], $page ) ),
+				'previous' === $direction ? $arrow_html . $text : $text . $arrow_html
+			);
+		};
+
+		$previous = $result['page'] > 1 ? $link( 'previous', $result['page'] - 1, __( 'Previous', 'easyq' ), $arrow[0] ?? '' ) : '';
+		$next     = $result['page'] < $pages ? $link( 'next', $result['page'] + 1, __( 'Next', 'easyq' ), $arrow[1] ?? '' ) : '';
+
+		$numbers = '';
+		if ( $attributes['showNumbers'] ?? true ) {
+			$links   = paginate_links(
+				array(
+					'base'      => add_query_arg( $result['page_var'], '%#%' ),
+					'format'    => '',
+					'current'   => $result['page'],
+					'total'     => $pages,
+					'prev_next' => false,
+					'type'      => 'plain',
+				)
+			);
+			$numbers = sprintf( '<div class="wp-block-query-pagination-numbers">%s</div>', is_string( $links ) ? $links : '' );
+		}
 
 		return sprintf(
-			'<nav %s aria-label="%s">%s<div class="wp-block-query-pagination-numbers">%s</div>%s</nav>',
+			'<nav %s aria-label="%s">%s%s%s</nav>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-query-pagination is-layout-flex' ) ),
 			esc_attr__( 'Pages', 'easyq' ),
 			$previous,
-			is_string( $links ) ? $links : '',
+			$numbers,
 			$next
 		);
 	}
@@ -202,8 +223,11 @@ final class Lists_Render {
 			)
 		);
 
-		$by_votes = 'votes' === Options::get_string( 'viewing', 'sort_answers_by' );
-		$selected = Options::get_bool( 'viewing', 'show_selected_first' ) ? $question->selected_child_id : null;
+		// The answer list block can override the site settings; empty values keep them.
+		$order          = $block->context['easyq/answerOrder'] ?? '';
+		$selected_first = $block->context['easyq/answerSelectedFirst'] ?? '';
+		$by_votes       = 'votes' === ( in_array( $order, array( 'votes', 'created' ), true ) ? $order : Options::get_string( 'viewing', 'sort_answers_by' ) );
+		$selected       = ( in_array( $selected_first, array( 'yes', 'no' ), true ) ? 'yes' === $selected_first : Options::get_bool( 'viewing', 'show_selected_first' ) ) ? $question->selected_child_id : null;
 		usort(
 			$answers,
 			static function ( Post $a, Post $b ) use ( $by_votes, $selected ): int {
@@ -215,7 +239,7 @@ final class Lists_Render {
 			}
 		);
 
-		$per_page = max( 1, Options::get_int( 'viewing', 'page_size_q_as' ) );
+		$per_page = self::positive_int( $block->context['easyq/answersPerPage'] ?? null ) ?? max( 1, Options::get_int( 'viewing', 'page_size_q_as' ) );
 		$page_var = 'easyq_answers';
 		$page     = Lists::requested_page( $page_var );
 		$ids      = array_map( static fn ( Post $answer ): int => $answer->id, array_slice( $answers, ( $page - 1 ) * $per_page, $per_page ) );
@@ -264,8 +288,9 @@ final class Lists_Render {
 		}
 
 		// Long discussions show only the latest comments, with a link to the earlier ones, as in Question2Answer.
-		$from    = max( 1, Options::get_int( 'viewing', 'show_fewer_cs_from' ) );
-		$keep    = max( 1, Options::get_int( 'viewing', 'show_fewer_cs_count' ) );
+		// The comment list block can override the site settings; 0 keeps them.
+		$from    = self::positive_int( $block->context['easyq/commentsFewerFrom'] ?? null ) ?? max( 1, Options::get_int( 'viewing', 'show_fewer_cs_from' ) );
+		$keep    = self::positive_int( $block->context['easyq/commentsFewerCount'] ?? null ) ?? max( 1, Options::get_int( 'viewing', 'show_fewer_cs_count' ) );
 		$earlier = '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading which comments to show.
 		$show_all = isset( $_GET[ self::SHOW_COMMENTS_VAR ] ) && is_string( $_GET[ self::SHOW_COMMENTS_VAR ] ) && absint( $_GET[ self::SHOW_COMMENTS_VAR ] ) === $parent->id;
@@ -330,5 +355,15 @@ final class Lists_Render {
 		}
 
 		return sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes( array( 'class' => 'wp-block-post-template' ) ), $html );
+	}
+
+	/**
+	 * Returns a positive whole number from a block setting.
+	 *
+	 * @param mixed $value Setting.
+	 * @return int|null The number, or null if the setting is empty, 0 or invalid.
+	 */
+	private static function positive_int( mixed $value ): ?int {
+		return is_numeric( $value ) && (int) $value > 0 ? (int) $value : null;
 	}
 }

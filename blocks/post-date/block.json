@@ -10,6 +10,15 @@
 		"showModified": {
 			"type": "boolean",
 			"default": true
+		},
+		"display": {
+			"type": "string",
+			"enum": [
+				"",
+				"relative",
+				"absolute"
+			],
+			"default": ""
 		}
 	},
 	"usesContext": [
