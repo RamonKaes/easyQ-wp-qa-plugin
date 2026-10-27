@@ -215,35 +215,17 @@ final class Basic_Search implements Search_Provider {
 		$words       = array_values( array_unique( $this->words( $query ) ) );
 		$posts       = Schema::table( 'posts' );
 		$words_table = Schema::table( 'words' );
-		$parts       = array();
-		$params      = array();
-
-		if ( array() !== $words ) {
-			$word_list = implode( ',', array_fill( 0, count( $words ), '%s' ) );
-
-			// Title matches; duplicate words in a title count once.
-			$parts[] = "(SELECT t.post_id AS question_id, LOG(%d / w.title_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . $word_list . ') AND w.title_count < %d)';
-			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'titlewords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) );
-
-			// Content matches: repeated words add less and less weight; answers count half, comments and notes a quarter.
-			$parts[] = "(SELECT c.question_id, (1 - 1 / (1 + c.count)) * LOG(%d / w.content_count) * (CASE c.type WHEN 'Q' THEN 1.0 WHEN 'A' THEN 0.5 ELSE 0.25 END) AS score, c.type AS match_type, c.post_id AS match_post_id FROM %i AS c JOIN %i AS w ON c.word_id = w.id WHERE w.word IN (" . $word_list . ') AND w.content_count < %d)';
-			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'contentwords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) );
-
-			// Tag word matches count like two title matches, since tags express intent.
-			$parts[] = "(SELECT t.post_id AS question_id, 2 * LOG(%d / w.tagword_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . $word_list . ') AND w.tagword_count < %d)';
-			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'tagwords' ), $words_table ), $words, array( self::IGNORED_WORDS_FREQUENCY ) );
-		}
 
 		// Questions by users whose public name is in the query, or is the whole query.
 		$author_ids = $this->author_ids( $words, trim( $query ) );
-		if ( array() !== $author_ids ) {
-			$parts[] = "(SELECT p.id AS question_id, LOG(%d / GREATEST(u.questions, 1)) AS score, 'Q' AS match_type, p.id AS match_post_id FROM %i AS p JOIN %i AS u ON p.user_id = u.user_id WHERE p.user_id IN (" . implode( ',', array_fill( 0, count( $author_ids ), '%d' ) ) . ") AND p.type = 'Q')";
-			$params  = array_merge( $params, array( self::IGNORED_WORDS_FREQUENCY, $posts, Schema::table( 'userpoints' ) ), $author_ids );
-		}
-
-		if ( array() === $parts ) {
+		if ( array() === $words && array() === $author_ids ) {
 			return array();
 		}
+
+		// The statement always has all four parts; a part without input gets a value that matches
+		// nothing (no word is empty, no user has the ID 0).
+		$search_words = array() === $words ? array( '' ) : $words;
+		$authors      = array() === $author_ids ? array( 0 ) : $author_ids;
 
 		// The hottest question gets a bonus equal to a unique tag match, the least hot none.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
@@ -251,17 +233,37 @@ final class Basic_Search implements Search_Provider {
 		$min     = null === $hotness ? 0.0 : (float) Row::nullable_float( $hotness, 'min_hotness' );
 		$range   = ( null === $hotness ? 0.0 : (float) Row::nullable_float( $hotness, 'max_hotness' ) ) - $min;
 
-		$params = array_merge(
+		$values = array_merge(
 			array( $range, self::IGNORED_WORDS_FREQUENCY, $min, $min, $range > 0 ? $range : 1 ),
-			$params,
+			array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'titlewords' ), $words_table ),
+			$search_words,
+			array( self::IGNORED_WORDS_FREQUENCY ),
+			array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'contentwords' ), $words_table ),
+			$search_words,
+			array( self::IGNORED_WORDS_FREQUENCY ),
+			array( self::IGNORED_WORDS_FREQUENCY, Schema::table( 'tagwords' ), $words_table ),
+			$search_words,
+			array( self::IGNORED_WORDS_FREQUENCY ),
+			array( self::IGNORED_WORDS_FREQUENCY, $posts, Schema::table( 'userpoints' ) ),
+			$authors,
 			array( $posts, max( 0, $start ), max( 0, $count ) )
 		);
 
+		// Title matches count duplicate words in a title once. Content matches add less and less
+		// weight for repeated words; answers count half, comments and notes a quarter. Tag word
+		// matches count like two title matches, since tags express intent.
 		$rows = DB::rows(
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 			$wpdb->get_results(
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The union consists of fixed SQL with placeholders; the values are passed as an array.
-				$wpdb->prepare( "SELECT x.question_id, SUM(x.score) + IF(%f > 0, 2 * LOG(%d) * (COALESCE(MAX(p.hotness), %f) - %f) / %f, 0) + LOG(x.question_id) / 1000000 AS score, GROUP_CONCAT(CONCAT_WS(':', x.match_type, x.match_post_id, ROUND(x.score, 3))) AS match_parts FROM (" . implode( ' UNION ALL ', $parts ) . ") AS x JOIN %i AS p ON p.id = x.question_id WHERE p.type = 'Q' GROUP BY x.question_id ORDER BY score DESC LIMIT %d, %d", $params )
+				$wpdb->prepare(
+					"SELECT x.question_id, SUM(x.score) + IF(%f > 0, 2 * LOG(%d) * (COALESCE(MAX(p.hotness), %f) - %f) / %f, 0) + LOG(x.question_id) / 1000000 AS score, GROUP_CONCAT(CONCAT_WS(':', x.match_type, x.match_post_id, ROUND(x.score, 3))) AS match_parts FROM (
+						(SELECT t.post_id AS question_id, LOG(%d / w.title_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . implode( ',', array_fill( 0, count( $search_words ), '%s' ) ) . ") AND w.title_count < %d)
+						UNION ALL (SELECT c.question_id, (1 - 1 / (1 + c.count)) * LOG(%d / w.content_count) * (CASE c.type WHEN 'Q' THEN 1.0 WHEN 'A' THEN 0.5 ELSE 0.25 END) AS score, c.type AS match_type, c.post_id AS match_post_id FROM %i AS c JOIN %i AS w ON c.word_id = w.id WHERE w.word IN (" . implode( ',', array_fill( 0, count( $search_words ), '%s' ) ) . ") AND w.content_count < %d)
+						UNION ALL (SELECT t.post_id AS question_id, 2 * LOG(%d / w.tagword_count) AS score, 'Q' AS match_type, t.post_id AS match_post_id FROM %i AS t JOIN %i AS w ON t.word_id = w.id WHERE w.word IN (" . implode( ',', array_fill( 0, count( $search_words ), '%s' ) ) . ") AND w.tagword_count < %d)
+						UNION ALL (SELECT p.id AS question_id, LOG(%d / GREATEST(u.questions, 1)) AS score, 'Q' AS match_type, p.id AS match_post_id FROM %i AS p JOIN %i AS u ON p.user_id = u.user_id WHERE p.user_id IN (" . implode( ',', array_fill( 0, count( $authors ), '%d' ) ) . ") AND p.type = 'Q')
+					) AS x JOIN %i AS p ON p.id = x.question_id WHERE p.type = 'Q' GROUP BY x.question_id ORDER BY score DESC LIMIT %d, %d",
+					$values
+				)
 			)
 		);
 

@@ -25,32 +25,29 @@ defined( 'ABSPATH' ) || exit;
 final class Question_Query {
 
 	/**
-	 * Sort orders and their SQL.
+	 * Sort orders and the column they sort by; newer questions come first on equal values.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @var array<string, string>
 	 */
 	private const ORDERS = array(
-		'recent'  => 'p.created DESC, p.id DESC',
-		'hot'     => 'p.hotness DESC, p.id DESC',
-		'votes'   => 'p.net_votes DESC, p.created DESC, p.id DESC',
-		'answers' => 'p.answer_count DESC, p.created DESC, p.id DESC',
-		'views'   => 'p.views DESC, p.created DESC, p.id DESC',
+		'recent'  => 'created',
+		'hot'     => 'hotness',
+		'votes'   => 'net_votes',
+		'answers' => 'answer_count',
+		'views'   => 'views',
 	);
 
 	/**
-	 * Conditions of the unanswered lists.
+	 * Lists of questions without answers, without a selected answer or without upvoted answers;
+	 * their conditions are part of the query in find().
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var array<string, string>
+	 * @var string[]
 	 */
-	private const UNANSWERED = array(
-		'unanswered' => 'p.answer_count = 0',
-		'unselected' => 'p.selected_child_id IS NULL',
-		'unupvoted'  => 'p.answer_max_votes = 0',
-	);
+	private const UNANSWERED = array( 'unanswered', 'unselected', 'unupvoted' );
 
 	/**
 	 * Largest page size.
@@ -83,7 +80,7 @@ final class Question_Query {
 	 * @return string[]
 	 */
 	public static function sources(): array {
-		return array_merge( array_keys( self::ORDERS ), array_keys( self::UNANSWERED ) );
+		return array_merge( array_keys( self::ORDERS ), self::UNANSWERED );
 	}
 
 	/**
@@ -130,17 +127,9 @@ final class Question_Query {
 		$per_page = max( 1, min( self::MAX_PER_PAGE, is_numeric( $args['per_page'] ?? null ) ? (int) $args['per_page'] : 20 ) );
 		$page     = max( 1, is_numeric( $args['page'] ?? null ) ? (int) $args['page'] : 1 );
 
-		$wpdb   = DB::wpdb();
-		$where  = array( "p.type = 'Q'" );
-		$params = array( Schema::table( 'posts' ) );
-
-		if ( isset( self::UNANSWERED[ $source ] ) ) {
-			$where[] = self::UNANSWERED[ $source ];
-			$where[] = 'p.closed_by_id IS NULL';
-		}
-
-		$category_id = is_numeric( $args['category_id'] ?? null ) ? (int) $args['category_id'] : null;
-		if ( null !== $category_id ) {
+		$category_id = is_numeric( $args['category_id'] ?? null ) ? (int) $args['category_id'] : 0;
+		$column      = 'category_id';
+		if ( 0 !== $category_id ) {
 			$column = self::category_column( $this->categories, $category_id );
 			if ( null === $column ) {
 				return array(
@@ -148,13 +137,10 @@ final class Question_Query {
 					'total' => 0,
 				);
 			}
-
-			$where[]  = 'p.%i = %d';
-			$params[] = $column;
-			$params[] = $category_id;
 		}
 
-		$tag = is_string( $args['tag'] ?? null ) ? (string) $args['tag'] : '';
+		$tag     = is_string( $args['tag'] ?? null ) ? (string) $args['tag'] : '';
+		$word_id = 0;
 		if ( '' !== $tag ) {
 			$word_ids = ( new Basic_Search() )->word_ids( array( $tag ), create: false );
 			if ( ! isset( $word_ids[ $tag ] ) ) {
@@ -163,34 +149,74 @@ final class Question_Query {
 					'total' => 0,
 				);
 			}
-
-			$where[]  = 'p.id IN (SELECT post_id FROM %i WHERE word_id = %d)';
-			$params[] = Schema::table( 'posttags' );
-			$params[] = $word_ids[ $tag ];
+			$word_id = $word_ids[ $tag ];
 		}
 
-		$user_id = is_numeric( $args['user_id'] ?? null ) ? (int) $args['user_id'] : null;
-		if ( null !== $user_id ) {
-			$where[]  = 'p.user_id = %d';
-			$params[] = $user_id;
-		}
+		$user_id = is_numeric( $args['user_id'] ?? null ) ? (int) $args['user_id'] : 0;
 
-		$conditions = implode( ' AND ', $where );
-		$order      = self::ORDERS[ $source ] ?? self::ORDERS['recent'];
-
-		// The conditions and the order consist of fixed SQL with placeholders for the values.
-		$ids = DB::int_col(
+		// One fixed statement for every list: each filter only applies when its value is set,
+		// i.e. a source of UNANSWERED, or a category, tag or user ID other than 0.
+		$wpdb  = DB::wpdb();
+		$posts = Schema::table( 'posts' );
+		$tags  = Schema::table( 'posttags' );
+		$ids   = DB::int_col(
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 			$wpdb->get_col(
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-				$wpdb->prepare( 'SELECT p.id FROM %i AS p WHERE ' . $conditions . ' ORDER BY ' . $order . ' LIMIT %d, %d', array_merge( $params, array( ( $page - 1 ) * $per_page, $per_page ) ) )
+				$wpdb->prepare(
+					"SELECT p.id FROM %i AS p WHERE p.type = 'Q'
+						AND ( %s NOT IN ('unanswered', 'unselected', 'unupvoted') OR p.closed_by_id IS NULL )
+						AND ( %s <> 'unanswered' OR p.answer_count = 0 )
+						AND ( %s <> 'unselected' OR p.selected_child_id IS NULL )
+						AND ( %s <> 'unupvoted' OR p.answer_max_votes = 0 )
+						AND ( %d = 0 OR p.%i = %d )
+						AND ( %d = 0 OR p.id IN (SELECT post_id FROM %i WHERE word_id = %d) )
+						AND ( %d = 0 OR p.user_id = %d )
+					ORDER BY p.%i DESC, p.created DESC, p.id DESC LIMIT %d, %d",
+					$posts,
+					$source,
+					$source,
+					$source,
+					$source,
+					$category_id,
+					$column,
+					$category_id,
+					$word_id,
+					$tags,
+					$word_id,
+					$user_id,
+					$user_id,
+					self::ORDERS[ $source ] ?? self::ORDERS['recent'],
+					( $page - 1 ) * $per_page,
+					$per_page
+				)
 			)
 		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 		$total = (int) $wpdb->get_var(
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- Fixed SQL with placeholders; the values are passed as an array.
-			$wpdb->prepare( 'SELECT COUNT(*) FROM %i AS p WHERE ' . $conditions, $params )
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM %i AS p WHERE p.type = 'Q'
+					AND ( %s NOT IN ('unanswered', 'unselected', 'unupvoted') OR p.closed_by_id IS NULL )
+					AND ( %s <> 'unanswered' OR p.answer_count = 0 )
+					AND ( %s <> 'unselected' OR p.selected_child_id IS NULL )
+					AND ( %s <> 'unupvoted' OR p.answer_max_votes = 0 )
+					AND ( %d = 0 OR p.%i = %d )
+					AND ( %d = 0 OR p.id IN (SELECT post_id FROM %i WHERE word_id = %d) )
+					AND ( %d = 0 OR p.user_id = %d )",
+				$posts,
+				$source,
+				$source,
+				$source,
+				$source,
+				$category_id,
+				$column,
+				$category_id,
+				$word_id,
+				$tags,
+				$word_id,
+				$user_id,
+				$user_id
+			)
 		);
 
 		$found = $this->posts->find_many( $ids );

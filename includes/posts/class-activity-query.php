@@ -141,7 +141,7 @@ final class Activity_Query {
 	}
 
 	/**
-	 * Selects activity of one kind.
+	 * Selects activity of one kind. Only visible posts of visible questions are included.
 	 *
 	 * @since 0.1.0
 	 *
@@ -152,7 +152,88 @@ final class Activity_Query {
 	 * @return list<Activity_Item>
 	 */
 	private function select( string $kind, array $filters, int $offset, int $limit ): array {
-		$rows = $this->run( $kind, $filters, array( $offset, $limit ) );
+		$values = $this->filter_values( $filters );
+		if ( null === $values ) {
+			return array();
+		}
+
+		[ $category_id, $column, $user_id ] = $values;
+
+		$wpdb  = DB::wpdb();
+		$posts = Schema::table( 'posts' );
+
+		// One fixed statement per kind; the filters only apply to a category or user ID other than 0.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$rows = DB::rows(
+			match ( $kind ) {
+				'questions' => $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT p.id AS post_id, p.id AS question_id, p.type, p.created AS time, NULL AS update_type, p.user_id FROM %i AS p WHERE p.type = 'Q'
+							AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.user_id = %d )
+						ORDER BY time DESC, post_id DESC LIMIT %d, %d",
+						$posts,
+						$category_id,
+						$column,
+						$category_id,
+						$user_id,
+						$user_id,
+						$offset,
+						$limit
+					)
+				),
+				'answers'   => $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT p.id AS post_id, q.id AS question_id, p.type, p.created AS time, NULL AS update_type, p.user_id FROM %i AS p JOIN %i AS q ON q.id = p.parent_id WHERE p.type = 'A' AND q.type = 'Q'
+							AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.user_id = %d )
+						ORDER BY time DESC, post_id DESC LIMIT %d, %d",
+						$posts,
+						$posts,
+						$category_id,
+						$column,
+						$category_id,
+						$user_id,
+						$user_id,
+						$offset,
+						$limit
+					)
+				),
+				'comments'  => $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT p.id AS post_id, q.id AS question_id, p.type, p.created AS time, NULL AS update_type, p.user_id FROM %i AS p JOIN %i AS parent ON parent.id = p.parent_id JOIN %i AS q ON q.id = IF(parent.type = 'Q', parent.id, parent.parent_id) WHERE p.type = 'C' AND parent.type IN ('Q', 'A') AND q.type = 'Q'
+							AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.user_id = %d )
+						ORDER BY time DESC, post_id DESC LIMIT %d, %d",
+						$posts,
+						$posts,
+						$posts,
+						$category_id,
+						$column,
+						$category_id,
+						$user_id,
+						$user_id,
+						$offset,
+						$limit
+					)
+				),
+				default     => $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT p.id AS post_id, q.id AS question_id, p.type, p.updated AS time, p.update_type, p.last_user_id AS user_id FROM %i AS p LEFT JOIN %i AS parent ON parent.id = p.parent_id JOIN %i AS q ON q.id = IF(p.type = 'Q', p.id, IF(parent.type = 'Q', parent.id, parent.parent_id)) WHERE p.updated IS NOT NULL AND p.type IN ('Q', 'A', 'C') AND (p.type = 'Q' OR parent.type IN ('Q', 'A')) AND q.type = 'Q'
+							AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.last_user_id = %d )
+						ORDER BY time DESC, post_id DESC LIMIT %d, %d",
+						$posts,
+						$posts,
+						$posts,
+						$category_id,
+						$column,
+						$category_id,
+						$user_id,
+						$user_id,
+						$offset,
+						$limit
+					)
+				),
+			}
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$items = array();
 		foreach ( $rows as $row ) {
@@ -170,7 +251,7 @@ final class Activity_Query {
 	}
 
 	/**
-	 * Counts activity of one kind.
+	 * Counts activity of one kind, like select().
 	 *
 	 * @since 0.1.0
 	 *
@@ -179,78 +260,94 @@ final class Activity_Query {
 	 * @return int
 	 */
 	private function count( string $kind, array $filters ): int {
-		$rows = $this->run( $kind, $filters, null );
+		$values = $this->filter_values( $filters );
+		if ( null === $values ) {
+			return 0;
+		}
 
-		return array() === $rows ? 0 : Row::int( $rows[0], 'total' );
-	}
+		[ $category_id, $column, $user_id ] = $values;
 
-	/**
-	 * Runs the query of one kind of activity. Only visible posts of visible questions are included.
-	 *
-	 * The statement is built and run in this method, so every part of it is visibly fixed SQL.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string               $kind    Kind of activity, see KINDS.
-	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
-	 * @param int[]|null           $page    Offset and number of rows, or null to count the rows instead.
-	 * @return object[] Activity rows, or one row with the `total` column when counting.
-	 */
-	private function run( string $kind, array $filters, ?array $page ): array {
 		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
 
-		[ $select, $params ] = match ( $kind ) {
-			'questions' => array(
-				'SELECT p.id AS post_id, p.id AS question_id, p.type, p.created AS time, NULL AS update_type, p.user_id FROM %i AS p WHERE p.type = \'Q\'',
-				array( $posts ),
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$count = match ( $kind ) {
+			'questions' => $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i AS p WHERE p.type = 'Q'
+						AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.user_id = %d )",
+					$posts,
+					$category_id,
+					$column,
+					$category_id,
+					$user_id,
+					$user_id
+				)
 			),
-			'answers'   => array(
-				'SELECT p.id AS post_id, q.id AS question_id, p.type, p.created AS time, NULL AS update_type, p.user_id FROM %i AS p JOIN %i AS q ON q.id = p.parent_id WHERE p.type = \'A\' AND q.type = \'Q\'',
-				array( $posts, $posts ),
+			'answers'   => $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i AS p JOIN %i AS q ON q.id = p.parent_id WHERE p.type = 'A' AND q.type = 'Q'
+						AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.user_id = %d )",
+					$posts,
+					$posts,
+					$category_id,
+					$column,
+					$category_id,
+					$user_id,
+					$user_id
+				)
 			),
-			'comments'  => array(
-				'SELECT p.id AS post_id, q.id AS question_id, p.type, p.created AS time, NULL AS update_type, p.user_id FROM %i AS p JOIN %i AS parent ON parent.id = p.parent_id JOIN %i AS q ON q.id = IF(parent.type = \'Q\', parent.id, parent.parent_id) WHERE p.type = \'C\' AND parent.type IN (\'Q\', \'A\') AND q.type = \'Q\'',
-				array( $posts, $posts, $posts ),
+			'comments'  => $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i AS p JOIN %i AS parent ON parent.id = p.parent_id JOIN %i AS q ON q.id = IF(parent.type = 'Q', parent.id, parent.parent_id) WHERE p.type = 'C' AND parent.type IN ('Q', 'A') AND q.type = 'Q'
+						AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.user_id = %d )",
+					$posts,
+					$posts,
+					$posts,
+					$category_id,
+					$column,
+					$category_id,
+					$user_id,
+					$user_id
+				)
 			),
-			default     => array(
-				'SELECT p.id AS post_id, q.id AS question_id, p.type, p.updated AS time, p.update_type, p.last_user_id AS user_id FROM %i AS p LEFT JOIN %i AS parent ON parent.id = p.parent_id JOIN %i AS q ON q.id = IF(p.type = \'Q\', p.id, IF(parent.type = \'Q\', parent.id, parent.parent_id)) WHERE p.updated IS NOT NULL AND p.type IN (\'Q\', \'A\', \'C\') AND (p.type = \'Q\' OR parent.type IN (\'Q\', \'A\')) AND q.type = \'Q\'',
-				array( $posts, $posts, $posts ),
+			default     => $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM %i AS p LEFT JOIN %i AS parent ON parent.id = p.parent_id JOIN %i AS q ON q.id = IF(p.type = 'Q', p.id, IF(parent.type = 'Q', parent.id, parent.parent_id)) WHERE p.updated IS NOT NULL AND p.type IN ('Q', 'A', 'C') AND (p.type = 'Q' OR parent.type IN ('Q', 'A')) AND q.type = 'Q'
+						AND ( %d = 0 OR p.%i = %d ) AND ( %d = 0 OR p.last_user_id = %d )",
+					$posts,
+					$posts,
+					$posts,
+					$category_id,
+					$column,
+					$category_id,
+					$user_id,
+					$user_id
+				)
 			),
 		};
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
-		$category_id = is_numeric( $filters['category_id'] ?? null ) ? (int) $filters['category_id'] : null;
-		if ( null !== $category_id ) {
-			$column = Question_Query::category_column( $this->categories, $category_id );
-			if ( null === $column ) {
-				return array();
-			}
+		return (int) $count;
+	}
 
-			$select  .= ' AND p.%i = %d';
-			$params[] = $column;
-			$params[] = $category_id;
+	/**
+	 * Returns the values of the filters for the queries: category ID, its posts column and user
+	 * ID, with 0 for no filter.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $filters Optional `category_id` and `user_id`.
+	 * @return array{0: int, 1: string, 2: int}|null Null if the category does not exist, so nothing matches.
+	 */
+	private function filter_values( array $filters ): ?array {
+		$category_id = is_numeric( $filters['category_id'] ?? null ) ? (int) $filters['category_id'] : 0;
+		$column      = 0 === $category_id ? 'category_id' : Question_Query::category_column( $this->categories, $category_id );
+		if ( null === $column ) {
+			return null;
 		}
 
-		$user_id = is_numeric( $filters['user_id'] ?? null ) ? (int) $filters['user_id'] : null;
-		if ( null !== $user_id ) {
-			$select  .= 'edits' === $kind ? ' AND p.last_user_id = %d' : ' AND p.user_id = %d';
-			$params[] = $user_id;
-		}
-
-		if ( null === $page ) {
-			$sql = 'SELECT COUNT(*) AS total FROM (' . $select . ') AS activity';
-		} else {
-			$sql    = $select . ' ORDER BY time DESC, post_id DESC LIMIT %d, %d';
-			$params = array_merge( $params, $page );
-		}
-
-		return DB::rows(
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-			$wpdb->get_results(
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Fixed SQL with placeholders, built above; the values are passed as an array.
-				$wpdb->prepare( $sql, $params )
-			)
-		);
+		return array( $category_id, $column, is_numeric( $filters['user_id'] ?? null ) ? (int) $filters['user_id'] : 0 );
 	}
 
 	/**
