@@ -44,6 +44,15 @@
 		],
 		"layout": true
 	},
+	"example": {
+		"attributes": {
+			"query": {
+				"sort": "points",
+				"perPage": 3,
+				"inherit": false
+			}
+		}
+	},
 	"editorScript": "easyq-editor",
 	"render": "file:./render.php"
 }

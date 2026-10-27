@@ -30,6 +30,7 @@
 		"layout": true,
 		"interactivity": true
 	},
+	"example": {},
 	"editorScript": "easyq-editor",
 	"viewScriptModule": "easyq-view",
 	"render": "file:./render.php"

@@ -28,7 +28,8 @@
 			"fontSize": true
 		}
 	},
+	"example": {},
 	"editorScript": "easyq-editor",
-	"style": "wp-block-search",
-	"render": "file:./render.php"
+	"render": "file:./render.php",
+	"style": "wp-block-search"
 }

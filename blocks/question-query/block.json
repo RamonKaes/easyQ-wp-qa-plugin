@@ -46,6 +46,15 @@
 		],
 		"layout": true
 	},
+	"example": {
+		"attributes": {
+			"query": {
+				"source": "recent",
+				"perPage": 2,
+				"inherit": false
+			}
+		}
+	},
 	"editorScript": "easyq-editor",
 	"render": "file:./render.php"
 }

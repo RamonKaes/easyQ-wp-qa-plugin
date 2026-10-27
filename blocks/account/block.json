@@ -22,6 +22,7 @@
 			"padding": true
 		}
 	},
+	"example": {},
 	"editorScript": "easyq-editor",
 	"render": "file:./render.php"
 }
