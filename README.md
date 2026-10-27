@@ -80,6 +80,15 @@ easyQ is not in the plugin directory yet. To try it on a test site:
 - PHP 8.2 or later
 - A MySQL or MariaDB version supported by WordPress
 
+## How easyQ is built
+
+easyQ is developed with the help of [Claude](https://www.anthropic.com/claude), an AI
+assistant by Anthropic. Claude helps above all with code reviews, tests and documentation,
+which makes development much easier and a lot faster. Every change, whoever wrote it, has
+to pass the same checks before it is published: the WordPress coding standards, static
+analysis at the strictest level, unit, integration and end-to-end tests with accessibility
+checks, and the official Plugin Check.
+
 ## Principles
 
 - **WordPress core guidelines without exception.** Coding standards, Plugin Handbook,

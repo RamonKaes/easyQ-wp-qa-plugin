@@ -43,6 +43,10 @@ easyQ brings the proven feature set of the open source platform [Question2Answer
 * Accessible markup
 * A REST API and documented hooks for developers
 
+= How easyQ is built =
+
+easyQ is developed with the help of Claude, an AI assistant by Anthropic. Claude helps above all with code reviews, tests and documentation, which makes development much easier and a lot faster. Every change, whoever wrote it, has to pass the same checks before it is published: the WordPress coding standards, static analysis at the strictest level, unit, integration and end-to-end tests with accessibility checks, and the official Plugin Check.
+
 = Privacy =
 
 easyQ makes no requests to external services and does not track visitors. Posting without an account stores a cookie, so the author can edit the post later; the forms point to your privacy policy.
