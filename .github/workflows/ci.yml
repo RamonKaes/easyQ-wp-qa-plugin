@@ -33,7 +33,7 @@ jobs:
           path: easyq
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.2'
           coverage: none
       - uses: ramsey/composer-install@v3
         with:
@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.4', '8.5']
+        php: ['8.2', '8.3', '8.4', '8.5']
     steps:
       - uses: actions/checkout@v7
         with:
@@ -75,21 +75,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # WordPress 6.7 predates PHP 8.5.
+        # Every supported PHP version with the latest WordPress, and the oldest supported
+        # combination: WordPress 6.7 with PHP 8.2.
         include:
+          - { wp: latest, php: '8.2', multisite: false }
+          - { wp: latest, php: '8.2', multisite: true }
+          - { wp: latest, php: '8.3', multisite: false }
+          - { wp: latest, php: '8.3', multisite: true }
           - { wp: latest, php: '8.4', multisite: false }
           - { wp: latest, php: '8.4', multisite: true }
           - { wp: latest, php: '8.5', multisite: false }
           - { wp: latest, php: '8.5', multisite: true }
-          - { wp: '6.7', php: '8.4', multisite: false }
-          - { wp: '6.7', php: '8.4', multisite: true }
+          - { wp: '6.7', php: '8.2', multisite: false }
+          - { wp: '6.7', php: '8.2', multisite: true }
     steps:
       - uses: actions/checkout@v7
         with:
           path: easyq
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
+          php-version: '8.2'
           coverage: none
       - uses: ramsey/composer-install@v3
         with:
@@ -153,14 +158,11 @@ jobs:
           npm run build
           npm run plugin-zip
           unzip -q easyq.zip -d dist
-      # The action starts WordPress with the PHP version of a .wp-env.json in the workspace
-      # (outside the checked folder); its own default is older than the minimum of easyQ.
-      - name: Use the minimum PHP version for Plugin Check
-        working-directory: .
-        run: |
-          echo '{ "phpVersion": "8.4" }' > .wp-env.json
       # Checks exactly what is published on wordpress.org; warnings fail the run as well.
       - uses: WordPress/plugin-check-action@v1
+        # wp-env of the action uses this PHP version: the minimum of easyQ.
+        env:
+          WP_ENV_PHP_VERSION: '8.2'
         with:
           build-dir: easyq/dist/easyq
           include-experimental: true

@@ -5,7 +5,7 @@
  * Description:       A complete question and answer platform built from blocks, based on Question2Answer.
  * Version:           0.1.0
  * Requires at least: 6.7
- * Requires PHP:      8.4
+ * Requires PHP:      8.2
  * Author:            easyQ
  * Author URI:        https://easyq.info
  * License:           GPL-2.0-or-later

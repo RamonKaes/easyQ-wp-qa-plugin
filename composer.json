@@ -5,7 +5,7 @@
 	"license": "GPL-2.0-or-later",
 	"homepage": "https://easyq.info",
 	"require": {
-		"php": ">=8.4"
+		"php": ">=8.2"
 	},
 	"require-dev": {
 		"wp-coding-standards/wpcs": "^3.1",
@@ -23,7 +23,7 @@
 			"phpstan/extension-installer": true
 		},
 		"platform": {
-			"php": "8.4.0"
+			"php": "8.2.0"
 		},
 		"sort-packages": true
 	},

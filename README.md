@@ -77,7 +77,7 @@ easyQ is not in the plugin directory yet. To try it on a test site:
 ## Requirements
 
 - WordPress 6.7 or later
-- PHP 8.4 or later
+- PHP 8.2 or later
 - A MySQL or MariaDB version supported by WordPress
 
 ## Principles
@@ -97,7 +97,7 @@ The full mapping of Question2Answer features to WordPress is documented in
 
 ### Prerequisites
 
-- PHP 8.4+ and [Composer](https://getcomposer.org/)
+- PHP 8.2+ and [Composer](https://getcomposer.org/)
 - Node.js 20+ and npm
 - Docker (for [`wp-env`](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/))
 
@@ -139,7 +139,7 @@ To test against another WordPress or PHP version, create `.wp-env.test.override.
 (`.wp-env.override.json` for the development site) and start the environment again:
 
 ```json
-{ "core": "WordPress/WordPress#6.7", "phpVersion": "8.5" }
+{ "core": "WordPress/WordPress#6.7", "phpVersion": "8.2" }
 ```
 
 ### Continuous integration
@@ -149,9 +149,9 @@ GitHub Actions checks every push to `main` and every pull request
 
 - coding standards (WPCS, PHPCompatibilityWP) and PHPStan, JavaScript and `package.json`
   linting;
-- unit tests on PHP 8.4 and 8.5;
-- integration tests on single site and multisite with the latest WordPress on PHP 8.4 and
-  8.5, and WordPress 6.7 on PHP 8.4;
+- unit tests on PHP 8.2, 8.3, 8.4 and 8.5;
+- integration tests on single site and multisite with the latest WordPress on PHP 8.2 to
+  8.5, and WordPress 6.7 on PHP 8.2;
 - end-to-end tests with Playwright and axe; the artifacts of a failed run are attached to it;
 - [Plugin Check](https://github.com/WordPress/plugin-check-action) on the release archive,
   including experimental checks, with warnings failing the run.
