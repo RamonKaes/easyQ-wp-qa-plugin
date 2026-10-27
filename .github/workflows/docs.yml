@@ -1,5 +1,4 @@
-# Lints the Markdown documentation. Commits that change other files as well run ci.yml,
-# which lints Markdown too.
+# Lints the Markdown files whenever one of them changes; ci.yml checks everything else.
 name: Docs
 
 on:

@@ -147,8 +147,8 @@ To test against another WordPress or PHP version, create `.wp-env.test.override.
 GitHub Actions checks every push to `main` and every pull request
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
-- coding standards (WPCS, PHPCompatibilityWP) and PHPStan, JavaScript, Markdown and
-  `package.json` linting;
+- coding standards (WPCS, PHPCompatibilityWP) and PHPStan, JavaScript and `package.json`
+  linting;
 - unit tests on PHP 8.4 and 8.5;
 - integration tests on single site and multisite with the latest WordPress on PHP 8.4 and
   8.5, and WordPress 6.7 on PHP 8.4;
@@ -156,8 +156,8 @@ GitHub Actions checks every push to `main` and every pull request
 - [Plugin Check](https://github.com/WordPress/plugin-check-action) on the release archive,
   including experimental checks, with warnings failing the run.
 
-Commits that only change Markdown files are linted by
-[`.github/workflows/docs.yml`](.github/workflows/docs.yml). Before pushing, run the
+Markdown files are linted by [`.github/workflows/docs.yml`](.github/workflows/docs.yml)
+whenever one of them changes; commits that only change Markdown run nothing else. Before pushing, run the
 commands above for the parts you changed, at least `composer lint`, `composer analyse`
 and the tests.
 

@@ -1,6 +1,6 @@
 # Checks every push to main and every pull request: coding standards, static analysis,
 # unit, integration and end-to-end tests, and Plugin Check on the release archive.
-# Commits that only change Markdown are linted by docs.yml instead.
+# Markdown is linted by docs.yml, which runs whenever a Markdown file changes.
 name: CI
 
 on:
@@ -47,7 +47,6 @@ jobs:
           cache-dependency-path: easyq/package-lock.json
       - run: npm ci --no-audit --no-fund
       - run: npm run lint:js
-      - run: npm run lint:md
       - run: npm run lint:pkg-json
 
   unit:
