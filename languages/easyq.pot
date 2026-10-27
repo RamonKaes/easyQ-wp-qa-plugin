@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-27T07:36:16+00:00\n"
+"POT-Creation-Date: 2026-10-27T07:52:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -39,7 +39,7 @@ msgstr ""
 #: includes/admin/class-profile-screen.php:81
 #: includes/admin/class-users-screen.php:54
 #: includes/blocks/render/class-users-render.php:270
-#: src/editor/edit.js:260
+#: src/editor/edit.js:273
 msgid "Points"
 msgstr ""
 
@@ -249,13 +249,13 @@ msgid "Anonymous"
 msgstr ""
 
 #. translators: %s: time difference, e.g. "5 minutes".
-#: includes/blocks/class-render.php:101
+#: includes/blocks/class-render.php:107
 #, php-format
 msgid "%s ago"
 msgstr ""
 
 #. translators: %s: number of thousands, e.g. 1.2.
-#: includes/blocks/class-render.php:119
+#: includes/blocks/class-render.php:125
 #, php-format
 msgid "%sk"
 msgstr ""
@@ -409,6 +409,7 @@ msgid "— Select a category —"
 msgstr ""
 
 #: includes/blocks/render/class-forms.php:410
+#: src/editor/edit.js:477
 msgid "Category"
 msgstr ""
 
@@ -478,27 +479,27 @@ msgstr ""
 msgid "You are not allowed to do this."
 msgstr ""
 
-#: includes/blocks/render/class-lists-render.php:98
+#: includes/blocks/render/class-lists-render.php:107
 msgid "Previous"
 msgstr ""
 
-#: includes/blocks/render/class-lists-render.php:101
+#: includes/blocks/render/class-lists-render.php:108
 msgid "Next"
 msgstr ""
 
-#: includes/blocks/render/class-lists-render.php:107
+#: includes/blocks/render/class-lists-render.php:128
 msgid "Pages"
 msgstr ""
 
-#: includes/blocks/render/class-lists-render.php:128
+#: includes/blocks/render/class-lists-render.php:149
 msgid "No questions found."
 msgstr ""
 
 #. translators: %s: number of answers.
-#: includes/blocks/render/class-lists-render.php:175
-#: includes/blocks/render/class-post-fields.php:187
+#: includes/blocks/render/class-lists-render.php:196
+#: includes/blocks/render/class-post-fields.php:195
 #: includes/blocks/render/class-widgets.php:228
-#: src/editor/edit.js:103
+#: src/editor/edit.js:110
 #, php-format,js-format
 msgid "%s answer"
 msgid_plural "%s answers"
@@ -506,7 +507,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: number of comments.
-#: includes/blocks/render/class-lists-render.php:280
+#: includes/blocks/render/class-lists-render.php:305
 #, php-format
 msgid "Show %s previous comment"
 msgid_plural "Show %s previous comments"
@@ -514,24 +515,33 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: includes/blocks/render/class-post-fields.php:154
-msgid "Votes"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:158
 msgid "Vote up"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:159
+#: includes/blocks/render/class-post-fields.php:155
 msgid "Vote down"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:191
+#: includes/blocks/render/class-post-fields.php:168
+msgid "Upvotes"
+msgstr ""
+
+#: includes/blocks/render/class-post-fields.php:168
+msgid "Downvotes"
+msgstr ""
+
+#: includes/blocks/render/class-post-fields.php:169
+#: src/editor/inspector.js:69
+msgid "Votes"
+msgstr ""
+
+#: includes/blocks/render/class-post-fields.php:199
 msgid "(solved)"
 msgstr ""
 
 #. translators: %s: number of views.
-#: includes/blocks/render/class-post-fields.php:213
-#: src/editor/edit.js:118
+#: includes/blocks/render/class-post-fields.php:221
+#: src/editor/edit.js:125
 #, php-format,js-format
 msgid "%s view"
 msgid_plural "%s views"
@@ -539,21 +549,21 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: time of the change.
-#: includes/blocks/render/class-post-fields.php:245
+#: includes/blocks/render/class-post-fields.php:254
 #, php-format
 msgid "edited %s"
 msgstr ""
 
 #. translators: %s: name of the user who changed the post.
-#: includes/blocks/render/class-post-fields.php:250
+#: includes/blocks/render/class-post-fields.php:259
 #, php-format
 msgid "by %s"
 msgstr ""
 
 #. translators: %s: number of points.
-#: includes/blocks/render/class-post-fields.php:287
+#: includes/blocks/render/class-post-fields.php:296
 #: includes/blocks/render/class-users-render.php:174
-#: src/editor/edit.js:228
+#: src/editor/edit.js:241
 #, php-format,js-format
 msgid "%s point"
 msgid_plural "%s points"
@@ -561,107 +571,107 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: what happened, e.g. "answered", 2: when it happened, e.g. "5 minutes ago", 3: who did it.
-#: includes/blocks/render/class-post-fields.php:332
+#: includes/blocks/render/class-post-fields.php:341
 #, php-format
 msgid "%1$s %2$s by %3$s"
 msgstr ""
 
 #. translators: %s: number of points.
-#: includes/blocks/render/class-post-fields.php:355
+#: includes/blocks/render/class-post-fields.php:364
 #, php-format
 msgid "(%s point)"
 msgid_plural "(%s points)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/blocks/render/class-post-fields.php:430
+#: includes/blocks/render/class-post-fields.php:438
 msgid "Hidden"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:432
+#: includes/blocks/render/class-post-fields.php:440
 msgid "Waiting for approval"
 msgstr ""
 
 #. translators: %s: link to the original question.
-#: includes/blocks/render/class-post-fields.php:440
+#: includes/blocks/render/class-post-fields.php:448
 #, php-format
 msgid "Closed as a duplicate of %s"
 msgstr ""
 
 #. translators: %s: reason the question was closed.
-#: includes/blocks/render/class-post-fields.php:445
+#: includes/blocks/render/class-post-fields.php:453
 #, php-format
 msgid "Closed: %s"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:447
+#: includes/blocks/render/class-post-fields.php:455
 msgid "Closed"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:454
+#: includes/blocks/render/class-post-fields.php:462
 msgid "Best answer"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:490
+#: includes/blocks/render/class-post-fields.php:498
 msgid "Edit"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:497
+#: includes/blocks/render/class-post-fields.php:505
 msgid "Unselect"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:501
+#: includes/blocks/render/class-post-fields.php:509
 msgid "Select as best answer"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:510
+#: includes/blocks/render/class-post-fields.php:518
 msgid "Ask a related question"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:514
+#: includes/blocks/render/class-post-fields.php:522
 msgid "Approve"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:515
+#: includes/blocks/render/class-post-fields.php:523
 msgid "Reject"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:516
+#: includes/blocks/render/class-post-fields.php:524
 msgid "Flag"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:517
+#: includes/blocks/render/class-post-fields.php:525
 msgid "Unflag"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:518
+#: includes/blocks/render/class-post-fields.php:526
 msgid "Clear flags"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:519
+#: includes/blocks/render/class-post-fields.php:527
 msgid "Reopen"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:520
+#: includes/blocks/render/class-post-fields.php:528
 msgid "Hide"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:521
+#: includes/blocks/render/class-post-fields.php:529
 msgid "Show again"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:522
+#: includes/blocks/render/class-post-fields.php:530
 msgid "Delete"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:523
+#: includes/blocks/render/class-post-fields.php:531
 msgid "Claim as mine"
 msgstr ""
 
 #. translators: %s: rank of the user by points.
 #: includes/blocks/render/class-users-render.php:179
 #: includes/blocks/render/class-users-render.php:268
-#: src/editor/edit.js:236
+#: src/editor/edit.js:249
 #, php-format,js-format
 msgid "(ranked #%s)"
 msgstr ""
@@ -683,16 +693,16 @@ msgstr ""
 #: includes/blocks/render/class-widgets.php:85
 #: includes/blocks/render/class-widgets.php:253
 #: includes/frontend/class-navigation.php:57
-#: src/editor/edit.js:262
-#: src/editor/edit.js:273
-#: src/editor/edit.js:367
-#: src/editor/edit.js:383
+#: src/editor/edit.js:275
+#: src/editor/edit.js:286
+#: src/editor/edit.js:405
+#: src/editor/edit.js:421
 msgid "Questions"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:273
-#: src/editor/edit.js:265
-#: src/editor/edit.js:274
+#: src/editor/edit.js:278
+#: src/editor/edit.js:287
 msgid "Answers"
 msgstr ""
 
@@ -703,7 +713,7 @@ msgid "%1$s (%2$s selected as best)"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:283
-#: src/editor/edit.js:266
+#: src/editor/edit.js:279
 msgid "Comments"
 msgstr ""
 
@@ -716,7 +726,7 @@ msgid "Votes received"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:311
-#: src/editor/edit.js:272
+#: src/editor/edit.js:285
 msgid "Profile"
 msgstr ""
 
@@ -736,7 +746,8 @@ msgstr ""
 #: includes/blocks/render/class-widgets.php:78
 #: includes/feeds/class-feeds.php:338
 #: includes/frontend/class-navigation.php:61
-#: src/editor/edit.js:276
+#: src/editor/edit.js:289
+#: src/editor/edit.js:460
 msgid "Recent activity"
 msgstr ""
 
@@ -844,32 +855,32 @@ msgid "Breadcrumbs"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:341
-#: src/editor/edit.js:390
+#: src/editor/edit.js:428
 msgid "Hot"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:342
-#: src/editor/edit.js:392
+#: src/editor/edit.js:430
 msgid "Most votes"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:343
-#: src/editor/edit.js:396
+#: src/editor/edit.js:434
 msgid "Most answers"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:344
-#: src/editor/edit.js:400
+#: src/editor/edit.js:438
 msgid "Most views"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:356
-#: src/editor/edit.js:497
+#: src/editor/edit.js:563
 msgid "Newest users"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:357
-#: src/editor/edit.js:501
+#: src/editor/edit.js:567
 msgid "Special users"
 msgstr ""
 
@@ -1029,8 +1040,8 @@ msgid "Unanswered"
 msgstr ""
 
 #: includes/frontend/class-navigation.php:64
-#: src/editor/edit.js:474
-#: src/editor/edit.js:489
+#: src/editor/edit.js:540
+#: src/editor/edit.js:555
 msgid "Users"
 msgstr ""
 
@@ -1734,146 +1745,268 @@ msgid "Flagging is not available on this post."
 msgstr ""
 
 #. translators: 1: date, 2: author name.
-#: src/editor/edit.js:161
+#: src/editor/edit.js:174
 #, js-format
 msgid "asked %1$s by %2$s"
 msgstr ""
 
 #. translators: %s: date.
-#: src/editor/edit.js:167
+#: src/editor/edit.js:180
 #, js-format
 msgid "asked %s"
 msgstr ""
 
-#: src/editor/edit.js:370
+#: src/editor/edit.js:408
 msgid "Questions of the current page"
 msgstr ""
 
-#: src/editor/edit.js:371
+#: src/editor/edit.js:409
 msgid "Shows the questions of the Q&A page, e.g. of the tag or category."
 msgstr ""
 
-#: src/editor/edit.js:387
+#: src/editor/edit.js:425
 msgid "Recent"
 msgstr ""
 
-#: src/editor/edit.js:404
+#: src/editor/edit.js:442
 msgid "Without answers"
 msgstr ""
 
-#: src/editor/edit.js:408
+#: src/editor/edit.js:446
 msgid "Without selected answer"
 msgstr ""
 
-#: src/editor/edit.js:415
+#: src/editor/edit.js:453
 msgid "Without upvoted answers"
 msgstr ""
 
-#: src/editor/edit.js:427
-msgid "Category ID (0 for all)"
+#: src/editor/edit.js:464
+msgid "Recently answered"
 msgstr ""
 
-#: src/editor/edit.js:436
+#: src/editor/edit.js:468
+msgid "Recently commented"
+msgstr ""
+
+#: src/editor/edit.js:482
+msgid "All categories"
+msgstr ""
+
+#: src/editor/edit.js:491
+msgid "Author"
+msgstr ""
+
+#: src/editor/edit.js:492
+msgid "Empty shows the questions of everyone."
+msgstr ""
+
+#: src/editor/edit.js:502
 msgid "Tag"
 msgstr ""
 
-#: src/editor/edit.js:445
+#: src/editor/edit.js:511
 msgid "Questions per page (0 for the default)"
 msgstr ""
 
-#: src/editor/edit.js:477
+#: src/editor/edit.js:543
 msgid "Sort order of the current page"
 msgstr ""
 
-#: src/editor/edit.js:478
+#: src/editor/edit.js:544
 msgid "Lets visitors switch between top, newest and special users on the users page."
 msgstr ""
 
-#: src/editor/edit.js:493
+#: src/editor/edit.js:559
 msgid "Top users by points"
 msgstr ""
 
-#: src/editor/edit.js:511
+#: src/editor/edit.js:577
 msgid "Users per page (0 for the default)"
 msgstr ""
 
-#: src/editor/inspector.js:20
+#: src/editor/inspector.js:23
 msgid "Heading level"
 msgstr ""
 
-#: src/editor/inspector.js:21
+#: src/editor/inspector.js:24
 msgid "Link to the question"
 msgstr ""
 
-#: src/editor/inspector.js:22
+#: src/editor/inspector.js:25
 msgid "Maximum length"
 msgstr ""
 
-#: src/editor/inspector.js:23
+#: src/editor/inspector.js:26
 msgid "Show when the post was edited"
 msgstr ""
 
-#: src/editor/inspector.js:24
+#: src/editor/inspector.js:27
 msgid "Show avatar"
 msgstr ""
 
-#: src/editor/inspector.js:25
+#: src/editor/inspector.js:28
 msgid "Avatar size"
 msgstr ""
 
-#: src/editor/inspector.js:26
+#: src/editor/inspector.js:29
 msgid "Show points"
 msgstr ""
 
-#: src/editor/inspector.js:27
+#: src/editor/inspector.js:30
 msgid "Separator"
 msgstr ""
 
-#: src/editor/inspector.js:28
+#: src/editor/inspector.js:31
+msgid "Prefix"
+msgstr ""
+
+#: src/editor/inspector.js:32
+msgid "Suffix"
+msgstr ""
+
+#: src/editor/inspector.js:33
 msgid "Placeholder"
 msgstr ""
 
-#: src/editor/inspector.js:29
-msgid "Number of items (0 for the default)"
-msgstr ""
-
-#: src/editor/inspector.js:30
-msgid "Show counts"
-msgstr ""
-
-#: src/editor/inspector.js:31
-msgid "Only subcategories of the current category"
+#: src/editor/inspector.js:34
+msgid "Number of items"
 msgstr ""
 
 #: src/editor/inspector.js:35
-msgid "Number of questions"
+msgid "Show counts"
 msgstr ""
 
 #: src/editor/inspector.js:36
-msgid "Message"
-msgstr ""
-
-#: src/editor/inspector.js:37
-msgid "Question ID (0 for the question of the page)"
-msgstr ""
-
-#: src/editor/inspector.js:38
-msgid "User ID (0 for the user of the page)"
-msgstr ""
-
-#: src/editor/inspector.js:39
-msgid "Show rank"
+msgid "Only subcategories of the current category"
 msgstr ""
 
 #: src/editor/inspector.js:40
+msgid "Number of questions"
+msgstr ""
+
+#: src/editor/inspector.js:41
+msgid "Message"
+msgstr ""
+
+#: src/editor/inspector.js:42
+msgid "Question"
+msgstr ""
+
+#: src/editor/inspector.js:43
+msgid "User"
+msgstr ""
+
+#: src/editor/inspector.js:44
+msgid "Show rank"
+msgstr ""
+
+#: src/editor/inspector.js:45
 msgid "Show who did it"
 msgstr ""
 
+#: src/editor/inspector.js:46
+msgid "Order"
+msgstr ""
+
+#: src/editor/inspector.js:47
+msgid "Best answer first"
+msgstr ""
+
+#: src/editor/inspector.js:48
+msgid "Collapse comments from"
+msgstr ""
+
 #: src/editor/inspector.js:49
+msgid "Comments shown when collapsed"
+msgstr ""
+
+#: src/editor/inspector.js:50
+msgid "Display"
+msgstr ""
+
+#: src/editor/inspector.js:51
+msgid "Show page numbers"
+msgstr ""
+
+#: src/editor/inspector.js:52
+msgid "Arrow"
+msgstr ""
+
+#: src/editor/inspector.js:53
+msgid "Show labels"
+msgstr ""
+
+#: src/editor/inspector.js:63
+msgid "Answers per page"
+msgstr ""
+
+#: src/editor/inspector.js:66
+#: src/editor/inspector.js:117
+msgid "Date"
+msgstr ""
+
+#: src/editor/inspector.js:79
+#: src/editor/inspector.js:84
+msgid "0 uses the site setting."
+msgstr ""
+
+#: src/editor/inspector.js:80
+msgid "Number of comments from which only the latest are shown. 0 uses the site setting."
+msgstr ""
+
+#: src/editor/inspector.js:85
+msgid "Empty shows the question of the page."
+msgstr ""
+
+#: src/editor/inspector.js:86
+msgid "Empty shows the user of the page."
+msgstr ""
+
+#: src/editor/inspector.js:87
+msgid "Without labels the arrows are shown; screen readers still read the labels."
+msgstr ""
+
+#: src/editor/inspector.js:93
+msgid "Site default"
+msgstr ""
+
+#: src/editor/inspector.js:103
+msgid "Most votes first"
+msgstr ""
+
+#: src/editor/inspector.js:104
+msgid "Oldest first"
+msgstr ""
+
+#: src/editor/inspector.js:108
+msgid "Yes"
+msgstr ""
+
+#: src/editor/inspector.js:109
+msgid "No"
+msgstr ""
+
+#: src/editor/inspector.js:115
+msgid "Relative, e.g. “5 minutes ago”"
+msgstr ""
+
+#: src/editor/inspector.js:123
+msgid "Difference of up and down votes"
+msgstr ""
+
+#: src/editor/inspector.js:127
+msgid "Up and down votes separately"
+msgstr ""
+
+#: src/editor/inspector.js:131
+msgid "None"
+msgstr ""
+
+#: src/editor/inspector.js:237
 msgid "Link to the profile"
 msgstr ""
 
-#: src/editor/inspector.js:151
+#: src/editor/inspector.js:348
 msgid "Settings"
 msgstr ""
 

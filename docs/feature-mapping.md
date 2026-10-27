@@ -206,6 +206,12 @@ arranged and styled in the Site Editor without plugin CSS.
 - **Core markup.** Dynamic blocks render the same markup and class names as their core
   counterparts (pagination, search, buttons, lists), so the theme's styles apply.
 - **Block supports** for color, typography, spacing, border and layout on every block.
+- **Block settings** in the sidebar for what belongs to the block. Settings that have a Q2A
+  option (answer order, best answer first, answers per page, collapsing comments, relative
+  dates, separated votes) default to the site setting and can be overridden per block.
+  Questions, users and categories are picked by name.
+- **Icons** from `@wordpress/icons`, the same as the core counterpart where there is one,
+  and inserter previews (`example`) for the blocks that work without a question or user.
 - **Interactivity API** for voting, favorites, loading more comments, inline answering –
   always with a working no-JS fallback (regular form posts). Answer and comment forms
   are sent in the background to the same form handler (header `X-EasyQ-In-Place`, which
@@ -222,7 +228,7 @@ arranged and styled in the Site Editor without plugin CSS.
 | --- | --- | --- |
 | `easyq/question-query` | All question lists | Source (recent, hot, votes, answers, views, unanswered variants, activity), category, tag, author, favorites, per page, inherit from route |
 | `easyq/question-template` | List item | – (repeats inner blocks per item) |
-| `easyq/query-pagination` (+ previous, numbers, next) | Paging | Same markup as core pagination |
+| `easyq/query-pagination` (+ previous, numbers, next) | Paging | Same markup as core pagination; page numbers, arrows (none, ←→, «»), labels |
 | `easyq/query-no-results` | Empty lists | Inner blocks |
 | `easyq/question` | Question page | Provides the current question from the route |
 | `easyq/answer-list` / `easyq/answer-template` | Answers | Sort order, selected first, page size |
@@ -237,13 +243,13 @@ arranged and styled in the Site Editor without plugin CSS.
 | `easyq/post-title` | Question title (link optional) |
 | `easyq/post-content` | Formatted content |
 | `easyq/post-excerpt` | Shortened content (list items) |
-| `easyq/post-votes` | Vote score and buttons |
+| `easyq/post-votes` | Vote score and buttons; difference or up and down votes separately (`votes_separated`) |
 | `easyq/post-answer-count` | Answer count, "selected" state |
 | `easyq/post-view-count` | Views |
 | `easyq/post-date` | Created/updated, relative or absolute |
 | `easyq/post-author` | Avatar, name, points, user title |
-| `easyq/post-category` | Category path |
-| `easyq/post-tags` | Tags |
+| `easyq/post-category` | Category, with prefix and suffix |
+| `easyq/post-tags` | Tags, with separator, prefix and suffix |
 | `easyq/post-status` | Closed, selected, hidden, queued |
 | `easyq/post-actions` | Answer, comment, edit, close, select, flag, hide, delete … depending on permissions |
 | `easyq/user-name`, `easyq/user-avatar`, `easyq/user-points`, `easyq/user-title`, `easyq/user-fields`, `easyq/user-stats` | Profile pieces |
@@ -695,3 +701,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 27 | Classic themes get the same block templates, rendered between the theme's header and footer, instead of separate PHP templates | 2026-10-26 |
 | 28 | Answer and comment forms are sent in the background to the regular form handler and the page is updated with the Interactivity Router, so both ways share one implementation | 2026-10-26 |
 | 29 | Counts in question lists keep their width through core flex child sizing, and text areas use `cols="45"` like the core comment form, so themes without form styles stay usable without plugin CSS | 2026-10-26 |
+| 30 | Block settings with a Q2A counterpart default to the site setting (empty or 0) instead of copying its value, so changing the site setting later reaches every block that was not changed | 2026-10-27 |
