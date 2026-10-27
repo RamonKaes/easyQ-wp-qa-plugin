@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-26T13:38:13+00:00\n"
+"POT-Creation-Date: 2026-10-27T07:36:16+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -39,7 +39,7 @@ msgstr ""
 #: includes/admin/class-profile-screen.php:81
 #: includes/admin/class-users-screen.php:54
 #: includes/blocks/render/class-users-render.php:270
-#: src/editor/edit.js:242
+#: src/editor/edit.js:260
 msgid "Points"
 msgstr ""
 
@@ -498,7 +498,7 @@ msgstr ""
 #: includes/blocks/render/class-lists-render.php:175
 #: includes/blocks/render/class-post-fields.php:187
 #: includes/blocks/render/class-widgets.php:228
-#: src/editor/edit.js:102
+#: src/editor/edit.js:103
 #, php-format,js-format
 msgid "%s answer"
 msgid_plural "%s answers"
@@ -531,7 +531,7 @@ msgstr ""
 
 #. translators: %s: number of views.
 #: includes/blocks/render/class-post-fields.php:213
-#: src/editor/edit.js:117
+#: src/editor/edit.js:118
 #, php-format,js-format
 msgid "%s view"
 msgid_plural "%s views"
@@ -553,7 +553,7 @@ msgstr ""
 #. translators: %s: number of points.
 #: includes/blocks/render/class-post-fields.php:287
 #: includes/blocks/render/class-users-render.php:174
-#: src/editor/edit.js:210
+#: src/editor/edit.js:228
 #, php-format,js-format
 msgid "%s point"
 msgid_plural "%s points"
@@ -661,7 +661,7 @@ msgstr ""
 #. translators: %s: rank of the user by points.
 #: includes/blocks/render/class-users-render.php:179
 #: includes/blocks/render/class-users-render.php:268
-#: src/editor/edit.js:218
+#: src/editor/edit.js:236
 #, php-format,js-format
 msgid "(ranked #%s)"
 msgstr ""
@@ -683,16 +683,16 @@ msgstr ""
 #: includes/blocks/render/class-widgets.php:85
 #: includes/blocks/render/class-widgets.php:253
 #: includes/frontend/class-navigation.php:57
-#: src/editor/edit.js:244
-#: src/editor/edit.js:255
-#: src/editor/edit.js:349
-#: src/editor/edit.js:365
+#: src/editor/edit.js:262
+#: src/editor/edit.js:273
+#: src/editor/edit.js:367
+#: src/editor/edit.js:383
 msgid "Questions"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:273
-#: src/editor/edit.js:247
-#: src/editor/edit.js:256
+#: src/editor/edit.js:265
+#: src/editor/edit.js:274
 msgid "Answers"
 msgstr ""
 
@@ -703,7 +703,7 @@ msgid "%1$s (%2$s selected as best)"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:283
-#: src/editor/edit.js:248
+#: src/editor/edit.js:266
 msgid "Comments"
 msgstr ""
 
@@ -716,7 +716,7 @@ msgid "Votes received"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:311
-#: src/editor/edit.js:254
+#: src/editor/edit.js:272
 msgid "Profile"
 msgstr ""
 
@@ -736,7 +736,7 @@ msgstr ""
 #: includes/blocks/render/class-widgets.php:78
 #: includes/feeds/class-feeds.php:338
 #: includes/frontend/class-navigation.php:61
-#: src/editor/edit.js:258
+#: src/editor/edit.js:276
 msgid "Recent activity"
 msgstr ""
 
@@ -844,32 +844,32 @@ msgid "Breadcrumbs"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:341
-#: src/editor/edit.js:372
+#: src/editor/edit.js:390
 msgid "Hot"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:342
-#: src/editor/edit.js:374
+#: src/editor/edit.js:392
 msgid "Most votes"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:343
-#: src/editor/edit.js:378
+#: src/editor/edit.js:396
 msgid "Most answers"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:344
-#: src/editor/edit.js:382
+#: src/editor/edit.js:400
 msgid "Most views"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:356
-#: src/editor/edit.js:479
+#: src/editor/edit.js:497
 msgid "Newest users"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:357
-#: src/editor/edit.js:483
+#: src/editor/edit.js:501
 msgid "Special users"
 msgstr ""
 
@@ -1029,8 +1029,8 @@ msgid "Unanswered"
 msgstr ""
 
 #: includes/frontend/class-navigation.php:64
-#: src/editor/edit.js:456
-#: src/editor/edit.js:471
+#: src/editor/edit.js:474
+#: src/editor/edit.js:489
 msgid "Users"
 msgstr ""
 
@@ -1733,55 +1733,67 @@ msgstr ""
 msgid "Flagging is not available on this post."
 msgstr ""
 
-#: src/editor/edit.js:352
+#. translators: 1: date, 2: author name.
+#: src/editor/edit.js:161
+#, js-format
+msgid "asked %1$s by %2$s"
+msgstr ""
+
+#. translators: %s: date.
+#: src/editor/edit.js:167
+#, js-format
+msgid "asked %s"
+msgstr ""
+
+#: src/editor/edit.js:370
 msgid "Questions of the current page"
 msgstr ""
 
-#: src/editor/edit.js:353
+#: src/editor/edit.js:371
 msgid "Shows the questions of the Q&A page, e.g. of the tag or category."
 msgstr ""
 
-#: src/editor/edit.js:369
+#: src/editor/edit.js:387
 msgid "Recent"
 msgstr ""
 
-#: src/editor/edit.js:386
+#: src/editor/edit.js:404
 msgid "Without answers"
 msgstr ""
 
-#: src/editor/edit.js:390
+#: src/editor/edit.js:408
 msgid "Without selected answer"
 msgstr ""
 
-#: src/editor/edit.js:397
+#: src/editor/edit.js:415
 msgid "Without upvoted answers"
 msgstr ""
 
-#: src/editor/edit.js:409
+#: src/editor/edit.js:427
 msgid "Category ID (0 for all)"
 msgstr ""
 
-#: src/editor/edit.js:418
+#: src/editor/edit.js:436
 msgid "Tag"
 msgstr ""
 
-#: src/editor/edit.js:427
+#: src/editor/edit.js:445
 msgid "Questions per page (0 for the default)"
 msgstr ""
 
-#: src/editor/edit.js:459
+#: src/editor/edit.js:477
 msgid "Sort order of the current page"
 msgstr ""
 
-#: src/editor/edit.js:460
+#: src/editor/edit.js:478
 msgid "Lets visitors switch between top, newest and special users on the users page."
 msgstr ""
 
-#: src/editor/edit.js:475
+#: src/editor/edit.js:493
 msgid "Top users by points"
 msgstr ""
 
-#: src/editor/edit.js:493
+#: src/editor/edit.js:511
 msgid "Users per page (0 for the default)"
 msgstr ""
 

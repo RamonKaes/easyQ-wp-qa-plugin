@@ -15,7 +15,8 @@ import {
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
-import { RawHTML, useEffect, useInstanceId } from '@wordpress/element';
+import { useInstanceId } from '@wordpress/compose';
+import { RawHTML, useEffect } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
 
 import Inspector from './inspector';
@@ -151,6 +152,23 @@ function FieldPreview( { name, attributes, context, title } ) {
 			return post.category ? (
 				<div { ...blockProps }>{ post.category.title }</div>
 			) : null;
+		case 'easyq/post-activity':
+			return (
+				<div { ...blockProps }>
+					{ attributes.showAuthor
+						? sprintf(
+								/* translators: 1: date, 2: author name. */
+								__( 'asked %1$s by %2$s', 'easyq' ),
+								new Date( post.date_gmt ).toLocaleDateString(),
+								post.author.name
+							)
+						: sprintf(
+								/* translators: %s: date. */
+								__( 'asked %s', 'easyq' ),
+								new Date( post.date_gmt ).toLocaleDateString()
+							) }
+				</div>
+			);
 		default:
 			return (
 				<div { ...blockProps }>
