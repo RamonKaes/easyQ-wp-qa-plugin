@@ -172,7 +172,7 @@ final class Post_Fields {
 		$count = static fn ( string $key, int $value, string $label ): string => sprintf(
 			'<span><span class="screen-reader-text">%s </span><span data-wp-text="context.%s">%s</span></span>',
 			esc_html( $label ),
-			$key,
+			esc_attr( $key ),
 			esc_html( number_format_i18n( $value ) )
 		);
 
@@ -476,11 +476,11 @@ final class Post_Fields {
 				$notes[] = sprintf(
 					/* translators: %s: link to the original question. */
 					esc_html__( 'Closed as a duplicate of %s', 'easyq' ),
-					sprintf( '<a href="%s">%s</a>', esc_url( URLs::question( $closer ) ), esc_html( (string) $closer->title ) )
+					sprintf( '<a href="%s">%s</a>', esc_url( URLs::question( $closer ) ), esc_html( Services::content_renderer()->text( (string) $closer->title ) ) )
 				);
 			} elseif ( null !== $closer && Post::NOTE === $closer->type ) {
 				/* translators: %s: reason the question was closed. */
-				$notes[] = esc_html( sprintf( __( 'Closed: %s', 'easyq' ), (string) $closer->content ) );
+				$notes[] = esc_html( sprintf( __( 'Closed: %s', 'easyq' ), Services::content_renderer()->text( (string) $closer->content ) ) );
 			} else {
 				$notes[] = esc_html__( 'Closed', 'easyq' );
 			}

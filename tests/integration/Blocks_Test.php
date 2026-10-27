@@ -192,6 +192,27 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'Closed: Closed.', $html );
 	}
 
+	public function test_closing_notes_censor_block_words(): void {
+		Options::update( 'posting', array( 'block_bad_words' => 'darn' ) );
+		$question = $this->ask( $this->user() );
+		Services::post_service()->close_with_note( Actor::system(), $question, 'Darn spam.' );
+
+		$html = $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-status /--><!-- /wp:easyq/question -->', new Route( 'question', $this->post( $question->id ) ) );
+
+		$this->assertStringContainsString( 'Closed: **** spam.', $html );
+	}
+
+	public function test_duplicate_notes_censor_the_original_title(): void {
+		Options::update( 'posting', array( 'block_bad_words' => 'darn' ) );
+		$original = $this->ask( $this->user(), 'Darn widget settings' );
+		$question = $this->ask( $this->user() );
+		Services::post_service()->close_as_duplicate( Actor::system(), $question, $original->id );
+
+		$html = $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-status /--><!-- /wp:easyq/question -->', new Route( 'question', $this->post( $question->id ) ) );
+
+		$this->assertStringContainsString( '**** widget settings</a>', $html );
+	}
+
 	public function test_page_titles_navigation_and_lists(): void {
 		$this->ask( $this->user(), 'Tagged question title', 'x', array( 'php' ) );
 		$category = Services::categories()->create( null, 'Software' );

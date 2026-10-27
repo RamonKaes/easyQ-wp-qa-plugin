@@ -110,12 +110,12 @@ final class Lists_Render {
 		$labels = ( $attributes['showLabel'] ?? true ) || null === $arrow;
 
 		$link = static function ( string $direction, int $page, string $label, string $symbol ) use ( $result, $style, $labels ): string {
-			$arrow_html = null === $style ? '' : sprintf( '<span class="wp-block-query-pagination-%1$s-arrow is-arrow-%2$s" aria-hidden="true">%3$s</span>', $direction, $style, $symbol );
+			$arrow_html = null === $style ? '' : sprintf( '<span class="wp-block-query-pagination-%1$s-arrow is-arrow-%2$s" aria-hidden="true">%3$s</span>', esc_attr( $direction ), esc_attr( $style ), esc_html( $symbol ) );
 			$text       = $labels ? esc_html( $label ) : sprintf( '<span class="screen-reader-text">%s</span>', esc_html( $label ) );
 
 			return sprintf(
 				'<a class="wp-block-query-pagination-%s" href="%s">%s</a>',
-				$direction,
+				esc_attr( $direction ),
 				esc_url( add_query_arg( $result['page_var'], $page ) ),
 				'previous' === $direction ? $arrow_html . $text : $text . $arrow_html
 			);
@@ -393,7 +393,7 @@ final class Lists_Render {
 		foreach ( $items as $item ) {
 			$html .= sprintf(
 				'<%1$s id="easyq-post-%2$d">%3$s</%1$s>',
-				$tag,
+				tag_escape( $tag ),
 				$item['id'],
 				Render::inner_blocks( $block, $item['context'] )
 			);
