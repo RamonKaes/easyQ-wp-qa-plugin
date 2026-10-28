@@ -65,6 +65,9 @@ final class Permissions_Test extends Test_Case {
 				'moderate_users'      => true,
 			)
 		);
+		// The matrix covers every threshold, also those the settings screen does not
+		// offer for this permission, so the range check on saving is left out here.
+		remove_all_filters( 'sanitize_option_' . Options::option_name( 'permissions' ) );
 		Options::update( 'permissions', array( 'permit_post_q' => $permit ) );
 
 		$this->assertSame( $expected, Services::permissions()->error( 'permit_post_q', $this->actor( $kind ) ) );

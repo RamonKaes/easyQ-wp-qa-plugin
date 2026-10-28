@@ -28,6 +28,7 @@ final class Plugin {
 
 		( new Database\Installer() )->register();
 		( new Capabilities() )->register();
+		( new Settings\Registry() )->register();
 		( new Events\Activity_Tracker() )->register();
 		Services::limits()->register();
 		( new Users\User_Status() )->register();
@@ -51,6 +52,7 @@ final class Plugin {
 		if ( is_admin() ) {
 			( new Admin\Profile_Screen() )->register();
 			( new Admin\Users_Screen() )->register();
+			( new Admin\Settings_Screen() )->register();
 		}
 	}
 }

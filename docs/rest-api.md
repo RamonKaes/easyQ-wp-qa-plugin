@@ -118,3 +118,13 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `GET /users/{id}` | Public Q&A profile: name, avatar, level, title, points, rank, activity counts and the profile fields the viewer may see. On multisite, users of other sites only have a profile once they took part |
 | `GET /users/me` | The profile of the current user, with all profile fields, including those hidden from others |
 | `POST /users/me` | Change the own profile: `fields` (object of field name and value), `remove_avatar`, or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; cropped to a square; counts towards the upload rate limit). Name, email address and password are changed in the WordPress profile |
+
+### Settings
+
+The settings shown on the easyQ settings screen are part of the core endpoint
+`/wp/v2/settings` (`GET` and `POST`, capability `manage_options`), one object per
+section: `easyq_settings_general`, `easyq_settings_permissions`, `easyq_settings_users`,
+`easyq_settings_posting`, `easyq_settings_viewing`, `easyq_settings_lists`,
+`easyq_settings_feeds` and `easyq_settings_spam`. An update may pass only some settings
+of a section; the others keep their value. Unknown settings and values outside the
+allowed range are refused with `rest_invalid_param`.
