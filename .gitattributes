@@ -1,7 +1,7 @@
 * text=auto eol=lf
 
 # Excluded from release archives (git archive)
-/bin                         export-ignore
+/.github                     export-ignore
 /docs                        export-ignore
 /tests                       export-ignore
 /.editorconfig               export-ignore
@@ -19,4 +19,5 @@
 /phpunit-multisite.xml.dist  export-ignore
 /phpunit-unit.xml.dist       export-ignore
 /playwright.config.js        export-ignore
+/webpack.config.js           export-ignore
 /README.md                   export-ignore
