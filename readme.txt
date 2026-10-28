@@ -15,7 +15,7 @@ easyQ Q&A adds a question and answer community to your WordPress site. Visitors 
 
 easyQ brings the proven feature set of the open source platform [Question2Answer](https://www.question2answer.org/) to WordPress, rebuilt the WordPress way: every Q&A page is a block template, every part of it a block, and your theme decides how it looks.
 
-**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles and all Q&A pages work. A settings screen, emails and notifications, the privacy export and erasure tools and translations follow in the next versions.
+**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages and the settings screen work. More admin screens, emails and notifications, the privacy export and erasure tools and translations follow in the next versions.
 
 = Questions and answers =
 
@@ -66,7 +66,7 @@ easyQ is made for block themes, such as Twenty Twenty-Five. Classic themes show 
 
 = Where do I change the settings? =
 
-The settings screen comes with the next version. Until then easyQ uses the defaults of Question2Answer.
+In the admin menu under easyQ → Settings. The tabs cover the general options, permissions, users, posting, viewing, lists, feeds and spam protection. Options of features that are still to come appear together with them.
 
 = Does easyQ delete my data when I delete the plugin? =
 
