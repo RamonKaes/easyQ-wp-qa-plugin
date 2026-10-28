@@ -11,9 +11,9 @@ the WordPress way: every page is a block template, every part of it a block, and
 your theme decides how it looks.
 
 > **Status: early development, not ready for live sites yet.** Asking, answering,
-> voting, moderation, profiles, all Q&A pages and the settings screen work. More admin
-> screens, emails and notifications, the privacy tools and translations are still to
-> come, see [what is next](#what-is-next).
+> voting, moderation, profiles, all Q&A pages, the settings screen and the category
+> management work. More admin screens, emails and notifications, the privacy tools
+> and translations are still to come, see [what is next](#what-is-next).
 
 ## Features
 
@@ -49,6 +49,8 @@ your theme decides how it looks.
 - Accessible markup, checked automatically with axe
 - Settings on one screen with tabs, built with the WordPress Settings API and also
   available through the REST API
+- Category management in the style of the core category screen, also through the REST
+  API
 - A REST API for every action and documented hooks for extensions
 - Privacy by design: no external requests, no tracking
 
@@ -57,8 +59,8 @@ your theme decides how it looks.
 easyQ is built in phases, see the
 [phase plan](docs/feature-mapping.md#13-phases):
 
-1. **Admin:** category management, a moderation list, points, user titles and user
-   fields, a dashboard and maintenance tools (the settings screen is done)
+1. **Admin:** a moderation list, points, user titles and user fields, a dashboard and
+   maintenance tools (the settings screen and category management are done)
 2. **Communication:** emails and notifications, private messages, the user wall,
    favorites and the updates page
 3. **Privacy and tooling:** personal data export and erasure, IP address retention,
