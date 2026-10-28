@@ -497,6 +497,11 @@ final class Fields {
 				__( 'Preselect email notifications on the post forms', 'easyq' ),
 				__( 'Users can still turn them off for each post.', 'easyq' )
 			),
+			'allow_no_category'         => self::bool(
+				__( 'Allow questions without a category', 'easyq' ),
+				__( 'Only applies once categories exist.', 'easyq' )
+			),
+			'allow_no_sub_category'     => self::bool( __( 'Allow questions in a category that has subcategories', 'easyq' ) ),
 			'min_len_q_title'           => self::int( __( 'Minimum length of question titles, in characters', 'easyq' ), 1 ),
 			'max_len_q_title'           => self::int( __( 'Maximum length of question titles, in characters', 'easyq' ), 1, 800 ),
 			'min_len_q_content'         => self::int( __( 'Minimum length of questions, in characters', 'easyq' ) ),

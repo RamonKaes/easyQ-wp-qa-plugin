@@ -120,6 +120,8 @@ final class Options {
 				'comment_on_as'             => true,
 				'allow_anonymous_naming'    => true,
 				'do_close_on_select'        => false,
+				'allow_no_category'         => false,
+				'allow_no_sub_category'     => false,
 				'min_len_q_title'           => 12,
 				'max_len_q_title'           => 120,
 				'min_len_q_content'         => 0,

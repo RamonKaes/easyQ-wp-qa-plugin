@@ -10,7 +10,10 @@ namespace EasyQ\Categories;
 
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
+use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Repository;
+use EasyQ\Search\Search;
+use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
 use WP_Error;
 
@@ -81,9 +84,10 @@ final class Categories {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Post_Repository $posts Post storage.
+	 * @param Post_Repository $posts  Post storage.
+	 * @param Search          $search Search providers, told when posts change category.
 	 */
-	public function __construct( private readonly Post_Repository $posts ) {
+	public function __construct( private readonly Post_Repository $posts, private readonly Search $search ) {
 	}
 
 	/**
@@ -153,6 +157,48 @@ final class Categories {
 	}
 
 	/**
+	 * Returns all categories depth first, each with its depth.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $parent_id Category whose descendants to return, or null for all categories.
+	 * @param int      $depth     Depth of the children of the parent; 0 for the top level.
+	 * @return array<int, array{0: Category, 1: int}>
+	 */
+	public function tree( ?int $parent_id = null, int $depth = 0 ): array {
+		$tree = array();
+		foreach ( $this->children( $parent_id ) as $category ) {
+			$tree[] = array( $category, $depth );
+			$tree   = array_merge( $tree, $this->tree( $category->id, $depth + 1 ) );
+		}
+
+		return $tree;
+	}
+
+	/**
+	 * Returns the categories that can be the parent of a category.
+	 *
+	 * Leaves out the category itself, its subcategories, and categories so deep that
+	 * the category or one of its subcategories would be more than four levels down.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $id Category ID, or null for a new category.
+	 * @return array<int, array{0: Category, 1: int}> Categories depth first, each with its depth.
+	 */
+	public function possible_parents( ?int $id ): array {
+		$excluded = null === $id ? array() : $this->subtree_ids( $id );
+		$height   = null === $id ? 1 : $this->height( $id );
+
+		return array_values(
+			array_filter(
+				$this->tree(),
+				static fn ( array $item ): bool => ! in_array( $item[0]->id, $excluded, true ) && $item[1] + 1 + $height <= self::MAX_DEPTH
+			)
+		);
+	}
+
+	/**
 	 * Returns a category and its ancestors, from the top level down.
 	 *
 	 * @since 0.1.0
@@ -216,7 +262,10 @@ final class Categories {
 	}
 
 	/**
-	 * Creates a category at the end of its siblings.
+	 * Creates a category.
+	 *
+	 * Without a slug, the slug is derived from the name; if that one cannot be used,
+	 * `category-{slug}` and then `category-1`, `category-2`, … are tried, as in Question2Answer.
 	 *
 	 * @since 0.1.0
 	 *
@@ -224,11 +273,15 @@ final class Categories {
 	 * @param string   $title       Name.
 	 * @param string   $slug        Slug; derived from the name if empty.
 	 * @param string   $description Description.
+	 * @param int|null $position    Position among the siblings, starting at 1; null for the end.
 	 * @return int|WP_Error The new category ID, or the validation errors.
 	 */
-	public function create( ?int $parent_id, string $title, string $slug = '', string $description = '' ): int|WP_Error {
+	public function create( ?int $parent_id, string $title, string $slug = '', string $description = '', ?int $position = null ): int|WP_Error {
 		$title = trim( $title );
-		$slug  = '' === trim( $slug ) ? sanitize_title( $title ) : trim( $slug );
+		$slug  = trim( $slug );
+		if ( '' === $slug ) {
+			$slug = $this->free_slug( $parent_id, sanitize_title( $title ) );
+		}
 
 		$errors = $this->validate( null, $parent_id, $title, $slug, $description );
 		if ( null !== $parent_id && count( $this->path( $parent_id ) ) >= self::MAX_DEPTH ) {
@@ -252,6 +305,9 @@ final class Categories {
 
 		$this->recalc_backpaths( array( $id ) );
 		$this->forget();
+		if ( null !== $position ) {
+			$this->set_position( $id, $position );
+		}
 
 		return $id;
 	}
@@ -273,9 +329,62 @@ final class Categories {
 			return new WP_Error( 'not_found', __( 'The category does not exist.', 'easyq' ) );
 		}
 
+		return $this->save( $id, $title, $slug, $description, $category->parent_id );
+	}
+
+	/**
+	 * Moves a category to another parent, at the end of its new siblings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int      $id            Category ID.
+	 * @param int|null $new_parent_id New parent category ID, or null for the top level.
+	 * @return true|WP_Error
+	 */
+	public function move( int $id, ?int $new_parent_id ): bool|WP_Error {
+		$category = $this->find( $id );
+		if ( null === $category ) {
+			return new WP_Error( 'not_found', __( 'The category does not exist.', 'easyq' ) );
+		}
+
+		return $this->save( $id, $category->title, $category->slug, $category->description, $new_parent_id );
+	}
+
+	/**
+	 * Changes a category: name, slug, description, parent and position.
+	 *
+	 * All changes are checked before any is stored. A category that gets another
+	 * parent goes to the end of its new siblings unless a position is given; posts in
+	 * it and its subcategories get their new category path, and the question counts
+	 * of all affected categories are recalculated.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int      $id          Category ID.
+	 * @param string   $title       Name.
+	 * @param string   $slug        Slug; derived from the name if empty.
+	 * @param string   $description Description.
+	 * @param int|null $parent_id   Parent category ID, or null for the top level.
+	 * @param int|null $position    Position among the siblings, starting at 1; null to keep it.
+	 * @return true|WP_Error
+	 */
+	public function save( int $id, string $title, string $slug, string $description, ?int $parent_id, ?int $position = null ): bool|WP_Error {
+		$category = $this->find( $id );
+		if ( null === $category ) {
+			return new WP_Error( 'not_found', __( 'The category does not exist.', 'easyq' ) );
+		}
+
 		$title  = trim( $title );
 		$slug   = '' === trim( $slug ) ? sanitize_title( $title ) : trim( $slug );
-		$errors = $this->validate( $id, $category->parent_id, $title, $slug, $description );
+		$moves  = $parent_id !== $category->parent_id;
+		$errors = $this->validate( $id, $parent_id, $title, $slug, $description );
+		if ( $moves && ! $errors->get_error_message( 'parent' ) ) {
+			if ( null !== $parent_id && in_array( $parent_id, $this->subtree_ids( $id ), true ) ) {
+				$errors->add( 'parent', __( 'A category cannot be moved into itself or one of its subcategories.', 'easyq' ) );
+			} elseif ( ( null === $parent_id ? 0 : count( $this->path( $parent_id ) ) ) + $this->height( $id ) > self::MAX_DEPTH ) {
+				$errors->add( 'parent', __( 'Categories can be nested up to four levels deep.', 'easyq' ) );
+			}
+		}
 		if ( $errors->has_errors() ) {
 			return $errors;
 		}
@@ -290,71 +399,17 @@ final class Categories {
 			),
 			array( 'id' => $id )
 		);
-
 		$this->forget();
-		if ( $slug !== $category->slug ) {
+
+		if ( $moves ) {
+			$this->change_parent( $id, $parent_id );
+		} elseif ( $slug !== $category->slug ) {
 			$this->recalc_backpaths( $this->subtree_ids( $id ) );
 		}
 
-		return true;
-	}
-
-	/**
-	 * Moves a category to another parent, at the end of its new siblings.
-	 *
-	 * Posts in the category and its subcategories get their new category path,
-	 * and the question counts of all affected categories are recalculated.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int      $id            Category ID.
-	 * @param int|null $new_parent_id New parent category ID, or null for the top level.
-	 * @return true|WP_Error
-	 */
-	public function move( int $id, ?int $new_parent_id ): bool|WP_Error {
-		$category = $this->find( $id );
-		if ( null === $category ) {
-			return new WP_Error( 'not_found', __( 'The category does not exist.', 'easyq' ) );
+		if ( null !== $position ) {
+			$this->set_position( $id, $position );
 		}
-
-		if ( $new_parent_id === $category->parent_id ) {
-			return true;
-		}
-
-		$subtree = $this->subtree_ids( $id );
-		if ( null !== $new_parent_id && ( in_array( $new_parent_id, $subtree, true ) || null === $this->find( $new_parent_id ) ) ) {
-			return new WP_Error( 'parent', __( 'A category cannot be moved into itself or one of its subcategories.', 'easyq' ) );
-		}
-
-		$new_depth = ( null === $new_parent_id ? 0 : count( $this->path( $new_parent_id ) ) ) + $this->height( $id );
-		if ( $new_depth > self::MAX_DEPTH ) {
-			return new WP_Error( 'parent', __( 'Categories can be nested up to four levels deep.', 'easyq' ) );
-		}
-
-		if ( $this->slug_taken( $new_parent_id, $category->slug, $id ) ) {
-			return new WP_Error( 'slug', __( 'Another category with this slug already exists at the new place.', 'easyq' ) );
-		}
-
-		$old_ancestors = array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $id ) );
-
-		$this->set_position( $id, PHP_INT_MAX );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
-		DB::wpdb()->update(
-			Schema::table( 'categories' ),
-			array(
-				'parent_id' => $new_parent_id,
-				'position'  => $this->last_position( $new_parent_id ) + 1,
-			),
-			array( 'id' => $id )
-		);
-		$this->forget();
-
-		$this->recalc_backpaths( $subtree );
-		$this->posts->calc_category_paths_in( $subtree );
-
-		$new_ancestors = array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $id ) );
-		$this->recount( array_unique( array_merge( $old_ancestors, $new_ancestors, $subtree ) ) );
 
 		return true;
 	}
@@ -424,36 +479,116 @@ final class Categories {
 	}
 
 	/**
-	 * Moves all posts of a category to another category.
+	 * Moves the questions of a category, with their answers and comments, to another category.
+	 *
+	 * Only posts directly in the category move, not those in its subcategories, as in
+	 * Question2Answer. Used to give questions a category or subcategory they lack.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int      $id          Category ID.
+	 * @param int|null $id          Category ID, or null for posts without a category.
+	 * @param int|null $reassign_to Target category ID, or null for no category.
+	 * @return true|WP_Error
+	 */
+	public function reassign( ?int $id, ?int $reassign_to ): bool|WP_Error {
+		if ( null !== $id && null === $this->find( $id ) ) {
+			return new WP_Error( 'not_found', __( 'The category does not exist.', 'easyq' ) );
+		}
+
+		if ( $reassign_to === $id || ( null !== $reassign_to && null === $this->find( $reassign_to ) ) ) {
+			return new WP_Error( 'reassign', __( 'The posts cannot be moved to this category.', 'easyq' ) );
+		}
+
+		$this->reassign_posts( $id, $reassign_to );
+		$this->recount( array_merge( $this->path_ids( $id ), $this->path_ids( $reassign_to ) ) );
+
+		return true;
+	}
+
+	/**
+	 * Moves all posts of a category to another category, without recounting.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $id          Category ID, or null for posts without a category.
 	 * @param int|null $reassign_to Target category ID, or null for no category.
 	 */
-	public function reassign_posts( int $id, ?int $reassign_to ): void {
+	public function reassign_posts( ?int $id, ?int $reassign_to ): void {
 		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'posts' );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		$post_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id = %d', $table, $id ) ) );
 
-		if ( null === $reassign_to ) {
-			$sql = $wpdb->prepare( 'UPDATE %i SET category_id = NULL WHERE category_id = %d', $table, $id );
-			if ( null !== $sql ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-				$wpdb->query( $sql );
-			}
+		if ( null === $id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$post_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id IS NULL ORDER BY id', $table ) ) );
 		} else {
-			$sql = $wpdb->prepare( 'UPDATE %i SET category_id = %d WHERE category_id = %d', $table, $reassign_to, $id );
-			if ( null !== $sql ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-				$wpdb->query( $sql );
-			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$post_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE category_id = %d ORDER BY id', $table, $id ) ) );
 		}
 
 		foreach ( $post_ids as $post_id ) {
+			$this->posts->update( $post_id, array( 'category_id' => $reassign_to ) );
 			$this->posts->calc_category_path( $post_id );
 		}
+
+		$this->search->move( $post_ids, $reassign_to );
+	}
+
+	/**
+	 * Returns the number of questions directly in a category, not counting its subcategories.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $id Category ID, or null for questions without a category.
+	 * @return int
+	 */
+	public function count_direct_questions( ?int $id ): int {
+		$wpdb  = DB::wpdb();
+		$table = Schema::table( 'posts' );
+
+		if ( null === $id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE category_id IS NULL AND type = 'Q'", $table ) );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE category_id = %d AND type = 'Q'", $table, $id ) );
+	}
+
+	/**
+	 * Checks the category chosen for a question against the category settings.
+	 *
+	 * Unless allowed, a question needs a category once categories exist, and that
+	 * category must not have subcategories. A question that keeps its category is
+	 * always accepted, as is a question without a category that stays without one.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null  $category_id Chosen category ID, or null for none.
+	 * @param Post|null $question    Question being edited, or null for a new question.
+	 * @return WP_Error|null Error with the code `category`, or null if the choice is valid.
+	 */
+	public function check_choice( ?int $category_id, ?Post $question = null ): ?WP_Error {
+		if ( null !== $question && $category_id === $question->category_id ) {
+			return null;
+		}
+
+		if ( null === $category_id ) {
+			if ( array() !== $this->all() && ! Options::get_bool( 'posting', 'allow_no_category' ) ) {
+				return new WP_Error( 'category', __( 'Please choose a category.', 'easyq' ) );
+			}
+
+			return null;
+		}
+
+		if ( null === $this->find( $category_id ) ) {
+			return new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) );
+		}
+
+		if ( array() !== $this->children( $category_id ) && ! Options::get_bool( 'posting', 'allow_no_sub_category' ) ) {
+			return new WP_Error( 'category', __( 'Please choose a subcategory.', 'easyq' ) );
+		}
+
+		return null;
 	}
 
 	/**
@@ -562,15 +697,9 @@ final class Categories {
 			}
 		}
 
-		if ( '' === $slug ) {
-			$errors->add( 'slug', __( 'Please enter a slug.', 'easyq' ) );
-		} elseif ( Text::length( $slug ) > self::MAX_SLUG_LENGTH ) {
-			/* translators: %d: maximum number of characters. */
-			$errors->add( 'slug', sprintf( __( 'The slug can have at most %d characters.', 'easyq' ), self::MAX_SLUG_LENGTH ) );
-		} elseif ( preg_match( '/[\+\/]/', $slug ) ) {
-			$errors->add( 'slug', __( 'The slug must not contain + or /.', 'easyq' ) );
-		} elseif ( $this->slug_taken( $parent_id, $slug, $id ) ) {
-			$errors->add( 'slug', __( 'Another category with this slug already exists here.', 'easyq' ) );
+		$slug_error = $this->slug_error( $id, $parent_id, $slug );
+		if ( null !== $slug_error ) {
+			$errors->add( 'slug', $slug_error );
 		}
 
 		if ( Text::length( $description ) > self::MAX_DESCRIPTION_LENGTH ) {
@@ -579,6 +708,111 @@ final class Categories {
 		}
 
 		return $errors;
+	}
+
+	/**
+	 * Returns the IDs of a category and its ancestors.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $id Category ID, or null for none.
+	 * @return int[]
+	 */
+	private function path_ids( ?int $id ): array {
+		return null === $id ? array() : array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $id ) );
+	}
+
+	/**
+	 * Checks a slug.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $id        Category ID, or null for a new category.
+	 * @param int|null $parent_id Parent category ID.
+	 * @param string   $slug      Slug.
+	 * @return string|null Error message, or null if the slug can be used.
+	 */
+	private function slug_error( ?int $id, ?int $parent_id, string $slug ): ?string {
+		if ( '' === $slug ) {
+			return __( 'Please enter a slug.', 'easyq' );
+		}
+
+		if ( Text::length( $slug ) > self::MAX_SLUG_LENGTH ) {
+			/* translators: %d: maximum number of characters. */
+			return sprintf( __( 'The slug can have at most %d characters.', 'easyq' ), self::MAX_SLUG_LENGTH );
+		}
+
+		if ( preg_match( '/[\+\/]/', $slug ) ) {
+			return __( 'The slug must not contain + or /.', 'easyq' );
+		}
+
+		if ( $this->slug_taken( $parent_id, $slug, $id ) ) {
+			return __( 'Another category with this slug already exists here.', 'easyq' );
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns a slug for a new category that no sibling uses.
+	 *
+	 * Tries the given slug, then `category-{slug}`, then `category-1`, `category-2`, …
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $parent_id Parent category ID.
+	 * @param string   $slug      Slug derived from the name.
+	 * @return string The first usable slug, or the given slug if none is, so that validation reports why.
+	 */
+	private function free_slug( ?int $parent_id, string $slug ): string {
+		/* translators: %s: slug or number. Used as the slug of a category whose name gives no usable slug. */
+		$pattern    = _x( 'category-%s', 'category slug', 'easyq' );
+		$candidates = array( $slug, sprintf( $pattern, $slug ) );
+		for ( $number = 1; $number < 99; $number++ ) {
+			$candidates[] = sprintf( $pattern, $number );
+		}
+
+		foreach ( $candidates as $candidate ) {
+			$candidate = sanitize_title( $candidate );
+			if ( null === $this->slug_error( null, $parent_id, $candidate ) ) {
+				return $candidate;
+			}
+		}
+
+		return $slug;
+	}
+
+	/**
+	 * Moves a category to another parent, at the end of its new siblings, and updates
+	 * the posts and counts that depend on it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int      $id        Category ID.
+	 * @param int|null $parent_id New parent category ID, or null for the top level.
+	 */
+	private function change_parent( int $id, ?int $parent_id ): void {
+		$subtree       = $this->subtree_ids( $id );
+		$old_ancestors = array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $id ) );
+
+		$this->set_position( $id, PHP_INT_MAX );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
+		DB::wpdb()->update(
+			Schema::table( 'categories' ),
+			array(
+				'parent_id' => $parent_id,
+				'position'  => $this->last_position( $parent_id ) + 1,
+			),
+			array( 'id' => $id )
+		);
+		$this->forget();
+
+		$this->recalc_backpaths( $subtree );
+		$this->posts->calc_category_paths_in( $subtree );
+
+		$new_ancestors = array_map( static fn ( Category $ancestor ): int => $ancestor->id, $this->path( $id ) );
+		$this->recount( array_unique( array_merge( $old_ancestors, $new_ancestors, $subtree ) ) );
 	}
 
 	/**

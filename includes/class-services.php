@@ -123,7 +123,7 @@ final class Services {
 	 * @return Categories
 	 */
 	public static function categories(): Categories {
-		return self::shared( Categories::class, static fn (): Categories => new Categories( self::posts() ) );
+		return self::shared( Categories::class, static fn (): Categories => new Categories( self::posts(), self::search() ) );
 	}
 
 	/**

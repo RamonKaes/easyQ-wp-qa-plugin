@@ -422,13 +422,17 @@ final class Forms {
 	 * @return string
 	 */
 	private static function category_field( string $selected ): string {
-		$options = sprintf( '<option value="">%s</option>', esc_html__( '— Select a category —', 'easyq' ) );
+		$categories = Services::categories();
+		$options    = sprintf( '<option value="">%s</option>', esc_html__( '— Select a category —', 'easyq' ) );
+		// Categories with subcategories are shown for orientation, but only offered if allowed.
+		$parents_allowed = Options::get_bool( 'posting', 'allow_no_sub_category' );
 
-		foreach ( self::category_tree( null, 0 ) as [ $category, $depth ] ) {
+		foreach ( $categories->tree() as [ $category, $depth ] ) {
 			$options .= sprintf(
-				'<option value="%d"%s>%s%s</option>',
+				'<option value="%d"%s%s>%s%s</option>',
 				$category->id,
 				selected( $selected, (string) $category->id, false ),
+				disabled( ! $parents_allowed && array() !== $categories->children( $category->id ), true, false ),
 				esc_html( str_repeat( '— ', $depth ) ),
 				esc_html( $category->title )
 			);
@@ -437,30 +441,12 @@ final class Forms {
 		$error = Flash::error( 'ask', 'category' );
 
 		return sprintf(
-			'<p><label for="easyq-ask-category">%s</label><br /><select id="easyq-ask-category" name="category">%s</select>%s</p>',
+			'<p><label for="easyq-ask-category">%s</label><br /><select id="easyq-ask-category" name="category"%s>%s</select>%s</p>',
 			esc_html__( 'Category', 'easyq' ),
+			Options::get_bool( 'posting', 'allow_no_category' ) ? '' : ' required',
 			$options,
 			'' === $error ? '' : sprintf( '<br /><strong role="alert">%s</strong>', esc_html( $error ) )
 		);
-	}
-
-	/**
-	 * Returns the categories below a parent with their depth, depth first.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int|null $parent_id Parent category.
-	 * @param int      $depth     Depth of the children.
-	 * @return array<int, array{0: \EasyQ\Categories\Category, 1: int}>
-	 */
-	private static function category_tree( ?int $parent_id, int $depth ): array {
-		$tree = array();
-		foreach ( Services::categories()->children( $parent_id ) as $category ) {
-			$tree[] = array( $category, $depth );
-			$tree   = array_merge( $tree, self::category_tree( $category->id, $depth + 1 ) );
-		}
-
-		return $tree;
 	}
 
 	/**

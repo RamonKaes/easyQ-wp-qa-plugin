@@ -209,10 +209,6 @@ final class Questions_Controller extends Controller {
 		$tags        = Post_Input::uses_tags() ? Post_Input::tags( $request->get_param( 'tags' ) ) : array();
 		$category_id = Post_Input::uses_categories() ? self::int_param( $request, 'category' ) : null;
 
-		if ( null !== $category_id && null === Services::categories()->find( $category_id ) ) {
-			return REST_Errors::invalid( new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) ) );
-		}
-
 		$fields = array(
 			'title'   => $title,
 			'content' => $input['content'],
@@ -223,6 +219,9 @@ final class Questions_Controller extends Controller {
 		}
 
 		$errors = Services::validator()->validate_question( Post_Input::validation_fields( $request, $fields ) );
+		if ( Post_Input::uses_categories() ) {
+			$errors->merge_from( Services::categories()->check_choice( $category_id ) ?? new WP_Error() );
+		}
 		if ( $errors->has_errors() ) {
 			return REST_Errors::invalid( $errors );
 		}
@@ -328,17 +327,14 @@ final class Questions_Controller extends Controller {
 			$fields['tags'] = $tags;
 		}
 
-		$errors = Services::validator()->validate_question( $fields, is_new: false );
-		if ( $errors->has_errors() ) {
-			return REST_Errors::invalid( $errors );
-		}
-
+		$errors      = Services::validator()->validate_question( $fields, is_new: false );
 		$category_id = $question->category_id;
 		if ( $request->has_param( 'category' ) && Post_Input::uses_categories() ) {
 			$category_id = self::int_param( $request, 'category' );
-			if ( null !== $category_id && null === Services::categories()->find( $category_id ) ) {
-				return REST_Errors::invalid( new WP_Error( 'category', __( 'The category does not exist.', 'easyq' ) ) );
-			}
+			$errors->merge_from( Services::categories()->check_choice( $category_id, $question ) ?? new WP_Error() );
+		}
+		if ( $errors->has_errors() ) {
+			return REST_Errors::invalid( $errors );
 		}
 
 		$silent     = self::bool_param( $request, 'silent' );

@@ -181,6 +181,30 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'name="tags"', $html );
 	}
 
+	public function test_ask_form_follows_the_category_settings(): void {
+		$parent = Services::categories()->create( null, 'Software' );
+		$this->assertIsInt( $parent );
+		$child = Services::categories()->create( $parent, 'Themes' );
+		$this->assertIsInt( $child );
+		wp_set_current_user( (int) $this->user()->user_id );
+
+		$html = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) );
+		$this->assertStringContainsString( '<select id="easyq-ask-category" name="category" required>', $html );
+		$this->assertMatchesRegularExpression( '/<option value="' . $parent . '"\s+disabled=\'disabled\'>Software<\/option>/', $html );
+		$this->assertStringContainsString( '<option value="' . $child . '">— Themes</option>', $html );
+
+		Options::update(
+			'posting',
+			array(
+				'allow_no_category'     => true,
+				'allow_no_sub_category' => true,
+			)
+		);
+		$html = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) );
+		$this->assertStringContainsString( '<select id="easyq-ask-category" name="category">', $html );
+		$this->assertStringContainsString( '<option value="' . $parent . '">Software</option>', $html );
+	}
+
 	public function test_closed_questions_have_no_answer_form(): void {
 		$question = $this->ask( $this->user() );
 		Services::post_service()->close_with_note( Actor::system(), $question, 'Closed.' );

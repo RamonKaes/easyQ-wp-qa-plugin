@@ -463,8 +463,9 @@ final class Actions_Controller extends Controller {
 	 */
 	private function move( Actor $actor, Post $question, WP_REST_Request $request ): bool|WP_Error {
 		$category_id = self::int_param( $request, 'category' );
-		if ( null !== $category_id && null === Services::categories()->find( $category_id ) ) {
-			return $this->invalid( 'category', __( 'The category does not exist.', 'easyq' ) );
+		$error       = Services::categories()->check_choice( $category_id, $question );
+		if ( null !== $error ) {
+			return REST_Errors::invalid( $error );
 		}
 
 		Services::post_service()->set_category( $actor, $question, $category_id );
