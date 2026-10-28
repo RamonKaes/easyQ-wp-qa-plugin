@@ -85,8 +85,8 @@ final class Settings_Screen {
 			add_settings_section( Registry::group( $section ), '', '__return_empty_string', self::page( $section ) );
 
 			foreach ( Fields::section( $section ) as $key => $field ) {
-				// A points minimum is shown with its permission.
-				if ( isset( $field['parent'] ) ) {
+				// A points minimum is shown with its permission; fields of the site owner only to the site owner.
+				if ( isset( $field['parent'] ) || ! Fields::may_change( $field ) ) {
 					continue;
 				}
 

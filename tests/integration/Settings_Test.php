@@ -270,6 +270,46 @@ final class Settings_Test extends Test_Case {
 		$this->assertMatchesRegularExpression( '/<option value="' . Levels::MODERATOR . '"\s+selected=\'selected\'>Moderator<\/option>/', $html );
 	}
 
+	public function test_only_the_site_owner_changes_role_levels_and_data_deletion(): void {
+		Options::update( 'general', array( 'role_levels' => array( 'editor' => Levels::ADMIN ) ) );
+		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $editor );
+		$this->assertTrue( current_user_can( Capabilities::MANAGE ) );
+		$this->assertFalse( current_user_can( 'manage_options' ) );
+
+		update_option(
+			Options::option_name( 'general' ),
+			array(
+				'role_levels'              => array(
+					'editor'     => Levels::ADMIN,
+					'subscriber' => Levels::ADMIN,
+				),
+				'delete_data_on_uninstall' => true,
+				'read_only'                => true,
+			)
+		);
+		$this->assertSame( array( 'editor' => Levels::ADMIN ), Options::get( 'general', 'role_levels' ) );
+		$this->assertFalse( Options::get_bool( 'general', 'delete_data_on_uninstall' ) );
+		$this->assertTrue( Options::get_bool( 'general', 'read_only' ) );
+
+		global $title, $wp_settings_fields;
+		$title = 'Q&A Settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Admin screen context.
+		// Earlier tests registered the fields for an administrator; a request registers them once for its user.
+		unset( $wp_settings_fields[ Settings_Screen::page( 'general' ) ] );
+		$screen = new Settings_Screen();
+		$screen->add_fields();
+		ob_start();
+		$screen->render();
+		$html = (string) ob_get_clean();
+		$this->assertStringContainsString( 'easyq_settings_general[read_only]', $html );
+		$this->assertStringNotContainsString( 'easyq_settings_general[role_levels]', $html );
+		$this->assertStringNotContainsString( 'easyq_settings_general[delete_data_on_uninstall]', $html );
+
+		wp_set_current_user( $this->administrator() );
+		Options::update( 'general', array( 'delete_data_on_uninstall' => true ) );
+		$this->assertTrue( Options::get_bool( 'general', 'delete_data_on_uninstall' ) );
+	}
+
 	public function test_menu_is_shown_to_users_who_manage_easyq(): void {
 		global $submenu;
 

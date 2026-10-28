@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  *
- * @phpstan-type Field array{type: string, label: string, description?: string, min?: int, max?: int, choices?: array<int|string, string>, parent?: string}
+ * @phpstan-type Field array{type: string, label: string, description?: string, min?: int, max?: int, choices?: array<int|string, string>, parent?: string, owner?: bool}
  */
 final class Fields {
 
@@ -127,7 +127,7 @@ final class Fields {
 
 		$fields = self::section( $section );
 		foreach ( $values as $key => $current ) {
-			if ( ! array_key_exists( $key, $input ) ) {
+			if ( ! array_key_exists( $key, $input ) || ( isset( $fields[ $key ] ) && ! self::may_change( $fields[ $key ] ) ) ) {
 				continue;
 			}
 
@@ -135,6 +135,24 @@ final class Fields {
 		}
 
 		return $values;
+	}
+
+	/**
+	 * Checks whether the current user may change a field.
+	 *
+	 * Fields of the site owner, such as the Q&A level of each role, need `manage_options`:
+	 * with the level of whole roles, users who manage easyQ could otherwise make others
+	 * administrators, which Question2Answer does not let administrators do. Without a
+	 * logged-in user, as in WP-CLI, every field may change.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $field Field.
+	 * @phpstan-param Field $field
+	 * @return bool
+	 */
+	public static function may_change( array $field ): bool {
+		return empty( $field['owner'] ) || ! is_user_logged_in() || current_user_can( 'manage_options' );
 	}
 
 	/**
@@ -389,8 +407,9 @@ final class Fields {
 				'type'        => 'role_levels',
 				'label'       => __( 'Q&A level of each role', 'easyq' ),
 				'description' => __( 'Users get the level of their role unless their profile sets a higher one.', 'easyq' ),
+				'owner'       => true,
 			),
-			'delete_data_on_uninstall' => self::bool(
+			'delete_data_on_uninstall' => array( 'owner' => true ) + self::bool(
 				__( 'Delete all Q&A data when the plugin is deleted', 'easyq' ),
 				__( 'Removes the questions, answers, comments, votes, settings and user data of easyQ.', 'easyq' )
 			),

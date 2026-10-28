@@ -701,6 +701,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 26 | The rewrite rules are rebuilt whenever they change (hash of the rules), not only when the base slug changes, so updates that add routes work without saving the permalinks | 2026-10-26 |
 | 27 | `allow_no_category` and `allow_no_sub_category` are checked on the server for every way a question gets a category; Q2A enforces `allow_no_sub_category` only in its category picker. A question may always keep the category it has | 2026-10-28 |
 | 28 | Moving the questions of a category to another category also tells the search providers, as moving a single question does | 2026-10-28 |
+| 29 | The Q&A level of each role and the deletion of all data on uninstall can only be changed by users with `manage_options`; other users who manage easyQ do not see these fields. Otherwise they could make whole roles administrators, which Q2A does not let administrators do | 2026-10-28 |
 | 27 | Classic themes get the same block templates, rendered between the theme's header and footer, instead of separate PHP templates | 2026-10-26 |
 | 28 | Answer and comment forms are sent in the background to the regular form handler and the page is updated with the Interactivity Router, so both ways share one implementation | 2026-10-26 |
 | 29 | Counts in question lists keep their width through core flex child sizing, and text areas use `cols="45"` like the core comment form, so themes without form styles stay usable without plugin CSS | 2026-10-26 |
