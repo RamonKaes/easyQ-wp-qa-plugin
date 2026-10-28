@@ -53,6 +53,7 @@ final class Plugin {
 			( new Admin\Profile_Screen() )->register();
 			( new Admin\Users_Screen() )->register();
 			( new Admin\Settings_Screen() )->register();
+			( new Admin\Categories_Screen() )->register();
 		}
 	}
 }

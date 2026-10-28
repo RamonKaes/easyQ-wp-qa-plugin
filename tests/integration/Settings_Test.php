@@ -276,7 +276,8 @@ final class Settings_Test extends Test_Case {
 		wp_set_current_user( $this->administrator() );
 		( new Settings_Screen() )->add_menu();
 
-		$this->assertSame( Settings_Screen::PAGE, $submenu[ Settings_Screen::PAGE ][0][2] ?? null );
-		$this->assertSame( Capabilities::MANAGE, $submenu[ Settings_Screen::PAGE ][0][1] ?? null );
+		// Capability of each entry, keyed by page; other screens may have added entries before.
+		$entries = array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 1, 2 );
+		$this->assertSame( Capabilities::MANAGE, $entries[ Settings_Screen::PAGE ] ?? null );
 	}
 }
