@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T09:38:35+00:00\n"
+"POT-Creation-Date: 2026-10-29T09:55:46+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -63,14 +63,15 @@ msgstr ""
 #: includes/admin/class-categories-list-table.php:78
 #: includes/admin/class-categories-screen.php:402
 #: includes/admin/class-dashboard-screen.php:97
-#: includes/admin/class-points-screen.php:101
+#: includes/admin/class-points-screen.php:103
 #: includes/admin/class-posts-list-table.php:248
-#: includes/admin/class-settings-layout.php:217
+#: includes/admin/class-settings-layout.php:221
 #: includes/blocks/render/class-users-render.php:292
 #: includes/blocks/render/class-widgets.php:63
 #: includes/blocks/render/class-widgets.php:92
 #: includes/blocks/render/class-widgets.php:272
 #: includes/frontend/class-navigation.php:68
+#: includes/settings/class-fields.php:729
 #: src/editor/edit.js:283
 #: src/editor/edit.js:294
 #: src/editor/edit.js:423
@@ -277,7 +278,7 @@ msgid "Move questions in “%s” without a subcategory to"
 msgstr ""
 
 #: includes/admin/class-categories-screen.php:498
-#: includes/admin/class-points-screen.php:166
+#: includes/admin/class-points-screen.php:184
 #: includes/blocks/render/class-forms.php:301
 msgid "Cancel"
 msgstr ""
@@ -357,11 +358,11 @@ msgid "Questions by visitors without account"
 msgstr ""
 
 #: includes/admin/class-dashboard-screen.php:101
-#: includes/admin/class-points-screen.php:102
+#: includes/admin/class-points-screen.php:110
 #: includes/admin/class-posts-list-table.php:249
 #: includes/admin/class-settings-layout.php:141
 #: includes/admin/class-settings-layout.php:178
-#: includes/admin/class-settings-layout.php:218
+#: includes/admin/class-settings-layout.php:222
 #: includes/blocks/render/class-users-render.php:294
 #: src/editor/edit.js:286
 #: src/editor/edit.js:295
@@ -377,11 +378,11 @@ msgid "Answers by visitors without account"
 msgstr ""
 
 #: includes/admin/class-dashboard-screen.php:104
-#: includes/admin/class-points-screen.php:103
+#: includes/admin/class-points-screen.php:117
 #: includes/admin/class-posts-list-table.php:250
 #: includes/admin/class-settings-layout.php:142
 #: includes/admin/class-settings-layout.php:179
-#: includes/admin/class-settings-layout.php:219
+#: includes/admin/class-settings-layout.php:223
 #: includes/blocks/render/class-users-render.php:304
 #: src/editor/edit.js:287
 msgid "Comments"
@@ -397,9 +398,10 @@ msgstr ""
 
 #: includes/admin/class-dashboard-screen.php:110
 #: includes/admin/class-settings-layout.php:131
-#: includes/admin/class-settings-layout.php:199
+#: includes/admin/class-settings-layout.php:203
 #: includes/frontend/class-navigation.php:75
 #: includes/settings/class-fields.php:86
+#: includes/settings/class-fields.php:732
 #: src/editor/edit.js:560
 #: src/editor/edit.js:575
 msgid "Users"
@@ -525,58 +527,80 @@ msgstr ""
 msgid "User Titles"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:104
+#: includes/admin/class-points-screen.php:105
+#: includes/admin/class-points-screen.php:112
+#: includes/settings/class-fields.php:87
+msgid "Posting"
+msgstr ""
+
+#: includes/admin/class-points-screen.php:106
+#: includes/admin/class-points-screen.php:113
+#: includes/admin/class-points-screen.php:118
+#: includes/blocks/render/class-users-render.php:309
+msgid "Votes received"
+msgstr ""
+
+#: includes/admin/class-points-screen.php:121
 #: includes/admin/class-settings-layout.php:174
 msgid "Voting"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:105
+#: includes/admin/class-points-screen.php:122
+#: includes/blocks/render/class-users-render.php:308
+msgid "Votes given"
+msgstr ""
+
+#: includes/admin/class-points-screen.php:125
 msgid "All users"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:156
+#: includes/admin/class-points-screen.php:126
+msgid "Calculation"
+msgstr ""
+
+#: includes/admin/class-points-screen.php:174
 msgid "The default values are shown. Save the changes to use them."
 msgstr ""
 
-#: includes/admin/class-points-screen.php:158
+#: includes/admin/class-points-screen.php:176
 msgid "Users get these points for their activity. Saving recalculates the points of all users."
 msgstr ""
 
-#: includes/admin/class-points-screen.php:164
+#: includes/admin/class-points-screen.php:182
 msgid "Save and Recalculate"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:168
+#: includes/admin/class-points-screen.php:186
 msgid "Show Default Values"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:193
+#: includes/admin/class-points-screen.php:211
 msgid "Users earn a title once they have the points needed. Users with a special level, such as Expert or Moderator, show their level instead. To remove a title, clear it."
 msgstr ""
 
-#: includes/admin/class-points-screen.php:200
-#: includes/admin/class-settings-screen.php:385
+#: includes/admin/class-points-screen.php:218
+#: includes/admin/class-settings-screen.php:412
 msgid "Points needed"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:201
+#: includes/admin/class-points-screen.php:219
 #: includes/blocks/render/class-forms.php:284
 msgid "Title"
 msgstr ""
 
 #. translators: %d: row number.
-#: includes/admin/class-points-screen.php:210
+#: includes/admin/class-points-screen.php:228
 #, php-format
 msgid "Points needed for title %d"
 msgstr ""
 
 #. translators: %d: row number.
-#: includes/admin/class-points-screen.php:214
+#: includes/admin/class-points-screen.php:232
 #, php-format
 msgid "Title %d"
 msgstr ""
 
-#: includes/admin/class-points-screen.php:220
+#: includes/admin/class-points-screen.php:238
 msgid "Save Titles"
 msgstr ""
 
@@ -1003,8 +1027,26 @@ msgstr ""
 msgid "A level in a category also applies to its subcategories."
 msgstr ""
 
+#: includes/admin/class-settings-layout.php:122
+msgid "Maintenance"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:123
+#: includes/settings/class-fields.php:446
+msgid "Q&A level of each role"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:123
+#: includes/settings/class-fields.php:447
+msgid "Users get the level of their role unless their profile sets a higher one."
+msgstr ""
+
 #: includes/admin/class-settings-layout.php:124
-msgid "Users and data"
+msgid "Data"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:124
+msgid "Uninstalling"
 msgstr ""
 
 #: includes/admin/class-settings-layout.php:127
@@ -1020,7 +1062,7 @@ msgid "Editing and closing"
 msgstr ""
 
 #: includes/admin/class-settings-layout.php:130
-#: includes/admin/class-settings-layout.php:206
+#: includes/admin/class-settings-layout.php:210
 msgid "Moderation"
 msgstr ""
 
@@ -1058,6 +1100,7 @@ msgstr ""
 #: includes/blocks/render/class-widgets.php:82
 #: includes/frontend/class-navigation.php:73
 #: includes/settings/class-fields.php:435
+#: includes/settings/class-fields.php:731
 msgid "Tags"
 msgstr ""
 
@@ -1073,6 +1116,10 @@ msgstr ""
 msgid "Tag suggestions"
 msgstr ""
 
+#: includes/admin/class-settings-layout.php:168
+msgid "Addresses"
+msgstr ""
+
 #: includes/admin/class-settings-layout.php:169
 msgid "Links"
 msgstr ""
@@ -1086,8 +1133,8 @@ msgid "Views"
 msgstr ""
 
 #: includes/admin/class-settings-layout.php:174
-#: includes/admin/class-settings-layout.php:220
-#: includes/settings/class-fields.php:696
+#: includes/admin/class-settings-layout.php:224
+#: includes/settings/class-fields.php:707
 #: src/editor/inspector.js:75
 msgid "Votes"
 msgstr ""
@@ -1100,72 +1147,92 @@ msgstr ""
 msgid "Search engines"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:185
-msgid "Page sizes"
+#: includes/admin/class-settings-layout.php:182
+msgid "Sitemaps"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:186
+#: includes/admin/class-settings-layout.php:185
+msgid "Items per page"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:187
 #: includes/blocks/render/class-widgets.php:74
 #: includes/feeds/class-feeds.php:370
 #: includes/frontend/class-navigation.php:70
 msgid "Hot questions"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:192
+#: includes/admin/class-settings-layout.php:188
+msgid "Weights"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:189
+msgid "How much each of these counts towards the hotness of a question."
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:196
 #: includes/settings/class-fields.php:90
 msgid "Feeds"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:193
+#: includes/admin/class-settings-layout.php:197
 msgid "Feed items"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:201
+#: includes/admin/class-settings-layout.php:205
 msgid "Email addresses"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:202
+#: includes/admin/class-settings-layout.php:206
 msgid "New users"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:208
+#: includes/admin/class-settings-layout.php:212
 msgid "Moderate posts"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:209
+#: includes/admin/class-settings-layout.php:213
 msgid "Edited and approved posts"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:210
-#: includes/admin/class-settings-layout.php:221
+#: includes/admin/class-settings-layout.php:214
+#: includes/admin/class-settings-layout.php:225
 msgid "Flags"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:213
+#: includes/admin/class-settings-layout.php:217
 msgid "IP addresses"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:215
+#: includes/admin/class-settings-layout.php:217
+msgid "Storage"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:219
 msgid "Rate limits"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:222
+#: includes/admin/class-settings-layout.php:226
 msgid "Uploads"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:223
+#: includes/admin/class-settings-layout.php:227
 msgid "Messages"
 msgstr ""
 
-#: includes/admin/class-settings-layout.php:224
+#: includes/admin/class-settings-layout.php:228
 msgid "Accounts"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:230
+msgid "How often each IP address or user may do something, per hour; 0 blocks it."
 msgstr ""
 
 #: includes/admin/class-settings-screen.php:56
 msgid "Q&A Settings"
 msgstr ""
 
-#: includes/admin/class-settings-screen.php:155
+#: includes/admin/class-settings-screen.php:185
 msgid "Settings sections"
 msgstr ""
 
@@ -1846,14 +1913,6 @@ msgstr ""
 #: includes/blocks/render/class-users-render.php:298
 #, php-format
 msgid "%1$s (%2$s selected as best)"
-msgstr ""
-
-#: includes/blocks/render/class-users-render.php:308
-msgid "Votes given"
-msgstr ""
-
-#: includes/blocks/render/class-users-render.php:309
-msgid "Votes received"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:334
@@ -2820,10 +2879,6 @@ msgstr ""
 msgid "Permissions"
 msgstr ""
 
-#: includes/settings/class-fields.php:87
-msgid "Posting"
-msgstr ""
-
 #: includes/settings/class-fields.php:88
 msgid "Viewing"
 msgstr ""
@@ -2884,14 +2939,6 @@ msgstr ""
 
 #: includes/settings/class-fields.php:442
 msgid "Only users who manage easyQ can post, vote or change anything, for example during maintenance."
-msgstr ""
-
-#: includes/settings/class-fields.php:446
-msgid "Q&A level of each role"
-msgstr ""
-
-#: includes/settings/class-fields.php:447
-msgid "Users get the level of their role unless their profile sets a higher one."
 msgstr ""
 
 #: includes/settings/class-fields.php:451
@@ -2998,549 +3045,625 @@ msgstr ""
 msgid "Posting on user walls"
 msgstr ""
 
+#: includes/settings/class-fields.php:496
+msgid "Changing tags or categories"
+msgstr ""
+
+#: includes/settings/class-fields.php:497
+msgid "Editing silently"
+msgstr ""
+
+#: includes/settings/class-fields.php:498
+msgid "Selecting best answers"
+msgstr ""
+
+#: includes/settings/class-fields.php:499
+msgid "Viewing IP addresses"
+msgstr ""
+
+#: includes/settings/class-fields.php:500
+msgid "Viewing voters and flaggers"
+msgstr ""
+
+#: includes/settings/class-fields.php:501
+msgid "Viewing new users"
+msgstr ""
+
+#: includes/settings/class-fields.php:502
+msgid "Viewing special users"
+msgstr ""
+
 #. translators: %s: name of a permission, e.g. "Asking questions".
-#: includes/settings/class-fields.php:507
+#: includes/settings/class-fields.php:518
 #, php-format
 msgid "Points needed for: %s"
 msgstr ""
 
-#: includes/settings/class-fields.php:529
+#: includes/settings/class-fields.php:540
 msgid "Posting a question"
 msgstr ""
 
-#: includes/settings/class-fields.php:530
+#: includes/settings/class-fields.php:541
 msgid "Selecting an answer for your question"
 msgstr ""
 
-#: includes/settings/class-fields.php:531
+#: includes/settings/class-fields.php:542
 msgid "Per up vote on your question"
 msgstr ""
 
-#: includes/settings/class-fields.php:532
+#: includes/settings/class-fields.php:543
 msgid "Per down vote on your question"
 msgstr ""
 
-#: includes/settings/class-fields.php:533
+#: includes/settings/class-fields.php:544
 msgid "Limit from up votes on each question"
 msgstr ""
 
-#: includes/settings/class-fields.php:534
+#: includes/settings/class-fields.php:545
 msgid "Limit from down votes on each question"
 msgstr ""
 
-#: includes/settings/class-fields.php:535
+#: includes/settings/class-fields.php:546
 msgid "Posting an answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:536
+#: includes/settings/class-fields.php:547
 msgid "Having your answer selected as the best"
 msgstr ""
 
-#: includes/settings/class-fields.php:537
+#: includes/settings/class-fields.php:548
 msgid "Per up vote on your answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:538
+#: includes/settings/class-fields.php:549
 msgid "Per down vote on your answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:539
+#: includes/settings/class-fields.php:550
 msgid "Limit from up votes on each answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:540
+#: includes/settings/class-fields.php:551
 msgid "Limit from down votes on each answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:541
+#: includes/settings/class-fields.php:552
 msgid "Per up vote on your comment"
 msgstr ""
 
-#: includes/settings/class-fields.php:542
+#: includes/settings/class-fields.php:553
 msgid "Per down vote on your comment"
 msgstr ""
 
-#: includes/settings/class-fields.php:543
+#: includes/settings/class-fields.php:554
 msgid "Limit from up votes on each comment"
 msgstr ""
 
-#: includes/settings/class-fields.php:544
+#: includes/settings/class-fields.php:555
 msgid "Limit from down votes on each comment"
 msgstr ""
 
-#: includes/settings/class-fields.php:545
+#: includes/settings/class-fields.php:556
 msgid "Voting up a question"
 msgstr ""
 
-#: includes/settings/class-fields.php:546
+#: includes/settings/class-fields.php:557
 msgid "Voting down a question"
 msgstr ""
 
-#: includes/settings/class-fields.php:547
+#: includes/settings/class-fields.php:558
 msgid "Voting up an answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:548
+#: includes/settings/class-fields.php:559
 msgid "Voting down an answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:554
+#: includes/settings/class-fields.php:565
 msgid "Multiply all points by"
 msgstr ""
 
-#: includes/settings/class-fields.php:554
+#: includes/settings/class-fields.php:565
 msgid "Every value above counts this many times."
 msgstr ""
 
-#: includes/settings/class-fields.php:555
+#: includes/settings/class-fields.php:566
 msgid "Add for all users"
 msgstr ""
 
-#: includes/settings/class-fields.php:555
+#: includes/settings/class-fields.php:566
 msgid "Points every user starts with, not multiplied."
 msgstr ""
 
-#: includes/settings/class-fields.php:558
+#: includes/settings/class-fields.php:569
 msgid "User titles"
 msgstr ""
 
-#: includes/settings/class-fields.php:559
+#: includes/settings/class-fields.php:570
 msgid "Titles that users earn with points, keyed by the points needed."
 msgstr ""
 
 #. translators: %s: number of points.
-#: includes/settings/class-fields.php:588
+#: includes/settings/class-fields.php:599
 #, php-format
 msgid "Only one title can need %s points; the first one was kept."
 msgstr ""
 
-#: includes/settings/class-fields.php:612
+#: includes/settings/class-fields.php:623
 msgid "Allow users to upload an avatar"
 msgstr ""
 
-#: includes/settings/class-fields.php:613
+#: includes/settings/class-fields.php:624
 msgid "Largest stored avatar size, in pixels"
 msgstr ""
 
-#: includes/settings/class-fields.php:628
+#: includes/settings/class-fields.php:639
 msgid "Allow questions to be closed"
 msgstr ""
 
-#: includes/settings/class-fields.php:629
+#: includes/settings/class-fields.php:640
 msgid "Allow users to close their own questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:630
+#: includes/settings/class-fields.php:641
 msgid "Close questions when an answer is selected"
 msgstr ""
 
-#: includes/settings/class-fields.php:631
+#: includes/settings/class-fields.php:642
 msgid "Allow users to answer their own questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:632
+#: includes/settings/class-fields.php:643
 msgid "Allow more than one answer per user to a question"
 msgstr ""
 
-#: includes/settings/class-fields.php:633
+#: includes/settings/class-fields.php:644
 msgid "Allow follow-on questions to answers"
 msgstr ""
 
-#: includes/settings/class-fields.php:634
+#: includes/settings/class-fields.php:645
 msgid "Allow comments on questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:635
+#: includes/settings/class-fields.php:646
 msgid "Allow comments on answers"
 msgstr ""
 
-#: includes/settings/class-fields.php:636
+#: includes/settings/class-fields.php:647
 msgid "Allow visitors to give a name with their posts"
 msgstr ""
 
-#: includes/settings/class-fields.php:638
+#: includes/settings/class-fields.php:649
 msgid "Preselect email notifications on the post forms"
 msgstr ""
 
-#: includes/settings/class-fields.php:639
+#: includes/settings/class-fields.php:650
 msgid "Users can still turn them off for each post."
 msgstr ""
 
-#: includes/settings/class-fields.php:642
+#: includes/settings/class-fields.php:653
 msgid "Allow questions without a category"
 msgstr ""
 
-#: includes/settings/class-fields.php:643
+#: includes/settings/class-fields.php:654
 msgid "Only applies once categories exist."
 msgstr ""
 
-#: includes/settings/class-fields.php:645
+#: includes/settings/class-fields.php:656
 msgid "Allow questions in a category that has subcategories"
 msgstr ""
 
-#: includes/settings/class-fields.php:646
+#: includes/settings/class-fields.php:657
 msgid "Minimum length of question titles, in characters"
 msgstr ""
 
-#: includes/settings/class-fields.php:647
+#: includes/settings/class-fields.php:658
 msgid "Maximum length of question titles, in characters"
 msgstr ""
 
-#: includes/settings/class-fields.php:648
+#: includes/settings/class-fields.php:659
 msgid "Minimum length of questions, in characters"
 msgstr ""
 
-#: includes/settings/class-fields.php:649
+#: includes/settings/class-fields.php:660
 msgid "Minimum length of answers, in characters"
 msgstr ""
 
-#: includes/settings/class-fields.php:650
+#: includes/settings/class-fields.php:661
 msgid "Minimum length of comments, in characters"
 msgstr ""
 
-#: includes/settings/class-fields.php:651
+#: includes/settings/class-fields.php:662
 msgid "Minimum number of tags per question"
 msgstr ""
 
-#: includes/settings/class-fields.php:652
+#: includes/settings/class-fields.php:663
 msgid "Maximum number of tags per question"
 msgstr ""
 
-#: includes/settings/class-fields.php:653
+#: includes/settings/class-fields.php:664
 msgid "Separate tags with commas instead of spaces"
 msgstr ""
 
-#: includes/settings/class-fields.php:656
+#: includes/settings/class-fields.php:667
 msgid "Censored words"
 msgstr ""
 
-#: includes/settings/class-fields.php:657
+#: includes/settings/class-fields.php:668
 msgid "Separate words with spaces or commas. Use * as a wildcard, e.g. bad*."
 msgstr ""
 
-#: includes/settings/class-fields.php:659
+#: includes/settings/class-fields.php:670
 msgid "Show similar questions while asking"
 msgstr ""
 
-#: includes/settings/class-fields.php:660
+#: includes/settings/class-fields.php:671
 msgid "Similar questions matching"
 msgstr ""
 
-#: includes/settings/class-fields.php:661
+#: includes/settings/class-fields.php:671
+msgid "how closely they must match"
+msgstr ""
+
+#: includes/settings/class-fields.php:672
 msgid "Number of similar questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:662
+#: includes/settings/class-fields.php:673
 msgid "Suggest tags from similar questions while asking"
 msgstr ""
 
-#: includes/settings/class-fields.php:663
+#: includes/settings/class-fields.php:674
 msgid "Example tags matching"
 msgstr ""
 
-#: includes/settings/class-fields.php:664
+#: includes/settings/class-fields.php:674
+msgid "how closely the questions must match"
+msgstr ""
+
+#: includes/settings/class-fields.php:675
 msgid "Number of suggested tags"
 msgstr ""
 
-#: includes/settings/class-fields.php:679
+#: includes/settings/class-fields.php:690
 msgid "Length of the question title in addresses, in characters"
 msgstr ""
 
-#: includes/settings/class-fields.php:680
+#: includes/settings/class-fields.php:691
 msgid "Count and show question views"
 msgstr ""
 
-#: includes/settings/class-fields.php:680
+#: includes/settings/class-fields.php:691
 msgid "No IP addresses are stored for this."
 msgstr ""
 
-#: includes/settings/class-fields.php:681
+#: includes/settings/class-fields.php:692
 msgid "Update the hotness of a question when it is viewed"
 msgstr ""
 
-#: includes/settings/class-fields.php:682
+#: includes/settings/class-fields.php:693
 msgid "Allow voting on questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:683
+#: includes/settings/class-fields.php:694
 msgid "Allow voting on answers"
 msgstr ""
 
-#: includes/settings/class-fields.php:684
+#: includes/settings/class-fields.php:695
 msgid "Allow voting on comments"
 msgstr ""
 
-#: includes/settings/class-fields.php:685
+#: includes/settings/class-fields.php:696
 msgid "Show up and down votes separately"
 msgstr ""
 
-#: includes/settings/class-fields.php:686
+#: includes/settings/class-fields.php:697
 msgid "Turn web addresses in posts into links"
 msgstr ""
 
-#: includes/settings/class-fields.php:687
+#: includes/settings/class-fields.php:698
 msgid "Open links in posts in a new window"
 msgstr ""
 
-#: includes/settings/class-fields.php:688
+#: includes/settings/class-fields.php:699
 msgid "Show the full date after this many days"
 msgstr ""
 
-#: includes/settings/class-fields.php:689
+#: includes/settings/class-fields.php:700
 msgid "Show the points of authors"
 msgstr ""
 
-#: includes/settings/class-fields.php:690
+#: includes/settings/class-fields.php:701
 msgid "Show when and by whom a post was changed"
 msgstr ""
 
-#: includes/settings/class-fields.php:691
+#: includes/settings/class-fields.php:702
 msgid "Show large numbers in short form, e.g. 1.2k"
 msgstr ""
 
-#: includes/settings/class-fields.php:693
+#: includes/settings/class-fields.php:704
 msgid "Sort answers by"
 msgstr ""
 
-#: includes/settings/class-fields.php:695
+#: includes/settings/class-fields.php:706
 msgid "Time"
 msgstr ""
 
-#: includes/settings/class-fields.php:699
+#: includes/settings/class-fields.php:709
+msgid "decides the order of answers"
+msgstr ""
+
+#: includes/settings/class-fields.php:710
 msgid "Show the selected answer first"
 msgstr ""
 
-#: includes/settings/class-fields.php:700
+#: includes/settings/class-fields.php:711
 #: src/editor/inspector.js:69
 msgid "Answers per page"
 msgstr ""
 
-#: includes/settings/class-fields.php:701
+#: includes/settings/class-fields.php:712
 msgid "Shorten comment lists from this many comments"
 msgstr ""
 
-#: includes/settings/class-fields.php:702
+#: includes/settings/class-fields.php:713
 msgid "Comments shown in a shortened list"
 msgstr ""
 
-#: includes/settings/class-fields.php:703
+#: includes/settings/class-fields.php:714
 msgid "List user profiles in the sitemaps"
 msgstr ""
 
-#: includes/settings/class-fields.php:718
+#: includes/settings/class-fields.php:729
 msgid "Questions per page"
 msgstr ""
 
-#: includes/settings/class-fields.php:719
+#: includes/settings/class-fields.php:730
 msgid "Items per page of the activity list"
 msgstr ""
 
-#: includes/settings/class-fields.php:720
+#: includes/settings/class-fields.php:730
+msgid "Activity"
+msgstr ""
+
+#: includes/settings/class-fields.php:731
 msgid "Tags per page"
 msgstr ""
 
-#: includes/settings/class-fields.php:721
+#: includes/settings/class-fields.php:732
 msgid "Users per page"
 msgstr ""
 
-#: includes/settings/class-fields.php:730
+#: includes/settings/class-fields.php:741
 msgid "Search with"
 msgstr ""
 
-#: includes/settings/class-fields.php:733
-msgid "Weight in percent. Changes apply to a question the next time it is answered, voted on or viewed."
+#: includes/settings/class-fields.php:744
+msgid "Weights in percent. A change applies to a question the next time it is answered, voted on or viewed; Recount posts under easyQ → Tools applies it to all questions at once."
 msgstr ""
 
-#: includes/settings/class-fields.php:736
+#: includes/settings/class-fields.php:747
 msgid "Hotness: question is new"
 msgstr ""
 
-#: includes/settings/class-fields.php:737
+#: includes/settings/class-fields.php:747
+msgid "Question is new"
+msgstr ""
+
+#: includes/settings/class-fields.php:748
 msgid "Hotness: question has a new answer"
 msgstr ""
 
-#: includes/settings/class-fields.php:738
+#: includes/settings/class-fields.php:748
+msgid "Latest answer is new"
+msgstr ""
+
+#: includes/settings/class-fields.php:749
 msgid "Hotness: question has many answers"
 msgstr ""
 
-#: includes/settings/class-fields.php:739
+#: includes/settings/class-fields.php:749
+msgid "Many answers"
+msgstr ""
+
+#: includes/settings/class-fields.php:750
 msgid "Hotness: question has many up votes"
 msgstr ""
 
-#: includes/settings/class-fields.php:740
+#: includes/settings/class-fields.php:750
+msgid "Many up votes"
+msgstr ""
+
+#: includes/settings/class-fields.php:751
 msgid "Hotness: question has many views"
 msgstr ""
 
-#: includes/settings/class-fields.php:755
+#: includes/settings/class-fields.php:751
+msgid "Many views"
+msgstr ""
+
+#: includes/settings/class-fields.php:766
 msgid "Feed of recent questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:756
+#: includes/settings/class-fields.php:767
 msgid "Feed of recent questions and answers"
 msgstr ""
 
-#: includes/settings/class-fields.php:757
+#: includes/settings/class-fields.php:768
 msgid "Feed of recent activity"
 msgstr ""
 
-#: includes/settings/class-fields.php:758
+#: includes/settings/class-fields.php:769
 msgid "Feed of hot questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:759
+#: includes/settings/class-fields.php:770
 msgid "Feed of unanswered questions"
 msgstr ""
 
-#: includes/settings/class-fields.php:760
+#: includes/settings/class-fields.php:771
 msgid "Feed for each tag"
 msgstr ""
 
-#: includes/settings/class-fields.php:761
+#: includes/settings/class-fields.php:772
 msgid "Feeds for each category"
 msgstr ""
 
-#: includes/settings/class-fields.php:762
+#: includes/settings/class-fields.php:773
 msgid "Feed for search results"
 msgstr ""
 
-#: includes/settings/class-fields.php:763
+#: includes/settings/class-fields.php:774
 msgid "Items per feed"
 msgstr ""
 
-#: includes/settings/class-fields.php:764
+#: includes/settings/class-fields.php:775
 msgid "Include the full text of posts"
 msgstr ""
 
-#: includes/settings/class-fields.php:778
-msgid "Per hour."
-msgstr ""
-
-#: includes/settings/class-fields.php:780
+#: includes/settings/class-fields.php:790
 msgid "Questions per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:781
+#: includes/settings/class-fields.php:791
 msgid "Questions per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:782
+#: includes/settings/class-fields.php:792
 msgid "Answers per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:783
+#: includes/settings/class-fields.php:793
 msgid "Answers per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:784
+#: includes/settings/class-fields.php:794
 msgid "Comments per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:785
+#: includes/settings/class-fields.php:795
 msgid "Comments per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:786
+#: includes/settings/class-fields.php:796
 msgid "Votes per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:787
+#: includes/settings/class-fields.php:797
 msgid "Votes per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:788
+#: includes/settings/class-fields.php:798
 msgid "Flags per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:789
+#: includes/settings/class-fields.php:799
 msgid "Flags per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:790
+#: includes/settings/class-fields.php:800
 msgid "Uploads per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:791
+#: includes/settings/class-fields.php:801
 msgid "Uploads per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:792
+#: includes/settings/class-fields.php:802
 msgid "Messages per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:793
+#: includes/settings/class-fields.php:803
 msgid "Messages per user"
 msgstr ""
 
-#: includes/settings/class-fields.php:794
+#: includes/settings/class-fields.php:804
 msgid "Registrations per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:795
+#: includes/settings/class-fields.php:805
 msgid "Login attempts per IP address"
 msgstr ""
 
-#: includes/settings/class-fields.php:799
+#: includes/settings/class-fields.php:809
 msgid "Ask users to confirm their email address"
 msgstr ""
 
-#: includes/settings/class-fields.php:800
+#: includes/settings/class-fields.php:810
 msgid "Require a confirmed email address to take part"
 msgstr ""
 
-#: includes/settings/class-fields.php:801
+#: includes/settings/class-fields.php:811
 msgid "Approve new users before they take part"
 msgstr ""
 
-#: includes/settings/class-fields.php:802
+#: includes/settings/class-fields.php:812
 msgid "Moderate posts by visitors"
 msgstr ""
 
-#: includes/settings/class-fields.php:803
+#: includes/settings/class-fields.php:813
 msgid "Moderate posts by users awaiting approval"
 msgstr ""
 
-#: includes/settings/class-fields.php:804
+#: includes/settings/class-fields.php:814
 msgid "Moderate posts by users with an unconfirmed email address"
 msgstr ""
 
-#: includes/settings/class-fields.php:805
+#: includes/settings/class-fields.php:815
 msgid "Moderate posts by users with few points"
 msgstr ""
 
-#: includes/settings/class-fields.php:806
+#: includes/settings/class-fields.php:816
 msgid "Points needed to post without moderation"
 msgstr ""
 
-#: includes/settings/class-fields.php:807
+#: includes/settings/class-fields.php:817
 msgid "Moderate posts again after they are edited"
 msgstr ""
 
-#: includes/settings/class-fields.php:808
+#: includes/settings/class-fields.php:818
 msgid "Date approved posts at the time of approval"
 msgstr ""
 
-#: includes/settings/class-fields.php:809
+#: includes/settings/class-fields.php:819
 msgid "Allow users to flag posts"
 msgstr ""
 
-#: includes/settings/class-fields.php:810
+#: includes/settings/class-fields.php:820
 msgid "Hide a post after this many flags"
 msgstr ""
 
-#: includes/settings/class-fields.php:813
+#: includes/settings/class-fields.php:823
 msgid "Blocked IP addresses"
 msgstr ""
 
-#: includes/settings/class-fields.php:814
+#: includes/settings/class-fields.php:824
 msgid "These addresses can read but not post or vote. Separate them with commas; use * as a wildcard or a hyphen for a range."
 msgstr ""
 
-#: includes/settings/class-fields.php:816
+#: includes/settings/class-fields.php:826
 msgid "Store IP addresses shortened"
 msgstr ""
 
-#: includes/settings/class-fields.php:816
+#: includes/settings/class-fields.php:826
 msgid "Removes the last part of each stored address."
+msgstr ""
+
+#: includes/settings/class-fields.php:833
+msgid "registrations per IP address"
+msgstr ""
+
+#: includes/settings/class-fields.php:834
+msgid "login attempts per IP address"
+msgstr ""
+
+#: includes/settings/class-fields.php:835
+msgid "per IP address"
+msgstr ""
+
+#: includes/settings/class-fields.php:836
+msgid "per user"
 msgstr ""
 
 #: includes/tools/class-tools.php:73
