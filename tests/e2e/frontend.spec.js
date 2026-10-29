@@ -59,6 +59,9 @@ test.describe( 'Q&A frontend', () => {
 		} );
 		const page = await context.newPage();
 		await page.goto( `${ requestUtils.baseURL }/wp-login.php` );
+		// Core focuses and selects the user name field after 200 ms; filling the fields before that can
+		// put the password into the user name field.
+		await expect( page.locator( '#user_login' ) ).toBeFocused();
 		await page.locator( '#user_login' ).fill( username );
 		await page.locator( '#user_pass' ).fill( 'password' );
 		await page.locator( '#wp-submit' ).click();
