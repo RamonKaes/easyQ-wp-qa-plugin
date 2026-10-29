@@ -131,7 +131,7 @@ and axe.
 | `permission_callback` on every route | Met | All controllers |
 | Arguments with types and validation; `WP_Error` with a status | Met | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
-| Response schema for each endpoint | Open | Questions, answers and comments have one; categories, users, user fields, moderation, IP addresses, tools and actions do not yet |
+| Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()` (`REST\Post_Schema`, `REST\Schemas`); a test checks real responses of all routes against them, both types and undocumented properties |
 
 ## Blocks
 

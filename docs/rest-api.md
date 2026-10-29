@@ -15,6 +15,13 @@ Visitors can read whatever the permission settings allow. Anonymous authors (if
 the site allows anonymous posting) receive the cookie `easyq_visitor` with a
 random number, so they can edit and later claim their posts.
 
+## Schemas
+
+Every route describes its response in a JSON schema, as core routes do. An `OPTIONS`
+request returns it, e.g. `OPTIONS /easyq/v1/categories`. Lists are described by the
+schema of one item; `DELETE` responses (`deleted` and `previous` or `id`) are not part
+of it, as in core.
+
 ## Errors
 
 Errors use the usual WordPress format with `code`, `message` and `data.status`.
