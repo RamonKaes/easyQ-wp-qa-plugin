@@ -64,6 +64,15 @@ final class Forms {
 	public const FORM_CLASS = 'wp-block-post-comments-form';
 
 	/**
+	 * Query variable that opens the close form of a question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const CLOSE_VAR = 'easyq_close';
+
+	/**
 	 * Renders the form to ask a question.
 	 *
 	 * @since 0.1.0
@@ -316,7 +325,10 @@ final class Forms {
 	}
 
 	/**
-	 * Returns the form to close a question, folded until opened.
+	 * Returns the form to close a question, shown below the question once its close button was used.
+	 *
+	 * As in Question2Answer, the close button opens the question page in the state `close`
+	 * (`?easyq_close={id}`), so the form needs no JavaScript.
 	 *
 	 * @since 0.1.0
 	 *
@@ -324,18 +336,30 @@ final class Forms {
 	 * @return string
 	 */
 	public static function close_form( Post $question ): string {
-		$fields = Form_Handler::hidden_fields( 'action' )
-			. sprintf( '<input type="hidden" name="easyq_post" value="%d" /><input type="hidden" name="easyq_action" value="close" />', $question->id )
-			. self::field( 'action', 'note', __( 'Reason for closing', 'easyq' ), 'textarea', '', array(), '', 'easyq-close-' . $question->id )
-			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', '', array( 'min' => '1' ), '', 'easyq-close-' . $question->id );
+		$id     = 'easyq-close-' . $question->id;
+		$fields = self::field( 'action', 'note', __( 'Reason for closing', 'easyq' ), 'textarea', '', array(), '', $id )
+			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', '', array( 'min' => '1' ), '', $id );
+		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( self::CLOSE_VAR ) ), esc_html__( 'Cancel', 'easyq' ) );
 
 		return sprintf(
-			'<details class="wp-block-button"><summary>%s</summary><div class="%s"><form method="post" class="comment-form">%s<div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></form></div></details>',
-			esc_html__( 'Close', 'easyq' ),
-			esc_attr( self::FORM_CLASS ),
-			$fields,
-			esc_html__( 'Close question', 'easyq' )
+			'<section id="%1$s" aria-labelledby="%1$s-title"><h2 id="%1$s-title">%2$s</h2>%3$s</section>',
+			esc_attr( $id ),
+			esc_html__( 'Close this question', 'easyq' ),
+			self::form( 'action', $question->id, $fields, __( 'Close question', 'easyq' ), array( 'easyq_action' => 'close' ), $cancel )
 		);
+	}
+
+	/**
+	 * Whether the current request asks for the close form of a question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $question Question.
+	 * @return bool
+	 */
+	public static function closing( Post $question ): bool {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only selects which question shows its close form.
+		return isset( $_GET[ self::CLOSE_VAR ] ) && is_string( $_GET[ self::CLOSE_VAR ] ) && absint( $_GET[ self::CLOSE_VAR ] ) === $question->id;
 	}
 
 	/**

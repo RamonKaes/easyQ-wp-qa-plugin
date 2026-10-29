@@ -10,10 +10,12 @@ namespace EasyQ\Tests\Integration;
 use EasyQ\Actor;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
+use EasyQ\Blocks\Render\Forms;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\Templates;
+use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -42,7 +44,7 @@ final class Blocks_Test extends Test_Case {
 
 	public function tear_down(): void {
 		Block_Context::router()->set_current( null );
-		unset( $_GET['sort'], $_GET[ Flash::QUERY_VAR ], $_GET['easyq_edit'] );
+		unset( $_GET['sort'], $_GET[ Flash::QUERY_VAR ], $_GET['easyq_edit'], $_GET['easyq_close'] );
 		parent::tear_down();
 	}
 
@@ -229,7 +231,52 @@ final class Blocks_Test extends Test_Case {
 
 		$this->assertStringContainsString( 'value="hide"', $html );
 		$this->assertStringContainsString( 'easyq_edit=' . $question->id, $html );
-		$this->assertStringContainsString( '<details', $html );
+		// Closing opens the question page in the state `close`, as in Question2Answer.
+		$this->assertStringContainsString( 'easyq_close=' . $question->id . '#easyq-close-' . $question->id . '">Close</a>', $html );
+		$this->assertStringNotContainsString( 'name="note"', $html );
+	}
+
+	public function test_close_form_appears_below_the_question_when_requested(): void {
+		$question = $this->ask( $this->user(), 'Question to close', 'The question text.' );
+		$markup   = '<!-- wp:easyq/question --><!-- wp:easyq/post-content /--><!-- /wp:easyq/question -->';
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+
+		$this->assertStringNotContainsString( 'name="note"', $this->render( $markup, new Route( 'question', $question ) ) );
+
+		// The request address as in the browser; the cancel link is built from it.
+		$this->go_to( add_query_arg( 'easyq_close', $question->id, URLs::question( $question ) ) );
+		$this->assertTrue( Forms::closing( $question ) );
+		$html   = $this->render( $markup, new Route( 'question', $question ) );
+		$cancel = $this->cancel_link( $html );
+
+		$this->assertStringContainsString( 'The question text.', $html );
+		$this->assertLessThan( (int) strpos( $html, 'id="easyq-close-' . $question->id . '"' ), (int) strpos( $html, 'The question text.' ) );
+		$this->assertStringContainsString( '<h2 id="easyq-close-' . $question->id . '-title">Close this question</h2>', $html );
+		$this->assertStringContainsString( 'name="easyq_action" value="close"', $html );
+		$this->assertStringContainsString( 'name="note"', $html );
+		$this->assertStringContainsString( 'name="duplicate_of"', $html );
+		$this->assertStringContainsString( '>Close question</button>', $html );
+		$this->assertStringContainsString( (string) wp_parse_url( URLs::question( $question ), PHP_URL_PATH ), $cancel );
+		$this->assertStringNotContainsString( 'easyq_close=', $cancel );
+
+		// Not for users who may not close it, and not for another question.
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertStringNotContainsString( 'name="note"', $this->render( $markup, new Route( 'question', $question ) ) );
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+		$_GET['easyq_close'] = (string) ( $question->id + 1 );
+		$this->assertStringNotContainsString( 'name="note"', $this->render( $markup, new Route( 'question', $question ) ) );
+	}
+
+	/**
+	 * Returns the address of the cancel link of a form.
+	 *
+	 * @param string $html Rendered HTML.
+	 * @return string
+	 */
+	private function cancel_link( string $html ): string {
+		$this->assertSame( 1, preg_match( '/<a href="([^"]*)">Cancel<\/a>/', $html, $match ) );
+
+		return html_entity_decode( $match[1] );
 	}
 
 	public function test_edit_form_replaces_the_content_for_editors(): void {
@@ -334,6 +381,9 @@ final class Blocks_Test extends Test_Case {
 			. do_blocks( '<!-- wp:easyq/account /-->' );
 		$_GET['easyq_edit'] = (string) $question->id;
 		$html              .= $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-content /--><!-- /wp:easyq/question -->', new Route( 'question', $question ) );
+		unset( $_GET['easyq_edit'] );
+		$_GET['easyq_close'] = (string) $question->id;
+		$html               .= $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-content /--><!-- /wp:easyq/question -->', new Route( 'question', $question ) );
 
 		$this->assertTrue( wp_style_is( 'wp-block-post-comments-form' ) );
 		$forms = $this->field_forms( $html );

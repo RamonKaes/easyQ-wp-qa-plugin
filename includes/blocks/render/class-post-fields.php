@@ -81,9 +81,10 @@ final class Post_Fields {
 		}
 
 		return sprintf(
-			'<div %s>%s</div>',
+			'<div %s>%s%s</div>',
 			get_block_wrapper_attributes(),
-			Services::content_renderer()->html( (string) $post->content, $post->format )
+			Services::content_renderer()->html( (string) $post->content, $post->format ),
+			Forms::closing( $post ) && Render::rules( $post )['closeable'] ? Forms::close_form( $post ) : ''
 		);
 	}
 
@@ -571,7 +572,7 @@ final class Post_Fields {
 		}
 
 		if ( $rules['closeable'] ) {
-			$buttons[] = Forms::close_form( $post );
+			$buttons[] = self::link_button( add_query_arg( Forms::CLOSE_VAR, $post->id, URLs::post( $post ) ) . '#easyq-close-' . $post->id, __( 'Close', 'easyq' ) );
 		}
 
 		if ( array() === $buttons ) {

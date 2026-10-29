@@ -11,6 +11,7 @@ use EasyQ\Actor;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
+use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 
@@ -32,13 +33,14 @@ final class Form_Handler_Test extends REST_Test_Case {
 	 * @param string               $form   Form name.
 	 * @param array<string, mixed> $fields Fields.
 	 * @param bool                 $nonce  Whether to send a valid nonce.
+	 * @param string               $from   Address of the page the form is on; default the ask page.
 	 * @return string Redirect address.
 	 */
-	private function submit( string $form, array $fields, bool $nonce = true ): string {
+	private function submit( string $form, array $fields, bool $nonce = true, string $from = '' ): string {
 		$_POST                   = $fields;
 		$_POST['easyq_form']     = $form;
 		$_POST['_easyq_nonce']   = $nonce ? wp_create_nonce( 'easyq_' . $form ) : 'invalid';
-		$_SERVER['HTTP_REFERER'] = home_url( '/questions/ask/' );
+		$_SERVER['HTTP_REFERER'] = '' === $from ? home_url( '/questions/ask/' ) : $from;
 
 		$url = ( new Form_Handler() )->process();
 		$this->assertIsString( $url );
@@ -155,17 +157,38 @@ final class Form_Handler_Test extends REST_Test_Case {
 	public function test_performs_post_actions(): void {
 		$question = $this->ask( $this->user() );
 		$this->login( 'editor' );
+		$form_page = add_query_arg( 'easyq_close', $question->id, URLs::question( $question ) );
 
-		$this->submit(
+		// A question that does not exist: back to the close form with the error.
+		$url = $this->submit(
+			'action',
+			array(
+				'easyq_post'   => (string) $question->id,
+				'easyq_action' => 'close',
+				'duplicate_of' => '999999',
+			),
+			true,
+			$form_page
+		);
+		$this->assertFalse( $this->post( $question->id )->is_closed() );
+		$this->assertStringStartsWith( $form_page, $url );
+		$this->assertSame( 'error', Flash::current()['type'] ?? null );
+
+		$url = $this->submit(
 			'action',
 			array(
 				'easyq_post'   => (string) $question->id,
 				'easyq_action' => 'close',
 				'note'         => 'Answered elsewhere.',
-			)
+			),
+			true,
+			$form_page
 		);
 
 		$this->assertTrue( $this->post( $question->id )->is_closed() );
+		// Then the question page without the close form.
+		$this->assertStringStartsWith( URLs::question( $question ), $url );
+		$this->assertStringNotContainsString( 'easyq_close', $url );
 	}
 
 	public function test_deleting_a_question_goes_to_the_start_page(): void {
