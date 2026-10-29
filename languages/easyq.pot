@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T09:55:46+00:00\n"
+"POT-Creation-Date: 2026-10-29T10:03:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -579,7 +579,7 @@ msgid "Users earn a title once they have the points needed. Users with a special
 msgstr ""
 
 #: includes/admin/class-points-screen.php:218
-#: includes/admin/class-settings-screen.php:412
+#: includes/admin/class-settings-screen.php:413
 msgid "Points needed"
 msgstr ""
 

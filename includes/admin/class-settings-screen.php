@@ -65,7 +65,7 @@ final class Settings_Screen {
 	}
 
 	/**
-	 * Loads the script that shows the points minimum of a permission only when it is needed.
+	 * Loads the script that disables the points minimum of a permission while it is not needed.
 	 *
 	 * @since 0.1.0
 	 */
@@ -330,7 +330,7 @@ final class Settings_Screen {
 			case 'choice':
 				$points = isset( $fields[ $key . '_points' ] ) ? $key . '_points' : null;
 				// Permissions get one width, so that their points line up.
-				$this->render_select( $id, $name, $field['choices'] ?? array(), $value, $described, 'permissions' === $section ? 'regular-text' : '', null === $points ? null : self::id( $section, $points ) . '-wrap' );
+				$this->render_select( $id, $name, $field['choices'] ?? array(), $value, $described, 'permissions' === $section ? 'regular-text' : '', null === $points ? null : self::id( $section, $points ) );
 				if ( null !== $points ) {
 					$this->render_points( $section, $points, $defaults );
 				}
@@ -396,7 +396,8 @@ final class Settings_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * The script of the screen hides it unless the chosen threshold needs points.
+	 * The script of the screen disables it while the chosen threshold needs no points;
+	 * a disabled field is not sent, so its stored value stays.
 	 *
 	 * @param string $section  Section name.
 	 * @param string $key      Setting name of the points minimum.
@@ -407,7 +408,7 @@ final class Settings_Screen {
 		$value = $defaults ? ( Options::defaults()[ $section ][ $key ] ?? 0 ) : Options::get_int( $section, $key );
 
 		printf(
-			' <span id="%1$s-wrap"><label for="%1$s">%2$s</label> <input type="number" class="small-text" id="%1$s" name="%3$s" value="%4$s" min="0"></span>',
+			' <label for="%1$s">%2$s</label> <input type="number" class="small-text" id="%1$s" name="%3$s" value="%4$s" min="0">',
 			esc_attr( $id ),
 			esc_html__( 'Points needed', 'easyq' ),
 			esc_attr( Options::option_name( $section ) . '[' . $key . ']' ),

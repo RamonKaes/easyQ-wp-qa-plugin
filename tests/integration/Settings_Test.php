@@ -455,13 +455,15 @@ final class Settings_Test extends Test_Case {
 		$this->assertStringContainsString( '<th scope="row">Maintenance</th>', $html );
 	}
 
-	public function test_permissions_line_up_and_show_points_only_when_needed(): void {
+	public function test_permissions_line_up_and_keep_their_points_in_place(): void {
 		$html = $this->render( 'permissions' );
 
-		$this->assertStringContainsString( '<select id="easyq-permissions-permit-post-q" name="easyq_settings_permissions[permit_post_q]" class="regular-text" data-easyq-points="easyq-permissions-permit-post-q-points-wrap">', $html );
+		$this->assertStringContainsString( '<select id="easyq-permissions-permit-post-q" name="easyq_settings_permissions[permit_post_q]" class="regular-text" data-easyq-points="easyq-permissions-permit-post-q-points">', $html );
 		$this->assertMatchesRegularExpression( '/<option value="' . Permits::POINTS . '" data-points>/', $html );
 		$this->assertStringNotContainsString( '<option value="' . Permits::USERS . '" data-points', $html );
-		$this->assertStringContainsString( '<span id="easyq-permissions-permit-post-q-points-wrap"><label for="easyq-permissions-permit-post-q-points">Points needed</label>', $html );
+		// The minimum is always there and enabled; only the script disables it, as core does under Settings → Reading.
+		$this->assertStringContainsString( '</select> <label for="easyq-permissions-permit-post-q-points">Points needed</label> <input type="number" class="small-text" id="easyq-permissions-permit-post-q-points" name="easyq_settings_permissions[permit_post_q_points]" value="0" min="0">', $html );
+		$this->assertStringNotContainsString( 'hidden', (string) strstr( (string) strstr( $html, 'id="easyq-permissions-permit-post-q"' ), '</td>', true ) );
 		// A permission without points has no minimum to show.
 		$this->assertStringContainsString( '<select id="easyq-permissions-permit-view-q-page" name="easyq_settings_permissions[permit_view_q_page]" class="regular-text">', $html );
 	}

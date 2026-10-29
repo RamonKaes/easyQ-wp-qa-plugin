@@ -66,7 +66,7 @@ test.describe( 'Settings screen', () => {
 		).toBeChecked();
 	} );
 
-	test( 'shows the points minimum only for thresholds with points', async ( {
+	test( 'disables the points minimum while no points are needed', async ( {
 		admin,
 		page,
 	} ) => {
@@ -75,18 +75,21 @@ test.describe( 'Settings screen', () => {
 			'page=easyq-settings&tab=permissions'
 		);
 		const points = page.locator(
-			'#easyq-permissions-permit-post-q-points-wrap'
+			'#easyq-permissions-permit-post-q-points'
 		);
 
-		await expect( points ).toBeHidden();
+		// Like the page selection under Settings → Reading: in place, but disabled.
+		await expect( points ).toBeVisible();
+		await expect( points ).toBeDisabled();
 		await page
 			.getByLabel( 'Asking questions' )
 			.selectOption( { label: 'Registered users with enough points' } );
-		await expect( points ).toBeVisible();
+		await expect( points ).toBeEnabled();
 		await page
 			.getByLabel( 'Asking questions' )
 			.selectOption( { label: 'Registered users' } );
-		await expect( points ).toBeHidden();
+		await expect( points ).toBeDisabled();
+		await expect( points ).toBeVisible();
 	} );
 
 	test( 'has no accessibility violations on any tab', async ( {
