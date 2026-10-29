@@ -315,7 +315,7 @@ Top-level menu **easyQ**, shown from `easyq_moderate`; moderators only see the P
 | User titles | `admin/usertitles` | One table of titles with the points needed and empty rows for new ones, saved through the Settings API |
 | User fields | `admin/userfields` | List and form like the core category screen, ordering, deleting with the values users entered |
 | Email templates **(N)** | language files `emails` | List of all templates, editor with placeholders, preview, test mail, reset to default (section 8) |
-| Settings | `admin/general` … `admin/mailing` | Settings API with tabs (5.2–5.12) |
+| Settings | `admin/general` … `admin/mailing` | Settings API with tabs (5.2–5.12), arranged like the core settings screens: sections with headings, related switches and numbers in one row with a short title, permissions in one width, and the points minimum of a permission only shown when its threshold needs points |
 | Newsletter | `admin/mailing` | Own screen with progress; batches via WP-Cron |
 | Tools | `admin/recalc` | Section 5.13: each tool runs in batches through the REST API with a progress bar; without JavaScript, each click runs one batch |
 | IP address (linked) | `ip/{ip}` | The Posts screen filtered by an address, with buttons to block, unblock and hide all its posts; without the host name, which would be a request to a name server |
@@ -718,3 +718,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 42 | The easyQ menu opens with the dashboard; moderators, who may not see it, get the Posts screen as the first entry | 2026-10-29 |
 | 43 | The tools run in batches without stored state: each call returns the step and the last item, which the next call passes back. The search index, the counts of posts and the hotness are recalculated by question or post ID | 2026-10-29 |
 | 44 | Deleting hidden posts needs a confirmation on the tools screen, as it cannot be undone; Q2A starts it with one click | 2026-10-29 |
+| 45 | The settings tabs follow the layout of the core settings screens instead of one row per setting: only core markup and classes, plus a small script that hides points minimums that do not apply (they stay visible without JavaScript) | 2026-10-29 |

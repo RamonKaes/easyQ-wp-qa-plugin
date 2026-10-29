@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T09:15:10+00:00\n"
+"POT-Creation-Date: 2026-10-29T09:38:35+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -65,6 +65,7 @@ msgstr ""
 #: includes/admin/class-dashboard-screen.php:97
 #: includes/admin/class-points-screen.php:101
 #: includes/admin/class-posts-list-table.php:248
+#: includes/admin/class-settings-layout.php:217
 #: includes/blocks/render/class-users-render.php:292
 #: includes/blocks/render/class-widgets.php:63
 #: includes/blocks/render/class-widgets.php:92
@@ -119,6 +120,7 @@ msgstr ""
 
 #: includes/admin/class-categories-screen.php:89
 #: includes/admin/class-categories-screen.php:275
+#: includes/admin/class-settings-layout.php:144
 #: includes/blocks/render/class-widgets.php:83
 #: includes/blocks/render/class-widgets.php:196
 #: includes/frontend/class-navigation.php:74
@@ -338,6 +340,7 @@ msgstr ""
 
 #: includes/admin/class-dashboard-screen.php:93
 #: includes/admin/class-posts-screen.php:83
+#: includes/admin/class-settings-layout.php:166
 msgid "Posts"
 msgstr ""
 
@@ -356,6 +359,9 @@ msgstr ""
 #: includes/admin/class-dashboard-screen.php:101
 #: includes/admin/class-points-screen.php:102
 #: includes/admin/class-posts-list-table.php:249
+#: includes/admin/class-settings-layout.php:141
+#: includes/admin/class-settings-layout.php:178
+#: includes/admin/class-settings-layout.php:218
 #: includes/blocks/render/class-users-render.php:294
 #: src/editor/edit.js:286
 #: src/editor/edit.js:295
@@ -373,6 +379,9 @@ msgstr ""
 #: includes/admin/class-dashboard-screen.php:104
 #: includes/admin/class-points-screen.php:103
 #: includes/admin/class-posts-list-table.php:250
+#: includes/admin/class-settings-layout.php:142
+#: includes/admin/class-settings-layout.php:179
+#: includes/admin/class-settings-layout.php:219
 #: includes/blocks/render/class-users-render.php:304
 #: src/editor/edit.js:287
 msgid "Comments"
@@ -387,6 +396,8 @@ msgid "Comments by visitors without account"
 msgstr ""
 
 #: includes/admin/class-dashboard-screen.php:110
+#: includes/admin/class-settings-layout.php:131
+#: includes/admin/class-settings-layout.php:199
 #: includes/frontend/class-navigation.php:75
 #: includes/settings/class-fields.php:86
 #: src/editor/edit.js:560
@@ -436,7 +447,7 @@ msgid "Open Site Health"
 msgstr ""
 
 #: includes/admin/class-dashboard-screen.php:137
-#: includes/admin/class-settings-screen.php:54
+#: includes/admin/class-settings-screen.php:56
 #: src/editor/inspector.js:366
 msgid "Settings"
 msgstr ""
@@ -515,6 +526,7 @@ msgid "User Titles"
 msgstr ""
 
 #: includes/admin/class-points-screen.php:104
+#: includes/admin/class-settings-layout.php:174
 msgid "Voting"
 msgstr ""
 
@@ -543,7 +555,7 @@ msgid "Users earn a title once they have the points needed. Users with a special
 msgstr ""
 
 #: includes/admin/class-points-screen.php:200
-#: includes/admin/class-settings-screen.php:260
+#: includes/admin/class-settings-screen.php:385
 msgid "Points needed"
 msgstr ""
 
@@ -991,11 +1003,169 @@ msgstr ""
 msgid "A level in a category also applies to its subcategories."
 msgstr ""
 
-#: includes/admin/class-settings-screen.php:54
+#: includes/admin/class-settings-layout.php:124
+msgid "Users and data"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:127
+msgid "Viewing and posting"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:128
+msgid "Voting and flagging"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:129
+msgid "Editing and closing"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:130
+#: includes/admin/class-settings-layout.php:206
+msgid "Moderation"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:134
+msgid "Avatars"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:138
+msgid "Questions, answers and comments"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:140
+msgid "Closing questions"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:143
+msgid "Authors"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:148
+msgid "Length and tags"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:150
+msgid "Question titles"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:151
+msgid "Text"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:152
+#: includes/blocks/render/class-forms.php:80
+#: includes/blocks/render/class-forms.php:290
+#: includes/blocks/render/class-widgets.php:82
+#: includes/frontend/class-navigation.php:73
+#: includes/settings/class-fields.php:435
+msgid "Tags"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:157
+msgid "While asking"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:159
+msgid "Similar questions"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:160
+msgid "Tag suggestions"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:169
+msgid "Links"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:170
+msgid "Shown with posts"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:171
+msgid "Views"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:174
+#: includes/admin/class-settings-layout.php:220
+#: includes/settings/class-fields.php:696
+#: src/editor/inspector.js:75
+msgid "Votes"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:176
+msgid "Answers and comments"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:182
+msgid "Search engines"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:185
+msgid "Page sizes"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:186
+#: includes/blocks/render/class-widgets.php:74
+#: includes/feeds/class-feeds.php:370
+#: includes/frontend/class-navigation.php:70
+msgid "Hot questions"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:192
+#: includes/settings/class-fields.php:90
+msgid "Feeds"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:193
+msgid "Feed items"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:201
+msgid "Email addresses"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:202
+msgid "New users"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:208
+msgid "Moderate posts"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:209
+msgid "Edited and approved posts"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:210
+#: includes/admin/class-settings-layout.php:221
+msgid "Flags"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:213
+msgid "IP addresses"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:215
+msgid "Rate limits"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:222
+msgid "Uploads"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:223
+msgid "Messages"
+msgstr ""
+
+#: includes/admin/class-settings-layout.php:224
+msgid "Accounts"
+msgstr ""
+
+#: includes/admin/class-settings-screen.php:56
 msgid "Q&A Settings"
 msgstr ""
 
-#: includes/admin/class-settings-screen.php:108
+#: includes/admin/class-settings-screen.php:155
 msgid "Settings sections"
 msgstr ""
 
@@ -1330,14 +1500,6 @@ msgstr ""
 
 #: includes/blocks/render/class-forms.php:79
 msgid "Separate tags with spaces; use hyphens to combine words."
-msgstr ""
-
-#: includes/blocks/render/class-forms.php:80
-#: includes/blocks/render/class-forms.php:290
-#: includes/blocks/render/class-widgets.php:82
-#: includes/frontend/class-navigation.php:73
-#: includes/settings/class-fields.php:435
-msgid "Tags"
 msgstr ""
 
 #: includes/blocks/render/class-forms.php:83
@@ -1730,12 +1892,6 @@ msgstr ""
 #: includes/blocks/render/class-users-render.php:418
 #, php-format
 msgid "%1$s up, %2$s down"
-msgstr ""
-
-#: includes/blocks/render/class-widgets.php:74
-#: includes/feeds/class-feeds.php:370
-#: includes/frontend/class-navigation.php:70
-msgid "Hot questions"
 msgstr ""
 
 #: includes/blocks/render/class-widgets.php:75
@@ -2676,10 +2832,6 @@ msgstr ""
 msgid "Lists"
 msgstr ""
 
-#: includes/settings/class-fields.php:90
-msgid "Feeds"
-msgstr ""
-
 #: includes/settings/class-fields.php:91
 msgid "Spam"
 msgstr ""
@@ -3152,11 +3304,6 @@ msgstr ""
 
 #: includes/settings/class-fields.php:695
 msgid "Time"
-msgstr ""
-
-#: includes/settings/class-fields.php:696
-#: src/editor/inspector.js:75
-msgid "Votes"
 msgstr ""
 
 #: includes/settings/class-fields.php:699
