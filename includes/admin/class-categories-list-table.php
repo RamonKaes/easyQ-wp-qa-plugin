@@ -112,6 +112,18 @@ final class Categories_List_Table extends WP_List_Table {
 	}
 
 	/**
+	 * Returns a short name for the row header: the name of the category.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array{0: Category, 1: int} $item Category and depth.
+	 * @return string
+	 */
+	protected function get_primary_column_aria_label( $item ): string {
+		return $item[0]->title;
+	}
+
+	/**
 	 * Renders the name column with the row actions.
 	 *
 	 * @since 0.1.0

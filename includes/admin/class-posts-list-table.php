@@ -303,6 +303,29 @@ final class Posts_List_Table extends WP_List_Table {
 	}
 
 	/**
+	 * Returns a short name for the row header, instead of its whole content with
+	 * states, excerpt and row actions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $item Post.
+	 * @return string
+	 */
+	protected function get_primary_column_aria_label( $item ): string {
+		if ( null !== $item->title && '' !== $item->title ) {
+			return $item->title;
+		}
+
+		$type = match ( $item->base_type() ) {
+			Post::ANSWER => __( 'Answer', 'easyq' ),
+			default      => __( 'Comment', 'easyq' ),
+		};
+
+		/* translators: 1: type of post, 2: start of its text. */
+		return sprintf( __( '%1$s: %2$s', 'easyq' ), $type, wp_trim_words( wp_strip_all_tags( (string) $item->content ), 8 ) );
+	}
+
+	/**
 	 * Renders the checkbox column.
 	 *
 	 * @since 0.1.0

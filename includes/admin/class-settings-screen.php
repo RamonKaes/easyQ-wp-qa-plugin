@@ -76,7 +76,10 @@ final class Settings_Screen {
 			plugins_url( 'build/settings.js', \EasyQ\PLUGIN_FILE ),
 			array_values( array_filter( $asset['dependencies'], static fn ( $dependency ): bool => is_string( $dependency ) && '' !== $dependency ) ),
 			$asset['version'],
-			true
+			array(
+				'in_footer' => true,
+				'strategy'  => 'defer',
+			)
 		);
 	}
 

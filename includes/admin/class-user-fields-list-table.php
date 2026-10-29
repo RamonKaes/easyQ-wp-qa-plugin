@@ -104,6 +104,18 @@ final class User_Fields_List_Table extends WP_List_Table {
 	}
 
 	/**
+	 * Returns a short name for the row header: the label of the field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param User_Field $item Field.
+	 * @return string
+	 */
+	protected function get_primary_column_aria_label( $item ): string {
+		return $item->display_label();
+	}
+
+	/**
 	 * Renders the label with the row action.
 	 *
 	 * @since 0.1.0

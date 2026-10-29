@@ -205,4 +205,19 @@ final class Posts_Screen_Test extends Test_Case {
 		$screen->add_admin_bar_node( $admin_bar );
 		$this->assertNull( $admin_bar->get_node( 'easyq-pending' ) );
 	}
+
+	public function test_row_headers_have_short_names(): void {
+		$question = $this->ask( $this->user(), 'A question with a short name' );
+		$answer   = $this->answer( $this->user(), $question, 'An answer that is longer than the eight words of its row header name.' );
+		$table    = new \EasyQ\Admin\Posts_List_Table( Posts_Screen::filters() );
+		$label    = new \ReflectionMethod( $table, 'get_primary_column_aria_label' );
+
+		$this->assertSame( 'A question with a short name', $label->invoke( $table, $question ) );
+		$this->assertSame( 'Answer: An answer that is longer than the eight&hellip;', $label->invoke( $table, $answer ) );
+
+		// Core uses the name for the row header since WordPress 7.1.
+		if ( method_exists( \WP_List_Table::class, 'get_primary_column_aria_label' ) ) {
+			$this->assertStringContainsString( 'scope="row" aria-label="A question with a short name"', $this->render() );
+		}
+	}
 }

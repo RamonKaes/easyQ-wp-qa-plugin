@@ -170,7 +170,7 @@ final class Blocks {
 			'' === $src ? false : $src,
 			array_values( array_filter( $editor['dependencies'], static fn ( $dependency ): bool => is_string( $dependency ) && '' !== $dependency ) ),
 			$editor['version'],
-			true
+			array( 'in_footer' => true )
 		);
 		wp_set_script_translations( 'easyq-editor', 'easyq', \EasyQ\PLUGIN_DIR . '/languages' );
 

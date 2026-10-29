@@ -124,7 +124,10 @@ final class Tools_Screen {
 			plugins_url( 'build/tools.js', \EasyQ\PLUGIN_FILE ),
 			array_values( array_filter( $asset['dependencies'], static fn ( $dependency ): bool => is_string( $dependency ) && '' !== $dependency ) ),
 			$asset['version'],
-			true
+			array(
+				'in_footer' => true,
+				'strategy'  => 'defer',
+			)
 		);
 		wp_set_script_translations( 'easyq-tools', 'easyq', \EasyQ\PLUGIN_DIR . '/languages' );
 	}
