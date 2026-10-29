@@ -79,7 +79,7 @@ and axe.
 | Rule | Status | Where |
 | --- | --- | --- |
 | User meta prefixed and site specific on multisite | Met | `Users\Site_Meta` |
-| Custom post types and taxonomies | Kept | Custom tables instead, like Question2Answer, for the post tree, counts and search; see the [feature mapping](feature-mapping.md), section 1 |
+| Custom post types and taxonomies | Kept | Custom tables instead (decided 2026-10-13). The handbook explains post types but neither requires them nor rules out tables; `dbDelta()` is the core way to create them. The Q&A data needs indexed columns for its lists (hot, unanswered, votes, per category), per-user votes and flags, points, rate limits and a word index; as post meta these would be unindexed joins. In exchange, core screens, export, revisions and plugins that only know posts do not cover the Q&A content; easyQ provides its own screens, sitemaps, feeds and a search provider interface, and the privacy tools follow in phase 8. See the [feature mapping](feature-mapping.md), section 1 |
 
 ## Users
 
