@@ -131,7 +131,9 @@ and axe.
 | `permission_callback` on every route | Met | All controllers |
 | Arguments with types and validation; `WP_Error` with a status | Met | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
-| Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()` (`REST\Post_Schema`, `REST\Schemas`); a test checks real responses of all routes against them, both types and undocumented properties |
+| Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()`; a test checks real responses of all routes against them, both types and undocumented properties |
+| Controller pattern of `WP_REST_Controller` | Met | One controller per resource; `get_item_schema()` cached with `add_additional_fields_schema()`, `get_public_item_schema()` for the routes, `prepare_item_for_response()` with `register_rest_field()` and `filter_response_by_context()`, `context` on every property and reading route, `deleted` with `previous` (decision 51) |
+| Page states like `replytocom` | Met | Edit and close states: `wp_robots_no_robots()`, `rel="nofollow"`, cancel links back to the post (decision 51) |
 
 ## Blocks
 

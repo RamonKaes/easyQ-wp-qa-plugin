@@ -15,12 +15,23 @@ Visitors can read whatever the permission settings allow. Anonymous authors (if
 the site allows anonymous posting) receive the cookie `easyq_visitor` with a
 random number, so they can edit and later claim their posts.
 
-## Schemas
+## Schemas, contexts and fields
 
-Every route describes its response in a JSON schema, as core routes do. An `OPTIONS`
-request returns it, e.g. `OPTIONS /easyq/v1/categories`. Lists are described by the
-schema of one item; `DELETE` responses (`deleted` and `previous` or `id`) are not part
-of it, as in core.
+The controllers follow `WP_REST_Controller`, one controller per resource: posts,
+questions, answers, comments, categories, tags, users, profile fields, IP addresses
+and tools.
+
+- Every route describes its response in a JSON schema; an `OPTIONS` request returns
+  it, e.g. `OPTIONS /easyq/v1/categories`. Lists are described by the schema of one
+  item. Deleting responds with `deleted` and the `previous` item, as core does.
+- Every property names its contexts. Reading routes take `context`: `view` (default),
+  `embed` for the properties that identify an item, and for posts `edit`, which adds
+  the raw title and content for users who may edit the post. User lists default to
+  `embed`, without profile fields and counts.
+- Plugins can add fields with `register_rest_field()` for the object types
+  `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
+  actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
+  `easyq-ip` and `easyq-tool-batch`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -98,7 +109,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | Method and route | Description |
 | --- | --- |
 | `POST /posts/{id}/vote` | `vote`: `1`, `0` or `-1` |
-| `POST /posts/{id}/actions/{action}` | Perform an action; responds with the changed post, with its question if an answer or comment was deleted, or with `deleted` and `id` if a question was deleted |
+| `POST /posts/{id}/actions/{action}` | Perform an action; responds with the changed post, with its question if an answer or comment was converted or moved away, or, after `delete`, with `deleted` and the `previous` post, as core responds to deleting |
 
 | Action | Parameters | Description |
 | --- | --- | --- |
