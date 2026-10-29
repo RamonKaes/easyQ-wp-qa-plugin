@@ -153,26 +153,26 @@ is only available in block themes.
 
 | Q2A route | Target | Block template |
 | --- | --- | --- |
-| `/` (home) | **P** | `easyq-home`: question query sorted by recent activity |
+| `/` (home) | **P** | `easyq-home`: the recent questions and answers, one item per question, newest event first, `page_size_home` items without further pages, with the ask box and the feed of questions and answers, as `qa-include/pages/default.php` |
 | `activity/` | **P** | `easyq-activity` |
-| `questions/` (sort: newest, hot, votes, answers, views) | **P** | `easyq-questions` |
-| `hot/` | **P** | `easyq-questions` with source "hot" |
+| `questions/` (sort: newest, hot, votes, answers, views) | **P** | `easyq-questions`: sort links, titles of the sort orders, `page_size_qs` per page; the feed of the recent or hot questions, as `qa-include/pages/questions.php` |
+| `hot/` | **P** | `easyq-hot` |
 | `unanswered/` (no answer, no selected answer, no upvotes) | **P** | `easyq-unanswered` |
 | `answers/`, `comments/` | **P** | `easyq-answers`, `easyq-comments` |
-| `{id}/{slug}` (question) | **P** | `easyq-single` |
+| `{id}/{slug}` (question) | **P** | `easyq-question` |
 | `ask` | **P** | `easyq-ask` |
 | `categories/…` | **P** | `easyq-categories`, `easyq-category` |
 | `tags`, `tag/{tag}` | **P** | `easyq-tags`, `easyq-tag` |
 | `search` | **P** | `easyq-search` |
 | `users`, `users/new`, `users/special` | **P** | `easyq-users` |
 | `users/blocked` | **WP** | View in the WP users list |
-| `user/{name}` (+ `/questions`, `/answers`, `/activity`, `/wall`) | **P** | `easyq-user` and sub-templates |
+| `user/{name}` (+ `/questions`, `/answers`, `/activity`, `/wall`) | **P** | `easyq-user`, `easyq-user-questions`, `easyq-user-answers`, `easyq-user-activity`; the wall follows in phase 7 |
 | `account` | **P/WP** | `easyq-account` for Q&A data (profile fields, avatar, notifications, privacy choices); email and password via the WP profile |
-| `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites` |
-| `updates` | **P** | `easyq-updates` |
-| `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message` |
-| `feedback` | **P** | `easyq-feedback` |
-| `unsubscribe` | **P** | `easyq-unsubscribe` (plus `List-Unsubscribe` / one-click headers) |
+| `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites`, phase 7 |
+| `updates` | **P** | `easyq-updates`, phase 7 |
+| `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message`, phase 7 |
+| `feedback` | **P** | `easyq-feedback`, phase 7 |
+| `unsubscribe` | **P** | `easyq-unsubscribe` (plus `List-Unsubscribe` / one-click headers), phase 7 |
 | `ip/{ip}` | **P → admin** | Posts screen filtered by the address (section 5.1) |
 | `login`, `register`, `forgot`, `reset`, `logout`, `confirm` | **WP** | Section 2 |
 | `admin/*` | **P → admin** | Section 5 |
@@ -727,3 +727,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 46 | The forms (ask, answer, comment, edit, close, profile) use the markup of the comment form block (`wp-block-post-comments-form` around a `comment-form` form) and load its style handle, because themes style text fields only inside core blocks; with it, each theme shows them like its comment form. Selects stay as core leaves them: no core block and none of the default themes style them, so they look like the core category and archive dropdowns; a theme that sets the `select` element in `theme.json` styles them | 2026-10-29 |
 | 47 | The vote buttons sit in a buttons block (`wp-block-buttons`) like every core button, because themes such as Astra style outline buttons only there | 2026-10-29 |
 | 48 | Classic themes show the Q&A pages with their own page template and a page that stands in for the Q&A page, as bbPress does, instead of only between header and footer; the theme prints the title. Measured with Astra, GeneratePress, Kadence, OceanWP and Hello Elementor (replaces the layout part of decision 27) | 2026-10-29 |
+| 49 | The start page and the questions page are two pages, as in Question2Answer: the start page lists the recent questions and answers (`page_size_home`, new setting), `questions/` the questions with their sort orders. They had been one page with the sort orders of `questions/`, without the list of questions and answers; the navigation names them Q&A and Questions, as Q2A does | 2026-10-29 |
