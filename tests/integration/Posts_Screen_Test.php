@@ -8,8 +8,8 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Actor;
+use EasyQ\Admin\Dashboard_Screen;
 use EasyQ\Admin\Posts_Screen;
-use EasyQ\Admin\Settings_Screen;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -190,7 +190,7 @@ final class Posts_Screen_Test extends Test_Case {
 		$screen = new Posts_Screen();
 
 		$screen->add_menu();
-		$labels = array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 0, 2 );
+		$labels = array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 0, 2 );
 		$this->assertStringContainsString( 'Posts <span class="awaiting-mod count-2"><span class="pending-count" aria-hidden="true">2</span><span class="screen-reader-text">2 posts awaiting approval</span></span>', $labels[ Posts_Screen::PAGE ] ?? '' );
 
 		$admin_bar = new WP_Admin_Bar();

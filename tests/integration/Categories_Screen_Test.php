@@ -8,7 +8,7 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Admin\Categories_Screen;
-use EasyQ\Admin\Settings_Screen;
+use EasyQ\Admin\Dashboard_Screen;
 use EasyQ\Capabilities;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -68,11 +68,11 @@ final class Categories_Screen_Test extends Test_Case {
 
 		Options::update( 'general', array( 'tags_or_categories' => 't' ) );
 		( new Categories_Screen() )->add_menu();
-		$this->assertArrayNotHasKey( Categories_Screen::PAGE, array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 1, 2 ) );
+		$this->assertArrayNotHasKey( Categories_Screen::PAGE, array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 1, 2 ) );
 
 		Options::update( 'general', array( 'tags_or_categories' => 'tc' ) );
 		( new Categories_Screen() )->add_menu();
-		$this->assertSame( Capabilities::MANAGE, array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 1, 2 )[ Categories_Screen::PAGE ] ?? null );
+		$this->assertSame( Capabilities::MANAGE, array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 1, 2 )[ Categories_Screen::PAGE ] ?? null );
 	}
 
 	public function test_adds_categories_and_shows_errors_with_the_input(): void {

@@ -7,8 +7,8 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Admin\Dashboard_Screen;
 use EasyQ\Admin\Points_Screen;
-use EasyQ\Admin\Settings_Screen;
 use EasyQ\Admin\User_Fields_Screen;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -120,7 +120,7 @@ final class Users_Admin_Screens_Test extends Test_Case {
 
 		( new Points_Screen() )->add_menu();
 		( new User_Fields_Screen() )->add_menu();
-		$entries = array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 1, 2 );
+		$entries = array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 1, 2 );
 
 		foreach ( array( Points_Screen::PAGE, Points_Screen::TITLES_PAGE, User_Fields_Screen::PAGE ) as $page ) {
 			$this->assertSame( 'easyq_manage', $entries[ $page ] ?? null, $page );

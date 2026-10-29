@@ -53,11 +53,13 @@ final class Plugin {
 		if ( is_admin() ) {
 			( new Admin\Profile_Screen() )->register();
 			( new Admin\Users_Screen() )->register();
+			( new Admin\Dashboard_Screen() )->register();
 			( new Admin\Settings_Screen() )->register();
 			( new Admin\Categories_Screen() )->register();
 			( new Admin\Posts_Screen() )->register();
 			( new Admin\Points_Screen() )->register();
 			( new Admin\User_Fields_Screen() )->register();
+			( new Admin\Tools_Screen() )->register();
 		}
 	}
 }

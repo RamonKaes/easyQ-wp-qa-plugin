@@ -41,26 +41,17 @@ final class Settings_Screen {
 	 * @since 0.1.0
 	 */
 	public function register(): void {
-		add_action( 'admin_menu', array( $this, 'add_menu' ) );
+		add_action( 'admin_menu', array( $this, 'add_menu' ), 14 );
 		add_action( 'admin_init', array( $this, 'add_fields' ) );
 	}
 
 	/**
-	 * Adds the easyQ menu with the settings page.
+	 * Adds the settings page to the easyQ menu.
 	 *
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
-		add_menu_page(
-			__( 'Q&A Settings', 'easyq' ),
-			'easyQ',
-			Capabilities::MANAGE,
-			self::PAGE,
-			array( $this, 'render' ),
-			'dashicons-format-chat',
-			26
-		);
-		add_submenu_page( self::PAGE, __( 'Q&A Settings', 'easyq' ), __( 'Settings', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		add_submenu_page( Dashboard_Screen::PAGE, __( 'Q&A Settings', 'easyq' ), __( 'Settings', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
 	}
 
 	/**

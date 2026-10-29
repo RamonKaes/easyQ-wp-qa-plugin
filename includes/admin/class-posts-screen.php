@@ -56,7 +56,7 @@ final class Posts_Screen {
 	 * @since 0.1.0
 	 */
 	public function register(): void {
-		add_action( 'admin_menu', array( $this, 'add_menu' ), 11 );
+		add_action( 'admin_menu', array( $this, 'add_menu' ), 10 );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_node' ), 60 );
 		add_filter( 'removable_query_args', array( $this, 'removable_query_args' ) );
 	}
@@ -91,7 +91,7 @@ final class Posts_Screen {
 			);
 		}
 
-		$hook = add_submenu_page( Settings_Screen::PAGE, __( 'Q&A Posts', 'easyq' ), $label, Capabilities::MODERATE, self::PAGE, array( $this, 'render' ), 0 );
+		$hook = add_submenu_page( Dashboard_Screen::PAGE, __( 'Q&A Posts', 'easyq' ), $label, Capabilities::MODERATE, self::PAGE, array( $this, 'render' ) );
 		if ( false !== $hook ) {
 			add_action( 'load-' . $hook, array( $this, 'load' ) );
 		}

@@ -72,7 +72,7 @@ final class Categories_Screen {
 	 * @since 0.1.0
 	 */
 	public function register(): void {
-		// After the settings screen, which creates the easyQ menu.
+		// After the dashboard, which creates the easyQ menu.
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 11 );
 	}
 
@@ -86,7 +86,7 @@ final class Categories_Screen {
 			return;
 		}
 
-		$hook = add_submenu_page( Settings_Screen::PAGE, __( 'Categories', 'easyq' ), __( 'Categories', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		$hook = add_submenu_page( Dashboard_Screen::PAGE, __( 'Categories', 'easyq' ), __( 'Categories', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
 		if ( false !== $hook ) {
 			add_action( 'load-' . $hook, array( $this, 'load' ) );
 		}

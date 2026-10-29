@@ -1,5 +1,6 @@
 /**
- * Build configuration: one editor script for all blocks and one interactivity module.
+ * Build configuration: one editor script for all blocks, the script of the tools
+ * screen, and one interactivity module.
  *
  * Run with `wp-scripts build --experimental-modules`.
  */
@@ -11,7 +12,10 @@ const [
 module.exports = [
 	{
 		...scriptConfig,
-		entry: { editor: './src/editor/index.js' },
+		entry: {
+			editor: './src/editor/index.js',
+			tools: './src/tools/index.js',
+		},
 	},
 	{
 		...moduleConfig,

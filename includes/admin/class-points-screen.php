@@ -60,7 +60,7 @@ final class Points_Screen {
 	 * @since 0.1.0
 	 */
 	public function register(): void {
-		add_action( 'admin_menu', array( $this, 'add_menu' ), 11 );
+		add_action( 'admin_menu', array( $this, 'add_menu' ), 12 );
 		add_action( 'admin_init', array( $this, 'add_fields' ) );
 		add_action( 'update_option_' . Options::option_name( 'points' ), array( $this, 'report_recalculation' ), 20, 2 );
 	}
@@ -85,8 +85,8 @@ final class Points_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
-		add_submenu_page( Settings_Screen::PAGE, __( 'Points', 'easyq' ), __( 'Points', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
-		add_submenu_page( Settings_Screen::PAGE, __( 'User Titles', 'easyq' ), __( 'User Titles', 'easyq' ), Capabilities::MANAGE, self::TITLES_PAGE, array( $this, 'render_titles' ) );
+		add_submenu_page( Dashboard_Screen::PAGE, __( 'Points', 'easyq' ), __( 'Points', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		add_submenu_page( Dashboard_Screen::PAGE, __( 'User Titles', 'easyq' ), __( 'User Titles', 'easyq' ), Capabilities::MANAGE, self::TITLES_PAGE, array( $this, 'render_titles' ) );
 	}
 
 	/**

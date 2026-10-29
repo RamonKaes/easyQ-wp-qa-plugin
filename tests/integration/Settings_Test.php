@@ -7,6 +7,7 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Admin\Dashboard_Screen;
 use EasyQ\Admin\Settings_Screen;
 use EasyQ\Capabilities;
 use EasyQ\Search\Indexed_Post;
@@ -317,7 +318,7 @@ final class Settings_Test extends Test_Case {
 		( new Settings_Screen() )->add_menu();
 
 		// Capability of each entry, keyed by page; other screens may have added entries before.
-		$entries = array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 1, 2 );
+		$entries = array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 1, 2 );
 		$this->assertSame( Capabilities::MANAGE, $entries[ Settings_Screen::PAGE ] ?? null );
 	}
 

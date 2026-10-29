@@ -68,7 +68,7 @@ final class User_Fields_Screen {
 	 * @since 0.1.0
 	 */
 	public function register(): void {
-		add_action( 'admin_menu', array( $this, 'add_menu' ), 11 );
+		add_action( 'admin_menu', array( $this, 'add_menu' ), 13 );
 	}
 
 	/**
@@ -77,7 +77,7 @@ final class User_Fields_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
-		$hook = add_submenu_page( Settings_Screen::PAGE, __( 'User Fields', 'easyq' ), __( 'User Fields', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		$hook = add_submenu_page( Dashboard_Screen::PAGE, __( 'User Fields', 'easyq' ), __( 'User Fields', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
 		if ( false !== $hook ) {
 			add_action( 'load-' . $hook, array( $this, 'load' ) );
 		}
