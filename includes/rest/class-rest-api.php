@@ -39,6 +39,7 @@ final class REST_API {
 			new Actions_Controller(),
 			new Moderation_Controller(),
 			new User_Fields_Controller(),
+			new Tools_Controller(),
 			new Taxonomy_Controller(),
 			new Users_Controller(),
 		);

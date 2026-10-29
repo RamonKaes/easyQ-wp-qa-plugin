@@ -1282,6 +1282,23 @@ final class Post_Service {
 	}
 
 	/**
+	 * Builds the search index of a question anew: with its visible answers, comments
+	 * and close note if the question is visible, otherwise without any of them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $question Question in any state.
+	 */
+	public function reindex_question( Post $question ): void {
+		$this->search->unindex( $question->id );
+		$this->unindex_question_tree( $question );
+
+		if ( $question->is_visible() ) {
+			$this->index_question_tree( $question );
+		}
+	}
+
+	/**
 	 * Indexes a visible question with its visible answers, comments and close note.
 	 *
 	 * @since 0.1.0
