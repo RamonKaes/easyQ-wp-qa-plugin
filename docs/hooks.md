@@ -99,6 +99,12 @@ logs carry over.
 
 Message, wall and favorite events follow with the corresponding features.
 
+### IP addresses
+
+| Event | When | Notable parameters |
+| --- | --- | --- |
+| `ip_block`, `ip_unblock` | An IP address was blocked or unblocked on the moderation screen or through the REST API | `ip` |
+
 ## Filters
 
 | Filter | Arguments | Purpose |
@@ -117,7 +123,7 @@ with `current_user_can()` and `user_can()` anywhere:
 | Capability | Argument | Meaning |
 | --- | --- | --- |
 | `easyq_manage` | – | Manage the plugin settings (WordPress administrators and Q&A administrators) |
-| `easyq_moderate` | – | Use the moderation screens |
+| `easyq_moderate` | – | Use the moderation screen: users who may approve, hide or delete hidden posts, in at least one category |
 | `easyq_view_questions` | – | View question pages |
 | `easyq_post_question` | – | Ask questions |
 | `easyq_post_answer` | question ID | Answer the question |

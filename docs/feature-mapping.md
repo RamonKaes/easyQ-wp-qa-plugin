@@ -168,7 +168,7 @@ available in block themes.
 | `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message` |
 | `feedback` | **P** | `easyq-feedback` |
 | `unsubscribe` | **P** | `easyq-unsubscribe` (plus `List-Unsubscribe` / one-click headers) |
-| `ip/{ip}` | **P → admin** | Admin screen "IP address" |
+| `ip/{ip}` | **P → admin** | Posts screen filtered by the address (section 5.1) |
 | `login`, `register`, `forgot`, `reset`, `logout`, `confirm` | **WP** | Section 2 |
 | `admin/*` | **P → admin** | Section 5 |
 | `feed/*` | **P** | Section 5.10 |
@@ -309,7 +309,7 @@ Top-level menu **easyQ** (capability `easyq_manage`; moderation from `easyq_mode
 | Submenu | Q2A source | Implementation |
 | --- | --- | --- |
 | Dashboard | `admin/stats` | Figures, queues, quick links; plus a WP dashboard widget |
-| Posts **(N)** | `admin/moderate`, `admin/flagged`, `admin/hidden` | One `WP_List_Table` for questions, answers and comments, modelled on the core Comments screen: views All, Pending, Flagged, Hidden and Closed, filters by type, category, author and date, search, row and bulk actions (approve, reject, hide, restore, delete, close/reopen, edit), counter badge in the menu and the admin bar |
+| Posts **(N)** | `admin/moderate`, `admin/flagged`, `admin/hidden` | One `WP_List_Table` for questions, answers and comments, modelled on the core Comments screen: views All, Pending, Flagged, Hidden and Closed, filters by type, category, author and date, search, row and bulk actions (approve, reject, clear flags, hide, show again, reopen, delete), counter badge in the menu and the admin bar. Closing needs a reason and editing the editor of the site, so both stay on the question page |
 | Categories | `admin/categories` | List and form like the core category screen, hierarchy, ordering, moving posts on delete, moving questions without a category or subcategory; only shown when the site uses categories |
 | Points | `admin/points` | Settings API form |
 | User titles | `admin/usertitles` | List and form |
@@ -318,7 +318,7 @@ Top-level menu **easyQ** (capability `easyq_manage`; moderation from `easyq_mode
 | Settings | `admin/general` … `admin/mailing` | Settings API with tabs (5.2–5.12) |
 | Newsletter | `admin/mailing` | Own screen with progress; batches via WP-Cron |
 | Tools | `admin/recalc` | Section 5.13 |
-| IP address (hidden, linked) | `ip/{ip}` | Posts from an IP, block/unblock |
+| IP address (linked) | `ip/{ip}` | The Posts screen filtered by an address, with buttons to block, unblock and hide all its posts; without the host name, which would be a request to a name server |
 
 Integration into core screens:
 
@@ -661,7 +661,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
 | 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7 |
-| 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | In progress: profile and users screens done in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
+| 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | In progress: profile and users screens done in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
 | 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, newsletter (5.12) | Mails captured and asserted in tests | Open |
 | 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
 | 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
@@ -699,12 +699,15 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 24 | User profiles are left out of the sitemaps unless the site owner enables `sitemap_users` (privacy by default; Q2A lists them by default) | 2026-10-26 |
 | 25 | Feeds contain no author names and are not available when visitors may not view the Q&A area | 2026-10-26 |
 | 26 | The rewrite rules are rebuilt whenever they change (hash of the rules), not only when the base slug changes, so updates that add routes work without saving the permalinks | 2026-10-26 |
-| 27 | `allow_no_category` and `allow_no_sub_category` are checked on the server for every way a question gets a category; Q2A enforces `allow_no_sub_category` only in its category picker. A question may always keep the category it has | 2026-10-28 |
-| 28 | Moving the questions of a category to another category also tells the search providers, as moving a single question does | 2026-10-28 |
-| 29 | The Q&A level of each role and the deletion of all data on uninstall can only be changed by users with `manage_options`; other users who manage easyQ do not see these fields. Otherwise they could make whole roles administrators, which Q2A does not let administrators do | 2026-10-28 |
 | 27 | Classic themes get the same block templates, rendered between the theme's header and footer, instead of separate PHP templates | 2026-10-26 |
 | 28 | Answer and comment forms are sent in the background to the regular form handler and the page is updated with the Interactivity Router, so both ways share one implementation | 2026-10-26 |
 | 29 | Counts in question lists keep their width through core flex child sizing, and text areas use `cols="45"` like the core comment form, so themes without form styles stay usable without plugin CSS | 2026-10-26 |
 | 30 | Block settings with a Q2A counterpart default to the site setting (empty or 0) instead of copying its value, so changing the site setting later reaches every block that was not changed | 2026-10-27 |
 | 31 | Minimum PHP version 8.2: about two thirds of WordPress sites run PHP 8.2 or later, only about a sixth 8.4 or later (wordpress.org statistics, October 2026); PHP 8.2 gets security fixes until December 2026, so the minimum is reviewed before the release. PHP 8.1 has none since December 2025. The code needs no feature newer than PHP 8.1 | 2026-10-27 |
 | 32 | CI runs on GitHub Actions only, now that the repository is public: runs are free, pull requests from contributors are checked, and Plugin Check uses the official action on the release archive | 2026-10-27 |
+| 33 | `allow_no_category` and `allow_no_sub_category` are checked on the server for every way a question gets a category; Q2A enforces `allow_no_sub_category` only in its category picker. A question may always keep the category it has | 2026-10-28 |
+| 34 | Moving the questions of a category to another category also tells the search providers, as moving a single question does | 2026-10-28 |
+| 35 | The Q&A level of each role and the deletion of all data on uninstall can only be changed by users with `manage_options`; other users who manage easyQ do not see these fields. Otherwise they could make whole roles administrators, which Q2A does not let administrators do | 2026-10-28 |
+| 36 | The moderation list shows visible posts to every moderator, but posts awaiting approval and hidden posts only where the moderator may handle them, as Q2A checks for each post. `easyq_moderate` also covers users who may only delete hidden posts, who may open the Q2A page `admin/hidden` | 2026-10-29 |
+| 37 | The IP address screen does not show the host name: Q2A looks it up with `gethostbyaddr()`, which is a request to a name server | 2026-10-29 |
+| 38 | Deleting a question through the REST API responds with `deleted` and `id`, as core does, instead of a 404 for the missing question; the form then goes to the start page | 2026-10-29 |

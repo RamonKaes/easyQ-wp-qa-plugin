@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T18:35:53+00:00\n"
+"POT-Creation-Date: 2026-10-29T08:10:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -59,6 +59,7 @@ msgstr ""
 
 #: includes/admin/class-categories-list-table.php:78
 #: includes/admin/class-categories-screen.php:402
+#: includes/admin/class-posts-list-table.php:248
 #: includes/blocks/render/class-users-render.php:292
 #: includes/blocks/render/class-widgets.php:63
 #: includes/blocks/render/class-widgets.php:92
@@ -104,6 +105,7 @@ msgid "View “%s”"
 msgstr ""
 
 #: includes/admin/class-categories-list-table.php:206
+#: includes/admin/class-posts-list-table.php:488
 msgid "View"
 msgstr ""
 
@@ -234,6 +236,7 @@ msgid "Move its questions to"
 msgstr ""
 
 #: includes/admin/class-categories-screen.php:443
+#: includes/admin/class-posts-list-table.php:424
 msgid "No category"
 msgstr ""
 
@@ -303,6 +306,400 @@ msgstr ""
 #: includes/admin/class-categories-screen.php:690
 #, php-format
 msgid "After “%s”"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:96
+#: includes/blocks/render/class-post-fields.php:554
+msgid "Approve"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:97
+#: includes/blocks/render/class-post-fields.php:555
+msgid "Reject"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:98
+#: includes/blocks/render/class-post-fields.php:558
+msgid "Clear flags"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:99
+#: includes/blocks/render/class-post-fields.php:560
+msgid "Hide"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:100
+#: includes/blocks/render/class-post-fields.php:561
+msgid "Show again"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:101
+#: includes/blocks/render/class-post-fields.php:559
+msgid "Reopen"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:102
+msgid "Delete permanently"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:141
+#: src/editor/edit.js:509
+msgid "Author"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:142
+msgid "Post"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:143
+msgid "In response to"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:144
+#: includes/blocks/render/class-forms.php:445
+#: src/editor/edit.js:495
+msgid "Category"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:145
+#: src/editor/inspector.js:72
+#: src/editor/inspector.js:127
+msgid "Date"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:168
+msgid "No posts are awaiting approval."
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:169
+msgid "No posts are flagged."
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:170
+msgid "No posts are hidden."
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:171
+msgid "No posts found."
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-list-table.php:186
+#, php-format
+msgctxt "posts"
+msgid "All <span class=\"count\">(%s)</span>"
+msgid_plural "All <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-list-table.php:188
+#, php-format
+msgctxt "posts"
+msgid "Pending <span class=\"count\">(%s)</span>"
+msgid_plural "Pending <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-list-table.php:190
+#, php-format
+msgctxt "posts"
+msgid "Flagged <span class=\"count\">(%s)</span>"
+msgid_plural "Flagged <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-list-table.php:192
+#, php-format
+msgctxt "posts"
+msgid "Hidden <span class=\"count\">(%s)</span>"
+msgid_plural "Hidden <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of questions.
+#: includes/admin/class-posts-list-table.php:194
+#, php-format
+msgctxt "questions"
+msgid "Closed <span class=\"count\">(%s)</span>"
+msgid_plural "Closed <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-posts-list-table.php:244
+msgid "Filter by type"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:246
+msgid "All types"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:249
+#: includes/blocks/render/class-users-render.php:294
+#: src/editor/edit.js:286
+#: src/editor/edit.js:295
+msgid "Answers"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:250
+#: includes/blocks/render/class-users-render.php:304
+#: src/editor/edit.js:287
+msgid "Comments"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:258
+msgid "Filter by category"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:260
+#: src/editor/edit.js:500
+msgid "All categories"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:273
+msgid "Filter by date"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:275
+msgid "All dates"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:281
+msgctxt "month filter"
+msgid "F Y"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:286
+msgid "Filter"
+msgstr ""
+
+#. translators: %d: post ID.
+#: includes/admin/class-posts-list-table.php:318
+#, php-format
+msgid "Select post %d"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:339
+msgid "All posts by this user"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:342
+#: includes/blocks/class-render.php:95
+#: includes/rest/class-post-formatter.php:169
+msgid "Anonymous"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:364
+msgid "Pending"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:367
+#: includes/blocks/render/class-post-fields.php:468
+msgid "Hidden"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:370
+#: includes/blocks/render/class-post-fields.php:485
+msgid "Closed"
+msgstr ""
+
+#. translators: %s: number of flags.
+#: includes/admin/class-posts-list-table.php:374
+#, php-format
+msgid "%s flag"
+msgid_plural "%s flags"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-posts-list-table.php:378
+#: src/editor/inspector.js:46
+msgid "Question"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:379
+#: includes/blocks/render/class-forms.php:187
+msgid "Answer"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:380
+msgid "Comment"
+msgstr ""
+
+#: includes/admin/class-posts-list-table.php:402
+msgid "A question"
+msgstr ""
+
+#. translators: 1: date, 2: time.
+#: includes/admin/class-posts-list-table.php:445
+#, php-format
+msgid "%1$s at %2$s"
+msgstr ""
+
+#. translators: 1: action, 2: post ID.
+#: includes/admin/class-posts-list-table.php:477
+#, php-format
+msgid "%1$s post %2$d"
+msgstr ""
+
+#. translators: %d: post ID.
+#: includes/admin/class-posts-list-table.php:487
+#, php-format
+msgid "View post %d"
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:83
+msgid "Posts"
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:90
+#, php-format
+msgid "%s post awaiting approval"
+msgid_plural "%s posts awaiting approval"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-posts-screen.php:94
+#: includes/admin/class-posts-screen.php:256
+msgid "Q&A Posts"
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:123
+#, php-format
+msgid "Q&A %s"
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:125
+#, php-format
+msgid "%s Q&A post awaiting approval"
+msgid_plural "%s Q&A posts awaiting approval"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: search terms.
+#: includes/admin/class-posts-screen.php:259
+#, php-format
+msgid "Search results for: %s"
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:276
+msgid "Search Posts"
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:295
+#, php-format
+msgid "%s post approved."
+msgid_plural "%s posts approved."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:297
+#, php-format
+msgid "%s post rejected."
+msgid_plural "%s posts rejected."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:299
+#, php-format
+msgid "Flags cleared from %s post."
+msgid_plural "Flags cleared from %s posts."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:301
+#, php-format
+msgid "%s post hidden."
+msgid_plural "%s posts hidden."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:303
+#, php-format
+msgid "%s post shown again."
+msgid_plural "%s posts shown again."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of questions.
+#: includes/admin/class-posts-screen.php:305
+#, php-format
+msgid "%s question reopened."
+msgid_plural "%s questions reopened."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:307
+#, php-format
+msgid "%s post deleted permanently."
+msgid_plural "%s posts deleted permanently."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-posts-screen.php:308
+msgid "The IP address is blocked."
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:309
+msgid "The IP address is no longer blocked."
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:311
+#, php-format
+msgid "%s post from this IP address hidden."
+msgid_plural "%s posts from this IP address hidden."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-posts-screen.php:312
+msgid "The action could not be carried out."
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-posts-screen.php:326
+#, php-format
+msgid "%s post could not be changed, for example because it changed in the meantime or you may not do this there."
+msgid_plural "%s posts could not be changed, for example because they changed in the meantime or you may not do this there."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: IP address.
+#: includes/admin/class-posts-screen.php:351
+#, php-format
+msgid "IP address %s"
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:355
+msgid "This address is not blocked."
+msgstr ""
+
+#. translators: %s: blocking rules.
+#: includes/admin/class-posts-screen.php:357
+#, php-format
+msgid "This address is blocked by: %s"
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:367
+msgid "Block this IP address"
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:369
+msgid "Unblock this IP address"
+msgstr ""
+
+#: includes/admin/class-posts-screen.php:371
+msgid "Hide all posts from this IP address"
 msgstr ""
 
 #: includes/admin/class-profile-screen.php:75
@@ -535,11 +932,6 @@ msgstr ""
 msgid "Top users"
 msgstr ""
 
-#: includes/blocks/class-render.php:95
-#: includes/rest/class-post-formatter.php:169
-msgid "Anonymous"
-msgstr ""
-
 #. translators: %s: time difference, e.g. "5 minutes".
 #: includes/blocks/class-render.php:118
 #, php-format
@@ -617,10 +1009,6 @@ msgstr ""
 msgid "Email me if my answer is selected or commented on"
 msgstr ""
 
-#: includes/blocks/render/class-forms.php:187
-msgid "Answer"
-msgstr ""
-
 #: includes/blocks/render/class-forms.php:226
 msgid "Your comment"
 msgstr ""
@@ -695,11 +1083,6 @@ msgstr ""
 
 #: includes/blocks/render/class-forms.php:426
 msgid "— Select a category —"
-msgstr ""
-
-#: includes/blocks/render/class-forms.php:445
-#: src/editor/edit.js:495
-msgid "Category"
 msgstr ""
 
 #: includes/blocks/render/class-forms.php:471
@@ -872,10 +1255,6 @@ msgid_plural "(%s points)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/blocks/render/class-post-fields.php:468
-msgid "Hidden"
-msgstr ""
-
 #: includes/blocks/render/class-post-fields.php:470
 msgid "Waiting for approval"
 msgstr ""
@@ -890,10 +1269,6 @@ msgstr ""
 #: includes/blocks/render/class-post-fields.php:483
 #, php-format
 msgid "Closed: %s"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:485
-msgid "Closed"
 msgstr ""
 
 #: includes/blocks/render/class-post-fields.php:492
@@ -912,36 +1287,12 @@ msgstr ""
 msgid "Ask a related question"
 msgstr ""
 
-#: includes/blocks/render/class-post-fields.php:554
-msgid "Approve"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:555
-msgid "Reject"
-msgstr ""
-
 #: includes/blocks/render/class-post-fields.php:556
 msgid "Flag"
 msgstr ""
 
 #: includes/blocks/render/class-post-fields.php:557
 msgid "Unflag"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:558
-msgid "Clear flags"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:559
-msgid "Reopen"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:560
-msgid "Hide"
-msgstr ""
-
-#: includes/blocks/render/class-post-fields.php:561
-msgid "Show again"
 msgstr ""
 
 #: includes/blocks/render/class-post-fields.php:562
@@ -972,21 +1323,10 @@ msgstr ""
 msgid "Member for"
 msgstr ""
 
-#: includes/blocks/render/class-users-render.php:294
-#: src/editor/edit.js:286
-#: src/editor/edit.js:295
-msgid "Answers"
-msgstr ""
-
 #. translators: 1: number of answers, 2: number of answers selected as best answer.
 #: includes/blocks/render/class-users-render.php:298
 #, php-format
 msgid "%1$s (%2$s selected as best)"
-msgstr ""
-
-#: includes/blocks/render/class-users-render.php:304
-#: src/editor/edit.js:287
-msgid "Comments"
 msgstr ""
 
 #: includes/blocks/render/class-users-render.php:308
@@ -1276,31 +1616,31 @@ msgstr ""
 msgid "The form has expired. Please try again."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:302
+#: includes/frontend/class-form-handler.php:307
 msgid "Thank you! Your post will be published once a moderator approved it."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:306
+#: includes/frontend/class-form-handler.php:311
 msgid "Your question has been published."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:307
+#: includes/frontend/class-form-handler.php:312
 msgid "Your answer has been published."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:308
+#: includes/frontend/class-form-handler.php:313
 msgid "Your comment has been published."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:309
+#: includes/frontend/class-form-handler.php:314
 msgid "Your changes have been saved."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:310
+#: includes/frontend/class-form-handler.php:315
 msgid "Your profile has been saved."
 msgstr ""
 
-#: includes/frontend/class-form-handler.php:311
+#: includes/frontend/class-form-handler.php:316
 msgid "Done."
 msgstr ""
 
@@ -1623,23 +1963,23 @@ msgstr ""
 msgid "New category (move)."
 msgstr ""
 
-#: includes/rest/class-actions-controller.php:300
+#: includes/rest/class-actions-controller.php:310
 msgid "Answers can only be selected on visible questions."
 msgstr ""
 
-#: includes/rest/class-actions-controller.php:306
+#: includes/rest/class-actions-controller.php:316
 msgid "This is not a visible answer of the question."
 msgstr ""
 
-#: includes/rest/class-actions-controller.php:414
+#: includes/rest/class-actions-controller.php:424
 msgid "The original question does not exist."
 msgstr ""
 
-#: includes/rest/class-actions-controller.php:423
+#: includes/rest/class-actions-controller.php:433
 msgid "Please give a reason or the original question."
 msgstr ""
 
-#: includes/rest/class-actions-controller.php:445
+#: includes/rest/class-actions-controller.php:455
 msgid "The comment must belong to the question or another of its answers."
 msgstr ""
 
@@ -1673,6 +2013,34 @@ msgstr ""
 
 #: includes/rest/class-controller.php:180
 msgid "Items per page."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:63
+msgid "All posts, or those awaiting approval, flagged, hidden or closed."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:69
+msgid "Only questions, answers or comments."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:74
+msgid "Only posts in this category and its subcategories."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:78
+msgid "Only posts by this user."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:82
+msgid "Only posts created from this IP address."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:86
+msgid "Only posts whose title or text contains this."
+msgstr ""
+
+#: includes/rest/class-moderation-controller.php:90
+msgid "Only posts created in this month, as YYYYMM."
 msgstr ""
 
 #: includes/rest/class-post-input.php:38
@@ -2724,14 +3092,6 @@ msgstr ""
 msgid "Recently commented"
 msgstr ""
 
-#: src/editor/edit.js:500
-msgid "All categories"
-msgstr ""
-
-#: src/editor/edit.js:509
-msgid "Author"
-msgstr ""
-
 #: src/editor/edit.js:510
 msgid "Empty shows the questions of everyone."
 msgstr ""
@@ -2824,10 +3184,6 @@ msgstr ""
 msgid "Message"
 msgstr ""
 
-#: src/editor/inspector.js:46
-msgid "Question"
-msgstr ""
-
 #: src/editor/inspector.js:47
 msgid "User"
 msgstr ""
@@ -2870,11 +3226,6 @@ msgstr ""
 
 #: src/editor/inspector.js:57
 msgid "Show labels"
-msgstr ""
-
-#: src/editor/inspector.js:72
-#: src/editor/inspector.js:127
-msgid "Date"
 msgstr ""
 
 #: src/editor/inspector.js:87

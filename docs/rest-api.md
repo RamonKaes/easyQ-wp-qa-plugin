@@ -91,7 +91,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | Method and route | Description |
 | --- | --- |
 | `POST /posts/{id}/vote` | `vote`: `1`, `0` or `-1` |
-| `POST /posts/{id}/actions/{action}` | Perform an action; responds with the changed post (or its question if the post was deleted) |
+| `POST /posts/{id}/actions/{action}` | Perform an action; responds with the changed post, with its question if an answer or comment was deleted, or with `deleted` and `id` if a question was deleted |
 
 | Action | Parameters | Description |
 | --- | --- | --- |
@@ -127,6 +127,19 @@ Unless the site allows it in the posting settings, a question needs a category o
 categories exist, and that category must not have subcategories. This applies to
 `POST /questions`, to `category` in `PUT /questions/{id}` (`null` removes the
 category) and to the `move` action; a question may always keep the category it has.
+
+### Moderation
+
+| Method and route | Description |
+| --- | --- |
+| `GET /posts` | Questions, answers and comments for moderators (`easyq_moderate`), newest first: `view` (`all`, `pending`, `flagged` with the most flags first, `hidden`, `closed`), `type` (`question`, `answer`, `comment`), `category` (includes subcategories), `author`, `ip`, `search` (title and text), `month` (`YYYYMM`), `page`, `per_page`. Posts awaiting approval and hidden posts are only listed where the user may handle them; with category levels, that is in those categories. With `ip`, users who may see IP addresses (`easyq_view_ips`) may list too |
+| `GET /ips/{ip}` | Whether an IP address is blocked, the rules of the block list that match it, and whether the user may block it (`can_block`) and hide its posts (`can_hide_all`). Needs `easyq_view_ips` |
+| `POST /ips/{ip}/block` | Add the address to the block list of the spam settings. Needs `easyq_view_ips` and the level Moderator in any category, as in Q2A |
+| `POST /ips/{ip}/unblock` | Remove every rule that matches the address, including ranges and wildcards, as in Q2A; responds with the removed rules in `removed` |
+| `POST /ips/{ip}/hide-all` | Hide the visible posts created from the address, each through the `hide` action and its checks; responds with the number in `hidden`. Also needs the permission to hide posts |
+
+Actions on single posts, such as `approve`, `hide` or `delete`, are under
+`POST /posts/{id}/actions/{action}`.
 
 ### Settings
 
