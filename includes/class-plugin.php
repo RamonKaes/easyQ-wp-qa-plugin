@@ -54,6 +54,7 @@ final class Plugin {
 			( new Admin\Users_Screen() )->register();
 			( new Admin\Settings_Screen() )->register();
 			( new Admin\Categories_Screen() )->register();
+			( new Admin\Posts_Screen() )->register();
 		}
 	}
 }
