@@ -37,6 +37,7 @@
 	"editorScript": "easyq-editor",
 	"style": [
 		"wp-block-buttons",
-		"wp-block-button"
+		"wp-block-button",
+		"wp-block-post-comments-form"
 	]
 }

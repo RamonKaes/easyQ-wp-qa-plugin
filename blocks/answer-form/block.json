@@ -25,5 +25,6 @@
 			"fontSize": true
 		}
 	},
-	"editorScript": "easyq-editor"
+	"editorScript": "easyq-editor",
+	"style": "wp-block-post-comments-form"
 }

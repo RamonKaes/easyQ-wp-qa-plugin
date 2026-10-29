@@ -205,6 +205,84 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( '<option value="' . $parent . '">Software</option>', $html );
 	}
 
+	/**
+	 * Returns the forms with fields to fill in, each with the class of its parent element.
+	 *
+	 * @param string $html Rendered HTML.
+	 * @return array<int, array{form: string, parent: string, breaks: int}>
+	 */
+	private function field_forms( string $html ): array {
+		$document = new \DOMDocument();
+		$document->loadHTML( '<!DOCTYPE html><meta charset="utf-8">' . $html, LIBXML_NOERROR );
+		$xpath = new \DOMXPath( $document );
+		$forms = array();
+		$nodes = $xpath->query( '//form[.//textarea or .//input[not(@type="hidden") and not(@type="checkbox") and not(@type="submit")]]' );
+		$this->assertInstanceOf( \DOMNodeList::class, $nodes );
+		foreach ( $nodes as $form ) {
+			$this->assertInstanceOf( \DOMElement::class, $form );
+			$parents = $xpath->query( '..', $form );
+			$parent  = false === $parents ? null : $parents->item( 0 );
+			$forms[] = array(
+				'form'   => $form->getAttribute( 'class' ),
+				'parent' => $parent instanceof \DOMElement ? $parent->getAttribute( 'class' ) : '',
+				// Line breaks between a label and its text field.
+				'breaks' => (int) $xpath->evaluate( 'count(.//label/following-sibling::*[1][self::br][following-sibling::*[1][self::textarea or self::input]])', $form ),
+			);
+		}
+
+		return $forms;
+	}
+
+	public function test_forms_take_on_the_markup_and_styles_of_the_comment_form(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		Services::categories()->create( null, 'Software' );
+		Options::update( 'posting', array( 'comment_on_qs' => true ) );
+		wp_dequeue_style( 'wp-block-post-comments-form' );
+		$this->assertFalse( wp_style_is( 'wp-block-post-comments-form' ) );
+
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+		$html               = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) )
+			. $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-actions /--><!-- wp:easyq/comment-form /--><!-- wp:easyq/answer-form /--><!-- /wp:easyq/question -->', new Route( 'question', $question ) )
+			. do_blocks( '<!-- wp:easyq/account /-->' );
+		$_GET['easyq_edit'] = (string) $question->id;
+		$html              .= $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-content /--><!-- /wp:easyq/question -->', new Route( 'question', $question ) );
+
+		$this->assertTrue( wp_style_is( 'wp-block-post-comments-form' ) );
+		$forms = $this->field_forms( $html );
+		// Ask, close, comment, answer, account and edit.
+		$this->assertCount( 6, $forms );
+		foreach ( $forms as $form ) {
+			$this->assertSame( 'comment-form', $form['form'] );
+			$this->assertContains( 'wp-block-post-comments-form', explode( ' ', $form['parent'] ) );
+			$this->assertSame( 0, $form['breaks'] );
+		}
+		$this->assertStringContainsString( 'class="wp-block-post-comments-form wp-block-easyq-ask-form"', $html );
+
+		// The check finds forms without the markup.
+		$this->assertSame(
+			array(
+				array(
+					'form'   => '',
+					'parent' => '',
+					'breaks' => 1,
+				),
+			),
+			$this->field_forms( '<form method="post"><p><label for="x">X</label><br /><textarea id="x"></textarea></p></form>' )
+		);
+	}
+
+	public function test_category_errors_belong_to_the_select(): void {
+		Services::categories()->create( null, 'Software' );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$_GET[ Flash::QUERY_VAR ] = Flash::store( 'error', 'Please check the form.', 'ask', array( 'category' => 'Please select a category.' ) );
+
+		$html = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) );
+
+		$this->assertStringContainsString( '<select id="easyq-ask-category" name="category" required aria-invalid="true" aria-describedby="easyq-ask-category-error">', $html );
+		$this->assertStringContainsString( '<strong id="easyq-ask-category-error" role="alert">Please select a category.</strong>', $html );
+	}
+
 	public function test_closed_questions_have_no_answer_form(): void {
 		$question = $this->ask( $this->user() );
 		Services::post_service()->close_with_note( Actor::system(), $question, 'Closed.' );

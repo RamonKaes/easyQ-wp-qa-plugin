@@ -52,6 +52,18 @@ final class Forms {
 	public const IN_PLACE = array( 'answer', 'comment' );
 
 	/**
+	 * Class of the comment form block, whose styles and theme styles the forms take on.
+	 *
+	 * Themes style fields only inside core blocks; this class and the block's style
+	 * handle in `block.json` give the forms the look of the theme's comment form.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const FORM_CLASS = 'wp-block-post-comments-form';
+
+	/**
 	 * Renders the form to ask a question.
 	 *
 	 * @since 0.1.0
@@ -318,8 +330,9 @@ final class Forms {
 			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', '', array( 'min' => '1' ), '', 'easyq-close-' . $question->id );
 
 		return sprintf(
-			'<details class="wp-block-button"><summary>%s</summary><form method="post">%s<div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></form></details>',
+			'<details class="wp-block-button"><summary>%s</summary><div class="%s"><form method="post" class="comment-form">%s<div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></form></div></details>',
 			esc_html__( 'Close', 'easyq' ),
+			esc_attr( self::FORM_CLASS ),
 			$fields,
 			esc_html__( 'Close question', 'easyq' )
 		);
@@ -347,14 +360,15 @@ final class Forms {
 			$hidden_html .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
 		}
 
-		$wrapper = in_array( $form, array( 'ask', 'account' ), true ) ? get_block_wrapper_attributes() : '';
+		// The markup of the comment form block, so that the theme styles the fields as it styles that form.
+		$wrapper = in_array( $form, array( 'ask', 'account' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
 		$notice  = self::form_notice( $form );
 
 		return sprintf(
-			'<form method="post"%s%s %s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form>',
+			'<div %s><form method="post" class="comment-form"%s%s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form></div>',
+			$wrapper,
 			'account' === $form ? ' enctype="multipart/form-data"' : '',
 			in_array( $form, self::IN_PLACE, true ) ? ' data-wp-on--submit="actions.submit"' : '',
-			$wrapper,
 			$notice,
 			$hidden_html,
 			$fields,
@@ -404,12 +418,12 @@ final class Forms {
 			: sprintf( '<input type="%s" id="%s" name="%s" value="%s"%s />', esc_attr( $type ), esc_attr( $id ), esc_attr( $name ), esc_attr( $value ), $attrs );
 
 		return sprintf(
-			'<p><label for="%s">%s</label><br />%s%s%s</p>',
+			'<p><label for="%s">%s</label> %s%s%s</p>',
 			esc_attr( $id ),
 			esc_html( $label ),
 			$input,
-			'' === $hint ? '' : sprintf( '<br /><small id="%s-hint">%s</small>', esc_attr( $id ), esc_html( $hint ) ),
-			'' === $error ? '' : sprintf( '<br /><strong id="%s-error" role="alert">%s</strong>', esc_attr( $id ), esc_html( $error ) )
+			'' === $hint ? '' : sprintf( '<small id="%s-hint">%s</small>', esc_attr( $id ), esc_html( $hint ) ),
+			'' === $error ? '' : sprintf( '%s<strong id="%s-error" role="alert">%s</strong>', '' === $hint ? '' : '<br />', esc_attr( $id ), esc_html( $error ) )
 		);
 	}
 
@@ -440,12 +454,14 @@ final class Forms {
 
 		$error = Flash::error( 'ask', 'category' );
 
+		// Core does not style selects, unlike text fields, so the select keeps its own line here.
 		return sprintf(
-			'<p><label for="easyq-ask-category">%s</label><br /><select id="easyq-ask-category" name="category"%s>%s</select>%s</p>',
+			'<p><label for="easyq-ask-category">%s</label><br /><select id="easyq-ask-category" name="category"%s%s>%s</select>%s</p>',
 			esc_html__( 'Category', 'easyq' ),
 			Options::get_bool( 'posting', 'allow_no_category' ) ? '' : ' required',
+			'' === $error ? '' : ' aria-invalid="true" aria-describedby="easyq-ask-category-error"',
 			$options,
-			'' === $error ? '' : sprintf( '<br /><strong role="alert">%s</strong>', esc_html( $error ) )
+			'' === $error ? '' : sprintf( '<br /><strong id="easyq-ask-category-error" role="alert">%s</strong>', esc_html( $error ) )
 		);
 	}
 

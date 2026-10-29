@@ -23,5 +23,6 @@
 		}
 	},
 	"example": {},
-	"editorScript": "easyq-editor"
+	"editorScript": "easyq-editor",
+	"style": "wp-block-post-comments-form"
 }
