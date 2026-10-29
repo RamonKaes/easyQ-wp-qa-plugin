@@ -282,6 +282,16 @@ final class Actions_Controller extends Controller {
 			return $result;
 		}
 
+		// A deleted question leaves nothing to respond with, as core does for deleted items.
+		if ( 'delete' === $action && $post->id === $question->id ) {
+			return new WP_REST_Response(
+				array(
+					'deleted' => true,
+					'id'      => $post->id,
+				)
+			);
+		}
+
 		return $this->respond( null === Services::posts()->find( $post->id ) ? $question->id : $post->id, $actor );
 	}
 

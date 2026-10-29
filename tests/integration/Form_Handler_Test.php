@@ -7,9 +7,11 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Actor;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
+use EasyQ\Posts\Post;
 use EasyQ\Services;
 
 /**
@@ -164,6 +166,24 @@ final class Form_Handler_Test extends REST_Test_Case {
 		);
 
 		$this->assertTrue( $this->post( $question->id )->is_closed() );
+	}
+
+	public function test_deleting_a_question_goes_to_the_start_page(): void {
+		$question = $this->ask( $this->user() );
+		$this->login( 'editor' );
+		Services::post_service()->set_question_status( Actor::current(), $question, Post::STATUS_HIDDEN );
+
+		$url = $this->submit(
+			'action',
+			array(
+				'easyq_post'   => (string) $question->id,
+				'easyq_action' => 'delete',
+			)
+		);
+
+		$this->assertNull( Services::posts()->find( $question->id ) );
+		$this->assertStringStartsWith( Routes::url( 'home' ), $url );
+		$this->assertSame( 'success', Flash::current()['type'] ?? null );
 	}
 
 	public function test_saves_the_account(): void {

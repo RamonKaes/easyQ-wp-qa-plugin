@@ -78,8 +78,15 @@ final class Actions_REST_Test extends REST_Test_Case {
 		$this->assertSame( 'normal', $this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/reshow' ) )['status'] );
 
 		$this->request( 'POST', '/posts/' . $question->id . '/actions/hide' );
-		$this->assertSame( 404, $this->request( 'POST', '/posts/' . $question->id . '/actions/delete' )->get_status() );
+		$this->assertSame(
+			array(
+				'deleted' => true,
+				'id'      => $question->id,
+			),
+			$this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/delete' ) )
+		);
 		$this->assertNull( Services::posts()->find( $question->id ) );
+		$this->assertSame( 404, $this->request( 'POST', '/posts/' . $question->id . '/actions/delete' )->get_status() );
 	}
 
 	public function test_subscribers_cannot_moderate(): void {

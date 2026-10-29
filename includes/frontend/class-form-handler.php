@@ -281,6 +281,11 @@ final class Form_Handler {
 		$post     = Services::posts()->find( $id );
 		$question = null === $post ? null : Services::post_service()->question_of( $post );
 
+		// After a question was deleted, its page no longer exists.
+		if ( null === $post && 'action' === $form ) {
+			return Routes::url( 'home' );
+		}
+
 		if ( null === $question || 'vote' === $form ) {
 			return $back . ( null === $post ? '' : '#easyq-post-' . $post->id );
 		}
