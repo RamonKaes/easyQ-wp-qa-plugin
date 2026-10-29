@@ -73,6 +73,7 @@ and axe.
 | --- | --- | --- |
 | Settings API: `register_setting()`, sections, fields, `options.php` | Met | `Settings\Registry`, `Admin\Settings_Screen` |
 | Layout of the core settings screens | Met | Sections with headings; related settings in one row with a fieldset (Settings → Discussion); dependent fields disabled, not hidden (Settings → Reading) |
+| Design system of 7.1 (`@wordpress/theme`, `--wpds-*` tokens, `ThemeProvider`) | Not used | It styles React interfaces built from `@wordpress/components`; the classic admin styles (`forms.css`, `common.css`, `list-tables.css`) do not use it. easyQ's screens are Settings API and list table pages with core classes; the editor controls come from `@wordpress/components` and take the tokens from core |
 
 ## Metadata, post types and taxonomies
 
@@ -139,6 +140,7 @@ and axe.
 | `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 46 blocks |
 | Component props `__next40pxDefaultSize` and `__nextHasNoMarginBottom` | Kept | Without effect since WordPress 7.1, but needed from 6.7 to 7.0; remove once the minimum is 7.1 |
 | Editor canvas is always an iframe (7.1) | Met | The editor script uses no global `document` or `window` |
+| Frontend markup styled by the theme, no plugin stylesheet | Met | Core block classes and style handles; forms take on the comment form block, so text fields, buttons and checkboxes look as in the theme's comment form ([feature mapping](feature-mapping.md), decision 46). Selects keep the browser look, as in core |
 
 ## Admin list tables
 
