@@ -1,6 +1,6 @@
 <?php
 /**
- * Q&A page in classic themes: the rendered block template between the theme's header and footer.
+ * Q&A page in classic themes without a page template: the rendered block template between the theme's header and footer.
  *
  * Themes can replace this file with `easyq/classic.php`.
  *

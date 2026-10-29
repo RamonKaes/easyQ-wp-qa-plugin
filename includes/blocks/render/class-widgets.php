@@ -81,7 +81,7 @@ final class Widgets {
 			'ask'        => __( 'Ask a question', 'easyq' ),
 			'tags'       => __( 'Tags', 'easyq' ),
 			'categories' => __( 'Categories', 'easyq' ),
-			'question'   => (string) $route->question()?->title,
+			'question'   => Services::content_renderer()->text( (string) $route->question()?->title ),
 			'activity'   => __( 'Recent activity', 'easyq' ),
 			'answers'    => __( 'Recent answers', 'easyq' ),
 			'comments'   => __( 'Recent comments', 'easyq' ),

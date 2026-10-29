@@ -33,6 +33,15 @@ final class Templates {
 	private static string $classic_html = '';
 
 	/**
+	 * Page that stands for the Q&A page in the main query of classic themes.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var \WP_Post|null
+	 */
+	private static ?\WP_Post $classic_page = null;
+
+	/**
 	 * Sets up the templates.
 	 *
 	 * @since 0.1.0
@@ -108,8 +117,10 @@ final class Templates {
 	 * Renders the block template of a Q&A page for a classic theme and returns the file that prints it.
 	 *
 	 * Classic themes cannot load block templates, so the blocks of the template are
-	 * rendered here, before the document head, and printed between the theme's header
-	 * and footer. Themes can provide their own `easyq/classic.php`.
+	 * rendered here, before the document head. They are printed as the content of a
+	 * page that the theme shows with its own page template, so that the page has the
+	 * theme's containers, widths and sidebars. Themes can instead provide their own
+	 * `easyq/classic.php`, which prints classic_html() itself.
 	 *
 	 * @since 0.1.0
 	 *
@@ -131,11 +142,151 @@ final class Templates {
 		 */
 		$content = (string) apply_filters( 'easyq_classic_template_content', $content, $slug );
 
-		self::$classic_html = do_blocks( $content );
-
 		$theme_file = locate_template( array( 'easyq/classic.php' ) );
+		if ( '' !== $theme_file ) {
+			self::$classic_html = do_blocks( $content );
 
-		return '' === $theme_file ? \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php' : $theme_file;
+			return $theme_file;
+		}
+
+		// The theme's page template prints the title, so the blocks leave out theirs.
+		add_filter( 'render_block_easyq/page-title', array( self::class, 'without_main_heading' ), 10, 2 );
+		add_filter( 'render_block_easyq/post-title', array( self::class, 'without_main_heading' ), 10, 2 );
+		self::$classic_html = do_blocks( $content );
+		remove_filter( 'render_block_easyq/page-title', array( self::class, 'without_main_heading' ) );
+		remove_filter( 'render_block_easyq/post-title', array( self::class, 'without_main_heading' ) );
+
+		$this->set_up_classic_page();
+		foreach ( array( get_page_template(), get_singular_template(), get_index_template() ) as $file ) {
+			if ( '' !== $file ) {
+				return $file;
+			}
+		}
+
+		return \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php';
+	}
+
+	/**
+	 * Makes the main query hold one page whose content is the rendered Q&A page.
+	 *
+	 * The page has the title of the Q&A page, which the theme prints as it prints
+	 * page titles. It has no ID and no comments; its content is put in last, after
+	 * the content filters, so that they do not change the rendered blocks.
+	 *
+	 * @since 0.1.0
+	 */
+	private function set_up_classic_page(): void {
+		global $wp_query, $post;
+
+		self::$classic_page = new \WP_Post(
+			(object) array(
+				'ID'             => 0,
+				'post_type'      => 'page',
+				'post_status'    => 'publish',
+				// Post titles are printed without escaping.
+				'post_title'     => esc_html( \EasyQ\Blocks\Render\Widgets::title_of_page() ),
+				'post_content'   => '',
+				'comment_status' => 'closed',
+				'ping_status'    => 'closed',
+				'comment_count'  => 0,
+				'filter'         => 'raw',
+			)
+		);
+
+		if ( $wp_query instanceof \WP_Query ) {
+			$wp_query->posts             = array( self::$classic_page );
+			$wp_query->post              = self::$classic_page;
+			$wp_query->post_count        = 1;
+			$wp_query->found_posts       = 1;
+			$wp_query->max_num_pages     = 1;
+			$wp_query->current_post      = -1;
+			$wp_query->queried_object    = self::$classic_page;
+			$wp_query->queried_object_id = 0;
+			$wp_query->is_page           = true;
+			$wp_query->is_singular       = true;
+			$wp_query->is_home           = false;
+			$wp_query->is_archive        = false;
+			$wp_query->is_404            = false;
+		}
+		$post = self::$classic_page; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The theme's page template reads the page from the global.
+
+		add_filter( 'the_content', array( self::class, 'classic_content' ), PHP_INT_MAX );
+		add_filter( 'comments_template', array( self::class, 'classic_comments' ) );
+		add_filter( 'get_edit_post_link', array( self::class, 'classic_edit_link' ), 10, 2 );
+	}
+
+	/**
+	 * Leaves out the main heading of a Q&A page, a title block of level 1.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string               $html  Rendered block.
+	 * @param array<string, mixed> $block Parsed block.
+	 * @return string
+	 */
+	public static function without_main_heading( string $html, array $block ): string {
+		$attributes = is_array( $block['attrs'] ?? null ) ? $block['attrs'] : array();
+		$type       = \WP_Block_Type_Registry::get_instance()->get_registered( is_string( $block['blockName'] ?? null ) ? $block['blockName'] : '' );
+		$schema     = $type?->attributes['level'] ?? null;
+		$default    = is_array( $schema ) ? ( $schema['default'] ?? null ) : null;
+		$level      = $attributes['level'] ?? $default;
+
+		return is_numeric( $level ) && 1 === (int) $level ? '' : $html;
+	}
+
+	/**
+	 * Returns the rendered Q&A page as content of the page that stands for it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $content Content after the content filters.
+	 * @return string
+	 */
+	public static function classic_content( string $content ): string {
+		return self::is_classic_page( get_post() ) ? self::$classic_html : $content;
+	}
+
+	/**
+	 * Keeps the theme's comments template away from the page that stands for a Q&A page.
+	 *
+	 * Comment queries for post ID 0 are not limited to a post, so the theme would list
+	 * the comments of the whole site.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $template Comments template file.
+	 * @return string
+	 */
+	public static function classic_comments( string $template ): string {
+		return self::is_classic_page( get_post() ) ? \EasyQ\PLUGIN_DIR . '/includes/frontend/views/no-comments.php' : $template;
+	}
+
+	/**
+	 * Removes the edit link of the page that stands for a Q&A page.
+	 *
+	 * `get_post( 0 )` returns the global post, so without this the theme and the
+	 * toolbar would link to editing a post with ID 0.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string|null $link    Edit link.
+	 * @param int         $post_id Post ID.
+	 * @return string|null
+	 */
+	public static function classic_edit_link( ?string $link, int $post_id ): ?string {
+		return 0 === $post_id && self::is_classic_page( get_post() ) ? '' : $link;
+	}
+
+	/**
+	 * Whether a post is the page that stands for the Q&A page.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param \WP_Post|null $post Post.
+	 * @return bool
+	 */
+	private static function is_classic_page( ?\WP_Post $post ): bool {
+		return null !== self::$classic_page && null !== $post && 0 === $post->ID && 'page' === $post->post_type;
 	}
 
 	/**

@@ -19,6 +19,7 @@ use EasyQ\Settings\Options;
  * @covers \EasyQ\Frontend\Router
  * @covers \EasyQ\Frontend\Route
  * @covers \EasyQ\Frontend\URLs
+ * @covers \EasyQ\Frontend\Templates
  */
 final class Routing_Test extends Test_Case {
 
@@ -120,6 +121,67 @@ final class Routing_Test extends Test_Case {
 		$this->assertStringContainsString( 'template-canvas.php', $template );
 		// Core prefixes the ID of the resolved template with the theme, so only the slug is compared.
 		$this->assertStringEndsWith( '//easyq-user-activity', (string) ( $GLOBALS['_wp_current_template_id'] ?? '' ) );
+	}
+
+	/**
+	 * Opens a Q&A page in the classic theme Twenty Twenty-One and returns the template file.
+	 *
+	 * @param string $url Address of the page.
+	 * @return string
+	 */
+	private function open_in_classic_theme( string $url ): string {
+		switch_theme( 'twentytwentyone' );
+		$this->assertFalse( wp_is_block_theme() );
+		$this->go_to( $url );
+
+		return ( new Templates( Block_Context::router() ) )->template_include( 'index.php' );
+	}
+
+	public function test_classic_themes_show_q_and_a_pages_with_their_page_template(): void {
+		wp_set_current_user( $this->administrator() );
+		$question = $this->ask( $this->user() );
+		$this->go_to( get_permalink( self::factory()->post->create() ) );
+		the_post();
+		$this->assertNotSame( '', (string) get_edit_post_link(), 'Other posts keep their edit link.' );
+		$this->assertSame( '<p>Post</p>', trim( (string) apply_filters( 'the_content', 'Post' ) ) );
+
+		$template = $this->open_in_classic_theme( Routes::url( 'question', $question->id ) );
+
+		$this->assertSame( get_theme_root() . '/twentytwentyone/page.php', $template );
+		$this->assertTrue( is_page() );
+		$this->assertFalse( is_404() );
+		$this->assertTrue( have_posts() );
+		the_post();
+		$this->assertSame( 'How do I configure the widget?', get_the_title() );
+		$content = (string) apply_filters( 'the_content', '' );
+		$this->assertStringContainsString( 'wp-block-easyq-post-content', $content );
+		// The theme prints the title; the content has no heading of its own and no paragraphs added by `wpautop()`.
+		$this->assertStringNotContainsString( '<h1', $content );
+		$this->assertSame( Templates::classic_html(), $content );
+		$this->assertSame( '', get_edit_post_link() );
+		remove_filter( 'get_edit_post_link', array( Templates::class, 'classic_edit_link' ) );
+		$this->assertStringContainsString( 'post=0', (string) get_edit_post_link(), 'Without the filter, core links to editing post 0.' );
+		$this->assertStringEndsWith( '/includes/frontend/views/no-comments.php', (string) apply_filters( 'comments_template', 'comments.php' ) );
+	}
+
+	public function test_classic_page_titles_are_escaped_and_censored(): void {
+		Options::update( 'posting', array( 'block_bad_words' => 'darn' ) );
+		$question = $this->ask( $this->user(), 'Darn widgets & <b>bold</b> plans?' );
+
+		$this->open_in_classic_theme( Routes::url( 'question', $question->id ) );
+
+		$this->assertSame( esc_html( '**** widgets & <b>bold</b> plans?' ), $GLOBALS['post']->post_title );
+		$this->assertStringContainsString( '**** widgets', wp_get_document_title() );
+	}
+
+	public function test_classic_pages_keep_headings_below_the_title(): void {
+		$this->ask( $this->user(), 'Which hooks exist?' );
+
+		$this->open_in_classic_theme( Routes::url( 'home' ) );
+
+		$this->assertSame( 'Recent questions', get_the_title( $GLOBALS['post'] ) );
+		$this->assertStringNotContainsString( '<h1', Templates::classic_html() );
+		$this->assertMatchesRegularExpression( '/<h2 [^>]*><a href="[^"]+">Which hooks exist\?<\/a><\/h2>/', Templates::classic_html() );
 	}
 
 	public function test_other_requests_are_left_alone(): void {
