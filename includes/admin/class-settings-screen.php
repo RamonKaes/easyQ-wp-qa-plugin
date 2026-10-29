@@ -145,7 +145,7 @@ final class Settings_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array{section: string, key: string} $args Section and setting name.
+	 * @param array{section: string, key: string, defaults?: bool} $args Section and setting name; `defaults` shows the default value instead of the stored one.
 	 */
 	public function render_field( array $args ): void {
 		$section = $args['section'];
@@ -156,7 +156,7 @@ final class Settings_Screen {
 			return;
 		}
 
-		$value       = Options::get( $section, $key );
+		$value       = empty( $args['defaults'] ) ? Options::get( $section, $key ) : ( Options::defaults()[ $section ][ $key ] ?? null );
 		$id          = self::id( $section, $key );
 		$name        = Options::option_name( $section ) . '[' . $key . ']';
 		$description = $field['description'] ?? '';
