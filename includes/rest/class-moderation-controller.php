@@ -55,43 +55,46 @@ final class Moderation_Controller extends Controller {
 			self::NAMESPACE,
 			'/posts',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_posts' ),
-				'permission_callback' => array( $this, 'list_permissions_check' ),
-				'args'                => array(
-					'view'     => array(
-						'description' => __( 'All posts, or those awaiting approval, flagged, hidden or closed.', 'easyq' ),
-						'type'        => 'string',
-						'enum'        => Moderation_Query::VIEWS,
-						'default'     => 'all',
-					),
-					'type'     => array(
-						'description' => __( 'Only questions, answers or comments.', 'easyq' ),
-						'type'        => 'string',
-						'enum'        => array_keys( Moderation_Query::TYPES ),
-					),
-					'category' => array(
-						'description' => __( 'Only posts in this category and its subcategories.', 'easyq' ),
-						'type'        => 'integer',
-					),
-					'author'   => array(
-						'description' => __( 'Only posts by this user.', 'easyq' ),
-						'type'        => 'integer',
-					),
-					'ip'       => array(
-						'description' => __( 'Only posts created from this IP address.', 'easyq' ),
-						'type'        => 'string',
-					),
-					'search'   => array(
-						'description' => __( 'Only posts whose title or text contains this.', 'easyq' ),
-						'type'        => 'string',
-					),
-					'month'    => array(
-						'description' => __( 'Only posts created in this month, as YYYYMM.', 'easyq' ),
-						'type'        => 'string',
-						'pattern'     => '^\d{6}$',
-					),
-				) + $this->pagination_args( 20 ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_posts' ),
+					'permission_callback' => array( $this, 'list_permissions_check' ),
+					'args'                => array(
+						'view'     => array(
+							'description' => __( 'All posts, or those awaiting approval, flagged, hidden or closed.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => Moderation_Query::VIEWS,
+							'default'     => 'all',
+						),
+						'type'     => array(
+							'description' => __( 'Only questions, answers or comments.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array_keys( Moderation_Query::TYPES ),
+						),
+						'category' => array(
+							'description' => __( 'Only posts in this category and its subcategories.', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'author'   => array(
+							'description' => __( 'Only posts by this user.', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'ip'       => array(
+							'description' => __( 'Only posts created from this IP address.', 'easyq' ),
+							'type'        => 'string',
+						),
+						'search'   => array(
+							'description' => __( 'Only posts whose title or text contains this.', 'easyq' ),
+							'type'        => 'string',
+						),
+						'month'    => array(
+							'description' => __( 'Only posts created in this month, as YYYYMM.', 'easyq' ),
+							'type'        => 'string',
+							'pattern'     => '^\d{6}$',
+						),
+					) + $this->pagination_args( 20 ),
+				),
+				'schema' => array( Schemas::class, 'post' ),
 			)
 		);
 
@@ -99,9 +102,12 @@ final class Moderation_Controller extends Controller {
 			self::NAMESPACE,
 			'/ips/' . self::IP_PATTERN,
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_ip' ),
-				'permission_callback' => array( $this, 'ip_permissions_check' ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_ip' ),
+					'permission_callback' => array( $this, 'ip_permissions_check' ),
+				),
+				'schema' => array( Schemas::class, 'ip' ),
 			)
 		);
 
@@ -110,9 +116,12 @@ final class Moderation_Controller extends Controller {
 				self::NAMESPACE,
 				'/ips/' . self::IP_PATTERN . '/' . $action,
 				array(
-					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( $this, 'hide-all' === $action ? 'hide_all' : $action ),
-					'permission_callback' => array( $this, 'hide-all' === $action ? 'hide_all_permissions_check' : 'block_permissions_check' ),
+					array(
+						'methods'             => WP_REST_Server::CREATABLE,
+						'callback'            => array( $this, 'hide-all' === $action ? 'hide_all' : $action ),
+						'permission_callback' => array( $this, 'hide-all' === $action ? 'hide_all_permissions_check' : 'block_permissions_check' ),
+					),
+					'schema' => array( Schemas::class, 'ip' ),
 				)
 			);
 		}

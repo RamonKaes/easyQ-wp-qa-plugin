@@ -22,7 +22,7 @@ final class Post_Schema {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $type `question`, `answer` or `comment`.
+	 * @param string $type `question`, `answer` or `comment`, or `post` for lists that mix them.
 	 * @return array<string, mixed>
 	 */
 	public static function get( string $type ): array {
@@ -120,7 +120,8 @@ final class Post_Schema {
 			),
 		);
 
-		if ( 'question' === $type ) {
+		// Lists of any post type include the properties of questions, which only questions have.
+		if ( 'question' === $type || 'post' === $type ) {
 			$properties += array(
 				'title'           => array(
 					'description' => __( 'Title of the question.', 'easyq' ),

@@ -62,6 +62,7 @@ final class Taxonomy_Controller extends Controller {
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->category_args( true ),
 				),
+				'schema' => array( Schemas::class, 'category' ),
 			)
 		);
 
@@ -92,6 +93,7 @@ final class Taxonomy_Controller extends Controller {
 						),
 					),
 				),
+				'schema' => array( Schemas::class, 'category' ),
 			)
 		);
 
@@ -99,17 +101,20 @@ final class Taxonomy_Controller extends Controller {
 			self::NAMESPACE,
 			'/categories/(?P<id>\d+)/reassign',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'reassign_category' ),
-				'permission_callback' => array( $this, 'manage_permissions_check' ),
-				'args'                => array(
-					'to' => array(
-						'description' => __( 'Category that receives the questions directly in this category; 0 for no category.', 'easyq' ),
-						'type'        => 'integer',
-						'minimum'     => 0,
-						'required'    => true,
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'reassign_category' ),
+					'permission_callback' => array( $this, 'manage_permissions_check' ),
+					'args'                => array(
+						'to' => array(
+							'description' => __( 'Category that receives the questions directly in this category; 0 for no category.', 'easyq' ),
+							'type'        => 'integer',
+							'minimum'     => 0,
+							'required'    => true,
+						),
 					),
 				),
+				'schema' => array( Schemas::class, 'category_reassign' ),
 			)
 		);
 
@@ -117,16 +122,19 @@ final class Taxonomy_Controller extends Controller {
 			self::NAMESPACE,
 			'/tags',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_tags' ),
-				'permission_callback' => array( $this, 'view_permissions_check' ),
-				'args'                => array(
-					'search' => array(
-						'description' => __( 'Only tags starting with this text.', 'easyq' ),
-						'type'        => 'string',
-						'default'     => '',
-					),
-				) + $this->pagination_args( Options::get_int( 'lists', 'page_size_tags' ) ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_tags' ),
+					'permission_callback' => array( $this, 'view_permissions_check' ),
+					'args'                => array(
+						'search' => array(
+							'description' => __( 'Only tags starting with this text.', 'easyq' ),
+							'type'        => 'string',
+							'default'     => '',
+						),
+					) + $this->pagination_args( Options::get_int( 'lists', 'page_size_tags' ) ),
+				),
+				'schema' => array( Schemas::class, 'tag' ),
 			)
 		);
 	}

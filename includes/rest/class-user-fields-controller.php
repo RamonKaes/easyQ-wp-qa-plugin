@@ -68,6 +68,7 @@ final class User_Fields_Controller extends Controller {
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->field_args( true ),
 				),
+				'schema' => array( Schemas::class, 'user_field' ),
 			)
 		);
 
@@ -91,6 +92,7 @@ final class User_Fields_Controller extends Controller {
 					'callback'            => array( $this, 'delete_field' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 				),
+				'schema' => array( Schemas::class, 'user_field' ),
 			)
 		);
 	}

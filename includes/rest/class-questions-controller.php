@@ -74,16 +74,19 @@ final class Questions_Controller extends Controller {
 			self::NAMESPACE,
 			'/' . $this->rest_base . '/similar',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_similar' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => array(
-					'title' => array(
-						'description' => __( 'Title of the question being asked.', 'easyq' ),
-						'type'        => 'string',
-						'required'    => true,
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_similar' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => array(
+						'title' => array(
+							'description' => __( 'Title of the question being asked.', 'easyq' ),
+							'type'        => 'string',
+							'required'    => true,
+						),
 					),
 				),
+				'schema' => array( Schemas::class, 'similar' ),
 			)
 		);
 

@@ -52,17 +52,20 @@ final class Users_Controller extends Controller {
 			self::NAMESPACE,
 			'/users',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_items' ),
-				'permission_callback' => array( $this, 'get_items_permissions_check' ),
-				'args'                => array(
-					'sort' => array(
-						'description' => __( 'Users by points, the newest users, or users with special levels.', 'easyq' ),
-						'type'        => 'string',
-						'enum'        => array_keys( User_Query::SORTS ),
-						'default'     => 'points',
-					),
-				) + $this->pagination_args( Options::get_int( 'lists', 'page_size_users' ) ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_items' ),
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
+					'args'                => array(
+						'sort' => array(
+							'description' => __( 'Users by points, the newest users, or users with special levels.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array_keys( User_Query::SORTS ),
+							'default'     => 'points',
+						),
+					) + $this->pagination_args( Options::get_int( 'lists', 'page_size_users' ) ),
+				),
+				'schema' => array( Schemas::class, 'user' ),
 			)
 		);
 
@@ -92,6 +95,7 @@ final class Users_Controller extends Controller {
 						),
 					),
 				),
+				'schema' => array( Schemas::class, 'user' ),
 			)
 		);
 
@@ -99,9 +103,12 @@ final class Users_Controller extends Controller {
 			self::NAMESPACE,
 			'/users/(?P<id>\d+)',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_item' ),
-				'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_item' ),
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				),
+				'schema' => array( Schemas::class, 'user' ),
 			)
 		);
 	}

@@ -68,9 +68,12 @@ final class Actions_Controller extends Controller {
 			self::NAMESPACE,
 			'/posts/(?P<id>\d+)',
 			array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( $this, 'get_post' ),
-				'permission_callback' => '__return_true',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_post' ),
+					'permission_callback' => '__return_true',
+				),
+				'schema' => array( Schemas::class, 'post' ),
 			)
 		);
 
@@ -78,17 +81,20 @@ final class Actions_Controller extends Controller {
 			self::NAMESPACE,
 			'/posts/(?P<id>\d+)/vote',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'vote' ),
-				'permission_callback' => array( $this, 'vote_permissions_check' ),
-				'args'                => array(
-					'vote' => array(
-						'description' => __( 'The vote: 1 for up, -1 for down, 0 to remove the vote.', 'easyq' ),
-						'type'        => 'integer',
-						'enum'        => array( -1, 0, 1 ),
-						'required'    => true,
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'vote' ),
+					'permission_callback' => array( $this, 'vote_permissions_check' ),
+					'args'                => array(
+						'vote' => array(
+							'description' => __( 'The vote: 1 for up, -1 for down, 0 to remove the vote.', 'easyq' ),
+							'type'        => 'integer',
+							'enum'        => array( -1, 0, 1 ),
+							'required'    => true,
+						),
 					),
 				),
+				'schema' => array( Schemas::class, 'post' ),
 			)
 		);
 
@@ -96,35 +102,38 @@ final class Actions_Controller extends Controller {
 			self::NAMESPACE,
 			'/posts/(?P<id>\d+)/actions/(?P<action>[a-z-]+)',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'perform' ),
-				'permission_callback' => array( $this, 'perform_permissions_check' ),
-				'args'                => array(
-					'action'       => array(
-						'type' => 'string',
-						'enum' => array_keys( self::ACTIONS ),
-					),
-					'answer'       => array(
-						'description' => __( 'Answer to select (select).', 'easyq' ),
-						'type'        => 'integer',
-					),
-					'duplicate_of' => array(
-						'description' => __( 'Original question when closing as duplicate (close).', 'easyq' ),
-						'type'        => 'integer',
-					),
-					'note'         => array(
-						'description' => __( 'Reason when closing for another reason (close).', 'easyq' ),
-						'type'        => 'string',
-					),
-					'parent'       => array(
-						'description' => __( 'New parent when converting an answer into a comment (convert).', 'easyq' ),
-						'type'        => 'integer',
-					),
-					'category'     => array(
-						'description' => __( 'New category (move).', 'easyq' ),
-						'type'        => array( 'integer', 'null' ),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'perform' ),
+					'permission_callback' => array( $this, 'perform_permissions_check' ),
+					'args'                => array(
+						'action'       => array(
+							'type' => 'string',
+							'enum' => array_keys( self::ACTIONS ),
+						),
+						'answer'       => array(
+							'description' => __( 'Answer to select (select).', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'duplicate_of' => array(
+							'description' => __( 'Original question when closing as duplicate (close).', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'note'         => array(
+							'description' => __( 'Reason when closing for another reason (close).', 'easyq' ),
+							'type'        => 'string',
+						),
+						'parent'       => array(
+							'description' => __( 'New parent when converting an answer into a comment (convert).', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'category'     => array(
+							'description' => __( 'New category (move).', 'easyq' ),
+							'type'        => array( 'integer', 'null' ),
+						),
 					),
 				),
+				'schema' => array( Schemas::class, 'post' ),
 			)
 		);
 	}

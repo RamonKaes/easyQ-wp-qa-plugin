@@ -37,27 +37,30 @@ final class Tools_Controller extends Controller {
 			self::NAMESPACE,
 			'/tools/(?P<tool>[a-z_]+)',
 			array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( $this, 'run' ),
-				'permission_callback' => array( $this, 'manage_permissions_check' ),
-				'args'                => array(
-					'tool'  => array(
-						'description' => __( 'Tool to run.', 'easyq' ),
-						'type'        => 'string',
-						'enum'        => array_keys( Tools::STEPS ),
-					),
-					'step'  => array(
-						'description' => __( 'Step from the previous response; omit to start.', 'easyq' ),
-						'type'        => 'string',
-						'default'     => '',
-					),
-					'after' => array(
-						'description' => __( 'Last item handled, from the previous response.', 'easyq' ),
-						'type'        => 'integer',
-						'default'     => 0,
-						'minimum'     => 0,
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'run' ),
+					'permission_callback' => array( $this, 'manage_permissions_check' ),
+					'args'                => array(
+						'tool'  => array(
+							'description' => __( 'Tool to run.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array_keys( Tools::STEPS ),
+						),
+						'step'  => array(
+							'description' => __( 'Step from the previous response; omit to start.', 'easyq' ),
+							'type'        => 'string',
+							'default'     => '',
+						),
+						'after' => array(
+							'description' => __( 'Last item handled, from the previous response.', 'easyq' ),
+							'type'        => 'integer',
+							'default'     => 0,
+							'minimum'     => 0,
+						),
 					),
 				),
+				'schema' => array( Schemas::class, 'tool_batch' ),
 			)
 		);
 	}
