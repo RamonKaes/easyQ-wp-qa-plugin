@@ -43,12 +43,12 @@ final class Registry {
 	}
 
 	/**
-	 * Registers the sections that have a tab.
+	 * Registers the sections that have a screen.
 	 *
 	 * @since 0.1.0
 	 */
 	public function register_settings(): void {
-		foreach ( array_keys( Fields::tabs() ) as $section ) {
+		foreach ( array_keys( Fields::sections() ) as $section ) {
 			$group = self::group( $section );
 
 			register_setting(
@@ -56,7 +56,7 @@ final class Registry {
 				Options::option_name( $section ),
 				array(
 					'type'              => 'object',
-					'label'             => Fields::tabs()[ $section ],
+					'label'             => Fields::sections()[ $section ],
 					'sanitize_callback' => static fn ( mixed $input ): array => Fields::sanitize( $section, $input ),
 					'show_in_rest'      => array( 'schema' => Fields::schema( $section ) ),
 				)
@@ -85,7 +85,7 @@ final class Registry {
 		}
 
 		$section = substr( $name, strlen( Options::OPTION_PREFIX ) );
-		if ( ! isset( Fields::tabs()[ $section ] ) ) {
+		if ( ! isset( Fields::sections()[ $section ] ) ) {
 			return $value;
 		}
 

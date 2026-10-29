@@ -29,6 +29,15 @@ defined( 'ABSPATH' ) || exit;
 final class Fields {
 
 	/**
+	 * Longest user title in characters.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MAX_TITLE_LENGTH = 80;
+
+	/**
 	 * Permission settings with the widest and narrowest allowed threshold, and whether
 	 * the thresholds with a points minimum are allowed (from Question2Answer).
 	 *
@@ -84,6 +93,18 @@ final class Fields {
 	}
 
 	/**
+	 * Returns every settings section with a screen, with its title: the tabs of the
+	 * settings screen and the points.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, string>
+	 */
+	public static function sections(): array {
+		return self::tabs() + array( 'points' => __( 'Points', 'easyq' ) );
+	}
+
+	/**
 	 * Returns the fields of a section in display order.
 	 *
 	 * @since 0.1.0
@@ -103,6 +124,7 @@ final class Fields {
 			'lists'       => self::lists(),
 			'feeds'       => self::feeds(),
 			'spam'        => self::spam(),
+			'points'      => self::points(),
 			default       => array(),
 		};
 	}
@@ -192,6 +214,19 @@ final class Fields {
 						'enum' => array_keys( self::role_level_choices() ),
 					);
 					break;
+				case 'titles':
+					// Titles keyed by the points needed. The core settings endpoint forbids other keys
+					// already; the schema says so for every other reader too.
+					$property['type']                 = 'object';
+					$property['patternProperties']    = array(
+						'^\\d+$' => array(
+							'type'      => 'string',
+							'minLength' => 1,
+							'maxLength' => self::MAX_TITLE_LENGTH,
+						),
+					);
+					$property['additionalProperties'] = false;
+					break;
 				default:
 					$property['type'] = 'string';
 			}
@@ -262,6 +297,9 @@ final class Fields {
 				}
 
 				return $levels;
+
+			case 'titles':
+				return is_array( $value ) ? self::titles( $value ) : $current;
 
 			default:
 				return is_string( $value ) ? sanitize_text_field( $value ) : $current;
@@ -474,6 +512,90 @@ final class Fields {
 		}
 
 		return $fields;
+	}
+
+	/**
+	 * Returns the fields of the points section, in the order of Question2Answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, array>
+	 *
+	 * @phpstan-return array<string, Field>
+	 */
+	private static function points(): array {
+		$fields = array();
+		foreach ( array(
+			'points_post_q'           => __( 'Posting a question', 'easyq' ),
+			'points_select_a'         => __( 'Selecting an answer for your question', 'easyq' ),
+			'points_per_q_voted_up'   => __( 'Per up vote on your question', 'easyq' ),
+			'points_per_q_voted_down' => __( 'Per down vote on your question', 'easyq' ),
+			'points_q_voted_max_gain' => __( 'Limit from up votes on each question', 'easyq' ),
+			'points_q_voted_max_loss' => __( 'Limit from down votes on each question', 'easyq' ),
+			'points_post_a'           => __( 'Posting an answer', 'easyq' ),
+			'points_a_selected'       => __( 'Having your answer selected as the best', 'easyq' ),
+			'points_per_a_voted_up'   => __( 'Per up vote on your answer', 'easyq' ),
+			'points_per_a_voted_down' => __( 'Per down vote on your answer', 'easyq' ),
+			'points_a_voted_max_gain' => __( 'Limit from up votes on each answer', 'easyq' ),
+			'points_a_voted_max_loss' => __( 'Limit from down votes on each answer', 'easyq' ),
+			'points_per_c_voted_up'   => __( 'Per up vote on your comment', 'easyq' ),
+			'points_per_c_voted_down' => __( 'Per down vote on your comment', 'easyq' ),
+			'points_c_voted_max_gain' => __( 'Limit from up votes on each comment', 'easyq' ),
+			'points_c_voted_max_loss' => __( 'Limit from down votes on each comment', 'easyq' ),
+			'points_vote_up_q'        => __( 'Voting up a question', 'easyq' ),
+			'points_vote_down_q'      => __( 'Voting down a question', 'easyq' ),
+			'points_vote_up_a'        => __( 'Voting up an answer', 'easyq' ),
+			'points_vote_down_a'      => __( 'Voting down an answer', 'easyq' ),
+		) as $key => $label ) {
+			$fields[ $key ] = self::int( $label, 0, 100000 );
+		}
+
+		// Multiplying by 0 would take all points away; Question2Answer does not prevent it.
+		$fields['points_multiple'] = self::int( __( 'Multiply all points by', 'easyq' ), 1, 1000, __( 'Every value above counts this many times.', 'easyq' ) );
+		$fields['points_base']     = self::int( __( 'Add for all users', 'easyq' ), 0, 100000, __( 'Points every user starts with, not multiplied.', 'easyq' ) );
+		$fields['user_titles']     = array(
+			'type'        => 'titles',
+			'label'       => __( 'User titles', 'easyq' ),
+			'description' => __( 'Titles that users earn with points, keyed by the points needed.', 'easyq' ),
+		);
+
+		return $fields;
+	}
+
+	/**
+	 * Sanitizes user titles: an object of titles keyed by the points needed, or rows
+	 * with `points` and `title` as the form sends them. Rows without a title are
+	 * removed; of several titles for the same points, the first one is kept.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<mixed> $value Submitted titles.
+	 * @return array<int, string> Titles keyed by points, the highest first.
+	 */
+	private static function titles( array $value ): array {
+		$titles = array();
+		foreach ( $value as $key => $row ) {
+			[ $points, $title ] = is_array( $row ) ? array( $row['points'] ?? null, $row['title'] ?? null ) : array( $key, $row );
+			$title              = is_string( $title ) ? sanitize_text_field( $title ) : '';
+			if ( '' === $title || ! is_numeric( $points ) || (int) $points < 0 ) {
+				continue;
+			}
+
+			$points = (int) $points;
+			if ( isset( $titles[ $points ] ) ) {
+				if ( function_exists( 'add_settings_error' ) ) {
+					/* translators: %s: number of points. */
+					add_settings_error( 'easyq_points', 'easyq-title-points', sprintf( __( 'Only one title can need %s points; the first one was kept.', 'easyq' ), number_format_i18n( $points ) ), 'warning' );
+				}
+				continue;
+			}
+
+			$titles[ $points ] = mb_substr( $title, 0, self::MAX_TITLE_LENGTH );
+		}
+
+		krsort( $titles, SORT_NUMERIC );
+
+		return $titles;
 	}
 
 	/**

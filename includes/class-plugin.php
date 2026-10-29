@@ -31,6 +31,7 @@ final class Plugin {
 		( new Settings\Registry() )->register();
 		( new Events\Activity_Tracker() )->register();
 		Services::limits()->register();
+		Services::points()->register();
 		( new Users\User_Status() )->register();
 		( new Users\User_Events( Services::posts(), Services::points() ) )->register();
 		( new Users\Avatars() )->register();

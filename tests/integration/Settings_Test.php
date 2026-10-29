@@ -320,4 +320,81 @@ final class Settings_Test extends Test_Case {
 		$entries = array_column( $submenu[ Settings_Screen::PAGE ] ?? array(), 1, 2 );
 		$this->assertSame( Capabilities::MANAGE, $entries[ Settings_Screen::PAGE ] ?? null );
 	}
+
+	public function test_points_and_user_titles_are_a_settings_section(): void {
+		wp_set_current_user( $this->administrator() );
+
+		$data = $this->settings_request( 'GET' )->get_data();
+		$this->assertIsArray( $data );
+		$this->assertSame( 100, $data['easyq_settings_points']['points_base'] );
+		$this->assertSame( array(), $data['easyq_settings_points']['user_titles'] );
+
+		$response = $this->settings_request(
+			'POST',
+			array(
+				'easyq_settings_points' => array(
+					'user_titles' => array(
+						'100'  => 'Newcomer',
+						'1000' => 'Regular',
+					),
+				),
+			)
+		);
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame(
+			array(
+				1000 => 'Regular',
+				100  => 'Newcomer',
+			),
+			Options::get( 'points', 'user_titles' )
+		);
+		$this->assertSame( 'Regular', \EasyQ\Users\User_Titles::thresholds()[1000] ?? null );
+
+		$this->assertSame( 400, $this->settings_request( 'POST', array( 'easyq_settings_points' => array( 'user_titles' => array( 'many' => 'Invalid' ) ) ) )->get_status() );
+		$this->assertSame( 400, $this->settings_request( 'POST', array( 'easyq_settings_points' => array( 'points_multiple' => 0 ) ) )->get_status() );
+		$this->assertSame( Capabilities::MANAGE, apply_filters( 'option_page_capability_easyq_points', 'manage_options' ) );
+	}
+
+	public function test_user_titles_from_the_form_keep_one_title_per_points(): void {
+		Options::update(
+			'points',
+			array(
+				'user_titles' => array(
+					array(
+						'points' => '50',
+						'title'  => '<b>Helper</b>',
+					),
+					array(
+						'points' => '500',
+						'title'  => 'Expert helper',
+					),
+					array(
+						'points' => '50',
+						'title'  => 'Second for 50',
+					),
+					array(
+						'points' => '700',
+						'title'  => '',
+					),
+					array(
+						'points' => '-5',
+						'title'  => 'Negative',
+					),
+					array(
+						'points' => '',
+						'title'  => '',
+					),
+				),
+			)
+		);
+
+		$this->assertSame(
+			array(
+				500 => 'Expert helper',
+				50  => 'Helper',
+			),
+			Options::get( 'points', 'user_titles' )
+		);
+		$this->assertContains( 'easyq-title-points', array_column( get_settings_errors( 'easyq_points' ), 'code' ) );
+	}
 }

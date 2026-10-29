@@ -11,6 +11,7 @@ namespace EasyQ\Points;
 use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 
@@ -185,6 +186,179 @@ final class Points {
 	 * @var string
 	 */
 	public const DOWNVOTES_RECEIVED = 'downvotes_received';
+
+	/**
+	 * Settings that change how votes on each kind of post count, by the prefix of the vote points.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, string> Post type by prefix.
+	 */
+	private const VOTE_PREFIXES = array(
+		'q' => 'Q',
+		'a' => 'A',
+		'c' => 'C',
+	);
+
+	/**
+	 * Recalculates the points of all users when the points settings change.
+	 *
+	 * The hooks use the current service, whose loaded points must be forgotten.
+	 *
+	 * @since 0.1.0
+	 */
+	public function register(): void {
+		$option = Options::option_name( 'points' );
+
+		add_action(
+			"update_option_{$option}",
+			static function ( mixed $old, mixed $value ): void {
+				Services::points()->apply_settings( is_array( $old ) ? $old : array(), is_array( $value ) ? $value : array() );
+			},
+			10,
+			2
+		);
+		add_action(
+			"add_option_{$option}",
+			static function ( string $name, mixed $value ): void {
+				Services::points()->apply_settings( Options::defaults()['points'], is_array( $value ) ? $value : array() );
+			},
+			10,
+			2
+		);
+	}
+
+	/**
+	 * Recalculates the points of all users after the points settings changed.
+	 *
+	 * Question2Answer asks for a separate recalculation; here the stored points
+	 * follow the settings right away, with one statement for each changed part.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<mixed> $old   Settings before the change.
+	 * @param array<mixed> $value Settings after the change.
+	 * @return bool Whether anything was recalculated.
+	 */
+	public function apply_settings( array $old, array $value ): bool {
+		$changed = self::changed_settings( $old, $value );
+		if ( array() === $changed ) {
+			return false;
+		}
+
+		foreach ( self::VOTE_PREFIXES as $prefix => $type ) {
+			$keys = array( "points_per_{$prefix}_voted_up", "points_per_{$prefix}_voted_down", "points_{$prefix}_voted_max_gain", "points_{$prefix}_voted_max_loss" );
+			if ( array() !== array_intersect( $keys, $changed ) ) {
+				$this->recalculate_vote_points( $prefix );
+			}
+		}
+
+		$this->recalculate_totals();
+
+		return true;
+	}
+
+	/**
+	 * Returns the points settings that differ between two versions of the settings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<mixed> $old   Settings before the change.
+	 * @param array<mixed> $value Settings after the change.
+	 * @return string[] Names of the changed settings; user titles do not count.
+	 */
+	public static function changed_settings( array $old, array $value ): array {
+		$defaults = Options::defaults()['points'];
+		// Stored settings may be numbers or numeric strings.
+		$number  = static fn ( mixed $setting ): int => is_numeric( $setting ) ? (int) $setting : 0;
+		$changed = array();
+		foreach ( array_keys( $defaults ) as $key ) {
+			if ( str_starts_with( $key, 'points_' ) && $number( $old[ $key ] ?? $defaults[ $key ] ) !== $number( $value[ $key ] ?? $defaults[ $key ] ) ) {
+				$changed[] = $key;
+			}
+		}
+
+		return $changed;
+	}
+
+	/**
+	 * Recalculates the points that all users received for votes on one kind of post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $prefix `q`, `a` or `c`.
+	 */
+	public function recalculate_vote_points( string $prefix ): void {
+		$wpdb   = DB::wpdb();
+		$column = match ( $prefix ) {
+			'q'     => self::QUESTION_VOTE_POINTS,
+			'a'     => self::ANSWER_VOTE_POINTS,
+			default => self::COMMENT_VOTE_POINTS,
+		};
+
+		$sql = $wpdb->prepare(
+			'UPDATE %i AS u LEFT JOIN (
+				SELECT user_id, SUM(LEAST(%d * CAST(upvotes AS SIGNED), %d) - LEAST(%d * CAST(downvotes AS SIGNED), %d)) AS total
+				FROM %i WHERE LEFT(type, 1) = %s AND user_id IS NOT NULL GROUP BY user_id
+			) AS v ON v.user_id = u.user_id
+			SET u.%i = COALESCE(v.total, 0)',
+			Schema::table( 'userpoints' ),
+			Options::get_int( 'points', "points_per_{$prefix}_voted_up" ),
+			Options::get_int( 'points', "points_{$prefix}_voted_max_gain" ),
+			Options::get_int( 'points', "points_per_{$prefix}_voted_down" ),
+			Options::get_int( 'points', "points_{$prefix}_voted_max_loss" ),
+			Schema::table( 'posts' ),
+			self::VOTE_PREFIXES[ $prefix ] ?? 'C',
+			$column
+		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$this->loaded = array();
+	}
+
+	/**
+	 * Recalculates the total points of all users from their stored statistics.
+	 *
+	 * @since 0.1.0
+	 */
+	public function recalculate_totals(): void {
+		$wpdb = DB::wpdb();
+		$m    = $this->multipliers();
+
+		$sql = $wpdb->prepare(
+			'UPDATE %i SET points = %d + bonus
+				+ %d * questions + %d * answers + %d * comments + %d * selections + %d * answers_selected
+				+ %d * question_upvotes + %d * question_downvotes + %d * answer_upvotes + %d * answer_downvotes
+				+ %d * comment_upvotes + %d * comment_downvotes
+				+ %d * question_vote_points + %d * answer_vote_points + %d * comment_vote_points
+				+ %d * upvotes_received + %d * downvotes_received',
+			Schema::table( 'userpoints' ),
+			Options::get_int( 'points', 'points_base' ),
+			$m[ self::QUESTIONS ],
+			$m[ self::ANSWERS ],
+			$m[ self::COMMENTS ],
+			$m[ self::SELECTIONS ],
+			$m[ self::ANSWERS_SELECTED ],
+			$m[ self::QUESTION_UPVOTES ],
+			$m[ self::QUESTION_DOWNVOTES ],
+			$m[ self::ANSWER_UPVOTES ],
+			$m[ self::ANSWER_DOWNVOTES ],
+			$m[ self::COMMENT_UPVOTES ],
+			$m[ self::COMMENT_DOWNVOTES ],
+			$m[ self::QUESTION_VOTE_POINTS ],
+			$m[ self::ANSWER_VOTE_POINTS ],
+			$m[ self::COMMENT_VOTE_POINTS ],
+			$m[ self::UPVOTES_RECEIVED ],
+			$m[ self::DOWNVOTES_RECEIVED ]
+		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$this->loaded = array();
+	}
 
 	/**
 	 * Updates statistic columns and the total points of a user.
