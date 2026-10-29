@@ -180,9 +180,10 @@ final class Post_Fields {
 			? $up . $count( 'up', $post->upvotes, __( 'Upvotes:', 'easyq' ) ) . $down . $count( 'down', $post->downvotes, __( 'Downvotes:', 'easyq' ) )
 			: $up . $count( 'net', $post->net_votes, __( 'Votes:', 'easyq' ) ) . $down;
 
+		// Core buttons always sit in a buttons block, and themes style them only there.
 		return sprintf(
 			'<div %s data-wp-interactive="easyq" %s>%s</div>',
-			get_block_wrapper_attributes(),
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-buttons' ) ),
 			wp_interactivity_data_wp_context( $context ),
 			$html
 		);

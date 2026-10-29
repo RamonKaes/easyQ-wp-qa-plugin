@@ -143,6 +143,35 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'name="easyq_form" value="vote"', $html );
 	}
 
+	/**
+	 * Counts the buttons that are not inside a buttons block.
+	 *
+	 * @param string $html Rendered HTML.
+	 * @return int
+	 */
+	private function loose_buttons( string $html ): int {
+		$document = new \DOMDocument();
+		$document->loadHTML( '<!DOCTYPE html><meta charset="utf-8">' . $html, LIBXML_NOERROR );
+		$has = static fn ( string $name ): string => "contains(concat(' ', normalize-space(@class), ' '), ' $name ')";
+
+		return (int) ( new \DOMXPath( $document ) )->evaluate( 'count(//*[' . $has( 'wp-block-button' ) . '][not(ancestor::*[' . $has( 'wp-block-buttons' ) . '])])' );
+	}
+
+	public function test_buttons_sit_in_a_buttons_block_as_in_core(): void {
+		$question = $this->ask( $this->user() );
+		$this->answer( $this->user(), $question );
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+
+		$html = $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/post-votes /--><!-- wp:easyq/post-actions /--><!-- wp:easyq/answer-form /--><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/post-votes /--><!-- wp:easyq/post-actions /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->', new Route( 'question', $question ) );
+
+		// The votes and actions of the question and its answer.
+		$this->assertSame( 2, substr_count( $html, 'aria-label="Vote up"' ) );
+		$this->assertSame( 2, substr_count( $html, 'value="hide"' ) );
+		$this->assertSame( 0, $this->loose_buttons( $html ) );
+		// The check finds a button outside a buttons block.
+		$this->assertSame( 1, $this->loose_buttons( '<div class="wp-block-group"><form class="wp-block-button is-style-outline"><button class="wp-block-button__link">▲</button></form></div>' ) );
+	}
+
 	public function test_post_actions_follow_the_permissions(): void {
 		$question = $this->ask( $this->user() );
 		$markup   = '<!-- wp:easyq/question --><!-- wp:easyq/post-actions /--><!-- /wp:easyq/question -->';

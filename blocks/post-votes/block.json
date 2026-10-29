@@ -50,5 +50,8 @@
 	},
 	"editorScript": "easyq-editor",
 	"viewScriptModule": "easyq-view",
-	"style": "wp-block-button"
+	"style": [
+		"wp-block-buttons",
+		"wp-block-button"
+	]
 }
