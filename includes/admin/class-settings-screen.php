@@ -13,6 +13,8 @@ use EasyQ\Settings\Fields;
 use EasyQ\Settings\Options;
 use EasyQ\Settings\Registry;
 use EasyQ\Users\Levels;
+use EasyQ\Users\Permits;
+use EasyQ\Util\Assets;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -51,7 +53,31 @@ final class Settings_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
-		add_submenu_page( Dashboard_Screen::PAGE, __( 'Q&A Settings', 'easyq' ), __( 'Settings', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		$hook = add_submenu_page( Dashboard_Screen::PAGE, __( 'Q&A Settings', 'easyq' ), __( 'Settings', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		if ( false !== $hook ) {
+			add_action(
+				'load-' . $hook,
+				static function (): void {
+					add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
+				}
+			);
+		}
+	}
+
+	/**
+	 * Loads the script that shows the points minimum of a permission only when it is needed.
+	 *
+	 * @since 0.1.0
+	 */
+	public static function enqueue(): void {
+		$asset = Assets::get( 'settings' );
+		wp_enqueue_script(
+			'easyq-settings',
+			plugins_url( 'build/settings.js', \EasyQ\PLUGIN_FILE ),
+			array_values( array_filter( $asset['dependencies'], static fn ( $dependency ): bool => is_string( $dependency ) && '' !== $dependency ) ),
+			$asset['version'],
+			true
+		);
 	}
 
 	/**
@@ -72,24 +98,45 @@ final class Settings_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_fields(): void {
-		foreach ( array_keys( Fields::tabs() ) as $section ) {
-			add_settings_section( Registry::group( $section ), '', '__return_empty_string', self::page( $section ) );
+		foreach ( array_keys( Fields::tabs() ) as $tab ) {
+			$fields = Fields::section( $tab );
 
-			foreach ( Fields::section( $section ) as $key => $field ) {
-				// A points minimum is shown with its permission; fields of the site owner only to the site owner.
-				if ( isset( $field['parent'] ) || ! Fields::may_change( $field ) ) {
-					continue;
+			foreach ( Settings_Layout::sections( $tab ) as $index => $section ) {
+				$section_id = Registry::group( $tab ) . '_' . $index;
+				add_settings_section( $section_id, $section['title'], '__return_empty_string', self::page( $tab ) );
+
+				foreach ( $section['rows'] as $number => $row ) {
+					// Fields of the site owner are only shown to the site owner.
+					$keys = array_values( array_filter( is_string( $row ) ? array( $row ) : $row['keys'], static fn ( string $key ): bool => isset( $fields[ $key ] ) && Fields::may_change( $fields[ $key ] ) ) );
+					if ( array() === $keys ) {
+						continue;
+					}
+
+					if ( is_string( $row ) ) {
+						$args = array(
+							'section' => $tab,
+							'key'     => $row,
+						);
+						if ( 'role_levels' !== $fields[ $row ]['type'] ) {
+							$args['label_for'] = self::id( $tab, $row );
+						}
+						add_settings_field( $row, esc_html( $fields[ $row ]['label'] ), array( $this, 'render_field' ), self::page( $tab ), $section_id, $args );
+						continue;
+					}
+
+					add_settings_field(
+						'easyq-row-' . $index . '-' . $number,
+						esc_html( $row['title'] ),
+						array( $this, 'render_row' ),
+						self::page( $tab ),
+						$section_id,
+						array(
+							'section' => $tab,
+							'title'   => $row['title'],
+							'keys'    => $keys,
+						)
+					);
 				}
-
-				$args = array(
-					'section' => $section,
-					'key'     => $key,
-				);
-				if ( 'role_levels' !== $field['type'] ) {
-					$args['label_for'] = self::id( $section, $key );
-				}
-
-				add_settings_field( $key, esc_html( $field['label'] ), array( $this, 'render_field' ), self::page( $section ), Registry::group( $section ), $args );
 			}
 		}
 	}
@@ -141,17 +188,89 @@ final class Settings_Screen {
 	public function render_field( array $args ): void {
 		$section = $args['section'];
 		$key     = $args['key'];
-		$fields  = Fields::section( $section );
-		$field   = $fields[ $key ] ?? null;
+		$field   = Fields::section( $section )[ $key ] ?? null;
 		if ( null === $field ) {
 			return;
 		}
 
-		$value       = empty( $args['defaults'] ) ? Options::get( $section, $key ) : ( Options::defaults()[ $section ][ $key ] ?? null );
-		$id          = self::id( $section, $key );
-		$name        = Options::option_name( $section ) . '[' . $key . ']';
 		$description = $field['description'] ?? '';
-		$described   = '' === $description ? '' : ' aria-describedby="' . esc_attr( $id . '-description' ) . '"';
+		$this->render_control( $section, $key, ! empty( $args['defaults'] ), '' === $description ? '' : self::id( $section, $key ) . '-description' );
+		if ( '' !== $description ) {
+			printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( self::id( $section, $key ) . '-description' ), esc_html( $description ) );
+		}
+	}
+
+	/**
+	 * Renders several related settings in one row, as core does under Settings →
+	 * Discussion: each control with its text after it.
+	 *
+	 * A description that several settings share is shown once.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array{section: string, title: string, keys: string[]} $args Section, row title and settings.
+	 */
+	public function render_row( array $args ): void {
+		$section = $args['section'];
+		$fields  = Fields::section( $section );
+		$keys    = array_values( array_filter( $args['keys'], static fn ( string $key ): bool => isset( $fields[ $key ] ) ) );
+
+		printf( '<fieldset><legend class="screen-reader-text"><span>%s</span></legend>', esc_html( $args['title'] ) );
+		foreach ( $keys as $position => $key ) {
+			$field       = $fields[ $key ];
+			$id          = self::id( $section, $key );
+			$description = $field['description'] ?? '';
+			$next        = $keys[ $position + 1 ] ?? null;
+			$shared      = null !== $next && ( $fields[ $next ]['description'] ?? '' ) === $description;
+
+			// A shared description follows the last setting that has it; the others point to it.
+			$owner = $key;
+			for ( $later = $position + 1; isset( $keys[ $later ] ) && ( $fields[ $keys[ $later ] ]['description'] ?? '' ) === $description; $later++ ) {
+				$owner = $keys[ $later ];
+			}
+			$described = '' === $description ? '' : self::id( $section, $owner ) . '-description';
+
+			if ( $position > 0 ) {
+				echo '<br>';
+			}
+			// The control comes first, so that the controls of a row line up.
+			if ( 'bool' === $field['type'] ) {
+				printf( '<label for="%s">', esc_attr( $id ) );
+				$this->render_control( $section, $key, false, $described );
+				echo ' ' . esc_html( $field['label'] ) . '</label>';
+			} else {
+				$this->render_control( $section, $key, false, $described );
+				printf( ' <label for="%1$s">%2$s</label>', esc_attr( $id ), esc_html( $field['label'] ) );
+			}
+
+			if ( '' !== $description && ! $shared ) {
+				printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( $id . '-description' ), esc_html( $description ) );
+			}
+		}
+		echo '</fieldset>';
+	}
+
+	/**
+	 * Renders the control of a setting, without its description.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $section   Section name.
+	 * @param string $key       Setting name.
+	 * @param bool   $defaults  Whether to show the default value instead of the stored one.
+	 * @param string $described ID of the element that describes the control; empty for none.
+	 */
+	private function render_control( string $section, string $key, bool $defaults, string $described ): void {
+		$fields = Fields::section( $section );
+		$field  = $fields[ $key ] ?? null;
+		if ( null === $field ) {
+			return;
+		}
+
+		$value     = $defaults ? ( Options::defaults()[ $section ][ $key ] ?? null ) : Options::get( $section, $key );
+		$id        = self::id( $section, $key );
+		$name      = Options::option_name( $section ) . '[' . $key . ']';
+		$described = '' === $described ? '' : ' aria-describedby="' . esc_attr( $described ) . '"';
 
 		switch ( $field['type'] ) {
 			case 'bool':
@@ -178,10 +297,11 @@ final class Settings_Screen {
 				break;
 
 			case 'choice':
-				$this->render_select( $id, $name, $field['choices'] ?? array(), $value, $described );
-				$points = $fields[ $key . '_points' ] ?? null;
+				$points = isset( $fields[ $key . '_points' ] ) ? $key . '_points' : null;
+				// Permissions get one width, so that their points line up.
+				$this->render_select( $id, $name, $field['choices'] ?? array(), $value, $described, 'permissions' === $section ? 'regular-text' : '', null === $points ? null : self::id( $section, $points ) . '-wrap' );
 				if ( null !== $points ) {
-					$this->render_points( $section, $key . '_points' );
+					$this->render_points( $section, $points, $defaults );
 				}
 				break;
 
@@ -208,10 +328,6 @@ final class Settings_Screen {
 					$described // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
 				);
 		}
-
-		if ( '' !== $description ) {
-			printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( $id . '-description' ), esc_html( $description ) );
-		}
 	}
 
 	/**
@@ -224,18 +340,23 @@ final class Settings_Screen {
 	 * @param array<int|string, string> $choices   Values with their names.
 	 * @param mixed                     $value     Current value.
 	 * @param string                    $described Escaped aria-describedby attribute, or an empty string.
+	 * @param string                    $css_class Class of the box, e.g. `regular-text` for the core width; empty for none.
+	 * @param string|null               $points    ID of the points minimum that only choices with points need, or null.
 	 */
-	private function render_select( string $id, string $name, array $choices, mixed $value, string $described = '' ): void {
+	private function render_select( string $id, string $name, array $choices, mixed $value, string $described = '', string $css_class = '', ?string $points = null ): void {
 		printf(
-			'<select id="%1$s" name="%2$s"%3$s>',
+			'<select id="%1$s" name="%2$s"%3$s%4$s%5$s>',
 			esc_attr( $id ),
 			esc_attr( $name ),
+			'' === $css_class ? '' : ' class="' . esc_attr( $css_class ) . '"',
+			null === $points ? '' : ' data-easyq-points="' . esc_attr( $points ) . '"',
 			$described // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped by the caller.
 		);
 		foreach ( $choices as $choice => $label ) {
 			printf(
-				'<option value="%1$s"%2$s>%3$s</option>',
+				'<option value="%1$s"%2$s%3$s>%4$s</option>',
 				esc_attr( (string) $choice ),
+				null !== $points && is_int( $choice ) && Permits::uses_points( $choice ) ? ' data-points' : '',
 				selected( is_scalar( $value ) && (string) $choice === (string) $value, true, false ),
 				esc_html( $label )
 			);
@@ -248,18 +369,22 @@ final class Settings_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $section Section name.
-	 * @param string $key     Setting name of the points minimum.
+	 * The script of the screen hides it unless the chosen threshold needs points.
+	 *
+	 * @param string $section  Section name.
+	 * @param string $key      Setting name of the points minimum.
+	 * @param bool   $defaults Whether to show the default value instead of the stored one.
 	 */
-	private function render_points( string $section, string $key ): void {
-		$id = self::id( $section, $key );
+	private function render_points( string $section, string $key, bool $defaults = false ): void {
+		$id    = self::id( $section, $key );
+		$value = $defaults ? ( Options::defaults()[ $section ][ $key ] ?? 0 ) : Options::get_int( $section, $key );
 
 		printf(
-			' <label for="%1$s">%2$s</label> <input type="number" class="small-text" id="%1$s" name="%3$s" value="%4$s" min="0">',
+			' <span id="%1$s-wrap"><label for="%1$s">%2$s</label> <input type="number" class="small-text" id="%1$s" name="%3$s" value="%4$s" min="0"></span>',
 			esc_attr( $id ),
 			esc_html__( 'Points needed', 'easyq' ),
 			esc_attr( Options::option_name( $section ) . '[' . $key . ']' ),
-			esc_attr( (string) Options::get_int( $section, $key ) )
+			esc_attr( is_numeric( $value ) ? (string) (int) $value : '0' )
 		);
 	}
 

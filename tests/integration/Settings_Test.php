@@ -8,6 +8,7 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Admin\Dashboard_Screen;
+use EasyQ\Admin\Settings_Layout;
 use EasyQ\Admin\Settings_Screen;
 use EasyQ\Capabilities;
 use EasyQ\Search\Indexed_Post;
@@ -397,5 +398,49 @@ final class Settings_Test extends Test_Case {
 			Options::get( 'points', 'user_titles' )
 		);
 		$this->assertContains( 'easyq-title-points', array_column( get_settings_errors( 'easyq_points' ), 'code' ) );
+	}
+
+	public function test_layout_shows_every_field_once(): void {
+		foreach ( array_keys( Fields::tabs() ) as $tab ) {
+			$shown = array();
+			foreach ( Settings_Layout::sections( $tab ) as $section ) {
+				foreach ( $section['rows'] as $row ) {
+					$shown = array_merge( $shown, is_string( $row ) ? array( $row ) : $row['keys'] );
+				}
+			}
+
+			// Points minimums are shown with their permission.
+			$expected = array_keys( array_filter( Fields::section( $tab ), static fn ( array $field ): bool => ! isset( $field['parent'] ) ) );
+			sort( $expected );
+			$this->assertSame( count( $shown ), count( array_unique( $shown ) ), $tab );
+			sort( $shown );
+			$this->assertSame( $expected, $shown, $tab );
+		}
+	}
+
+	public function test_tabs_have_sections_and_rows_like_core_screens(): void {
+		$html = $this->render( 'posting' );
+		$this->assertMatchesRegularExpression( '/<h2[^>]*>Questions, answers and comments<\/h2>/', $html );
+		$this->assertStringContainsString( '<th scope="row">Closing questions</th><td><fieldset><legend class="screen-reader-text"><span>Closing questions</span></legend>', $html );
+		$this->assertStringContainsString( '<label for="easyq-posting-allow-close-questions"><input type="hidden" name="easyq_settings_posting[allow_close_questions]" value="0"><input type="checkbox" id="easyq-posting-allow-close-questions"', $html );
+		$this->assertStringContainsString( '> Allow questions to be closed</label>', $html );
+		$this->assertStringContainsString( 'name="easyq_settings_posting[min_len_q_title]" value="12" min="1"> <label for="easyq-posting-min-len-q-title">Minimum length of question titles, in characters</label>', $html );
+
+		// A description shared by the settings of a row is shown once.
+		$html = $this->render( 'spam' );
+		$row  = (string) strstr( (string) strstr( $html, '<span>Questions</span>' ), '</fieldset>', true );
+		$this->assertSame( 1, substr_count( $row, '<p class="description"' ) );
+		$this->assertSame( 2, substr_count( $row, 'aria-describedby="easyq-spam-max-rate-user-qs-description"' ) );
+	}
+
+	public function test_permissions_line_up_and_show_points_only_when_needed(): void {
+		$html = $this->render( 'permissions' );
+
+		$this->assertStringContainsString( '<select id="easyq-permissions-permit-post-q" name="easyq_settings_permissions[permit_post_q]" class="regular-text" data-easyq-points="easyq-permissions-permit-post-q-points-wrap">', $html );
+		$this->assertMatchesRegularExpression( '/<option value="' . Permits::POINTS . '" data-points>/', $html );
+		$this->assertStringNotContainsString( '<option value="' . Permits::USERS . '" data-points', $html );
+		$this->assertStringContainsString( '<span id="easyq-permissions-permit-post-q-points-wrap"><label for="easyq-permissions-permit-post-q-points">Points needed</label>', $html );
+		// A permission without points has no minimum to show.
+		$this->assertStringContainsString( '<select id="easyq-permissions-permit-view-q-page" name="easyq_settings_permissions[permit_view_q_page]" class="regular-text">', $html );
 	}
 }

@@ -66,6 +66,29 @@ test.describe( 'Settings screen', () => {
 		).toBeChecked();
 	} );
 
+	test( 'shows the points minimum only for thresholds with points', async ( {
+		admin,
+		page,
+	} ) => {
+		await admin.visitAdminPage(
+			'admin.php',
+			'page=easyq-settings&tab=permissions'
+		);
+		const points = page.locator(
+			'#easyq-permissions-permit-post-q-points-wrap'
+		);
+
+		await expect( points ).toBeHidden();
+		await page
+			.getByLabel( 'Asking questions' )
+			.selectOption( { label: 'Registered users with enough points' } );
+		await expect( points ).toBeVisible();
+		await page
+			.getByLabel( 'Asking questions' )
+			.selectOption( { label: 'Registered users' } );
+		await expect( points ).toBeHidden();
+	} );
+
 	test( 'has no accessibility violations on any tab', async ( {
 		admin,
 		page,
