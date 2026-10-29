@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T08:48:58+00:00\n"
+"POT-Creation-Date: 2026-10-29T09:15:10+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -62,6 +62,7 @@ msgstr ""
 
 #: includes/admin/class-categories-list-table.php:78
 #: includes/admin/class-categories-screen.php:402
+#: includes/admin/class-dashboard-screen.php:97
 #: includes/admin/class-points-screen.php:101
 #: includes/admin/class-posts-list-table.php:248
 #: includes/blocks/render/class-users-render.php:292
@@ -322,6 +323,180 @@ msgstr ""
 msgid "After “%s”"
 msgstr ""
 
+#: includes/admin/class-dashboard-screen.php:59
+#: includes/admin/class-dashboard-screen.php:60
+msgid "Q&A Dashboard"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:60
+msgid "Dashboard"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:70
+msgid "Questions and Answers"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:93
+#: includes/admin/class-posts-screen.php:83
+msgid "Posts"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:98
+msgid "Unanswered questions"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:99
+msgid "Questions by users"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:100
+msgid "Questions by visitors without account"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:101
+#: includes/admin/class-points-screen.php:102
+#: includes/admin/class-posts-list-table.php:249
+#: includes/blocks/render/class-users-render.php:294
+#: src/editor/edit.js:286
+#: src/editor/edit.js:295
+msgid "Answers"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:102
+msgid "Answers by users"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:103
+msgid "Answers by visitors without account"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:104
+#: includes/admin/class-points-screen.php:103
+#: includes/admin/class-posts-list-table.php:250
+#: includes/blocks/render/class-users-render.php:304
+#: src/editor/edit.js:287
+msgid "Comments"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:105
+msgid "Comments by users"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:106
+msgid "Comments by visitors without account"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:110
+#: includes/frontend/class-navigation.php:75
+#: includes/settings/class-fields.php:86
+#: src/editor/edit.js:560
+#: src/editor/edit.js:575
+msgid "Users"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:114
+#: includes/users/class-permits.php:142
+msgid "Registered users"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:115
+msgid "Users with points"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:116
+msgid "Users who posted"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:117
+msgid "Users who voted"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:121
+msgid "System"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:123
+msgid "easyQ version"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:124
+msgid "Database version"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:125
+msgid "Size of the Q&A tables"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:129
+msgid "The PHP and database versions are in Site Health."
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:131
+msgid "Open Site Health"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:137
+#: includes/admin/class-settings-screen.php:54
+#: src/editor/inspector.js:366
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-dashboard-screen.php:139
+#: includes/admin/class-tools-screen.php:89
+msgid "Tools"
+msgstr ""
+
+#. translators: %s: number of questions.
+#: includes/admin/class-dashboard-screen.php:156
+#: includes/blocks/render/class-widgets.php:243
+#, php-format
+msgid "%s question"
+msgid_plural "%s questions"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of answers.
+#: includes/admin/class-dashboard-screen.php:158
+#: includes/blocks/render/class-lists-render.php:231
+#: includes/blocks/render/class-post-fields.php:209
+#: includes/blocks/render/class-widgets.php:245
+#: src/editor/edit.js:116
+#, php-format,js-format
+msgid "%s answer"
+msgid_plural "%s answers"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of comments.
+#: includes/admin/class-dashboard-screen.php:160
+#: includes/blocks/render/class-widgets.php:247
+#, php-format
+msgid "%s comment"
+msgid_plural "%s comments"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-dashboard-screen.php:178
+msgid "No posts are waiting for moderators."
+msgstr ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-dashboard-screen.php:189
+#: includes/admin/class-posts-screen.php:90
+#, php-format
+msgid "%s post awaiting approval"
+msgid_plural "%s posts awaiting approval"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: number of posts.
+#: includes/admin/class-dashboard-screen.php:197
+#, php-format
+msgid "%s flagged post"
+msgid_plural "%s flagged posts"
+msgstr[0] ""
+msgstr[1] ""
+
 #: includes/admin/class-points-screen.php:78
 msgid "Settings saved. The points of all users were recalculated."
 msgstr ""
@@ -337,21 +512,6 @@ msgstr ""
 
 #: includes/admin/class-points-screen.php:89
 msgid "User Titles"
-msgstr ""
-
-#: includes/admin/class-points-screen.php:102
-#: includes/admin/class-posts-list-table.php:249
-#: includes/blocks/render/class-users-render.php:294
-#: src/editor/edit.js:286
-#: src/editor/edit.js:295
-msgid "Answers"
-msgstr ""
-
-#: includes/admin/class-points-screen.php:103
-#: includes/admin/class-posts-list-table.php:250
-#: includes/blocks/render/class-users-render.php:304
-#: src/editor/edit.js:287
-msgid "Comments"
 msgstr ""
 
 #: includes/admin/class-points-screen.php:104
@@ -383,7 +543,7 @@ msgid "Users earn a title once they have the points needed. Users with a special
 msgstr ""
 
 #: includes/admin/class-points-screen.php:200
-#: includes/admin/class-settings-screen.php:269
+#: includes/admin/class-settings-screen.php:260
 msgid "Points needed"
 msgstr ""
 
@@ -636,18 +796,6 @@ msgstr ""
 msgid "View post %d"
 msgstr ""
 
-#: includes/admin/class-posts-screen.php:83
-msgid "Posts"
-msgstr ""
-
-#. translators: %s: number of posts.
-#: includes/admin/class-posts-screen.php:90
-#, php-format
-msgid "%s post awaiting approval"
-msgid_plural "%s posts awaiting approval"
-msgstr[0] ""
-msgstr[1] ""
-
 #: includes/admin/class-posts-screen.php:94
 #: includes/admin/class-posts-screen.php:256
 msgid "Q&A Posts"
@@ -843,18 +991,53 @@ msgstr ""
 msgid "A level in a category also applies to its subcategories."
 msgstr ""
 
-#: includes/admin/class-settings-screen.php:55
-#: includes/admin/class-settings-screen.php:63
+#: includes/admin/class-settings-screen.php:54
 msgid "Q&A Settings"
 msgstr ""
 
-#: includes/admin/class-settings-screen.php:63
-#: src/editor/inspector.js:366
-msgid "Settings"
+#: includes/admin/class-settings-screen.php:108
+msgid "Settings sections"
 msgstr ""
 
-#: includes/admin/class-settings-screen.php:117
-msgid "Settings sections"
+#: includes/admin/class-tools-screen.php:89
+msgid "Q&A Tools"
+msgstr ""
+
+#: includes/admin/class-tools-screen.php:142
+msgid "Sorry, you are not allowed to run the tools."
+msgstr ""
+
+#. translators: %s: name of a tool.
+#: includes/admin/class-tools-screen.php:182
+#, php-format
+msgid "Finished: %s."
+msgstr ""
+
+#: includes/admin/class-tools-screen.php:184
+msgid "These tools recalculate stored values and clean up the database. They can take a while on large sites; keep this page open until they are done."
+msgstr ""
+
+#: includes/admin/class-tools-screen.php:225
+msgid "I understand that the posts are deleted for good."
+msgstr ""
+
+#: includes/admin/class-tools-screen.php:228
+msgid "Please confirm first."
+msgstr ""
+
+#: includes/admin/class-tools-screen.php:235
+msgid "Run"
+msgstr ""
+
+#: includes/admin/class-tools-screen.php:235
+msgid "Continue"
+msgstr ""
+
+#. translators: 1: number of the step, 2: number of steps, 3: items done, 4: items in the step.
+#: includes/admin/class-tools-screen.php:252
+#: src/tools/index.js:35
+#, php-format,js-format
+msgid "Step %1$d of %2$d: %3$s of %4$s done."
 msgstr ""
 
 #: includes/admin/class-user-fields-list-table.php:54
@@ -1026,15 +1209,15 @@ msgid_plural "%s users unblocked."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/blocks/class-blocks.php:67
+#: includes/blocks/class-blocks.php:68
 msgid "Q&A post"
 msgstr ""
 
-#: includes/blocks/class-blocks.php:76
+#: includes/blocks/class-blocks.php:77
 msgid "Q&A user"
 msgstr ""
 
-#: includes/blocks/class-blocks.php:94
+#: includes/blocks/class-blocks.php:95
 msgid "Questions & Answers"
 msgstr ""
 
@@ -1352,17 +1535,6 @@ msgstr ""
 msgid "No questions found."
 msgstr ""
 
-#. translators: %s: number of answers.
-#: includes/blocks/render/class-lists-render.php:231
-#: includes/blocks/render/class-post-fields.php:209
-#: includes/blocks/render/class-widgets.php:245
-#: src/editor/edit.js:116
-#, php-format,js-format
-msgid "%s answer"
-msgid_plural "%s answers"
-msgstr[0] ""
-msgstr[1] ""
-
 #. translators: %s: number of comments.
 #: includes/blocks/render/class-lists-render.php:346
 #, php-format
@@ -1617,22 +1789,6 @@ msgstr ""
 msgid "Related questions"
 msgstr ""
 
-#. translators: %s: number of questions.
-#: includes/blocks/render/class-widgets.php:243
-#, php-format
-msgid "%s question"
-msgid_plural "%s questions"
-msgstr[0] ""
-msgstr[1] ""
-
-#. translators: %s: number of comments.
-#: includes/blocks/render/class-widgets.php:247
-#, php-format
-msgid "%s comment"
-msgid_plural "%s comments"
-msgstr[0] ""
-msgstr[1] ""
-
 #. translators: %s: number of users.
 #: includes/blocks/render/class-widgets.php:249
 #, php-format
@@ -1826,18 +1982,12 @@ msgid "Your profile has been saved."
 msgstr ""
 
 #: includes/frontend/class-form-handler.php:316
+#: src/tools/index.js:77
 msgid "Done."
 msgstr ""
 
 #: includes/frontend/class-navigation.php:71
 msgid "Unanswered"
-msgstr ""
-
-#: includes/frontend/class-navigation.php:75
-#: includes/settings/class-fields.php:86
-#: src/editor/edit.js:560
-#: src/editor/edit.js:575
-msgid "Users"
 msgstr ""
 
 #. translators: %s: name of a Q&A page, e.g. "Ask a question".
@@ -2448,6 +2598,22 @@ msgstr ""
 
 #: includes/rest/class-taxonomy-controller.php:367
 msgid "Position among the siblings, starting at 1; larger values put the category at the end."
+msgstr ""
+
+#: includes/rest/class-tools-controller.php:45
+msgid "Tool to run."
+msgstr ""
+
+#: includes/rest/class-tools-controller.php:50
+msgid "Step from the previous response; omit to start."
+msgstr ""
+
+#: includes/rest/class-tools-controller.php:55
+msgid "Last item handled, from the previous response."
+msgstr ""
+
+#: includes/rest/class-tools-controller.php:100
+msgid "The tool has no such step."
 msgstr ""
 
 #: includes/rest/class-user-fields-controller.php:314
@@ -3230,6 +3396,46 @@ msgstr ""
 msgid "Removes the last part of each stored address."
 msgstr ""
 
+#: includes/tools/class-tools.php:73
+msgid "Recount posts"
+msgstr ""
+
+#: includes/tools/class-tools.php:73
+msgid "The number of answers, votes and flags and the hotness of each post, and the counts of the site."
+msgstr ""
+
+#: includes/tools/class-tools.php:74
+msgid "Rebuild the search index"
+msgstr ""
+
+#: includes/tools/class-tools.php:74
+msgid "For searching and for related questions."
+msgstr ""
+
+#: includes/tools/class-tools.php:75
+msgid "Recalculate points"
+msgstr ""
+
+#: includes/tools/class-tools.php:75
+msgid "The points and statistics of every user, for ranks and titles."
+msgstr ""
+
+#: includes/tools/class-tools.php:76
+msgid "Recalculate categories"
+msgstr ""
+
+#: includes/tools/class-tools.php:76
+msgid "The category of each post and the number of questions in each category."
+msgstr ""
+
+#: includes/tools/class-tools.php:77
+msgid "Delete hidden posts"
+msgstr ""
+
+#: includes/tools/class-tools.php:77
+msgid "Deletes all hidden questions, answers and comments without answers or comments of their own. This cannot be undone."
+msgstr ""
+
 #: includes/users/class-avatars.php:149
 msgid "The image could not be uploaded."
 msgstr ""
@@ -3279,10 +3485,6 @@ msgstr ""
 
 #: includes/users/class-permits.php:141
 msgid "Anybody"
-msgstr ""
-
-#: includes/users/class-permits.php:142
-msgid "Registered users"
 msgstr ""
 
 #: includes/users/class-permits.php:143
@@ -3594,6 +3796,14 @@ msgstr ""
 
 #: src/editor/inspector.js:253
 msgid "Link to the profile"
+msgstr ""
+
+#: src/tools/index.js:63
+msgid "Starting…"
+msgstr ""
+
+#: src/tools/index.js:80
+msgid "The tool stopped after an error."
 msgstr ""
 
 #: blocks/account/block.json

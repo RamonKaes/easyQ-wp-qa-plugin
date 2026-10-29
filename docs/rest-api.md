@@ -152,6 +152,12 @@ Actions on single posts, such as `approve`, `hide` or `delete`, are under
 
 The values users enter are part of `/users/{id}` and `/users/me`.
 
+### Tools
+
+| Method and route | Description |
+| --- | --- |
+| `POST /tools/{tool}` | Run one batch of a maintenance tool: `recount_posts` (answers, votes, flags, hotness and the counts of the site), `reindex` (search index), `recalc_points`, `recalc_categories` or `delete_hidden` (hidden posts without answers or comments of their own). Pass `step` and `after` from the previous response, or nothing to start; repeat until `complete` is true. Each response also has `step_number`, `steps`, `done` and `total` for the progress. Needs `easyq_manage` |
+
 ### Settings
 
 The settings shown on the easyQ settings screen are part of the core endpoint

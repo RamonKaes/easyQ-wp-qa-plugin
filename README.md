@@ -12,9 +12,9 @@ your theme decides how it looks.
 
 > **Status: early development, not ready for live sites yet.** Asking, answering,
 > voting, moderation, profiles, all Q&A pages, the settings screen, the category
-> management, the moderation list, points, user titles and user fields work. The
-> dashboard and tools, emails and notifications, the privacy tools and translations
-> are still to come, see [what is next](#what-is-next).
+> management, the moderation list, points, user titles, user fields, the dashboard and
+> the maintenance tools work. Emails and notifications, the privacy tools and
+> translations are still to come, see [what is next](#what-is-next).
 
 ## Features
 
@@ -56,6 +56,8 @@ your theme decides how it looks.
 - One moderation list for questions, answers and comments in the style of the core
   Comments screen, with the posts awaiting approval counted in the menu and the admin
   bar, and blocking of IP addresses
+- A dashboard with the figures of the Q&A area, and maintenance tools that recount
+  posts, rebuild the search index and recalculate points and categories
 - A REST API for every action and documented hooks for extensions
 - Privacy by design: no external requests, no tracking
 
@@ -64,13 +66,11 @@ your theme decides how it looks.
 easyQ is built in phases, see the
 [phase plan](docs/feature-mapping.md#13-phases):
 
-1. **Admin:** a dashboard and maintenance tools (the settings screen, category
-   management, moderation list, points, user titles and user fields are done)
-2. **Communication:** emails and notifications, private messages, the user wall,
+1. **Communication:** emails and notifications, private messages, the user wall,
    favorites and the updates page
-3. **Privacy and tooling:** personal data export and erasure, IP address retention,
+2. **Privacy and tooling:** personal data export and erasure, IP address retention,
    WP-CLI commands and Site Health checks
-4. **Release:** translations (German included), screenshots and the wordpress.org
+3. **Release:** translations (German included), screenshots and the wordpress.org
    release
 
 ## Try it
