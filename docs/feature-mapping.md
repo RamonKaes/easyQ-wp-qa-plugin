@@ -140,11 +140,16 @@ permalinks everything works through query parameters. Header and footer come fro
 theme's template parts.
 
 **Classic themes** cannot load block templates. For them easyQ renders the blocks of the
-same template before the document head and prints them between the theme's
-`get_header()` and `get_footer()` (`includes/frontend/views/classic.php`). Themes can
-replace that file with `easyq/classic.php`, and the filter
-`easyq_classic_template_content` changes the block markup; the Site Editor is only
-available in block themes.
+same template before the document head and shows them as the content of a page in the
+theme's own page template (`page.php`, else `singular.php` or `index.php`), so that the
+Q&A pages get the theme's containers, widths, sidebars and page title. The page stands
+in for the Q&A page in the main query: it has the title of the Q&A page, which the theme
+prints in place of the level 1 heading of the blocks, no ID, no edit link and no
+comments, and its content bypasses the content filters. Themes can instead provide
+`easyq/classic.php`, which prints `Templates::classic_html()` between header and footer
+itself (`includes/frontend/views/classic.php` is the fallback without any page template),
+and the filter `easyq_classic_template_content` changes the block markup; the Site Editor
+is only available in block themes.
 
 | Q2A route | Target | Block template |
 | --- | --- | --- |
@@ -720,3 +725,5 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 44 | Deleting hidden posts needs a confirmation on the tools screen, as it cannot be undone; Q2A starts it with one click | 2026-10-29 |
 | 45 | The settings tabs follow the layout of the core settings screens instead of one row per setting: only core markup and classes, plus a small script that disables points minimums that do not apply instead of hiding them, as core does, so nothing moves while the page loads (without JavaScript they stay enabled) | 2026-10-29 |
 | 46 | The forms (ask, answer, comment, edit, close, profile) use the markup of the comment form block (`wp-block-post-comments-form` around a `comment-form` form) and load its style handle, because themes style text fields only inside core blocks; with it, each theme shows them like its comment form. Selects stay as core leaves them: no core block and none of the default themes style them, so they look like the core category and archive dropdowns; a theme that sets the `select` element in `theme.json` styles them | 2026-10-29 |
+| 47 | The vote buttons sit in a buttons block (`wp-block-buttons`) like every core button, because themes such as Astra style outline buttons only there | 2026-10-29 |
+| 48 | Classic themes show the Q&A pages with their own page template and a page that stands in for the Q&A page, as bbPress does, instead of only between header and footer; the theme prints the title. Measured with Astra, GeneratePress, Kadence, OceanWP and Hello Elementor (replaces the layout part of decision 27) | 2026-10-29 |

@@ -141,6 +141,8 @@ and axe.
 | Component props `__next40pxDefaultSize` and `__nextHasNoMarginBottom` | Kept | Without effect since WordPress 7.1, but needed from 6.7 to 7.0; remove once the minimum is 7.1 |
 | Editor canvas is always an iframe (7.1) | Met | The editor script uses no global `document` or `window` |
 | Frontend markup styled by the theme, no plugin stylesheet | Met | Core block classes and style handles; forms take on the comment form block, so text fields, buttons and checkboxes look as in the theme's comment form ([feature mapping](feature-mapping.md), decision 46). Selects keep the browser look, as in core |
+| Buttons in a buttons block, as core places them | Met | Vote buttons and post actions (decision 47) |
+| Classic themes | Met | The theme's own page template shows the Q&A pages, with its title, containers and sidebars (decision 48) |
 
 ## Admin list tables
 

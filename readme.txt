@@ -62,7 +62,7 @@ easyQ makes no requests to external services and does not track visitors. Postin
 
 = Does easyQ work with my theme? =
 
-easyQ is made for block themes, such as Twenty Twenty-Five. Classic themes show the Q&A pages between their header and footer.
+easyQ is made for block themes, such as Twenty Twenty-Five. Classic themes show the Q&A pages with their own page template, with their page title, containers and sidebars.
 
 = Where do I change the settings? =
 
