@@ -13,6 +13,7 @@ use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
 use EasyQ\Posts\Activity_Query;
 use EasyQ\Posts\Content_Renderer;
+use EasyQ\Posts\Moderation_Query;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Posts\Question_Query;
 use EasyQ\Posts\Post_Service;
@@ -193,6 +194,17 @@ final class Services {
 	 */
 	public static function question_query(): Question_Query {
 		return self::shared( Question_Query::class, static fn (): Question_Query => new Question_Query( self::posts(), self::categories() ) );
+	}
+
+	/**
+	 * Returns the moderation lists.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Moderation_Query
+	 */
+	public static function moderation_query(): Moderation_Query {
+		return self::shared( Moderation_Query::class, static fn (): Moderation_Query => new Moderation_Query( self::posts(), self::categories(), self::permissions() ) );
 	}
 
 	/**

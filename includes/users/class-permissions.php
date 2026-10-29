@@ -67,14 +67,16 @@ final class Permissions {
 	 * @param string|null $limit_action  Rate limit to check, see the Limits constants.
 	 * @param bool        $check_blocks  Whether blocked users and IP addresses are refused.
 	 * @param bool        $maximum_level Whether to use the user's highest level in any category, e.g. for admin screens.
+	 * @param int[]       $category_ids  Categories the action relates to, if there is no post; their category levels apply.
 	 * @return string|null The reason the action is not allowed, or null if it is allowed.
 	 */
-	public function error( ?string $option, Actor $actor, ?Post $post = null, ?string $limit_action = null, bool $check_blocks = true, bool $maximum_level = false ): ?string {
+	public function error( ?string $option, Actor $actor, ?Post $post = null, ?string $limit_action = null, bool $check_blocks = true, bool $maximum_level = false, array $category_ids = array() ): ?string {
 		$user_id = $actor->user_id;
 		$level   = match ( true ) {
-			null !== $post => $this->levels->level_for_post( $user_id, $post ),
-			$maximum_level => $this->levels->maximum_level( $user_id ),
-			default        => $this->levels->level( $user_id ),
+			null !== $post             => $this->levels->level_for_post( $user_id, $post ),
+			$maximum_level             => $this->levels->maximum_level( $user_id ),
+			array() !== $category_ids => $this->levels->level_for_categories( $user_id, $category_ids ),
+			default                    => $this->levels->level( $user_id ),
 		};
 
 		$permit = null === $option ? Permits::ALL : Options::get_int( 'permissions', $option );
@@ -121,6 +123,33 @@ final class Permissions {
 	 */
 	public function allows( ?string $option, Actor $actor, ?Post $post = null ): bool {
 		return null === $this->error( $option, $actor, $post );
+	}
+
+	/**
+	 * Returns where an actor may perform an action: everywhere, or only in some categories.
+	 *
+	 * A post is in scope if its category or one of the categories above it is listed,
+	 * which matches the category levels that apply to a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $option Permission setting, e.g. `permit_moderate`.
+	 * @param Actor  $actor  The actor.
+	 * @return int[]|null Null if the action is allowed everywhere; otherwise the categories where it is allowed, possibly none.
+	 */
+	public function category_scope( string $option, Actor $actor ): ?array {
+		if ( null === $this->error( $option, $actor ) ) {
+			return null;
+		}
+
+		$category_ids = array();
+		foreach ( array_keys( null === $actor->user_id ? array() : $this->levels->category_levels( $actor->user_id ) ) as $category_id ) {
+			if ( null === $this->error( $option, $actor, category_ids: array( $category_id ) ) ) {
+				$category_ids[] = $category_id;
+			}
+		}
+
+		return $category_ids;
 	}
 
 	/**

@@ -142,7 +142,8 @@ final class Capabilities {
 		if ( self::MODERATE === $cap ) {
 			return user_can( $user_id, 'manage_options' )
 				|| null === $permissions->error( 'permit_moderate', $actor, maximum_level: true )
-				|| null === $permissions->error( 'permit_hide_show', $actor, maximum_level: true );
+				|| null === $permissions->error( 'permit_hide_show', $actor, maximum_level: true )
+				|| null === $permissions->error( 'permit_delete_hidden', $actor, maximum_level: true );
 		}
 
 		if ( isset( self::GENERAL[ $cap ] ) ) {
