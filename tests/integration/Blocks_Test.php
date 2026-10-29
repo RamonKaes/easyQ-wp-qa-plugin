@@ -233,6 +233,9 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'easyq_edit=' . $question->id, $html );
 		// Closing opens the question page in the state `close`, as in Question2Answer.
 		$this->assertStringContainsString( 'easyq_close=' . $question->id . '#easyq-close-' . $question->id . '">Close</a>', $html );
+		// Links that open a form in place are `nofollow`, like core's reply links of comments.
+		$this->assertMatchesRegularExpression( '/rel="nofollow" href="[^"]*easyq_edit=' . $question->id . '[^"]*">Edit<\/a>/', $html );
+		$this->assertMatchesRegularExpression( '/rel="nofollow" href="[^"]*easyq_close=' . $question->id . '[^"]*">Close<\/a>/', $html );
 		$this->assertStringNotContainsString( 'name="note"', $html );
 	}
 
@@ -258,6 +261,8 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( '>Close question</button>', $html );
 		$this->assertStringContainsString( (string) wp_parse_url( URLs::question( $question ), PHP_URL_PATH ), $cancel );
 		$this->assertStringNotContainsString( 'easyq_close=', $cancel );
+		// Back to the question, as core's link to cancel a reply goes back to the comment form.
+		$this->assertStringEndsWith( '#easyq-post-' . $question->id, $cancel );
 
 		// Not for users who may not close it, and not for another question.
 		wp_set_current_user( (int) $this->user()->user_id );
@@ -288,7 +293,9 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringNotContainsString( 'name="easyq_form" value="edit"', $this->render( $markup, new Route( 'question', $question ) ) );
 
 		wp_set_current_user( (int) $author->user_id );
-		$this->assertStringContainsString( 'name="easyq_form" value="edit"', $this->render( $markup, new Route( 'question', $question ) ) );
+		$html = $this->render( $markup, new Route( 'question', $question ) );
+		$this->assertStringContainsString( 'name="easyq_form" value="edit"', $html );
+		$this->assertStringEndsWith( '#easyq-post-' . $question->id, $this->cancel_link( $html ) );
 	}
 
 	public function test_forms_ask_visitors_to_log_in(): void {

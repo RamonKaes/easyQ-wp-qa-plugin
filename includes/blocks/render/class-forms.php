@@ -73,6 +73,15 @@ final class Forms {
 	public const CLOSE_VAR = 'easyq_close';
 
 	/**
+	 * Query variable that opens the edit form of a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const EDIT_VAR = 'easyq_edit';
+
+	/**
 	 * Renders the form to ask a question.
 	 *
 	 * @since 0.1.0
@@ -319,7 +328,8 @@ final class Forms {
 			);
 		}
 
-		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( 'easyq_edit' ) ), esc_html__( 'Cancel', 'easyq' ) );
+		// Back to the post, as core's link to cancel a reply goes back to the comment form.
+		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( self::EDIT_VAR ) . '#easyq-post-' . $post->id ), esc_html__( 'Cancel', 'easyq' ) );
 
 		return self::form( 'edit', $post->id, $fields, __( 'Save changes', 'easyq' ), array(), $cancel );
 	}
@@ -339,7 +349,7 @@ final class Forms {
 		$id     = 'easyq-close-' . $question->id;
 		$fields = self::field( 'action', 'note', __( 'Reason for closing', 'easyq' ), 'textarea', '', array(), '', $id )
 			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', '', array( 'min' => '1' ), '', $id );
-		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( self::CLOSE_VAR ) ), esc_html__( 'Cancel', 'easyq' ) );
+		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( self::CLOSE_VAR ) . '#easyq-post-' . $question->id ), esc_html__( 'Cancel', 'easyq' ) );
 
 		return sprintf(
 			'<section id="%1$s" aria-labelledby="%1$s-title"><h2 id="%1$s-title">%2$s</h2>%3$s</section>',
@@ -358,8 +368,47 @@ final class Forms {
 	 * @return bool
 	 */
 	public static function closing( Post $question ): bool {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only selects which question shows its close form.
-		return isset( $_GET[ self::CLOSE_VAR ] ) && is_string( $_GET[ self::CLOSE_VAR ] ) && absint( $_GET[ self::CLOSE_VAR ] ) === $question->id;
+		return self::requested( self::CLOSE_VAR ) === $question->id;
+	}
+
+	/**
+	 * Whether the current request asks for the edit form of a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $post Post.
+	 * @return bool
+	 */
+	public static function editing( Post $post ): bool {
+		return self::requested( self::EDIT_VAR ) === $post->id;
+	}
+
+	/**
+	 * Whether the current request opens a form in place, like core's `replytocom`.
+	 *
+	 * Such addresses are not indexed, as core does not index the addresses of comment replies.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return bool
+	 */
+	public static function opens_a_form(): bool {
+		return null !== self::requested( self::CLOSE_VAR ) || null !== self::requested( self::EDIT_VAR );
+	}
+
+	/**
+	 * Returns the post ID a query variable asks for.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $name Query variable.
+	 * @return int|null
+	 */
+	private static function requested( string $name ): ?int {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only selects which post shows a form.
+		$value = isset( $_GET[ $name ] ) && is_string( $_GET[ $name ] ) ? absint( $_GET[ $name ] ) : 0;
+
+		return $value > 0 ? $value : null;
 	}
 
 	/**

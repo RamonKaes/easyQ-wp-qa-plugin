@@ -9,6 +9,7 @@
 namespace EasyQ\Frontend;
 
 use EasyQ\Blocks\Lists;
+use EasyQ\Blocks\Render\Forms;
 use EasyQ\Blocks\Render\Widgets;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
@@ -113,6 +114,11 @@ final class Page_Meta {
 		$question = $route->question();
 		if ( in_array( $route->name, array( 'search', 'ask', 'account' ), true ) || ( null !== $question && ! $question->is_visible() ) || Lists::main_list_is_empty() ) {
 			$robots['noindex'] = true;
+		}
+
+		// Addresses that open a form in place, as core handles `replytocom`.
+		if ( Forms::opens_a_form() ) {
+			$robots = wp_robots_no_robots( $robots );
 		}
 
 		return $robots;

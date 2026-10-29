@@ -74,9 +74,7 @@ final class Post_Fields {
 			return '';
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only selects which post shows its edit form.
-		$editing = isset( $_GET['easyq_edit'] ) && is_string( $_GET['easyq_edit'] ) && absint( $_GET['easyq_edit'] ) === $post->id;
-		if ( $editing && Render::rules( $post )['editable'] ) {
+		if ( Forms::editing( $post ) && Render::rules( $post )['editable'] ) {
 			return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), Forms::edit_form( $post ) );
 		}
 
@@ -528,8 +526,9 @@ final class Post_Fields {
 
 		if ( $rules['editable'] ) {
 			$buttons[] = self::link_button(
-				add_query_arg( 'easyq_edit', $post->id, URLs::post( $post ) ) . '#easyq-post-' . $post->id,
-				__( 'Edit', 'easyq' )
+				add_query_arg( Forms::EDIT_VAR, $post->id, URLs::post( $post ) ) . '#easyq-post-' . $post->id,
+				__( 'Edit', 'easyq' ),
+				nofollow: true
 			);
 		}
 
@@ -572,7 +571,7 @@ final class Post_Fields {
 		}
 
 		if ( $rules['closeable'] ) {
-			$buttons[] = self::link_button( add_query_arg( Forms::CLOSE_VAR, $post->id, URLs::post( $post ) ) . '#easyq-close-' . $post->id, __( 'Close', 'easyq' ) );
+			$buttons[] = self::link_button( add_query_arg( Forms::CLOSE_VAR, $post->id, URLs::post( $post ) ) . '#easyq-close-' . $post->id, __( 'Close', 'easyq' ), nofollow: true );
 		}
 
 		if ( array() === $buttons ) {
@@ -617,13 +616,15 @@ final class Post_Fields {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $url   Address.
-	 * @param string $label Text.
+	 * @param string $url      Address.
+	 * @param string $label    Text.
+	 * @param bool   $nofollow Whether the link opens a form in place, which core links with `rel="nofollow"`, as the reply links of comments.
 	 * @return string
 	 */
-	private static function link_button( string $url, string $label ): string {
+	private static function link_button( string $url, string $label, bool $nofollow = false ): string {
 		return sprintf(
-			'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button has-small-font-size" href="%s">%s</a></div>',
+			'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button has-small-font-size"%s href="%s">%s</a></div>',
+			$nofollow ? ' rel="nofollow"' : '',
 			esc_url( $url ),
 			esc_html( $label )
 		);

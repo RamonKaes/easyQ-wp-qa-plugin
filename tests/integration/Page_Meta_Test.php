@@ -25,6 +25,30 @@ final class Page_Meta_Test extends Test_Case {
 		parent::tear_down();
 	}
 
+	public function test_pages_that_open_a_form_are_not_indexed_as_in_core(): void {
+		$question = $this->ask( $this->user() );
+		$meta     = new Page_Meta( Block_Context::router() );
+		update_option( 'blog_public', '1' );
+
+		$this->go_to( URLs::question( $question ) );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$this->assertArrayNotHasKey( 'noindex', $meta->robots( array() ) );
+
+		// Like `?replytocom=`: noindex, but links are followed on a public site.
+		foreach ( array( 'easyq_close', 'easyq_edit' ) as $var ) {
+			$this->go_to( add_query_arg( $var, $question->id, URLs::question( $question ) ) );
+			Block_Context::router()->set_current( new Route( 'question', $question ) );
+			$this->assertSame( wp_robots_no_robots( array() ), $meta->robots( array() ), $var );
+		}
+		$this->assertSame(
+			array(
+				'noindex' => true,
+				'follow'  => true,
+			),
+			wp_robots_no_robots( array() )
+		);
+	}
+
 	public function test_sets_titles_and_robots(): void {
 		$meta = new Page_Meta( Block_Context::router() );
 		Block_Context::router()->set_current( new Route( 'search' ) );
