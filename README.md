@@ -12,9 +12,9 @@ your theme decides how it looks.
 
 > **Status: early development, not ready for live sites yet.** Asking, answering,
 > voting, moderation, profiles, all Q&A pages, the settings screen, the category
-> management and the moderation list work. More admin screens, emails and
-> notifications, the privacy tools and translations are still to come, see
-> [what is next](#what-is-next).
+> management, the moderation list, points, user titles and user fields work. The
+> dashboard and tools, emails and notifications, the privacy tools and translations
+> are still to come, see [what is next](#what-is-next).
 
 ## Features
 
@@ -29,7 +29,8 @@ your theme decides how it looks.
 
 ### Community and moderation
 
-- Points for questions, answers, votes and best answers, with user ranks and titles
+- Points for questions, answers, votes and best answers, with user ranks and titles;
+  changing the points recalculates them for all users at once
 - User levels from registered user to super administrator, mapped to WordPress roles
   and capabilities
 - Flags, an approval queue, user approval and blocking, rate limits per user and IP
@@ -63,8 +64,8 @@ your theme decides how it looks.
 easyQ is built in phases, see the
 [phase plan](docs/feature-mapping.md#13-phases):
 
-1. **Admin:** points, user titles and user fields, a dashboard and maintenance tools
-   (the settings screen, category management and the moderation list are done)
+1. **Admin:** a dashboard and maintenance tools (the settings screen, category
+   management, moderation list, points, user titles and user fields are done)
 2. **Communication:** emails and notifications, private messages, the user wall,
    favorites and the updates page
 3. **Privacy and tooling:** personal data export and erasure, IP address retention,

@@ -141,12 +141,25 @@ category) and to the `move` action; a question may always keep the category it h
 Actions on single posts, such as `approve`, `hide` or `delete`, are under
 `POST /posts/{id}/actions/{action}`.
 
+### User fields
+
+| Method and route | Description |
+| --- | --- |
+| `GET /user-fields` | The profile fields in order, each with `id`, `name`, `label`, `type` (`text`, `multi_line`, `link`), `permit` (who may see it), `on_register` and `position`. Needs `easyq_manage` |
+| `POST /user-fields` | Add a field: `label`, optional `name` (derived from the label, as in Q2A), `type`, `permit`, `on_register`, `position` |
+| `GET`, `PUT`/`PATCH /user-fields/{id}` | A field; change label, type, visibility, registration form and position. Parameters that are not passed keep their value; the name cannot change |
+| `DELETE /user-fields/{id}` | Delete a field and the values users entered |
+
+The values users enter are part of `/users/{id}` and `/users/me`.
+
 ### Settings
 
 The settings shown on the easyQ settings screen are part of the core endpoint
 `/wp/v2/settings` (`GET` and `POST`, capability `manage_options`), one object per
 section: `easyq_settings_general`, `easyq_settings_permissions`, `easyq_settings_users`,
 `easyq_settings_posting`, `easyq_settings_viewing`, `easyq_settings_lists`,
-`easyq_settings_feeds` and `easyq_settings_spam`. An update may pass only some settings
+`easyq_settings_feeds`, `easyq_settings_spam` and `easyq_settings_points`. The points
+include `user_titles`, an object of titles keyed by the points needed; changing a points
+value recalculates the points of all users. An update may pass only some settings
 of a section; the others keep their value. Unknown settings and values outside the
 allowed range are refused with `rest_invalid_param`.

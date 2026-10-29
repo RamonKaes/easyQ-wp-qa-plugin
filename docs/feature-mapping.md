@@ -311,9 +311,9 @@ Top-level menu **easyQ** (capability `easyq_manage`; moderation from `easyq_mode
 | Dashboard | `admin/stats` | Figures, queues, quick links; plus a WP dashboard widget |
 | Posts **(N)** | `admin/moderate`, `admin/flagged`, `admin/hidden` | One `WP_List_Table` for questions, answers and comments, modelled on the core Comments screen: views All, Pending, Flagged, Hidden and Closed, filters by type, category, author and date, search, row and bulk actions (approve, reject, clear flags, hide, show again, reopen, delete), counter badge in the menu and the admin bar. Closing needs a reason and editing the editor of the site, so both stay on the question page |
 | Categories | `admin/categories` | List and form like the core category screen, hierarchy, ordering, moving posts on delete, moving questions without a category or subcategory; only shown when the site uses categories |
-| Points | `admin/points` | Settings API form |
-| User titles | `admin/usertitles` | List and form |
-| User fields | `admin/userfields` | List and form, ordering |
+| Points | `admin/points` | Settings API form in the groups of Q2A, with "Show default values"; saving recalculates the points of all users at once |
+| User titles | `admin/usertitles` | One table of titles with the points needed and empty rows for new ones, saved through the Settings API |
+| User fields | `admin/userfields` | List and form like the core category screen, ordering, deleting with the values users entered |
 | Email templates **(N)** | language files `emails` | List of all templates, editor with placeholders, preview, test mail, reset to default (section 8) |
 | Settings | `admin/general` … `admin/mailing` | Settings API with tabs (5.2–5.12) |
 | Newsletter | `admin/mailing` | Own screen with progress; batches via WP-Cron |
@@ -493,8 +493,8 @@ WordPress's conditional GET (based on its own posts) is turned off for these fee
 
 | Area | Target |
 | --- | --- |
-| Points: `points_base`, `points_post_q`, `points_post_a`, `points_select_a`, `points_a_selected`, `points_vote_up_q`, `points_vote_down_q`, `points_vote_up_a`, `points_vote_down_a`, `points_per_q_voted_up/down`, `points_per_a_voted_up/down`, `points_per_c_voted_up/down`, `points_q_voted_max_gain/loss`, `points_a_voted_max_gain/loss`, `points_c_voted_max_gain/loss`, `points_multiple` | **P**; saving triggers a background recalculation |
-| User titles (points → title) | **P** |
+| Points: `points_base`, `points_post_q`, `points_post_a`, `points_select_a`, `points_a_selected`, `points_vote_up_q`, `points_vote_down_q`, `points_vote_up_a`, `points_vote_down_a`, `points_per_q_voted_up/down`, `points_per_a_voted_up/down`, `points_per_c_voted_up/down`, `points_q_voted_max_gain/loss`, `points_a_voted_max_gain/loss`, `points_c_voted_max_gain/loss`, `points_multiple` | **P**; saving recalculates the stored points of all users right away, with one statement per changed part |
+| User titles (points → title) | **P**, part of the points settings (`user_titles`) |
 | User fields (name, type, visibility, on registration) | **P**; fields appear in the WP profile, the account block and optionally on the registration form |
 | Tools: rebuild search index, recount posts, recalculate points, refill events, recalculate categories, delete hidden posts | **P** batch processing (REST + progress bar), plus `wp easyq recalc …` |
 | Tools: move blobs to disk/database, clear cache | **–** (Media Library / object cache) |
@@ -661,7 +661,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
 | 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7 |
-| 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | In progress: profile and users screens done in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
+| 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | In progress: profile and users screens done in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
 | 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, newsletter (5.12) | Mails captured and asserted in tests | Open |
 | 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
 | 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
@@ -711,3 +711,6 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 36 | The moderation list shows visible posts to every moderator, but posts awaiting approval and hidden posts only where the moderator may handle them, as Q2A checks for each post. `easyq_moderate` also covers users who may only delete hidden posts, who may open the Q2A page `admin/hidden` | 2026-10-29 |
 | 37 | The IP address screen does not show the host name: Q2A looks it up with `gethostbyaddr()`, which is a request to a name server | 2026-10-29 |
 | 38 | Deleting a question through the REST API responds with `deleted` and `id`, as core does, instead of a 404 for the missing question; the form then goes to the start page | 2026-10-29 |
+| 39 | Saving the points settings recalculates the points of all users at once, with set-based statements, instead of the separate batch run of Q2A | 2026-10-29 |
+| 40 | User titles are part of the points settings and edited as one table; a title can be removed by clearing it | 2026-10-29 |
+| 41 | A new user field takes its name from the label if none is given, as in Q2A; the name cannot change later, as it is part of the user meta key | 2026-10-29 |
