@@ -132,9 +132,24 @@ test.describe( 'Q&A frontend', () => {
 		await page.goto( `${ requestUtils.baseURL }${ route( 'home' ) }` );
 
 		await expect(
-			page.getByRole( 'heading', { name: 'Recent questions' } )
+			page.getByRole( 'heading', {
+				name: 'Recent questions and answers',
+			} )
 		).toBeVisible();
 		await expect( page.getByRole( 'link', { name: title } ) ).toBeVisible();
+
+		await page.goto( `${ requestUtils.baseURL }${ route( 'questions' ) }` );
+		await expect(
+			page.getByRole( 'heading', {
+				name: 'Recent questions',
+				exact: true,
+			} )
+		).toBeVisible();
+		await expect( page.getByRole( 'link', { name: title } ) ).toBeVisible();
+		await page.getByRole( 'link', { name: 'Most votes' } ).click();
+		await expect(
+			page.getByRole( 'heading', { name: 'Highest voted questions' } )
+		).toBeVisible();
 
 		await context.close();
 	} );

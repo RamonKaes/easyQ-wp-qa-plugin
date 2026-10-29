@@ -172,6 +172,7 @@ final class Options {
 				'hot_weight_votes'   => 100,
 				'hot_weight_views'   => 100,
 				'search_provider'    => 'basic',
+				'page_size_home'     => 20,
 				'page_size_qs'       => 20,
 				'page_size_search'   => 10,
 				'page_size_tags'     => 30,

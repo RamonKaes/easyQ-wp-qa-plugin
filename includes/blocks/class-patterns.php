@@ -71,7 +71,7 @@ final class Patterns {
 		return array(
 			'home'             => array(
 				'title'         => __( 'Q&A start page', 'easyq' ),
-				'description'   => __( 'Page title, a box to ask a question, sort links and the list of questions.', 'easyq' ),
+				'description'   => __( 'Page title, a box to ask a question and the recent questions and answers.', 'easyq' ),
 				'templateTypes' => array( 'easyq-home' ),
 				'content'       => Layouts::home(),
 			),

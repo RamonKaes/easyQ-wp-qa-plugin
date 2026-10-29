@@ -58,6 +58,7 @@ final class Routes {
 	 * @var array<string, string>
 	 */
 	public const SIMPLE = array(
+		'questions'   => 'questions',
 		'ask'         => 'ask',
 		'hot'         => 'hot',
 		'unanswered'  => 'unanswered',

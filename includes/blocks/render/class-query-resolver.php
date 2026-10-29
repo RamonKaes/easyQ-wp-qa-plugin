@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || exit;
 final class Query_Resolver {
 
 	/**
-	 * Sort orders of the start page, selected with the `sort` parameter.
+	 * Sort orders of the questions page, selected with the `sort` parameter.
 	 *
 	 * @since 0.1.0
 	 *
@@ -52,6 +52,7 @@ final class Query_Resolver {
 	 */
 	public const ACTIVITY = array(
 		'activity'        => Activity_Query::KINDS,
+		'recent_qa'       => array( 'questions', 'answers' ),
 		'recent_answers'  => array( 'answers' ),
 		'recent_comments' => array( 'comments' ),
 	);
@@ -71,7 +72,11 @@ final class Query_Resolver {
 		$source   = is_string( $args['source'] ?? null ) ? $args['source'] : 'recent';
 		$page_var = ! empty( $query['inherit'] ) ? Lists::MAIN_PAGE_VAR : 'easyq_page_' . $list_id;
 		$page     = Lists::requested_page( $page_var );
-		$default  = isset( self::ACTIVITY[ $source ] ) ? Options::get_int( 'lists', 'page_size_activity' ) : Options::get_int( 'lists', 'page_size_qs' );
+		$default  = match ( true ) {
+			'recent_qa' === $source             => Options::get_int( 'lists', 'page_size_home' ),
+			isset( self::ACTIVITY[ $source ] ) => Options::get_int( 'lists', 'page_size_activity' ),
+			default                            => Options::get_int( 'lists', 'page_size_qs' ),
+		};
 		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : $default;
 		$per_page = max( 1, min( Question_Query::MAX_PER_PAGE, $per_page ) );
 		$activity = array();
@@ -120,6 +125,8 @@ final class Query_Resolver {
 			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 			return match ( $route->name ) {
+				// Recent questions and answers, as the Question2Answer start page shows them.
+				'home'       => array( 'source' => 'recent_qa' ),
 				'hot'        => array( 'source' => 'hot' ),
 				'unanswered' => array( 'source' => in_array( $by, self::UNANSWERED, true ) ? $by : 'unanswered' ),
 				'activity'   => array( 'source' => 'activity' ),

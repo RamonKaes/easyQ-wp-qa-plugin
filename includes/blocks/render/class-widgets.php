@@ -70,7 +70,8 @@ final class Widgets {
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		return match ( $route->name ) {
-			'home'       => self::sort_labels()[ $sort ] ?? __( 'Recent questions', 'easyq' ),
+			'home'       => __( 'Recent questions and answers', 'easyq' ),
+			'questions'  => self::sort_titles()[ $sort ] ?? __( 'Recent questions', 'easyq' ),
 			'hot'        => __( 'Hot questions', 'easyq' ),
 			'unanswered' => self::unanswered_labels()[ $by ] ?? __( 'Questions without answers', 'easyq' ),
 			/* translators: %s: tag. */
@@ -121,7 +122,7 @@ final class Widgets {
 			$param   = 'sort';
 			$labels  = self::sort_labels();
 			$default = 'recent';
-			$base    = 'category' === $route?->name && null !== $route->category() ? URLs::category( $route->category() ) : Routes::url( 'home' );
+			$base    = 'category' === $route?->name && null !== $route->category() ? URLs::category( $route->category() ) : Routes::url( 'questions' );
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Marks the current sort order.
@@ -367,6 +368,23 @@ final class Widgets {
 			'votes'   => __( 'Most votes', 'easyq' ),
 			'answers' => __( 'Most answers', 'easyq' ),
 			'views'   => __( 'Most views', 'easyq' ),
+		);
+	}
+
+	/**
+	 * Returns the titles of the questions page for each sort order, as in Question2Answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, string>
+	 */
+	private static function sort_titles(): array {
+		return array(
+			'recent'  => __( 'Recent questions', 'easyq' ),
+			'hot'     => __( 'Hot questions', 'easyq' ),
+			'votes'   => __( 'Highest voted questions', 'easyq' ),
+			'answers' => __( 'Most answered questions', 'easyq' ),
+			'views'   => __( 'Most viewed questions', 'easyq' ),
 		);
 	}
 

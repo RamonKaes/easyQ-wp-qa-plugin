@@ -9,7 +9,12 @@ import { addQueryArgs } from '@wordpress/url';
 
 const cache = new Map();
 
-const ACTIVITY_SOURCES = [ 'activity', 'recent_answers', 'recent_comments' ];
+const ACTIVITY_SOURCES = [
+	'activity',
+	'recent_qa',
+	'recent_answers',
+	'recent_comments',
+];
 
 /**
  * Loads a REST path once per editor session.

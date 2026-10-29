@@ -69,6 +69,15 @@ test.describe( 'Themes', () => {
 						).toBeVisible(),
 				},
 				{
+					url: route( 'questions' ),
+					check: () =>
+						expect(
+							page.getByRole( 'link', {
+								name: question.title.rendered,
+							} )
+						).toBeVisible(),
+				},
+				{
 					url: route( 'question', question.id ),
 					check: async () => {
 						await expect(

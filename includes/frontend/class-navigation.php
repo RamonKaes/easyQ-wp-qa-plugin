@@ -65,7 +65,9 @@ final class Navigation {
 	 */
 	public static function routes(): array {
 		return array(
-			'home'       => __( 'Questions', 'easyq' ),
+			// Named as in the Question2Answer navigation.
+			'home'       => __( 'Q&A', 'easyq' ),
+			'questions'  => __( 'Questions', 'easyq' ),
 			'ask'        => __( 'Ask a question', 'easyq' ),
 			'hot'        => __( 'Hot questions', 'easyq' ),
 			'unanswered' => __( 'Unanswered', 'easyq' ),

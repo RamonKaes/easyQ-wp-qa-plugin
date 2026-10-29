@@ -313,8 +313,13 @@ final class Templates {
 		return array(
 			'easyq-home'           => array(
 				'title'       => __( 'Q&A: Home', 'easyq' ),
-				'description' => __( 'Start page of the questions and answers.', 'easyq' ),
+				'description' => __( 'Start page with the recent questions and answers.', 'easyq' ),
 				'content'     => Layouts::home(),
+			),
+			'easyq-questions'      => array(
+				'title'       => __( 'Q&A: Questions', 'easyq' ),
+				'description' => __( 'All questions, sorted by date, hotness, votes, answers or views.', 'easyq' ),
+				'content'     => Layouts::questions(),
 			),
 			'easyq-hot'            => array(
 				'title'       => __( 'Q&A: Hot questions', 'easyq' ),

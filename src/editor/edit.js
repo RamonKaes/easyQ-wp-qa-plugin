@@ -475,6 +475,13 @@ function QueryInspector( { attributes, setAttributes } ) {
 									value: 'unupvoted',
 								},
 								{
+									label: __(
+										'Recent questions and answers',
+										'easyq'
+									),
+									value: 'recent_qa',
+								},
+								{
 									label: __( 'Recent activity', 'easyq' ),
 									value: 'activity',
 								},

@@ -182,7 +182,7 @@ final class Settings_Layout {
 				self::section( __( 'Search engines', 'easyq' ), array( self::row( __( 'Sitemaps', 'easyq' ), array( 'sitemap_users' ) ) ) ),
 			),
 			'lists'       => array(
-				self::section( '', array( self::row( __( 'Items per page', 'easyq' ), array( 'page_size_qs', 'page_size_activity', 'page_size_tags', 'page_size_users' ) ), 'search_provider' ) ),
+				self::section( '', array( self::row( __( 'Items per page', 'easyq' ), array( 'page_size_home', 'page_size_qs', 'page_size_activity', 'page_size_tags', 'page_size_users' ) ), 'search_provider' ) ),
 				self::section(
 					__( 'Hot questions', 'easyq' ),
 					array( self::row( __( 'Weights', 'easyq' ), array( 'hot_weight_q_age', 'hot_weight_a_age', 'hot_weight_answers', 'hot_weight_votes', 'hot_weight_views' ) ) ),

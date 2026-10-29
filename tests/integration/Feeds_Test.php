@@ -46,7 +46,7 @@ final class Feeds_Test extends Test_Case {
 
 		$this->assertNotNull( $channel );
 		$this->assertSame( 'Recent questions', $channel['title'] );
-		$this->assertSame( Routes::url( 'home' ), $channel['link'] );
+		$this->assertSame( Routes::url( 'questions' ), $channel['link'] );
 		$this->assertCount( 1, $channel['items'] );
 		$this->assertSame( URLs::question( $question ), $channel['items'][0]['link'] );
 		$this->assertStringContainsString( 'more.', (string) $channel['items'][0]['description'] );
@@ -186,7 +186,15 @@ final class Feeds_Test extends Test_Case {
 		$category = Services::categories()->find( (int) Services::categories()->create( null, 'Cooking' ) );
 		$this->assertNotNull( $category );
 
-		$this->assertSame( array( 'questions', null ), Feeds::for_route( new Route( 'home' ) ) );
+		// As in Question2Answer: the start page has the feed of questions and answers, the questions page those of its recent and hot questions.
+		$this->assertSame( array( 'qa', null ), Feeds::for_route( new Route( 'home' ) ) );
+		$this->assertSame( array( 'questions', null ), Feeds::for_route( new Route( 'questions' ) ) );
+		$this->assertSame( array( 'questions', null ), Feeds::for_route( new Route( 'questions' ), '', 'recent' ) );
+		$this->assertNull( Feeds::for_route( new Route( 'questions' ), '', 'hot' ), 'The hot feed is off by default.' );
+		$this->assertNull( Feeds::for_route( new Route( 'questions' ), '', 'votes' ) );
+		Options::update( 'feeds', array( 'feed_for_hot' => true ) );
+		$this->assertSame( array( 'hot', null ), Feeds::for_route( new Route( 'questions' ), '', 'hot' ) );
+		Options::update( 'feeds', array( 'feed_for_hot' => false ) );
 		$this->assertSame( array( 'questions', 'cooking' ), Feeds::for_route( new Route( 'category', $category ) ) );
 		$this->assertSame( array( 'activity', null ), Feeds::for_route( new Route( 'activity' ) ) );
 		$this->assertNull( Feeds::for_route( new Route( 'hot' ) ), 'Disabled by default.' );
@@ -197,7 +205,7 @@ final class Feeds_Test extends Test_Case {
 		$this->feeds->discovery_link();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'rel="alternate" type="application/rss+xml" title="Recent questions"', $html );
+		$this->assertStringContainsString( 'rel="alternate" type="application/rss+xml" title="Recent questions and answers"', $html );
 	}
 
 	public function test_does_not_send_cache_headers_of_wordpress_posts(): void {

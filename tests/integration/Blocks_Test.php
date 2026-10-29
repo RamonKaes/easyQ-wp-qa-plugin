@@ -12,6 +12,7 @@ use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Route;
+use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\Templates;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
@@ -98,7 +99,7 @@ final class Blocks_Test extends Test_Case {
 		}
 		$definitions = ( new Templates( Block_Context::router() ) )->definitions();
 
-		$html = $this->render( $definitions['easyq-home']['content'], new Route( 'home' ) );
+		$html = $this->render( $definitions['easyq-questions']['content'], new Route( 'questions' ) );
 
 		$this->assertStringContainsString( 'Third question in the list', $html );
 		$this->assertStringContainsString( 'Second question in the list', $html );
@@ -106,6 +107,46 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'wp-block-query-pagination', $html );
 		$this->assertStringContainsString( 'easyq_page=2', $html );
 		$this->assertStringContainsString( 'Recent questions', $html );
+	}
+
+	public function test_start_page_lists_recent_questions_and_answers_as_in_q2a(): void {
+		Options::update( 'lists', array( 'page_size_home' => 2 ) );
+		$author   = $this->user();
+		$answered = $this->ask( $author, 'Asked first and answered last' );
+		$newest   = $this->ask( $author, 'Asked second' );
+		$this->ask( $author, 'Asked last but commented on' );
+		$this->answer( $this->user(), $answered );
+		// Comments do not count on the start page, unlike the activity page.
+		$this->comment( $this->user(), $newest, $newest );
+		$definitions = ( new Templates( Block_Context::router() ) )->definitions();
+
+		$html = $this->render( $definitions['easyq-home']['content'], new Route( 'home' ) );
+
+		$this->assertStringContainsString( '>Recent questions and answers</h1>', $html );
+		$this->assertStringNotContainsString( 'wp-block-easyq-sort-navigation', $html );
+		// Newest event first, one item per question, as many as `page_size_home`, without further pages.
+		$this->assertLessThan( (int) strpos( $html, 'Asked last but commented on' ), (int) strpos( $html, 'Asked first and answered last' ) );
+		$this->assertStringContainsString( 'Asked last but commented on', $html );
+		$this->assertStringNotContainsString( 'Asked second', $html );
+		$this->assertSame( 1, substr_count( $html, 'Asked first and answered last' ) );
+		$this->assertStringNotContainsString( 'wp-block-query-pagination', $html );
+
+		$activity = $this->render( $definitions['easyq-activity']['content'], new Route( 'activity' ) );
+		$this->assertStringContainsString( 'Asked second', $activity, 'The activity page counts the comment.' );
+	}
+
+	public function test_questions_page_has_the_titles_of_q2a(): void {
+		$titles = array(
+			''        => 'Recent questions',
+			'hot'     => 'Hot questions',
+			'votes'   => 'Highest voted questions',
+			'answers' => 'Most answered questions',
+			'views'   => 'Most viewed questions',
+		);
+		foreach ( $titles as $sort => $title ) {
+			$_GET['sort'] = $sort;
+			$this->assertStringContainsString( ">$title</h1>", $this->render( '<!-- wp:easyq/page-title /-->', new Route( 'questions' ) ), $sort );
+		}
 	}
 
 	public function test_shows_a_message_for_empty_lists(): void {
@@ -121,7 +162,7 @@ final class Blocks_Test extends Test_Case {
 		Services::votes()->vote( $this->user(), $low, 1 );
 		$_GET['sort'] = 'votes';
 
-		$html = $this->render( '<!-- wp:easyq/question-query {"queryId":3,"query":{"inherit":true}} --><!-- wp:easyq/question-template --><!-- wp:easyq/post-title /--><!-- /wp:easyq/question-template --><!-- /wp:easyq/question-query -->', new Route( 'home' ) );
+		$html = $this->render( '<!-- wp:easyq/question-query {"queryId":3,"query":{"inherit":true}} --><!-- wp:easyq/question-template --><!-- wp:easyq/post-title /--><!-- /wp:easyq/question-template --><!-- /wp:easyq/question-query -->', new Route( 'questions' ) );
 
 		$this->assertLessThan( strpos( $html, 'many votes' ), strpos( $html, 'few votes' ) );
 		$this->assertNotFalse( strpos( $html, (string) $high->title ) );
@@ -380,7 +421,9 @@ final class Blocks_Test extends Test_Case {
 		$this->assertIsInt( $category );
 
 		$this->assertStringContainsString( 'Questions tagged “php”', $this->render( '<!-- wp:easyq/page-title /-->', new Route( 'tag', 'php' ) ) );
-		$this->assertStringContainsString( 'aria-current="page">Recent questions', $this->render( '<!-- wp:easyq/sort-navigation /-->', new Route( 'home' ) ) );
+		$sorts = $this->render( '<!-- wp:easyq/sort-navigation /-->', new Route( 'questions' ) );
+		$this->assertStringContainsString( 'aria-current="page">Recent questions', $sorts );
+		$this->assertStringContainsString( 'href="' . esc_url( add_query_arg( 'sort', 'votes', Routes::url( 'questions' ) ) ) . '"', $sorts );
 		$this->assertStringContainsString( 'rel="tag">php</a>', $this->render( '<!-- wp:easyq/tags /-->' ) );
 		$this->assertStringContainsString( 'Software', $this->render( '<!-- wp:easyq/categories /-->' ) );
 		$this->assertStringContainsString( '1 question', $this->render( '<!-- wp:easyq/activity-count /-->' ) );

@@ -726,6 +726,7 @@ final class Fields {
 	 */
 	private static function lists(): array {
 		$fields = array(
+			'page_size_home'     => self::int( __( 'Items on the start page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Start page', 'easyq' ) ),
 			'page_size_qs'       => self::int( __( 'Questions per page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Questions', 'easyq' ) ),
 			'page_size_activity' => self::int( __( 'Items per page of the activity list', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Activity', 'easyq' ) ),
 			'page_size_tags'     => self::int( __( 'Tags per page', 'easyq' ), 1, 200 ) + array( 'short' => __( 'Tags', 'easyq' ) ),

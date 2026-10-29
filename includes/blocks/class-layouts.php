@@ -19,14 +19,25 @@ defined( 'ABSPATH' ) || exit;
 final class Layouts {
 
 	/**
-	 * Returns the markup of the start page: title, ask box, sort links and the question list.
+	 * Returns the markup of the start page: title, ask box and the recent questions and answers.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
 	public static function home(): string {
-		return '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/ask-box /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . self::question_list();
+		return '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/ask-box /-->' . "\n" . self::question_list();
+	}
+
+	/**
+	 * Returns the markup of the questions page: title, sort links and the question list.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	public static function questions(): string {
+		return '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . self::question_list();
 	}
 
 	/**

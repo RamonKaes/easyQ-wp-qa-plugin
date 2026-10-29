@@ -91,6 +91,18 @@ final class Routing_Test extends Test_Case {
 		$this->assertSame( array(), $GLOBALS['wp_query']->posts );
 	}
 
+	public function test_the_questions_page_has_its_own_address_and_template(): void {
+		$this->assertSame( home_url( '/questions/questions/' ), Routes::url( 'questions' ) );
+		$this->go_to( Routes::url( 'questions', null, null, array( 'sort' => 'votes' ) ) );
+
+		$route = Block_Context::router()->current();
+		$this->assertSame( 'questions', $route?->name );
+		$this->assertFalse( is_404() );
+		$this->assertSame( 'easyq-questions', $route?->template_slug() );
+		$this->assertArrayHasKey( 'easyq-questions', ( new Templates( Block_Context::router() ) )->definitions() );
+		$this->assertSame( 'home', Block_Context::router()->resolve( 'home', null, null )->name );
+	}
+
 	public function test_unknown_addresses_below_the_base_are_not_found(): void {
 		$this->go_to( home_url( '/questions/999999/missing/' ) );
 
@@ -179,7 +191,7 @@ final class Routing_Test extends Test_Case {
 
 		$this->open_in_classic_theme( Routes::url( 'home' ) );
 
-		$this->assertSame( 'Recent questions', get_the_title( $GLOBALS['post'] ) );
+		$this->assertSame( 'Recent questions and answers', get_the_title( $GLOBALS['post'] ) );
 		$this->assertStringNotContainsString( '<h1', Templates::classic_html() );
 		$this->assertMatchesRegularExpression( '/<h2 [^>]*><a href="[^"]+">Which hooks exist\?<\/a><\/h2>/', Templates::classic_html() );
 	}

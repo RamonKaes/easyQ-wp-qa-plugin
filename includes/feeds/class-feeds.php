@@ -169,13 +169,20 @@ final class Feeds {
 	 *
 	 * @param Route  $route Route of the page.
 	 * @param string $query Search terms of a search page.
+	 * @param string $sort  Sort order of the questions page.
 	 * @return array{0: string, 1: string|null}|null Feed type and argument, or null if the page has no feed.
 	 */
-	public static function for_route( Route $route, string $query = '' ): ?array {
+	public static function for_route( Route $route, string $query = '', string $sort = '' ): ?array {
 		$category = $route->category();
 
 		$feed = match ( $route->name ) {
-			'home'       => array( 'questions', null ),
+			'home'       => array( 'qa', null ),
+			// Like Question2Answer, only the recent and the hot questions have a feed.
+			'questions'  => match ( $sort ) {
+				'', 'recent' => array( 'questions', null ),
+				'hot'        => array( 'hot', null ),
+				default      => null,
+			},
 			'hot'        => array( 'hot', null ),
 			'unanswered' => array( 'unanswered', null ),
 			'activity'   => array( 'activity', null ),
@@ -221,7 +228,9 @@ final class Feeds {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading the search terms of the page.
 		$query = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
-		$feed  = self::for_route( $route, $query );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading the sort order of the page.
+		$sort = isset( $_GET['sort'] ) && is_string( $_GET['sort'] ) ? sanitize_key( $_GET['sort'] ) : '';
+		$feed = self::for_route( $route, $query, $sort );
 		if ( null === $feed ) {
 			return;
 		}
@@ -400,7 +409,7 @@ final class Feeds {
 		}
 
 		return match ( $type ) {
-			'hot', 'unanswered', 'answers', 'comments', 'activity' => Routes::url( $type ),
+			'hot', 'unanswered', 'answers', 'comments', 'activity', 'questions' => Routes::url( $type ),
 			'tag'    => Routes::url( 'tag', $argument ),
 			'search' => Routes::url( 'search', null, null, array( 'q' => $argument ) ),
 			default  => Routes::url( 'home' ),
