@@ -409,6 +409,15 @@ final class Settings_Test extends Test_Case {
 				}
 			}
 
+			// Switches share a row with a short title, so that their text stands beside them.
+			foreach ( Settings_Layout::sections( $tab ) as $section ) {
+				foreach ( $section['rows'] as $row ) {
+					if ( is_string( $row ) ) {
+						$this->assertNotSame( 'bool', Fields::section( $tab )[ $row ]['type'] ?? null, "$tab.$row" );
+					}
+				}
+			}
+
 			// Points minimums are shown with their permission.
 			$expected = array_keys( array_filter( Fields::section( $tab ), static fn ( array $field ): bool => ! isset( $field['parent'] ) ) );
 			sort( $expected );
@@ -426,11 +435,24 @@ final class Settings_Test extends Test_Case {
 		$this->assertStringContainsString( '> Allow questions to be closed</label>', $html );
 		$this->assertStringContainsString( 'name="easyq_settings_posting[min_len_q_title]" value="12" min="1"> <label for="easyq-posting-min-len-q-title">Minimum length of question titles, in characters</label>', $html );
 
-		// A description shared by the settings of a row is shown once.
-		$html = $this->render( 'spam' );
-		$row  = (string) strstr( (string) strstr( $html, '<span>Questions</span>' ), '</fieldset>', true );
+		// A description shared by the settings of a row is shown once, after the controls.
+		$html = $this->render( 'lists' );
+		$row  = (string) strstr( (string) strstr( $html, '<span>Weights</span>' ), '</fieldset>', true );
 		$this->assertSame( 1, substr_count( $row, '<p class="description"' ) );
-		$this->assertSame( 2, substr_count( $row, 'aria-describedby="easyq-spam-max-rate-user-qs-description"' ) );
+		$this->assertSame( 5, substr_count( $row, 'aria-describedby="easyq-lists-hot-weight-q-age-description"' ) );
+		$this->assertStringContainsString( '> <label for="easyq-lists-hot-weight-views">Many views</label><p class="description"', $row );
+
+		// What all rows of a section share is said once below its heading.
+		$html = $this->render( 'spam' );
+		$this->assertMatchesRegularExpression( '/>Rate limits<\/h2>\s*<p>How often each IP address or user may do something, per hour; 0 blocks it.<\/p>/', $html );
+		$row = (string) strstr( (string) strstr( $html, '<span>Questions</span>' ), '</fieldset>', true );
+		$this->assertStringNotContainsString( '<p class="description"', $row );
+		$this->assertStringContainsString( '> <label for="easyq-spam-max-rate-user-qs">per user</label>', $row );
+
+		// Each role has a row of its own.
+		$html = $this->render( 'general' );
+		$this->assertStringContainsString( '<th scope="row"><label for="easyq-general-role-levels-author">Author</label></th><td><select id="easyq-general-role-levels-author" name="easyq_settings_general[role_levels][author]" class="regular-text">', $html );
+		$this->assertStringContainsString( '<th scope="row">Maintenance</th>', $html );
 	}
 
 	public function test_permissions_line_up_and_show_points_only_when_needed(): void {

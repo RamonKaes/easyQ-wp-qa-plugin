@@ -24,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  *
- * @phpstan-type Field array{type: string, label: string, description?: string, min?: int, max?: int, choices?: array<int|string, string>, parent?: string, owner?: bool}
+ * @phpstan-type Field array{type: string, label: string, description?: string, min?: int, max?: int, choices?: array<int|string, string>, parent?: string, owner?: bool, short?: string}
  */
 final class Fields {
 
@@ -491,6 +491,17 @@ final class Fields {
 			'permit_post_wall'               => __( 'Posting on user walls', 'easyq' ),
 		);
 
+		// Shorter names for the narrow title column of the settings screen.
+		$shorts = array(
+			'permit_retag_cat'               => __( 'Changing tags or categories', 'easyq' ),
+			'permit_edit_silent'             => __( 'Editing silently', 'easyq' ),
+			'permit_select_a'                => __( 'Selecting best answers', 'easyq' ),
+			'permit_anon_view_ips'           => __( 'Viewing IP addresses', 'easyq' ),
+			'permit_view_voters_flaggers'    => __( 'Viewing voters and flaggers', 'easyq' ),
+			'permit_view_new_users_page'     => __( 'Viewing new users', 'easyq' ),
+			'permit_view_special_users_page' => __( 'Viewing special users', 'easyq' ),
+		);
+
 		$fields = array();
 		foreach ( self::PERMITS as $key => [ $widest, $narrowest, $points ] ) {
 			$choices = array_filter(
@@ -499,7 +510,7 @@ final class Fields {
 				ARRAY_FILTER_USE_KEY
 			);
 
-			$fields[ $key ] = self::choice( $labels[ $key ], $choices );
+			$fields[ $key ] = self::choice( $labels[ $key ], $choices ) + ( isset( $shorts[ $key ] ) ? array( 'short' => $shorts[ $key ] ) : array() );
 			if ( $points ) {
 				$fields[ $key . '_points' ] = array(
 					'type'   => 'int',
@@ -657,10 +668,10 @@ final class Fields {
 				'description' => __( 'Separate words with spaces or commas. Use * as a wildcard, e.g. bad*.', 'easyq' ),
 			),
 			'do_ask_check_qs'           => self::bool( __( 'Show similar questions while asking', 'easyq' ) ),
-			'match_ask_check_qs'        => self::choice( __( 'Similar questions matching', 'easyq' ), self::match_choices() ),
+			'match_ask_check_qs'        => self::choice( __( 'Similar questions matching', 'easyq' ), self::match_choices() ) + array( 'short' => __( 'how closely they must match', 'easyq' ) ),
 			'page_size_ask_check_qs'    => self::int( __( 'Number of similar questions', 'easyq' ), 3, 50 ),
 			'do_example_tags'           => self::bool( __( 'Suggest tags from similar questions while asking', 'easyq' ) ),
-			'match_example_tags'        => self::choice( __( 'Example tags matching', 'easyq' ), self::match_choices() ),
+			'match_example_tags'        => self::choice( __( 'Example tags matching', 'easyq' ), self::match_choices() ) + array( 'short' => __( 'how closely the questions must match', 'easyq' ) ),
 			'page_size_ask_tags'        => self::int( __( 'Number of suggested tags', 'easyq' ), 3, 50 ),
 		);
 	}
@@ -695,7 +706,7 @@ final class Fields {
 					'created' => __( 'Time', 'easyq' ),
 					'votes'   => __( 'Votes', 'easyq' ),
 				)
-			),
+			) + array( 'short' => __( 'decides the order of answers', 'easyq' ) ),
 			'show_selected_first'   => self::bool( __( 'Show the selected answer first', 'easyq' ) ),
 			'page_size_q_as'        => self::int( __( 'Answers per page', 'easyq' ), 1, 50 ),
 			'show_fewer_cs_from'    => self::int( __( 'Shorten comment lists from this many comments', 'easyq' ), 1 ),
@@ -715,10 +726,10 @@ final class Fields {
 	 */
 	private static function lists(): array {
 		$fields = array(
-			'page_size_qs'       => self::int( __( 'Questions per page', 'easyq' ), 1, 50 ),
-			'page_size_activity' => self::int( __( 'Items per page of the activity list', 'easyq' ), 1, 50 ),
-			'page_size_tags'     => self::int( __( 'Tags per page', 'easyq' ), 1, 200 ),
-			'page_size_users'    => self::int( __( 'Users per page', 'easyq' ), 1, 200 ),
+			'page_size_qs'       => self::int( __( 'Questions per page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Questions', 'easyq' ) ),
+			'page_size_activity' => self::int( __( 'Items per page of the activity list', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Activity', 'easyq' ) ),
+			'page_size_tags'     => self::int( __( 'Tags per page', 'easyq' ), 1, 200 ) + array( 'short' => __( 'Tags', 'easyq' ) ),
+			'page_size_users'    => self::int( __( 'Users per page', 'easyq' ), 1, 200 ) + array( 'short' => __( 'Users', 'easyq' ) ),
 		);
 
 		$providers = array();
@@ -730,14 +741,14 @@ final class Fields {
 			$fields['search_provider'] = self::choice( __( 'Search with', 'easyq' ), $providers );
 		}
 
-		$hotness = __( 'Weight in percent. Changes apply to a question the next time it is answered, voted on or viewed.', 'easyq' );
+		$hotness = __( 'Weights in percent. A change applies to a question the next time it is answered, voted on or viewed; Recount posts under easyQ → Tools applies it to all questions at once.', 'easyq' );
 
 		return $fields + array(
-			'hot_weight_q_age'   => self::int( __( 'Hotness: question is new', 'easyq' ), 0, null, $hotness ),
-			'hot_weight_a_age'   => self::int( __( 'Hotness: question has a new answer', 'easyq' ), 0, null, $hotness ),
-			'hot_weight_answers' => self::int( __( 'Hotness: question has many answers', 'easyq' ), 0, null, $hotness ),
-			'hot_weight_votes'   => self::int( __( 'Hotness: question has many up votes', 'easyq' ), 0, null, $hotness ),
-			'hot_weight_views'   => self::int( __( 'Hotness: question has many views', 'easyq' ), 0, null, $hotness ),
+			'hot_weight_q_age'   => self::int( __( 'Hotness: question is new', 'easyq' ), 0, null, $hotness ) + array( 'short' => __( 'Question is new', 'easyq' ) ),
+			'hot_weight_a_age'   => self::int( __( 'Hotness: question has a new answer', 'easyq' ), 0, null, $hotness ) + array( 'short' => __( 'Latest answer is new', 'easyq' ) ),
+			'hot_weight_answers' => self::int( __( 'Hotness: question has many answers', 'easyq' ), 0, null, $hotness ) + array( 'short' => __( 'Many answers', 'easyq' ) ),
+			'hot_weight_votes'   => self::int( __( 'Hotness: question has many up votes', 'easyq' ), 0, null, $hotness ) + array( 'short' => __( 'Many up votes', 'easyq' ) ),
+			'hot_weight_views'   => self::int( __( 'Hotness: question has many views', 'easyq' ), 0, null, $hotness ) + array( 'short' => __( 'Many views', 'easyq' ) ),
 		);
 	}
 
@@ -775,8 +786,7 @@ final class Fields {
 	 * @phpstan-return array<string, Field>
 	 */
 	private static function spam(): array {
-		$per_hour = __( 'Per hour.', 'easyq' );
-		$limits   = array(
+		$limits = array(
 			'max_rate_ip_qs'         => __( 'Questions per IP address', 'easyq' ),
 			'max_rate_user_qs'       => __( 'Questions per user', 'easyq' ),
 			'max_rate_ip_as'         => __( 'Answers per IP address', 'easyq' ),
@@ -817,7 +827,15 @@ final class Fields {
 		);
 
 		foreach ( $limits as $key => $label ) {
-			$fields[ $key ] = self::int( $label, 'max_rate_ip_logins' === $key ? 1 : 0, null, $per_hour );
+			// The section says that limits count per hour; in their rows, the labels say what they limit.
+			$fields[ $key ] = self::int( $label, 'max_rate_ip_logins' === $key ? 1 : 0 ) + array(
+				'short' => match ( true ) {
+					'max_rate_ip_registers' === $key => __( 'registrations per IP address', 'easyq' ),
+					'max_rate_ip_logins' === $key    => __( 'login attempts per IP address', 'easyq' ),
+					str_contains( $key, '_ip_' )     => __( 'per IP address', 'easyq' ),
+					default                          => __( 'per user', 'easyq' ),
+				},
+			);
 		}
 
 		return $fields;

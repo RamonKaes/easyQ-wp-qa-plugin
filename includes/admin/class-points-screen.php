@@ -90,19 +90,41 @@ final class Points_Screen {
 	}
 
 	/**
-	 * Returns the groups of the points form, as Question2Answer separates them.
+	 * Returns the groups of the points form, as Question2Answer separates them, each
+	 * with rows of related settings.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<string, array{0: string, 1: string[]}> Title and settings of each group.
+	 * @return array<string, array{0: string, 1: array<string, string[]>}> Title and rows (title and settings) of each group.
 	 */
 	public static function groups(): array {
 		return array(
-			'questions' => array( __( 'Questions', 'easyq' ), array( 'points_post_q', 'points_select_a', 'points_per_q_voted_up', 'points_per_q_voted_down', 'points_q_voted_max_gain', 'points_q_voted_max_loss' ) ),
-			'answers'   => array( __( 'Answers', 'easyq' ), array( 'points_post_a', 'points_a_selected', 'points_per_a_voted_up', 'points_per_a_voted_down', 'points_a_voted_max_gain', 'points_a_voted_max_loss' ) ),
-			'comments'  => array( __( 'Comments', 'easyq' ), array( 'points_per_c_voted_up', 'points_per_c_voted_down', 'points_c_voted_max_gain', 'points_c_voted_max_loss' ) ),
-			'voting'    => array( __( 'Voting', 'easyq' ), array( 'points_vote_up_q', 'points_vote_down_q', 'points_vote_up_a', 'points_vote_down_a' ) ),
-			'all'       => array( __( 'All users', 'easyq' ), array( 'points_multiple', 'points_base' ) ),
+			'questions' => array(
+				__( 'Questions', 'easyq' ),
+				array(
+					__( 'Posting', 'easyq' )        => array( 'points_post_q', 'points_select_a' ),
+					__( 'Votes received', 'easyq' ) => array( 'points_per_q_voted_up', 'points_per_q_voted_down', 'points_q_voted_max_gain', 'points_q_voted_max_loss' ),
+				),
+			),
+			'answers'   => array(
+				__( 'Answers', 'easyq' ),
+				array(
+					__( 'Posting', 'easyq' )        => array( 'points_post_a', 'points_a_selected' ),
+					__( 'Votes received', 'easyq' ) => array( 'points_per_a_voted_up', 'points_per_a_voted_down', 'points_a_voted_max_gain', 'points_a_voted_max_loss' ),
+				),
+			),
+			'comments'  => array(
+				__( 'Comments', 'easyq' ),
+				array( __( 'Votes received', 'easyq' ) => array( 'points_per_c_voted_up', 'points_per_c_voted_down', 'points_c_voted_max_gain', 'points_c_voted_max_loss' ) ),
+			),
+			'voting'    => array(
+				__( 'Voting', 'easyq' ),
+				array( __( 'Votes given', 'easyq' ) => array( 'points_vote_up_q', 'points_vote_down_q', 'points_vote_up_a', 'points_vote_down_a' ) ),
+			),
+			'all'       => array(
+				__( 'All users', 'easyq' ),
+				array( __( 'Calculation', 'easyq' ) => array( 'points_multiple', 'points_base' ) ),
+			),
 		);
 	}
 
@@ -112,30 +134,26 @@ final class Points_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_fields(): void {
-		$fields   = Fields::section( 'points' );
 		$renderer = new Settings_Screen();
 		$defaults = $this->showing_defaults();
 
-		foreach ( self::groups() as $group => [ $title, $keys ] ) {
+		foreach ( self::groups() as $group => [ $title, $rows ] ) {
 			$section = Registry::group( 'points' ) . '_' . $group;
 			add_settings_section( $section, $title, '__return_empty_string', self::PAGE );
 
-			foreach ( $keys as $key ) {
-				if ( ! isset( $fields[ $key ] ) ) {
-					continue;
-				}
-
+			$number = 0;
+			foreach ( $rows as $row_title => $keys ) {
 				add_settings_field(
-					$key,
-					esc_html( $fields[ $key ]['label'] ),
-					array( $renderer, 'render_field' ),
+					'easyq-points-row-' . $group . '-' . ( ++$number ),
+					esc_html( $row_title ),
+					array( $renderer, 'render_row' ),
 					self::PAGE,
 					$section,
 					array(
-						'section'   => 'points',
-						'key'       => $key,
-						'defaults'  => $defaults,
-						'label_for' => 'easyq-points-' . str_replace( '_', '-', $key ),
+						'section'  => 'points',
+						'title'    => $row_title,
+						'keys'     => $keys,
+						'defaults' => $defaults,
 					)
 				);
 			}

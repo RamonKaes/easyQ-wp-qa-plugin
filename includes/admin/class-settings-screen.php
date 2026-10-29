@@ -102,13 +102,43 @@ final class Settings_Screen {
 			$fields = Fields::section( $tab );
 
 			foreach ( Settings_Layout::sections( $tab ) as $index => $section ) {
-				$section_id = Registry::group( $tab ) . '_' . $index;
-				add_settings_section( $section_id, $section['title'], '__return_empty_string', self::page( $tab ) );
+				$section_id  = Registry::group( $tab ) . '_' . $index;
+				$description = $section['description'];
+				add_settings_section(
+					$section_id,
+					$section['title'],
+					static function () use ( $description ): void {
+						if ( '' !== $description ) {
+							printf( '<p>%s</p>', esc_html( $description ) );
+						}
+					},
+					self::page( $tab )
+				);
 
 				foreach ( $section['rows'] as $number => $row ) {
 					// Fields of the site owner are only shown to the site owner.
 					$keys = array_values( array_filter( is_string( $row ) ? array( $row ) : $row['keys'], static fn ( string $key ): bool => isset( $fields[ $key ] ) && Fields::may_change( $fields[ $key ] ) ) );
 					if ( array() === $keys ) {
+						continue;
+					}
+
+					if ( is_string( $row ) && 'role_levels' === $fields[ $row ]['type'] ) {
+						// One row per role, as core lists one setting per row.
+						foreach ( wp_roles()->get_names() as $role => $role_name ) {
+							add_settings_field(
+								$row . '-' . $role,
+								esc_html( translate_user_role( $role_name ) ),
+								array( $this, 'render_role_level' ),
+								self::page( $tab ),
+								$section_id,
+								array(
+									'section'   => $tab,
+									'key'       => $row,
+									'role'      => $role,
+									'label_for' => self::id( $tab, $row ) . '-' . $role,
+								)
+							);
+						}
 						continue;
 					}
 
@@ -120,7 +150,7 @@ final class Settings_Screen {
 						if ( 'role_levels' !== $fields[ $row ]['type'] ) {
 							$args['label_for'] = self::id( $tab, $row );
 						}
-						add_settings_field( $row, esc_html( $fields[ $row ]['label'] ), array( $this, 'render_field' ), self::page( $tab ), $section_id, $args );
+						add_settings_field( $row, esc_html( $fields[ $row ]['short'] ?? $fields[ $row ]['label'] ), array( $this, 'render_field' ), self::page( $tab ), $section_id, $args );
 						continue;
 					}
 
@@ -208,27 +238,29 @@ final class Settings_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array{section: string, title: string, keys: string[]} $args Section, row title and settings.
+	 * @param array{section: string, title: string, keys: string[], defaults?: bool} $args Section, row title and settings; `defaults` shows the default values.
 	 */
 	public function render_row( array $args ): void {
-		$section = $args['section'];
-		$fields  = Fields::section( $section );
-		$keys    = array_values( array_filter( $args['keys'], static fn ( string $key ): bool => isset( $fields[ $key ] ) ) );
+		$defaults = ! empty( $args['defaults'] );
+		$section  = $args['section'];
+		$fields   = Fields::section( $section );
+		$keys     = array_values( array_filter( $args['keys'], static fn ( string $key ): bool => isset( $fields[ $key ] ) ) );
+
+		// Descriptions follow the controls of the row, each once.
+		$descriptions = array();
+		foreach ( $keys as $key ) {
+			$description = $fields[ $key ]['description'] ?? '';
+			if ( '' !== $description && ! isset( $descriptions[ $description ] ) ) {
+				$descriptions[ $description ] = self::id( $section, $key ) . '-description';
+			}
+		}
 
 		printf( '<fieldset><legend class="screen-reader-text"><span>%s</span></legend>', esc_html( $args['title'] ) );
 		foreach ( $keys as $position => $key ) {
-			$field       = $fields[ $key ];
-			$id          = self::id( $section, $key );
-			$description = $field['description'] ?? '';
-			$next        = $keys[ $position + 1 ] ?? null;
-			$shared      = null !== $next && ( $fields[ $next ]['description'] ?? '' ) === $description;
-
-			// A shared description follows the last setting that has it; the others point to it.
-			$owner = $key;
-			for ( $later = $position + 1; isset( $keys[ $later ] ) && ( $fields[ $keys[ $later ] ]['description'] ?? '' ) === $description; $later++ ) {
-				$owner = $keys[ $later ];
-			}
-			$described = '' === $description ? '' : self::id( $section, $owner ) . '-description';
+			$field     = $fields[ $key ];
+			$id        = self::id( $section, $key );
+			$label     = $field['short'] ?? $field['label'];
+			$described = $descriptions[ $field['description'] ?? '' ] ?? '';
 
 			if ( $position > 0 ) {
 				echo '<br>';
@@ -236,16 +268,15 @@ final class Settings_Screen {
 			// The control comes first, so that the controls of a row line up.
 			if ( 'bool' === $field['type'] ) {
 				printf( '<label for="%s">', esc_attr( $id ) );
-				$this->render_control( $section, $key, false, $described );
-				echo ' ' . esc_html( $field['label'] ) . '</label>';
+				$this->render_control( $section, $key, $defaults, $described );
+				echo ' ' . esc_html( $label ) . '</label>';
 			} else {
-				$this->render_control( $section, $key, false, $described );
-				printf( ' <label for="%1$s">%2$s</label>', esc_attr( $id ), esc_html( $field['label'] ) );
+				$this->render_control( $section, $key, $defaults, $described );
+				printf( ' <label for="%1$s">%2$s</label>', esc_attr( $id ), esc_html( $label ) );
 			}
-
-			if ( '' !== $description && ! $shared ) {
-				printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( $id . '-description' ), esc_html( $description ) );
-			}
+		}
+		foreach ( $descriptions as $description => $description_id ) {
+			printf( '<p class="description" id="%1$s">%2$s</p>', esc_attr( $description_id ), esc_html( $description ) );
 		}
 		echo '</fieldset>';
 	}
@@ -313,10 +344,6 @@ final class Settings_Screen {
 					$described, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
 					esc_textarea( is_string( $value ) ? $value : '' )
 				);
-				break;
-
-			case 'role_levels':
-				$this->render_role_levels( $id, $name, $field['label'], $value );
 				break;
 
 			default:
@@ -389,27 +416,24 @@ final class Settings_Screen {
 	}
 
 	/**
-	 * Renders the level of each role.
+	 * Renders the Q&A level of one role.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $id    Element ID prefix.
-	 * @param string $name  Field name.
-	 * @param string $label Field label.
-	 * @param mixed  $value Current levels keyed by role.
+	 * @param array{section: string, key: string, role: string} $args Section, setting name and role.
 	 */
-	private function render_role_levels( string $id, string $name, string $label, mixed $value ): void {
-		$levels = is_array( $value ) ? $value : array();
+	public function render_role_level( array $args ): void {
+		$levels = Options::get( $args['section'], $args['key'] );
+		$id     = self::id( $args['section'], $args['key'] ) . '-' . $args['role'];
 
-		printf( '<fieldset aria-describedby="%1$s"><legend class="screen-reader-text">%2$s</legend>', esc_attr( $id . '-description' ), esc_html( $label ) );
-		foreach ( wp_roles()->get_names() as $role => $role_name ) {
-			$role_id = $id . '-' . $role;
-
-			printf( '<label for="%1$s">%2$s</label> ', esc_attr( $role_id ), esc_html( translate_user_role( $role_name ) ) );
-			$this->render_select( $role_id, $name . '[' . $role . ']', Fields::role_level_choices(), $levels[ $role ] ?? Levels::BASIC );
-			echo '<br>';
-		}
-		echo '</fieldset>';
+		$this->render_select(
+			$id,
+			Options::option_name( $args['section'] ) . '[' . $args['key'] . '][' . $args['role'] . ']',
+			Fields::role_level_choices(),
+			is_array( $levels ) ? ( $levels[ $args['role'] ] ?? Levels::BASIC ) : Levels::BASIC,
+			'',
+			'regular-text'
+		);
 	}
 
 	/**

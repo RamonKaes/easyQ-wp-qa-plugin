@@ -19,8 +19,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since 0.1.0
  *
- * @phpstan-type Row string|array{title: string, keys: string[]}
- * @phpstan-type Section array{title: string, rows: array<int, Row>}
+ * Switches always share a row with a short title, even alone, so that their text
+ * stands beside them, as under Settings → Reading.
  */
 final class Settings_Layout {
 
@@ -30,7 +30,7 @@ final class Settings_Layout {
 	 * @since 0.1.0
 	 *
 	 * @param string $tab Settings section.
-	 * @return array<int, array{title: string, rows: array<int, string|array{title: string, keys: string[]}>}>
+	 * @return array<int, array{title: string, description: string, rows: array<int, string|array{title: string, keys: string[]}>}>
 	 */
 	public static function sections( string $tab ): array {
 		$sections = self::layout( $tab );
@@ -46,10 +46,7 @@ final class Settings_Layout {
 		$rest   = array_values( array_diff( $rest, $named ) );
 		if ( array() !== $rest ) {
 			if ( array() === $sections ) {
-				$sections[] = array(
-					'title' => '',
-					'rows'  => array(),
-				);
+				$sections[] = self::section( '', array() );
 			}
 			$last                      = array_key_last( $sections );
 			$sections[ $last ]['rows'] = array_merge( $sections[ $last ]['rows'], $rest );
@@ -98,14 +95,16 @@ final class Settings_Layout {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string                                                  $title Heading; empty for none.
-	 * @param array<int, string|array{title: string, keys: string[]}> $rows  Settings and rows.
-	 * @return array{title: string, rows: array<int, string|array{title: string, keys: string[]}>}
+	 * @param string                                                  $title       Heading; empty for none.
+	 * @param array<int, string|array{title: string, keys: string[]}> $rows        Settings and rows.
+	 * @param string                                                  $description Text below the heading; empty for none.
+	 * @return array{title: string, description: string, rows: array<int, string|array{title: string, keys: string[]}>}
 	 */
-	private static function section( string $title, array $rows ): array {
+	private static function section( string $title, array $rows, string $description = '' ): array {
 		return array(
-			'title' => $title,
-			'rows'  => $rows,
+			'title'       => $title,
+			'description' => $description,
+			'rows'        => $rows,
 		);
 	}
 
@@ -115,13 +114,14 @@ final class Settings_Layout {
 	 * @since 0.1.0
 	 *
 	 * @param string $tab Settings section.
-	 * @return array<int, array{title: string, rows: array<int, string|array{title: string, keys: string[]}>}>
+	 * @return array<int, array{title: string, description: string, rows: array<int, string|array{title: string, keys: string[]}>}>
 	 */
 	private static function layout( string $tab ): array {
 		return match ( $tab ) {
 			'general'     => array(
-				self::section( '', array( 'base_slug', 'tags_or_categories', 'read_only' ) ),
-				self::section( __( 'Users and data', 'easyq' ), array( 'role_levels', 'delete_data_on_uninstall' ) ),
+				self::section( '', array( 'base_slug', 'tags_or_categories', self::row( __( 'Maintenance', 'easyq' ), array( 'read_only' ) ) ) ),
+				self::section( __( 'Q&A level of each role', 'easyq' ), array( 'role_levels' ), __( 'Users get the level of their role unless their profile sets a higher one.', 'easyq' ) ),
+				self::section( __( 'Data', 'easyq' ), array( self::row( __( 'Uninstalling', 'easyq' ), array( 'delete_data_on_uninstall' ) ) ) ),
 			),
 			'permissions' => array(
 				self::section( __( 'Viewing and posting', 'easyq' ), array( 'permit_view_q_page', 'permit_post_q', 'permit_post_a', 'permit_post_c' ) ),
@@ -165,7 +165,7 @@ final class Settings_Layout {
 				self::section(
 					__( 'Posts', 'easyq' ),
 					array(
-						'q_urls_title_length',
+						self::row( __( 'Addresses', 'easyq' ), array( 'q_urls_title_length' ) ),
 						self::row( __( 'Links', 'easyq' ), array( 'show_url_links', 'links_in_new_window' ) ),
 						self::row( __( 'Shown with posts', 'easyq' ), array( 'show_user_points', 'show_post_update_meta', 'show_compact_numbers', 'show_full_date_days' ) ),
 						self::row( __( 'Views', 'easyq' ), array( 'do_count_q_views', 'recalc_hotness_q_view' ) ),
@@ -179,11 +179,15 @@ final class Settings_Layout {
 						self::row( __( 'Comments', 'easyq' ), array( 'show_fewer_cs_from', 'show_fewer_cs_count' ) ),
 					)
 				),
-				self::section( __( 'Search engines', 'easyq' ), array( 'sitemap_users' ) ),
+				self::section( __( 'Search engines', 'easyq' ), array( self::row( __( 'Sitemaps', 'easyq' ), array( 'sitemap_users' ) ) ) ),
 			),
 			'lists'       => array(
-				self::section( __( 'Page sizes', 'easyq' ), array( 'page_size_qs', 'page_size_activity', 'page_size_tags', 'page_size_users', 'search_provider' ) ),
-				self::section( __( 'Hot questions', 'easyq' ), array( 'hot_weight_q_age', 'hot_weight_a_age', 'hot_weight_answers', 'hot_weight_votes', 'hot_weight_views' ) ),
+				self::section( '', array( self::row( __( 'Items per page', 'easyq' ), array( 'page_size_qs', 'page_size_activity', 'page_size_tags', 'page_size_users' ) ), 'search_provider' ) ),
+				self::section(
+					__( 'Hot questions', 'easyq' ),
+					array( self::row( __( 'Weights', 'easyq' ), array( 'hot_weight_q_age', 'hot_weight_a_age', 'hot_weight_answers', 'hot_weight_votes', 'hot_weight_views' ) ) ),
+					__( 'How much each of these counts towards the hotness of a question.', 'easyq' )
+				),
 			),
 			'feeds'       => array(
 				self::section(
@@ -210,7 +214,7 @@ final class Settings_Layout {
 						self::row( __( 'Flags', 'easyq' ), array( 'flagging_of_posts', 'flagging_hide_after' ) ),
 					)
 				),
-				self::section( __( 'IP addresses', 'easyq' ), array( 'block_ips_write', 'ip_anonymize' ) ),
+				self::section( __( 'IP addresses', 'easyq' ), array( 'block_ips_write', self::row( __( 'Storage', 'easyq' ), array( 'ip_anonymize' ) ) ) ),
 				self::section(
 					__( 'Rate limits', 'easyq' ),
 					array(
@@ -222,7 +226,8 @@ final class Settings_Layout {
 						self::row( __( 'Uploads', 'easyq' ), array( 'max_rate_ip_uploads', 'max_rate_user_uploads' ) ),
 						self::row( __( 'Messages', 'easyq' ), array( 'max_rate_ip_messages', 'max_rate_user_messages' ) ),
 						self::row( __( 'Accounts', 'easyq' ), array( 'max_rate_ip_registers', 'max_rate_ip_logins' ) ),
-					)
+					),
+					__( 'How often each IP address or user may do something, per hour; 0 blocks it.', 'easyq' )
 				),
 			),
 			default       => array(),
