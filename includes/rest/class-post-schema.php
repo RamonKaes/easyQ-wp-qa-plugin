@@ -174,6 +174,25 @@ final class Post_Schema {
 			);
 		}
 
+		$properties += array(
+			'ip'     => array(
+				'description' => __( 'IP address of an anonymous author; only for users who may see IP addresses.', 'easyq' ),
+				'type'        => 'string',
+				'readonly'    => true,
+			),
+			'queued' => array(
+				'description' => __( 'Whether the new post waits for approval; only in the response to creating it.', 'easyq' ),
+				'type'        => 'boolean',
+				'readonly'    => true,
+			),
+		);
+
+		// Contexts as for core posts: what identifies a post also when it is embedded, the rest in view and edit.
+		$embed = array( 'id', 'type', 'status', 'parent', 'question', 'date_gmt', 'author', 'excerpt', 'title' );
+		foreach ( array_keys( $properties ) as $name ) {
+			$properties[ $name ]['context'] = in_array( $name, $embed, true ) ? array( 'view', 'edit', 'embed' ) : array( 'view', 'edit' );
+		}
+
 		return array(
 			'$schema'    => 'http://json-schema.org/draft-04/schema#',
 			'title'      => 'easyq-' . $type,

@@ -36,11 +36,12 @@ final class REST_API {
 			new Questions_Controller(),
 			new Answers_Controller(),
 			new Comments_Controller(),
-			new Actions_Controller(),
-			new Moderation_Controller(),
+			new Posts_Controller(),
+			new IPs_Controller(),
 			new User_Fields_Controller(),
 			new Tools_Controller(),
-			new Taxonomy_Controller(),
+			new Categories_Controller(),
+			new Tags_Controller(),
 			new Users_Controller(),
 		);
 

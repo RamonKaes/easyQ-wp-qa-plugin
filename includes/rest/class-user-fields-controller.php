@@ -61,6 +61,7 @@ final class User_Fields_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_fields' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
+					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -68,7 +69,7 @@ final class User_Fields_Controller extends Controller {
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->field_args( true ),
 				),
-				'schema' => array( Schemas::class, 'user_field' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -80,6 +81,7 @@ final class User_Fields_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_field' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
+					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
@@ -92,7 +94,7 @@ final class User_Fields_Controller extends Controller {
 					'callback'            => array( $this, 'delete_field' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 				),
-				'schema' => array( Schemas::class, 'user_field' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 	}
@@ -124,7 +126,7 @@ final class User_Fields_Controller extends Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_fields( $request ): WP_REST_Response {
-		return new WP_REST_Response( array_map( array( self::class, 'format' ), array_values( Services::user_fields()->all() ) ) );
+		return new WP_REST_Response( $this->collection( Services::user_fields()->all(), $request ) );
 	}
 
 	/**
@@ -139,7 +141,7 @@ final class User_Fields_Controller extends Controller {
 	public function get_field( $request ): WP_REST_Response|WP_Error {
 		$field = Services::user_fields()->find( (int) self::int_param( $request, 'id' ) );
 
-		return null === $field ? REST_Errors::not_found() : new WP_REST_Response( self::format( $field ) );
+		return null === $field ? REST_Errors::not_found() : $this->prepare_item_for_response( $field, $request );
 	}
 
 	/**
@@ -173,7 +175,11 @@ final class User_Fields_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$response = new WP_REST_Response( self::format( $field ), 201 );
+		$response = $this->prepare_item_for_response( $field, $request );
+		if ( $response instanceof WP_Error ) {
+			return $response;
+		}
+		$response->set_status( 201 );
 		$response->header( 'Location', rest_url( self::NAMESPACE . '/user-fields/' . $result ) );
 
 		return $response;
@@ -213,7 +219,7 @@ final class User_Fields_Controller extends Controller {
 
 		$updated = $fields->find( $field->id );
 
-		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( self::format( $updated ) );
+		return null === $updated ? REST_Errors::not_found() : $this->prepare_item_for_response( $updated, $request );
 	}
 
 	/**
@@ -231,12 +237,13 @@ final class User_Fields_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
+		$previous = $this->prepare_item_for_response( $field, $request );
 		Services::user_fields()->delete( $field->id );
 
 		return new WP_REST_Response(
 			array(
 				'deleted'  => true,
-				'previous' => self::format( $field ),
+				'previous' => $previous instanceof WP_REST_Response ? $previous->get_data() : null,
 			)
 		);
 	}
@@ -347,5 +354,34 @@ final class User_Fields_Controller extends Controller {
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Prepares a profile field for the response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed           $item    Field.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		if ( ! $item instanceof User_Field ) {
+			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
+		}
+
+		return $this->respond_with( self::format( $item ), $request );
+	}
+
+	/**
+	 * Builds the schema of a profile field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function item_schema(): array {
+		return Schemas::user_field();
 	}
 }

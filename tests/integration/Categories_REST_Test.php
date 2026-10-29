@@ -11,7 +11,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 
 /**
- * @covers \EasyQ\REST\Taxonomy_Controller
+ * @covers \EasyQ\REST\Categories_Controller
  */
 final class Categories_REST_Test extends REST_Test_Case {
 

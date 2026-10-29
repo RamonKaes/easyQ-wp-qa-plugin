@@ -111,15 +111,12 @@ final class Comments_Controller extends Controller {
 		}
 
 		$permissions = Services::permissions();
-		$items       = array();
+		$comments    = array_filter(
+			Services::posts()->children( $parent->id ),
+			static fn ( Post $child ): bool => Post::COMMENT === $child->base_type() && $permissions->post_rules( $child, $actor )['viewable']
+		);
 
-		foreach ( Services::posts()->children( $parent->id ) as $child ) {
-			if ( Post::COMMENT === $child->base_type() && $permissions->post_rules( $child, $actor )['viewable'] ) {
-				$items[] = $this->formatter()->format( $child, $actor );
-			}
-		}
-
-		return new WP_REST_Response( $items );
+		return new WP_REST_Response( $this->collection( $comments, $request ) );
 	}
 
 	/**
@@ -138,9 +135,7 @@ final class Comments_Controller extends Controller {
 			return $comment;
 		}
 
-		$context = 'edit' === $request->get_param( 'context' ) ? 'edit' : 'view';
-
-		return new WP_REST_Response( $this->formatter()->format( $comment, $actor, $context ) );
+		return $this->respond_with_post( $comment, $actor, $request );
 	}
 
 	/**
@@ -206,10 +201,7 @@ final class Comments_Controller extends Controller {
 			return new WP_Error( 'easyq_not_created', __( 'The comment could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
-		$response = new WP_REST_Response( $this->formatter()->format( $comment, $author['actor'], 'edit' ) + array( 'queued' => $queued ), 201 );
-		$response->header( 'Location', rest_url( sprintf( '%s/%s/%d', $this->namespace, $this->rest_base, $id ) ) );
-
-		return $response;
+		return $this->created_post( $comment, $author['actor'], $queued, $this->rest_base . '/' . $id, $request );
 	}
 
 	/**
@@ -282,22 +274,19 @@ final class Comments_Controller extends Controller {
 		Services::post_service()->edit_comment( $actor, $comment, $question, $parent, $content, $format, $notify, null, $remoderate, self::bool_param( $request, 'silent' ) );
 
 		$updated = Services::posts()->find( $comment->id );
+		$request->set_param( 'context', 'edit' );
 
-		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
+		return null === $updated ? REST_Errors::not_found() : $this->respond_with_post( $updated, $actor, $request );
 	}
 
 	/**
-	 * Returns the schema of a comment.
+	 * Builds the schema of a comment.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<mixed>
+	 * @return array<string, mixed>
 	 */
-	public function get_item_schema(): array {
-		if ( ! $this->schema ) {
-			$this->schema = Post_Schema::get( 'comment' );
-		}
-
-		return $this->add_additional_fields_schema( $this->schema );
+	protected function item_schema(): array {
+		return Post_Schema::get( 'comment' );
 	}
 }

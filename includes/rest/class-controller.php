@@ -50,6 +50,187 @@ abstract class Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Returns the schema of the items of the controller.
+	 *
+	 * Cached in `$this->schema`, as core caches it since WordPress 5.3, with the fields
+	 * that other plugins add through `register_rest_field()`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_item_schema(): array {
+		if ( ! $this->schema ) {
+			$this->schema = $this->item_schema();
+		}
+
+		/**
+		 * Schema with the fields of `register_rest_field()`.
+		 *
+		 * @var array<string, mixed> $schema
+		 */
+		$schema = $this->add_additional_fields_schema( $this->schema );
+
+		return $schema;
+	}
+
+	/**
+	 * Builds the schema of the items of the controller.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	abstract protected function item_schema(): array;
+
+	/**
+	 * Turns the data of an item into a response, as core controllers do: with the fields the
+	 * request asks for (`_fields`, also for requests inside WordPress, which the server does
+	 * not filter), the fields of `register_rest_field()`, and without the fields the context
+	 * does not include.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $data    Data of the item.
+	 * @param WP_REST_Request      $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response
+	 */
+	protected function respond_with( array $data, WP_REST_Request $request ): WP_REST_Response {
+		$fields = $this->get_fields_for_response( $request );
+		$data   = array_filter( $data, static fn ( string $field ): bool => rest_is_field_included( $field, $fields ), ARRAY_FILTER_USE_KEY );
+		$data   = $this->add_additional_fields_to_object( $data, $request );
+
+		return new WP_REST_Response( $this->filter_response_by_context( $data, self::context( $request ) ) );
+	}
+
+	/**
+	 * Prepares a post for the response; controllers of other items override this.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed           $item    Post.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		if ( ! $item instanceof Post ) {
+			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
+		}
+
+		return $this->respond_with_post( $item, $this->actor(), $request );
+	}
+
+	/**
+	 * Returns the response for a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post                 $post     Post.
+	 * @param Actor                $actor    Who requests the post.
+	 * @param WP_REST_Request      $request  Request.
+	 * @param Post[]               $children Children of the post, for the rules about deleting and answering.
+	 * @param array<string, mixed> $extra    Further fields, e.g. `queued` after creating the post.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response
+	 */
+	protected function respond_with_post( Post $post, Actor $actor, WP_REST_Request $request, array $children = array(), array $extra = array() ): WP_REST_Response {
+		return $this->respond_with( $this->formatter()->format( $post, $actor, self::context( $request ), $children ) + $extra, $request );
+	}
+
+	/**
+	 * Returns the response for a created post: status 201, the `Location` header and the edit context, as core responds.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post            $post    Post.
+	 * @param Actor           $actor   Author.
+	 * @param bool            $queued  Whether the post waits for approval.
+	 * @param string          $route   Route of the post below the namespace, e.g. `questions/5`.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response
+	 */
+	protected function created_post( Post $post, Actor $actor, bool $queued, string $route, WP_REST_Request $request ): WP_REST_Response {
+		$request->set_param( 'context', 'edit' );
+		$response = $this->respond_with_post( $post, $actor, $request, array(), array( 'queued' => $queued ) );
+		$response->set_status( 201 );
+		$response->header( 'Location', rest_url( $this->namespace . '/' . $route ) );
+
+		return $response;
+	}
+
+	/**
+	 * Returns the prepared items of a list.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<mixed>    $items   Items.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return list<mixed>
+	 */
+	protected function collection( array $items, WP_REST_Request $request ): array {
+		$data = array();
+		foreach ( $items as $item ) {
+			$response = $this->prepare_item_for_response( $item, $request );
+			if ( $response instanceof WP_REST_Response ) {
+				$data[] = $this->prepare_response_for_collection( $response );
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Returns the context of a request, `view` if it names none.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return string
+	 */
+	protected static function context( WP_REST_Request $request ): string {
+		$context = $request->get_param( 'context' );
+
+		return is_string( $context ) && '' !== $context ? $context : 'view';
+	}
+
+	/**
+	 * Whether a request asks for items as they are embedded in other responses.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return bool
+	 */
+	protected static function embedded( WP_REST_Request $request ): bool {
+		return 'embed' === self::context( $request );
+	}
+
+	/**
+	 * Returns the arguments of a route that reads items: the context, as core adds it to such routes.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $default_context Default context.
+	 * @return array<string, array<string, mixed>>
+	 */
+	protected function read_args( string $default_context = 'view' ): array {
+		/**
+		 * The argument as core describes it, with the contexts of the schema.
+		 *
+		 * @var array<string, mixed> $context
+		 */
+		$context = $this->get_context_param( array( 'default' => $default_context ) );
+
+		return array( 'context' => $context );
+	}
+
+	/**
 	 * Returns the actor of the request.
 	 *
 	 * @since 0.1.0

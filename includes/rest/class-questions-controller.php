@@ -86,7 +86,7 @@ final class Questions_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'similar' ),
+				'schema' => array( $this, 'get_similar_schema' ),
 			)
 		);
 
@@ -154,10 +154,7 @@ final class Questions_Controller extends Controller {
 			)
 		);
 
-		$actor = $this->actor();
-		$items = array_map( fn ( Post $post ): array => $this->formatter()->format( $post, $actor ), $result['posts'] );
-
-		return $this->paginated( $items, $result['total'], $per_page );
+		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page );
 	}
 
 	/**
@@ -176,9 +173,7 @@ final class Questions_Controller extends Controller {
 			return $question;
 		}
 
-		$context = 'edit' === $request->get_param( 'context' ) ? 'edit' : 'view';
-
-		return new WP_REST_Response( $this->formatter()->format( $question, $actor, $context, Services::posts()->children( $question->id ) ) );
+		return $this->respond_with_post( $question, $actor, $request, Services::posts()->children( $question->id ) );
 	}
 
 	/**
@@ -257,7 +252,7 @@ final class Questions_Controller extends Controller {
 			null === $extra ? null : sanitize_textarea_field( $extra )
 		);
 
-		return $this->created( $id, $author['actor'], $queued );
+		return $this->created( $id, $author['actor'], $queued, $request );
 	}
 
 	/**
@@ -354,8 +349,9 @@ final class Questions_Controller extends Controller {
 		}
 
 		$updated = Services::posts()->find( $question->id );
+		$request->set_param( 'context', 'edit' );
 
-		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
+		return null === $updated ? REST_Errors::not_found() : $this->respond_with_post( $updated, $actor, $request );
 	}
 
 	/**
@@ -400,16 +396,18 @@ final class Questions_Controller extends Controller {
 
 			if ( $check ) {
 				$min_score = self::min_score( Options::get_int( 'posting', 'match_ask_check_qs' ) );
-				$actor     = $this->actor();
+				$similar   = array();
 
 				foreach ( array_slice( $results, 0, Options::get_int( 'posting', 'page_size_ask_check_qs' ) ) as $result ) {
 					if ( $result->score < $min_score ) {
 						break;
 					}
 					if ( isset( $posts[ $result->question_id ] ) ) {
-						$questions[] = $this->formatter()->format( $posts[ $result->question_id ], $actor );
+						$similar[] = $posts[ $result->question_id ];
 					}
 				}
+
+				$questions = $this->collection( $similar, $request );
 			}
 		}
 
@@ -452,20 +450,25 @@ final class Questions_Controller extends Controller {
 	}
 
 	/**
-	 * Returns the schema of a question.
+	 * Builds the schema of a question.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<mixed>
+	 * @return array<string, mixed>
 	 */
-	public function get_item_schema(): array {
-		if ( $this->schema ) {
-			return $this->add_additional_fields_schema( $this->schema );
-		}
+	protected function item_schema(): array {
+		return Post_Schema::get( 'question' );
+	}
 
-		$this->schema = Post_Schema::get( 'question' );
-
-		return $this->add_additional_fields_schema( $this->schema );
+	/**
+	 * Returns the schema of the response with similar questions.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_similar_schema(): array {
+		return Schemas::similar();
 	}
 
 	/**
@@ -508,21 +511,20 @@ final class Questions_Controller extends Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int          $id     Post ID, 0 on failure.
-	 * @param \EasyQ\Actor $actor  Author.
-	 * @param bool         $queued Whether the post waits for moderation.
+	 * @param int             $id      Post ID, 0 on failure.
+	 * @param \EasyQ\Actor    $actor   Author.
+	 * @param bool            $queued  Whether the post waits for moderation.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	private function created( int $id, \EasyQ\Actor $actor, bool $queued ): WP_REST_Response|WP_Error {
+	private function created( int $id, \EasyQ\Actor $actor, bool $queued, WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $post ) {
 			return new WP_Error( 'easyq_not_created', __( 'The question could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
-		$response = new WP_REST_Response( $this->formatter()->format( $post, $actor, 'edit' ) + array( 'queued' => $queued ), 201 );
-		$response->header( 'Location', rest_url( sprintf( '%s/%s/%d', $this->namespace, $this->rest_base, $id ) ) );
-
-		return $response;
+		return $this->created_post( $post, $actor, $queued, $this->rest_base . '/' . $id, $request );
 	}
 
 	/**

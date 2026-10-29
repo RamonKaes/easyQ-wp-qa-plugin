@@ -209,6 +209,25 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertSame( 'success', Flash::current()['type'] ?? null );
 	}
 
+	public function test_deleting_an_answer_goes_to_its_question(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$this->login( 'editor' );
+		Services::post_service()->set_answer_status( Actor::current(), $answer, $question, Post::STATUS_HIDDEN );
+
+		$url = $this->submit(
+			'action',
+			array(
+				'easyq_post'   => (string) $answer->id,
+				'easyq_action' => 'delete',
+			)
+		);
+
+		$this->assertNull( Services::posts()->find( $answer->id ) );
+		$this->assertStringStartsWith( URLs::question( $question ), $url );
+		$this->assertSame( 'success', Flash::current()['type'] ?? null );
+	}
+
 	public function test_saves_the_account(): void {
 		$user = $this->login();
 

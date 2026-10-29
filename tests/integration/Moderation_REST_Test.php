@@ -15,7 +15,8 @@ use EasyQ\Users\Levels;
 use EasyQ\Users\Permits;
 
 /**
- * @covers \EasyQ\REST\Moderation_Controller
+ * @covers \EasyQ\REST\Posts_Controller
+ * @covers \EasyQ\REST\IPs_Controller
  * @covers \EasyQ\Limits\IP_Blocks
  */
 final class Moderation_REST_Test extends REST_Test_Case {

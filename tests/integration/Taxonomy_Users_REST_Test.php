@@ -12,7 +12,8 @@ use EasyQ\Users\Permits;
 use EasyQ\Users\User_Field;
 
 /**
- * @covers \EasyQ\REST\Taxonomy_Controller
+ * @covers \EasyQ\REST\Categories_Controller
+ * @covers \EasyQ\REST\Tags_Controller
  * @covers \EasyQ\REST\Users_Controller
  * @covers \EasyQ\Posts\Tags
  */

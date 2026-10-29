@@ -60,7 +60,7 @@ final class Tools_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'tool_batch' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 	}
@@ -101,6 +101,17 @@ final class Tools_Controller extends Controller {
 
 		return null === $result
 			? REST_Errors::invalid( new WP_Error( 'step', __( 'The tool has no such step.', 'easyq' ) ) )
-			: new WP_REST_Response( $result );
+			: $this->respond_with( $result, $request );
+	}
+
+	/**
+	 * Builds the schema of a batch of a tool.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function item_schema(): array {
+		return Schemas::tool_batch();
 	}
 }

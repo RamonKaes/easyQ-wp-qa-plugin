@@ -13,9 +13,9 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 
 /**
- * @covers \EasyQ\REST\Actions_Controller
+ * @covers \EasyQ\REST\Posts_Controller
  */
-final class Actions_REST_Test extends REST_Test_Case {
+final class Posts_REST_Test extends REST_Test_Case {
 
 	public function test_votes(): void {
 		$question = $this->ask( $this->user() );
@@ -78,13 +78,13 @@ final class Actions_REST_Test extends REST_Test_Case {
 		$this->assertSame( 'normal', $this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/reshow' ) )['status'] );
 
 		$this->request( 'POST', '/posts/' . $question->id . '/actions/hide' );
-		$this->assertSame(
-			array(
-				'deleted' => true,
-				'id'      => $question->id,
-			),
-			$this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/delete' ) )
-		);
+		// As core responds to deleting: `deleted` and the item as it was.
+		$deleted = $this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/delete' ) );
+		$this->assertSame( array( 'deleted', 'previous' ), array_keys( $deleted ) );
+		$this->assertTrue( $deleted['deleted'] );
+		$this->assertSame( $question->id, $deleted['previous']['id'] );
+		$this->assertSame( 'question', $deleted['previous']['type'] );
+		$this->assertSame( 'hidden', $deleted['previous']['status'] );
 		$this->assertNull( Services::posts()->find( $question->id ) );
 		$this->assertSame( 404, $this->request( 'POST', '/posts/' . $question->id . '/actions/delete' )->get_status() );
 	}

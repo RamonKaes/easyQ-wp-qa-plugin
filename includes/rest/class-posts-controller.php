@@ -1,6 +1,6 @@
 <?php
 /**
- * REST endpoints for actions on posts.
+ * REST endpoints for posts of any type: the moderation list, single posts, votes and actions.
  *
  * @package easyQ
  * @since 0.1.0
@@ -9,7 +9,9 @@
 namespace EasyQ\REST;
 
 use EasyQ\Actor;
+use EasyQ\Capabilities;
 use EasyQ\Limits\Limits;
+use EasyQ\Posts\Moderation_Query;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use WP_Error;
@@ -20,18 +22,30 @@ use WP_REST_Server;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Votes and performs moderation and other actions on posts.
+ * Lists posts for moderators, returns single posts, votes and performs moderation and other actions.
  *
  * Routes:
  *
+ * - `GET /easyq/v1/posts` with `view` and filters
+ * - `GET /easyq/v1/posts/{id}`
  * - `POST /easyq/v1/posts/{id}/vote` with `vote` = 1, 0 or -1
  * - `POST /easyq/v1/posts/{id}/actions/{action}`
  *
- * Every action responds with the changed post, or with the question if the post was deleted.
+ * Every action responds with the changed post, with its question if an answer or comment was
+ * converted or moved away, or, after deleting, with `deleted` and the `previous` post, as core does.
  *
  * @since 0.1.0
  */
-final class Actions_Controller extends Controller {
+final class Posts_Controller extends Controller {
+
+	/**
+	 * Route base.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected $rest_base = 'posts';
 
 	/**
 	 * Actions and the post rule that allows each.
@@ -66,14 +80,62 @@ final class Actions_Controller extends Controller {
 	public function register_routes(): void {
 		register_rest_route(
 			self::NAMESPACE,
+			'/posts',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( $this, 'get_posts' ),
+					'permission_callback' => array( $this, 'list_permissions_check' ),
+					'args'                => array(
+						'view'     => array(
+							'description' => __( 'All posts, or those awaiting approval, flagged, hidden or closed.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => Moderation_Query::VIEWS,
+							'default'     => 'all',
+						),
+						'type'     => array(
+							'description' => __( 'Only questions, answers or comments.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array_keys( Moderation_Query::TYPES ),
+						),
+						'category' => array(
+							'description' => __( 'Only posts in this category and its subcategories.', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'author'   => array(
+							'description' => __( 'Only posts by this user.', 'easyq' ),
+							'type'        => 'integer',
+						),
+						'ip'       => array(
+							'description' => __( 'Only posts created from this IP address.', 'easyq' ),
+							'type'        => 'string',
+						),
+						'search'   => array(
+							'description' => __( 'Only posts whose title or text contains this.', 'easyq' ),
+							'type'        => 'string',
+						),
+						'month'    => array(
+							'description' => __( 'Only posts created in this month, as YYYYMM.', 'easyq' ),
+							'type'        => 'string',
+							'pattern'     => '^\d{6}$',
+						),
+					) + $this->pagination_args( 20 ) + $this->read_args(),
+				),
+				'schema' => array( $this, 'get_public_item_schema' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/posts/(?P<id>\d+)',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_post' ),
 					'permission_callback' => '__return_true',
+					'args'                => $this->read_args(),
 				),
-				'schema' => array( Schemas::class, 'post' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -94,7 +156,7 @@ final class Actions_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'post' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -133,9 +195,57 @@ final class Actions_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'post' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
+	}
+
+	/**
+	 * Checks whether the current user may list posts: moderators, and users who may
+	 * see IP addresses when the list is limited to one address.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function list_permissions_check( $request ): bool|WP_Error {
+		if ( current_user_can( Capabilities::MODERATE ) || ( $request->has_param( 'ip' ) && current_user_can( 'easyq_view_ips' ) ) ) {
+			return true;
+		}
+
+		return REST_Errors::permission( is_user_logged_in() ? 'level' : 'login' );
+	}
+
+	/**
+	 * Lists posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response
+	 */
+	public function get_posts( $request ): WP_REST_Response {
+		$actor    = $this->actor();
+		$per_page = self::int_param( $request, 'per_page' ) ?? 20;
+		$result   = Services::moderation_query()->find(
+			$actor,
+			array(
+				'view'        => self::string_param( $request, 'view' ),
+				'type'        => self::string_param( $request, 'type' ),
+				'category_id' => self::int_param( $request, 'category' ),
+				'user_id'     => self::int_param( $request, 'author' ),
+				'ip'          => self::string_param( $request, 'ip' ),
+				'search'      => self::string_param( $request, 'search' ),
+				'month'       => self::string_param( $request, 'month' ),
+				'page'        => self::int_param( $request, 'page' ),
+				'per_page'    => $per_page,
+			)
+		);
+
+		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page );
 	}
 
 	/**
@@ -151,7 +261,7 @@ final class Actions_Controller extends Controller {
 		$actor = $this->actor();
 		$post  = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor );
 
-		return $post instanceof WP_Error ? $post : new WP_REST_Response( $this->formatter()->format( $post, $actor ) );
+		return $post instanceof WP_Error ? $post : $this->respond_with_post( $post, $actor, $request );
 	}
 
 	/**
@@ -210,7 +320,7 @@ final class Actions_Controller extends Controller {
 			return REST_Errors::with_status( $result, 403 );
 		}
 
-		return $this->respond( $post->id, $actor );
+		return $this->respond( $post->id, $actor, $request );
 	}
 
 	/**
@@ -269,6 +379,8 @@ final class Actions_Controller extends Controller {
 
 		$parent_post = null === $post->parent_id ? $question : ( Services::posts()->find( $post->parent_id ) ?? $question );
 		$action      = (string) self::string_param( $request, 'action' );
+		// Core responds to deleting with the item as it was.
+		$previous = 'delete' === $action ? $this->respond_with_post( $post, $actor, $request )->get_data() : null;
 
 		$result = match ( $action ) {
 			'select', 'unselect' => $this->select( $actor, $post, 'select' === $action ? self::int_param( $request, 'answer' ) : null ),
@@ -291,17 +403,16 @@ final class Actions_Controller extends Controller {
 			return $result;
 		}
 
-		// A deleted question leaves nothing to respond with, as core does for deleted items.
-		if ( 'delete' === $action && $post->id === $question->id ) {
+		if ( null !== $previous ) {
 			return new WP_REST_Response(
 				array(
-					'deleted' => true,
-					'id'      => $post->id,
+					'deleted'  => true,
+					'previous' => $previous,
 				)
 			);
 		}
 
-		return $this->respond( null === Services::posts()->find( $post->id ) ? $question->id : $post->id, $actor );
+		return $this->respond( null === Services::posts()->find( $post->id ) ? $question->id : $post->id, $actor, $request );
 	}
 
 	/**
@@ -524,14 +635,27 @@ final class Actions_Controller extends Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int   $id    Post ID.
-	 * @param Actor $actor The actor.
+	 * @param int             $id      Post ID.
+	 * @param Actor           $actor   The actor.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	private function respond( int $id, Actor $actor ): WP_REST_Response|WP_Error {
+	private function respond( int $id, Actor $actor, WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		Services::posts()->forget( $id );
 		$post = Services::posts()->find( $id );
 
-		return null === $post ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $post, $actor ) );
+		return null === $post ? REST_Errors::not_found() : $this->respond_with_post( $post, $actor, $request );
+	}
+
+	/**
+	 * Builds the schema of a post of any type.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function item_schema(): array {
+		return Post_Schema::get( 'post' );
 	}
 }

@@ -12,7 +12,7 @@ use EasyQ\Actor;
 use EasyQ\Capabilities;
 use EasyQ\Posts\Moderation_Query;
 use EasyQ\REST\Controller;
-use EasyQ\REST\Moderation_Controller;
+use EasyQ\REST\IPs_Controller;
 use EasyQ\Services;
 use EasyQ\Limits\IP_Blocks;
 use WP_Admin_Bar;
@@ -357,7 +357,7 @@ final class Posts_Screen {
 				: esc_html( sprintf( __( 'This address is blocked by: %s', 'easyq' ), implode( ', ', $rules ) ) )
 		);
 
-		if ( ! Moderation_Controller::can_block( $actor ) ) {
+		if ( ! IPs_Controller::can_block( $actor ) ) {
 			return;
 		}
 
@@ -367,7 +367,7 @@ final class Posts_Screen {
 			printf( '<button type="submit" class="button" name="easyq_ip_action" value="block">%s</button>', esc_html__( 'Block this IP address', 'easyq' ) );
 		} else {
 			printf( '<button type="submit" class="button" name="easyq_ip_action" value="unblock">%s</button>', esc_html__( 'Unblock this IP address', 'easyq' ) );
-			if ( Moderation_Controller::can_hide_all( $actor ) && array() !== ( new IP_Blocks() )->visible_post_ids( $ip ) ) {
+			if ( IPs_Controller::can_hide_all( $actor ) && array() !== ( new IP_Blocks() )->visible_post_ids( $ip ) ) {
 				printf( ' <button type="submit" class="button" name="easyq_ip_action" value="hide-all">%s</button>', esc_html__( 'Hide all posts from this IP address', 'easyq' ) );
 			}
 		}

@@ -138,6 +138,82 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$this->assert_matches( $similar, '/questions/similar' );
 	}
 
+	public function test_the_context_selects_the_fields_as_in_core(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author, 'Question in contexts', 'Text in contexts.' );
+
+		// Lists show users as they are embedded; single users with their profile.
+		$listed = $this->data( $this->request( 'GET', '/users' ) )[0];
+		$this->assertArrayHasKey( 'name', $listed );
+		$this->assertArrayNotHasKey( 'counts', $listed );
+		$this->assertArrayHasKey( 'counts', $this->data( $this->request( 'GET', '/users/' . $author->user_id ) ) );
+		$this->assertArrayNotHasKey( 'counts', $this->data( $this->request( 'GET', '/users/' . $author->user_id, array( 'context' => 'embed' ) ) ) );
+
+		$embedded = $this->data( $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'embed' ) ) );
+		$this->assertArrayHasKey( 'title', $embedded );
+		$this->assertArrayNotHasKey( 'votes', $embedded );
+		$this->assertArrayNotHasKey( 'content', $embedded );
+
+		// The raw text only in the edit context, and only for users who may edit.
+		wp_set_current_user( (int) $author->user_id );
+		$this->assertArrayNotHasKey( 'raw', $this->data( $this->request( 'GET', '/questions/' . $question->id ) )['content'] );
+		$this->assertSame( 'Text in contexts.', $this->data( $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) ) )['content']['raw'] );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertArrayNotHasKey( 'raw', $this->data( $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) ) )['content'] );
+
+		// Contexts the schema does not name are refused, as core refuses them.
+		$this->assertSame( 400, $this->request( 'GET', '/categories', array( 'context' => 'edit' ) )->get_status() );
+	}
+
+	public function test_fields_of_register_rest_field_and_fields_parameter_work_as_in_core(): void {
+		$category = Services::categories()->create( null, 'Software' );
+		$this->assertIsInt( $category );
+		register_rest_field(
+			'easyq-category',
+			'color',
+			array(
+				'get_callback' => static fn ( array $item ): string => 'red-' . $item['id'],
+				'schema'       => array(
+					'description' => 'Color of the category.',
+					'type'        => 'string',
+					'context'     => array( 'view' ),
+				),
+			)
+		);
+
+		$this->assertSame( 'red-' . $category, $this->data( $this->request( 'GET', '/categories/' . $category ) )['color'] );
+		$this->assertArrayHasKey( 'color', $this->schema( '/categories/' . $category )['properties'] );
+		$this->assertSame( array( 'id', 'title' ), array_keys( $this->data( rest_get_server()->dispatch( self::with_fields( '/categories/' . $category, 'id,title' ) ) ) ) );
+	}
+
+	public function test_deleting_responds_with_the_previous_item_as_in_core(): void {
+		wp_set_current_user( $this->administrator() );
+		$category = Services::categories()->create( null, 'Gone soon' );
+		$this->assertIsInt( $category );
+		$schema = $this->schema( '/categories/' . $category );
+
+		$deleted = $this->data( $this->request( 'DELETE', '/categories/' . $category ) );
+
+		$this->assertTrue( $deleted['deleted'] );
+		$this->assertIsArray( $deleted['previous'] );
+		$this->assertSame( 'Gone soon', $deleted['previous']['title'] );
+		$this->assertSame( array(), $this->problems( $deleted['previous'], $schema ) );
+	}
+
+	/**
+	 * Returns a GET request with the `_fields` parameter.
+	 *
+	 * @param string $route  Route below easyq/v1.
+	 * @param string $fields Fields, separated by commas.
+	 * @return WP_REST_Request<array<string, mixed>>
+	 */
+	private static function with_fields( string $route, string $fields ): WP_REST_Request {
+		$request = new WP_REST_Request( 'GET', '/easyq/v1' . $route );
+		$request->set_param( '_fields', $fields );
+
+		return $request;
+	}
+
 	public function test_the_check_finds_undescribed_and_mistyped_values(): void {
 		$schema = Schemas::tag();
 

@@ -170,7 +170,12 @@ final class Form_Handler {
 			return $this->with_flash( $back, Flash::store( 'error', $error->get_error_message(), $form, $fields, $values ) );
 		}
 
-		$id      = is_array( $data ) && is_numeric( $data['id'] ?? null ) ? (int) $data['id'] : $target;
+		$id = is_array( $data ) && is_numeric( $data['id'] ?? null ) ? (int) $data['id'] : $target;
+		// After deleting, as core responds with the `previous` post: its question, unless it was the question.
+		$previous = is_array( $data ) && true === ( $data['deleted'] ?? false ) && is_array( $data['previous'] ?? null ) ? $data['previous'] : null;
+		if ( null !== $previous && is_numeric( $previous['question'] ?? null ) && (int) $previous['question'] !== $target ) {
+			$id = (int) $previous['question'];
+		}
 		$queued  = is_array( $data ) && true === ( $data['queued'] ?? false );
 		$message = $this->success_message( $form, $queued );
 

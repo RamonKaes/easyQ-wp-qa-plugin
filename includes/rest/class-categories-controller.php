@@ -1,6 +1,6 @@
 <?php
 /**
- * REST endpoints for categories and tags.
+ * REST endpoints for categories.
  *
  * @package easyQ
  * @since 0.1.0
@@ -10,9 +10,7 @@ namespace EasyQ\REST;
 
 use EasyQ\Capabilities;
 use EasyQ\Categories\Category;
-use EasyQ\Posts\Tags;
 use EasyQ\Services;
-use EasyQ\Settings\Options;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -21,7 +19,7 @@ use WP_REST_Server;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Lists categories and tags, and lets users who manage easyQ change the categories.
+ * Lists categories, and lets users who manage easyQ change them.
  *
  * Routes:
  *
@@ -29,11 +27,21 @@ defined( 'ABSPATH' ) || exit;
  * - `POST /easyq/v1/categories`
  * - `GET`, `PUT`/`PATCH` and `DELETE /easyq/v1/categories/{id}`
  * - `POST /easyq/v1/categories/{id}/reassign`, with the ID 0 for questions without a category
- * - `GET /easyq/v1/tags`, optionally with `search` for a prefix
+ *
+ * Tags are in Tags_Controller.
  *
  * @since 0.1.0
  */
-final class Taxonomy_Controller extends Controller {
+final class Categories_Controller extends Controller {
+
+	/**
+	 * Route base.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected $rest_base = 'categories';
 
 	/**
 	 * Registers the routes.
@@ -54,7 +62,7 @@ final class Taxonomy_Controller extends Controller {
 							'description' => __( 'Only children of this category; 0 for top-level categories. Omit for all categories.', 'easyq' ),
 							'type'        => 'integer',
 						),
-					),
+					) + $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -62,7 +70,7 @@ final class Taxonomy_Controller extends Controller {
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->category_args( true ),
 				),
-				'schema' => array( Schemas::class, 'category' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -74,6 +82,7 @@ final class Taxonomy_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_category' ),
 					'permission_callback' => array( $this, 'view_permissions_check' ),
+					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
@@ -93,7 +102,7 @@ final class Taxonomy_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'category' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -114,27 +123,7 @@ final class Taxonomy_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'category_reassign' ),
-			)
-		);
-
-		register_rest_route(
-			self::NAMESPACE,
-			'/tags',
-			array(
-				array(
-					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_tags' ),
-					'permission_callback' => array( $this, 'view_permissions_check' ),
-					'args'                => array(
-						'search' => array(
-							'description' => __( 'Only tags starting with this text.', 'easyq' ),
-							'type'        => 'string',
-							'default'     => '',
-						),
-					) + $this->pagination_args( Options::get_int( 'lists', 'page_size_tags' ) ),
-				),
-				'schema' => array( Schemas::class, 'tag' ),
+				'schema' => array( $this, 'get_reassign_schema' ),
 			)
 		);
 	}
@@ -188,7 +177,7 @@ final class Taxonomy_Controller extends Controller {
 			$list = array_values( $categories->all() );
 		}
 
-		return new WP_REST_Response( array_map( array( $this, 'format_category' ), $list ) );
+		return new WP_REST_Response( $this->collection( $list, $request ) );
 	}
 
 	/**
@@ -203,7 +192,7 @@ final class Taxonomy_Controller extends Controller {
 	public function get_category( $request ): WP_REST_Response|WP_Error {
 		$category = Services::categories()->find( (int) self::int_param( $request, 'id' ) );
 
-		return null === $category ? REST_Errors::not_found() : new WP_REST_Response( $this->format_category( $category ) );
+		return null === $category ? REST_Errors::not_found() : $this->prepare_item_for_response( $category, $request );
 	}
 
 	/**
@@ -233,7 +222,11 @@ final class Taxonomy_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$response = new WP_REST_Response( $this->format_category( $category ), 201 );
+		$response = $this->prepare_item_for_response( $category, $request );
+		if ( $response instanceof WP_Error ) {
+			return $response;
+		}
+		$response->set_status( 201 );
 		$response->header( 'Location', rest_url( self::NAMESPACE . '/categories/' . $result ) );
 
 		return $response;
@@ -270,7 +263,7 @@ final class Taxonomy_Controller extends Controller {
 
 		$updated = $categories->find( $id );
 
-		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->format_category( $updated ) );
+		return null === $updated ? REST_Errors::not_found() : $this->prepare_item_for_response( $updated, $request );
 	}
 
 	/**
@@ -289,7 +282,8 @@ final class Taxonomy_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$result = $categories->delete( $category->id, self::parent_param( $request, 'reassign' ) );
+		$previous = $this->prepare_item_for_response( $category, $request );
+		$result   = $categories->delete( $category->id, self::parent_param( $request, 'reassign' ) );
 		if ( $result instanceof WP_Error ) {
 			return REST_Errors::invalid( $result );
 		}
@@ -297,7 +291,7 @@ final class Taxonomy_Controller extends Controller {
 		return new WP_REST_Response(
 			array(
 				'deleted'  => true,
-				'previous' => $this->format_category( $category ),
+				'previous' => $previous instanceof WP_REST_Response ? $previous->get_data() : null,
 			)
 		);
 	}
@@ -325,22 +319,6 @@ final class Taxonomy_Controller extends Controller {
 		}
 
 		return new WP_REST_Response( array( 'moved' => $moved ) );
-	}
-
-	/**
-	 * Lists tags.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param WP_REST_Request $request Request.
-	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
-	 */
-	public function get_tags( $request ): WP_REST_Response {
-		$per_page = self::int_param( $request, 'per_page' ) ?? 30;
-		$result   = ( new Tags() )->popular( (string) self::string_param( $request, 'search' ), self::int_param( $request, 'page' ) ?? 1, $per_page );
-
-		return $this->paginated( $result['tags'], $result['total'], $per_page );
 	}
 
 	/**
@@ -403,7 +381,7 @@ final class Taxonomy_Controller extends Controller {
 	 * @param Category $category Category.
 	 * @return array<string, mixed>
 	 */
-	public function format_category( Category $category ): array {
+	private function format_category( Category $category ): array {
 		return array(
 			'id'             => $category->id,
 			'parent'         => $category->parent_id,
@@ -414,5 +392,45 @@ final class Taxonomy_Controller extends Controller {
 			'position'       => $category->position,
 			'path'           => $category->path_slugs(),
 		);
+	}
+
+	/**
+	 * Prepares a category for the response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed           $item    Category.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		if ( ! $item instanceof Category ) {
+			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
+		}
+
+		return $this->respond_with( $this->format_category( $item ), $request );
+	}
+
+	/**
+	 * Builds the schema of a category.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function item_schema(): array {
+		return Schemas::category();
+	}
+
+	/**
+	 * Returns the schema of the response to moving questions to another category.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_reassign_schema(): array {
+		return Schemas::category_reassign();
 	}
 }

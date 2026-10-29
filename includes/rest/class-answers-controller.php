@@ -137,10 +137,7 @@ final class Answers_Controller extends Controller {
 
 		$per_page = self::int_param( $request, 'per_page' ) ?? 10;
 		$page     = self::int_param( $request, 'page' ) ?? 1;
-		$items    = array_map(
-			fn ( Post $answer ): array => $this->formatter()->format( $answer, $actor ),
-			array_slice( $answers, ( $page - 1 ) * $per_page, $per_page )
-		);
+		$items    = $this->collection( array_slice( $answers, ( $page - 1 ) * $per_page, $per_page ), $request );
 
 		return $this->paginated( $items, count( $answers ), $per_page );
 	}
@@ -161,9 +158,7 @@ final class Answers_Controller extends Controller {
 			return $answer;
 		}
 
-		$context = 'edit' === $request->get_param( 'context' ) ? 'edit' : 'view';
-
-		return new WP_REST_Response( $this->formatter()->format( $answer, $actor, $context, Services::posts()->children( $answer->id ) ) );
+		return $this->respond_with_post( $answer, $actor, $request, Services::posts()->children( $answer->id ) );
 	}
 
 	/**
@@ -228,10 +223,7 @@ final class Answers_Controller extends Controller {
 			return new WP_Error( 'easyq_not_created', __( 'The answer could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
-		$response = new WP_REST_Response( $this->formatter()->format( $answer, $author['actor'], 'edit' ) + array( 'queued' => $queued ), 201 );
-		$response->header( 'Location', rest_url( sprintf( '%s/%s/%d', $this->namespace, $this->rest_base, $id ) ) );
-
-		return $response;
+		return $this->created_post( $answer, $author['actor'], $queued, $this->rest_base . '/' . $id, $request );
 	}
 
 	/**
@@ -303,22 +295,19 @@ final class Answers_Controller extends Controller {
 		Services::post_service()->edit_answer( $actor, $answer, $question, $content, $format, $notify, null, $remoderate, self::bool_param( $request, 'silent' ) );
 
 		$updated = Services::posts()->find( $answer->id );
+		$request->set_param( 'context', 'edit' );
 
-		return null === $updated ? REST_Errors::not_found() : new WP_REST_Response( $this->formatter()->format( $updated, $actor, 'edit' ) );
+		return null === $updated ? REST_Errors::not_found() : $this->respond_with_post( $updated, $actor, $request );
 	}
 
 	/**
-	 * Returns the schema of an answer.
+	 * Builds the schema of an answer.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<mixed>
+	 * @return array<string, mixed>
 	 */
-	public function get_item_schema(): array {
-		if ( ! $this->schema ) {
-			$this->schema = Post_Schema::get( 'answer' );
-		}
-
-		return $this->add_additional_fields_schema( $this->schema );
+	protected function item_schema(): array {
+		return Post_Schema::get( 'answer' );
 	}
 }

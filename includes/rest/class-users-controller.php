@@ -63,9 +63,10 @@ final class Users_Controller extends Controller {
 							'enum'        => array_keys( User_Query::SORTS ),
 							'default'     => 'points',
 						),
-					) + $this->pagination_args( Options::get_int( 'lists', 'page_size_users' ) ),
+					// Lists show users as they are embedded, as core embeds authors: without profile fields and counts.
+					) + $this->pagination_args( Options::get_int( 'lists', 'page_size_users' ) ) + $this->read_args( 'embed' ),
 				),
-				'schema' => array( Schemas::class, 'user' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -77,6 +78,7 @@ final class Users_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_current_item' ),
 					'permission_callback' => array( $this, 'current_item_permissions_check' ),
+					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -95,7 +97,7 @@ final class Users_Controller extends Controller {
 						),
 					),
 				),
-				'schema' => array( Schemas::class, 'user' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 
@@ -107,8 +109,9 @@ final class Users_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'get_item_permissions_check' ),
+					'args'                => $this->read_args(),
 				),
-				'schema' => array( Schemas::class, 'user' ),
+				'schema' => array( $this, 'get_public_item_schema' ),
 			)
 		);
 	}
@@ -144,15 +147,9 @@ final class Users_Controller extends Controller {
 
 		cache_users( $found['ids'] );
 
-		$items = array();
-		foreach ( $found['ids'] as $id ) {
-			$user = get_userdata( $id );
-			if ( false !== $user ) {
-				$items[] = $this->format( $user, details: false );
-			}
-		}
+		$users = array_filter( array_map( 'get_userdata', $found['ids'] ) );
 
-		return $this->paginated( $items, $found['total'], $per_page );
+		return $this->paginated( $this->collection( $users, $request ), $found['total'], $per_page );
 	}
 
 	/**
@@ -183,7 +180,7 @@ final class Users_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		return new WP_REST_Response( $this->format( $user, details: true ) );
+		return $this->prepare_item_for_response( $user, $request );
 	}
 
 	/**
@@ -214,7 +211,7 @@ final class Users_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		return new WP_REST_Response( $this->format( $user, details: true, all_fields: true ) );
+		return $this->respond_with( $this->format( $user, ! self::embedded( $request ), all_fields: true ), $request );
 	}
 
 	/**
@@ -287,7 +284,7 @@ final class Users_Controller extends Controller {
 
 		Events::dispatch( 'u_save', array( 'user_id' => $user_id ), $actor );
 
-		return new WP_REST_Response( $this->format( $user, details: true, all_fields: true ) );
+		return $this->respond_with( $this->format( $user, ! self::embedded( $request ), all_fields: true ), $request );
 	}
 
 	/**
@@ -375,5 +372,34 @@ final class Users_Controller extends Controller {
 	 */
 	private function avatar_file( WP_REST_Request $request ): ?array {
 		return Avatars::file_entry( $request->get_file_params()['avatar'] ?? null );
+	}
+
+	/**
+	 * Prepares a user for the response; the `embed` context leaves out profile fields and counts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed           $item    User.
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		if ( ! $item instanceof WP_User ) {
+			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
+		}
+
+		return $this->respond_with( $this->format( $item, ! self::embedded( $request ) ), $request );
+	}
+
+	/**
+	 * Builds the schema of a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function item_schema(): array {
+		return Schemas::user();
 	}
 }

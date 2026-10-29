@@ -22,15 +22,22 @@ defined( 'ABSPATH' ) || exit;
 final class Schemas {
 
 	/**
-	 * Returns the schema of a post of any type, for lists and actions that mix them.
+	 * Contexts of most properties.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<string, mixed>
+	 * @var string[]
 	 */
-	public static function post(): array {
-		return Post_Schema::get( 'post' );
-	}
+	public const VIEW = array( 'view' );
+
+	/**
+	 * Contexts of the properties that identify an item, also when it is embedded.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string[]
+	 */
+	public const EMBED = array( 'view', 'embed' );
 
 	/**
 	 * Returns the schema of the questions similar to a title and the tags they suggest.
@@ -60,14 +67,14 @@ final class Schemas {
 		return self::schema(
 			'easyq-category',
 			array(
-				'id'             => self::property( __( 'Unique identifier of the category.', 'easyq' ), 'integer' ),
-				'parent'         => self::property( __( 'Parent category; null for a top-level category.', 'easyq' ), array( 'integer', 'null' ) ),
-				'title'          => self::property( __( 'Name of the category.', 'easyq' ), 'string' ),
-				'slug'           => self::property( __( 'Slug of the category in addresses.', 'easyq' ), 'string' ),
+				'id'             => self::property( __( 'Unique identifier of the category.', 'easyq' ), 'integer', self::EMBED ),
+				'parent'         => self::property( __( 'Parent category; null for a top-level category.', 'easyq' ), array( 'integer', 'null' ), self::EMBED ),
+				'title'          => self::property( __( 'Name of the category.', 'easyq' ), 'string', self::EMBED ),
+				'slug'           => self::property( __( 'Slug of the category in addresses.', 'easyq' ), 'string', self::EMBED ),
 				'description'    => self::property( __( 'Description of the category.', 'easyq' ), 'string' ),
 				'question_count' => self::property( __( 'Number of questions in the category and its subcategories.', 'easyq' ), 'integer' ),
 				'position'       => self::property( __( 'Position among the categories with the same parent.', 'easyq' ), 'integer' ),
-				'path'           => self::property( __( 'Slugs from the top-level category down to this one.', 'easyq' ), 'array' ) + array( 'items' => array( 'type' => 'string' ) ),
+				'path'           => self::property( __( 'Slugs from the top-level category down to this one.', 'easyq' ), 'array', self::EMBED ) + array( 'items' => array( 'type' => 'string' ) ),
 			)
 		);
 	}
@@ -99,8 +106,8 @@ final class Schemas {
 		return self::schema(
 			'easyq-tag',
 			array(
-				'name'  => self::property( __( 'The tag.', 'easyq' ), 'string' ),
-				'count' => self::property( __( 'Number of visible questions with the tag.', 'easyq' ), 'integer' ),
+				'name'  => self::property( __( 'The tag.', 'easyq' ), 'string', self::EMBED ),
+				'count' => self::property( __( 'Number of visible questions with the tag.', 'easyq' ), 'integer', self::EMBED ),
 			)
 		);
 	}
@@ -123,13 +130,13 @@ final class Schemas {
 		return self::schema(
 			'easyq-user',
 			array(
-				'id'          => self::property( __( 'Unique identifier of the user.', 'easyq' ), 'integer' ),
-				'name'        => self::property( __( 'Display name of the user.', 'easyq' ), 'string' ),
-				'link'        => self::property( __( 'Address of the Q&A profile.', 'easyq' ), 'string' ) + array( 'format' => 'uri' ),
-				'avatar'      => self::property( __( 'Address of the avatar image; false without one.', 'easyq' ), array( 'string', 'boolean' ) ),
-				'level'       => self::property( __( 'Name of the Q&A level of the user.', 'easyq' ), 'string' ),
-				'title'       => self::property( __( 'Title earned with points.', 'easyq' ), 'string' ),
-				'points'      => self::property( __( 'Points of the user.', 'easyq' ), 'integer' ),
+				'id'          => self::property( __( 'Unique identifier of the user.', 'easyq' ), 'integer', self::EMBED ),
+				'name'        => self::property( __( 'Display name of the user.', 'easyq' ), 'string', self::EMBED ),
+				'link'        => self::property( __( 'Address of the Q&A profile.', 'easyq' ), 'string', self::EMBED ) + array( 'format' => 'uri' ),
+				'avatar'      => self::property( __( 'Address of the avatar image; false without one.', 'easyq' ), array( 'string', 'boolean' ), self::EMBED ),
+				'level'       => self::property( __( 'Name of the Q&A level of the user.', 'easyq' ), 'string', self::EMBED ),
+				'title'       => self::property( __( 'Title earned with points.', 'easyq' ), 'string', self::EMBED ),
+				'points'      => self::property( __( 'Points of the user.', 'easyq' ), 'integer', self::EMBED ),
 				'url'         => self::property( __( 'Website of the user.', 'easyq' ), 'string' ),
 				'description' => self::property( __( 'Biographical info of the user.', 'easyq' ), 'string' ),
 				'registered'  => self::property( __( 'Time of the registration.', 'easyq' ), 'string' ) + array( 'format' => 'date-time' ),
@@ -170,10 +177,10 @@ final class Schemas {
 		return self::schema(
 			'easyq-user-field',
 			array(
-				'id'          => self::property( __( 'Unique identifier of the field.', 'easyq' ), 'integer' ),
-				'name'        => self::property( __( 'Internal name of the field, part of its user meta key.', 'easyq' ), 'string' ),
-				'label'       => self::property( __( 'Label of the field.', 'easyq' ), 'string' ),
-				'type'        => self::property( __( 'Kind of value.', 'easyq' ), 'string' ) + array( 'enum' => array_keys( User_Fields_Controller::TYPES ) ),
+				'id'          => self::property( __( 'Unique identifier of the field.', 'easyq' ), 'integer', self::EMBED ),
+				'name'        => self::property( __( 'Internal name of the field, part of its user meta key.', 'easyq' ), 'string', self::EMBED ),
+				'label'       => self::property( __( 'Label of the field.', 'easyq' ), 'string', self::EMBED ),
+				'type'        => self::property( __( 'Kind of value.', 'easyq' ), 'string', self::EMBED ) + array( 'enum' => array_keys( User_Fields_Controller::TYPES ) ),
 				'permit'      => self::property( __( 'Who may see the value, as a permission threshold.', 'easyq' ), 'integer' ),
 				'on_register' => self::property( __( 'Whether the field is on the registration form.', 'easyq' ), 'boolean' ),
 				'position'    => self::property( __( 'Position in the list of fields.', 'easyq' ), 'integer' ),
@@ -235,12 +242,15 @@ final class Schemas {
 	 *
 	 * @param string          $description Description.
 	 * @param string|string[] $type        JSON type.
+	 * @param string[]        $context     Contexts that include the property: `view`, and `embed` for the
+	 *                                     properties that identify the item when it is embedded.
 	 * @return array<string, mixed>
 	 */
-	private static function property( string $description, string|array $type ): array {
+	private static function property( string $description, string|array $type, array $context = self::VIEW ): array {
 		return array(
 			'description' => $description,
 			'type'        => $type,
+			'context'     => $context,
 			'readonly'    => true,
 		);
 	}
