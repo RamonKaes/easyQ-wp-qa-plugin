@@ -8,6 +8,7 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Services;
+use EasyQ\Settings\Options;
 use EasyQ\Users\Permits;
 use EasyQ\Users\User_Field;
 use EasyQ\Users\User_Fields;
@@ -104,5 +105,25 @@ final class User_Fields_Test extends Test_Case {
 		$this->assertNull( $this->fields->find( $field->id ) );
 		$this->assertSame( '', get_user_meta( $user, $field->meta_key(), true ) );
 		$this->assertSame( 1, $this->fields->all()[0]->position );
+	}
+
+	public function test_derives_a_free_name_from_the_label(): void {
+		$first  = $this->fields->create( '', 'Favourite Book', 0, null );
+		$second = $this->fields->create( '', 'Favourite book!', 0, null );
+		$this->assertIsInt( $first );
+		$this->assertIsInt( $second );
+
+		$this->assertSame( 'favourite-book', $this->field( $first )->name );
+		$this->assertSame( 'favourite-book-2', $this->field( $second )->name );
+		$this->assertInstanceOf( WP_Error::class, $this->fields->create( '', '???', 0, null ) );
+	}
+
+	public function test_offers_the_visibility_choices_of_question2answer(): void {
+		$this->assertSame( array( Permits::ALL, Permits::USERS, Permits::EXPERTS, Permits::EDITORS, Permits::MODERATORS, Permits::ADMINS ), array_keys( User_Fields::permit_choices() ) );
+		$this->assertInstanceOf( WP_Error::class, $this->fields->create( 'secret', '', 0, Permits::APPROVED ) );
+
+		Options::update( 'spam', array( 'moderate_users' => true ) );
+		$this->assertContains( Permits::APPROVED, array_keys( User_Fields::permit_choices() ) );
+		$this->assertIsInt( $this->fields->create( 'secret', '', 0, Permits::APPROVED ) );
 	}
 }

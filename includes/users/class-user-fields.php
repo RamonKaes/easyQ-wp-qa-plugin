@@ -10,6 +10,7 @@ namespace EasyQ\Users;
 
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
+use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
 use WP_Error;
 
@@ -110,15 +111,15 @@ final class User_Fields {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string   $name   Internal name: lowercase letters, digits, hyphens and underscores.
+	 * @param string   $name   Internal name: lowercase letters, digits, hyphens and underscores; derived from the label if empty, as in Question2Answer.
 	 * @param string   $label  Label; empty to use the name.
 	 * @param int      $flags  Combination of the User_Field::FLAG_* constants.
 	 * @param int|null $permit Who may see the field, or null for everybody.
 	 * @return int|WP_Error The field ID, or the validation errors.
 	 */
 	public function create( string $name, string $label, int $flags, ?int $permit ): int|WP_Error {
-		$name   = sanitize_key( $name );
-		$errors = $this->validate( $name, $label, null );
+		$name   = '' === trim( $name ) ? $this->free_name( $label ) : sanitize_key( $name );
+		$errors = $this->validate( $name, $label, null, $permit );
 		if ( $errors->has_errors() ) {
 			return $errors;
 		}
@@ -158,7 +159,7 @@ final class User_Fields {
 			return new WP_Error( 'not_found', __( 'The field does not exist.', 'easyq' ) );
 		}
 
-		$errors = $this->validate( $field->name, $label, $id );
+		$errors = $this->validate( $field->name, $label, $id, $permit );
 		if ( $errors->has_errors() ) {
 			return $errors;
 		}
@@ -265,16 +266,17 @@ final class User_Fields {
 	}
 
 	/**
-	 * Validates the name and label of a field.
+	 * Validates the name, label and visibility of a field.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string   $name  Name.
-	 * @param string   $label Label.
-	 * @param int|null $id    Field ID when editing.
+	 * @param string   $name   Name.
+	 * @param string   $label  Label.
+	 * @param int|null $id     Field ID when editing.
+	 * @param int|null $permit Who may see the field, or null for everybody.
 	 * @return WP_Error
 	 */
-	private function validate( string $name, string $label, ?int $id ): WP_Error {
+	private function validate( string $name, string $label, ?int $id, ?int $permit = null ): WP_Error {
 		$errors = new WP_Error();
 
 		if ( '' === $name ) {
@@ -295,7 +297,57 @@ final class User_Fields {
 			$errors->add( 'label', sprintf( __( 'The label can have at most %d characters.', 'easyq' ), self::MAX_NAME_LENGTH ) );
 		}
 
+		if ( null !== $permit && ! isset( self::permit_choices()[ $permit ] ) ) {
+			$errors->add( 'permit', __( 'Please choose who may see the field.', 'easyq' ) );
+		}
+
 		return $errors;
+	}
+
+	/**
+	 * Returns who may be allowed to see a field, as Question2Answer offers it: from
+	 * anybody to administrators, without points, and approved users only if new users
+	 * need approval.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<int, string> Names keyed by Permits threshold.
+	 */
+	public static function permit_choices(): array {
+		$keys = array( Permits::ALL, Permits::USERS, Permits::EXPERTS, Permits::EDITORS, Permits::MODERATORS, Permits::ADMINS );
+		if ( Options::get_bool( 'spam', 'moderate_users' ) ) {
+			$keys[] = Permits::APPROVED;
+		}
+
+		$choices = array_intersect_key( Permits::labels(), array_flip( $keys ) );
+		krsort( $choices );
+
+		return $choices;
+	}
+
+	/**
+	 * Returns an unused name derived from a label: `website`, `website-2`, `website-3`, …
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $label Label.
+	 * @return string An empty string if the label gives no name, so that validation reports it.
+	 */
+	private function free_name( string $label ): string {
+		$base = substr( sanitize_key( sanitize_title( $label ) ), 0, self::MAX_NAME_LENGTH - 4 );
+		if ( '' === $base ) {
+			return '';
+		}
+
+		$names = array_map( static fn ( User_Field $field ): string => $field->name, $this->all() );
+		for ( $number = 1; $number < 1000; $number++ ) {
+			$name = 1 === $number ? $base : $base . '-' . $number;
+			if ( ! in_array( $name, $names, true ) ) {
+				return $name;
+			}
+		}
+
+		return '';
 	}
 
 	/**
