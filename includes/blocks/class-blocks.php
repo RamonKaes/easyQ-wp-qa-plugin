@@ -10,6 +10,7 @@ namespace EasyQ\Blocks;
 
 use EasyQ\Posts\Post;
 use EasyQ\Services;
+use EasyQ\Util\Assets;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -162,7 +163,7 @@ final class Blocks {
 	 * @since 0.1.0
 	 */
 	private function register_scripts(): void {
-		$editor = $this->asset( 'editor' );
+		$editor = Assets::get( 'editor' );
 		$src    = plugins_url( 'build/editor.js', \EasyQ\PLUGIN_FILE );
 		wp_register_script(
 			'easyq-editor',
@@ -173,7 +174,7 @@ final class Blocks {
 		);
 		wp_set_script_translations( 'easyq-editor', 'easyq', \EasyQ\PLUGIN_DIR . '/languages' );
 
-		$view = $this->asset( 'view' );
+		$view = Assets::get( 'view' );
 		wp_register_script_module(
 			'easyq-view',
 			plugins_url( 'build/view.js', \EasyQ\PLUGIN_FILE ),
@@ -207,23 +208,5 @@ final class Blocks {
 		}
 
 		return $valid;
-	}
-
-	/**
-	 * Reads the dependencies and version of a built script.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $name Script name.
-	 * @return array{dependencies: array<int, mixed>, version: string}
-	 */
-	private function asset( string $name ): array {
-		$file  = \EasyQ\PLUGIN_DIR . '/build/' . $name . '.asset.php';
-		$asset = is_readable( $file ) ? require $file : array();
-
-		return array(
-			'dependencies' => is_array( $asset ) && is_array( $asset['dependencies'] ?? null ) ? array_values( $asset['dependencies'] ) : array(),
-			'version'      => is_array( $asset ) && is_string( $asset['version'] ?? null ) ? $asset['version'] : \EasyQ\VERSION,
-		);
 	}
 }
