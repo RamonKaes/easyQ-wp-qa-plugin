@@ -29,6 +29,11 @@ use EasyQ\Settings\Options;
  */
 final class Blocks_Test extends Test_Case {
 
+	/**
+	 * Rule of core's comment form styles that gives text fields a border and the font of the page.
+	 */
+	private const COMMENT_FORM_FIELD_RULE = '/:where\(\.wp-block-post-comments-form\)?\s?textarea\)?[^{]*\{[^}]*border[^}]*#949494[^}]*font-family:\s*inherit/';
+
 	public function set_up(): void {
 		parent::set_up();
 		Lists::reset();
@@ -267,6 +272,10 @@ final class Blocks_Test extends Test_Case {
 		$question = $this->ask( $author );
 		Services::categories()->create( null, 'Software' );
 		Options::update( 'posting', array( 'comment_on_qs' => true ) );
+		// Core registers the style of each core block only when block assets load separately, as in block themes.
+		add_filter( 'should_load_separate_core_block_assets', '__return_true' );
+		register_core_block_style_handles();
+		$this->assertTrue( wp_style_is( 'wp-block-post-comments-form', 'registered' ) );
 		wp_dequeue_style( 'wp-block-post-comments-form' );
 		$this->assertFalse( wp_style_is( 'wp-block-post-comments-form' ) );
 
@@ -299,6 +308,19 @@ final class Blocks_Test extends Test_Case {
 			),
 			$this->field_forms( '<form method="post"><p><label for="x">X</label><br /><textarea id="x"></textarea></p></form>' )
 		);
+	}
+
+	public function test_forms_get_the_comment_form_styles_from_the_block_library_otherwise(): void {
+		// Without separate block assets core loads all block styles in one stylesheet.
+		add_filter( 'should_load_separate_core_block_assets', '__return_false' );
+		$this->assertFalse( wp_should_load_separate_core_block_assets() );
+
+		$library = (string) file_get_contents( ABSPATH . WPINC . '/css/dist/block-library/style.css' );
+
+		$this->assertStringContainsString( '.wp-block-post-comments-form .comment-form textarea', $library );
+		// Border and font of the fields; WordPress 6.7 writes the selector as `:where(.wp-block-post-comments-form) textarea`.
+		$this->assertMatchesRegularExpression( self::COMMENT_FORM_FIELD_RULE, $library );
+		$this->assertDoesNotMatchRegularExpression( self::COMMENT_FORM_FIELD_RULE, '.wp-block-search__input{border:1px solid #949494;font-family:inherit}' );
 	}
 
 	public function test_category_errors_belong_to_the_select(): void {
