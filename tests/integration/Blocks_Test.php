@@ -272,9 +272,17 @@ final class Blocks_Test extends Test_Case {
 		$question = $this->ask( $author );
 		Services::categories()->create( null, 'Software' );
 		Options::update( 'posting', array( 'comment_on_qs' => true ) );
-		// Core registers the style of each core block only when block assets load separately, as in block themes.
+
+		/*
+		 * Core registers the style of the comment form block when it registers the block on `init`, and only
+		 * while block assets load separately: in block themes, and since WordPress 7.1 in all themes. The test
+		 * site of 6.7 starts with a classic theme, so this repeats that step with separate block assets.
+		 */
 		add_filter( 'should_load_separate_core_block_assets', '__return_true' );
-		register_core_block_style_handles();
+		$block_json       = wp_normalize_path( ABSPATH . WPINC . '/blocks/post-comments-form/block.json' );
+		$metadata         = (array) wp_json_file_decode( $block_json, array( 'associative' => true ) );
+		$metadata['file'] = $block_json;
+		$this->assertSame( 'wp-block-post-comments-form', register_block_style_handle( $metadata, 'style', 0 ) );
 		$this->assertTrue( wp_style_is( 'wp-block-post-comments-form', 'registered' ) );
 		wp_dequeue_style( 'wp-block-post-comments-form' );
 		$this->assertFalse( wp_style_is( 'wp-block-post-comments-form' ) );
