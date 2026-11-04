@@ -13,6 +13,8 @@ use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
+use EasyQ\Mail\Notifications;
+use EasyQ\Mail\Unsubscribe;
 use EasyQ\Posts\Post;
 use EasyQ\REST\Post_Input;
 use EasyQ\Services;
@@ -151,12 +153,49 @@ final class Forms {
 		}
 
 		$fields .= sprintf(
+			'<input type="hidden" name="notifications" value="0" /><p><label><input type="checkbox" name="notifications" value="1"%s /> %s</label></p>',
+			checked( Notifications::enabled( $viewer->user_id ), true, false ),
+			esc_html__( 'Send me the emails I asked for about my posts', 'easyq' )
+		);
+
+		$fields .= sprintf(
 			'<p><a href="%s">%s</a></p>',
 			esc_url( get_edit_profile_url( $viewer->user_id ) ),
 			esc_html__( 'Change your name, email address or password', 'easyq' )
 		);
 
 		return self::form( 'account', 0, $fields, __( 'Save profile', 'easyq' ), array() );
+	}
+
+	/**
+	 * Renders the form to stop the emails about a post, opened from a link in such an email.
+	 *
+	 * Opening the page changes nothing, as mail programs and scanners open links in emails.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	public static function unsubscribe(): string {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- The token in the address is checked instead.
+		$id    = isset( $_GET['post'] ) && is_string( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		$token = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( ! Unsubscribe::verify( $id, $token ) ) {
+			return sprintf( '<p %s>%s</p>', get_block_wrapper_attributes(), esc_html__( 'This link is not valid.', 'easyq' ) );
+		}
+
+		return self::form(
+			'unsubscribe',
+			0,
+			sprintf( '<p>%s</p>', esc_html__( 'Do you want to stop the emails about this post?', 'easyq' ) ),
+			__( 'Stop the emails', 'easyq' ),
+			array(
+				'post'  => $id,
+				'token' => $token,
+			)
+		);
 	}
 
 	/**
@@ -434,7 +473,7 @@ final class Forms {
 		}
 
 		// The markup of the comment form block, so that the theme styles the fields as it styles that form.
-		$wrapper = in_array( $form, array( 'ask', 'account' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
+		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
 		$notice  = self::form_notice( $form );
 
 		return sprintf(

@@ -104,6 +104,7 @@ const ICONS = {
 	'easyq/search': search,
 	'easyq/sort-navigation': listView,
 	'easyq/tags': tag,
+	'easyq/unsubscribe': postCommentsForm,
 	'easyq/user': commentAuthorAvatar,
 	'easyq/user-avatar': commentAuthorAvatar,
 	'easyq/user-fields': details,

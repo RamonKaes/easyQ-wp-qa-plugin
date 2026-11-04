@@ -101,6 +101,24 @@ final class Settings_Test extends Test_Case {
 		}
 	}
 
+	public function test_email_settings_accept_addresses_only(): void {
+		$sanitized = Fields::sanitize(
+			'emails',
+			array(
+				'from_email'            => 'from@example.com',
+				'feedback_email'        => '<b>not an address',
+				'flagging_notify_every' => '0',
+			)
+		);
+
+		$this->assertSame( 'from@example.com', $sanitized['from_email'] );
+		$this->assertSame( '', $sanitized['feedback_email'], 'Empty means the default address.' );
+		$this->assertSame( 1, $sanitized['flagging_notify_every'], 'At least one, as the count is divided by it.' );
+
+		$html = $this->render( 'emails' );
+		$this->assertStringContainsString( 'type="email" class="regular-text ltr"', $html );
+	}
+
 	public function test_sanitizes_numbers_switches_and_choices(): void {
 		Options::update(
 			'posting',

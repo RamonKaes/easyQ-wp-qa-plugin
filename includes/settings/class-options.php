@@ -106,9 +106,21 @@ final class Options {
 				'permit_view_special_users_page_points' => 0,
 				'permit_post_wall_points'               => 0,
 			),
+			'emails'      => array(
+				'from_email'            => '',
+				'feedback_email'        => '',
+				'notify_admin_q_post'   => false,
+				'moderate_notify_admin' => true,
+				'flagging_notify_first' => 1,
+				'flagging_notify_every' => 2,
+				// Core sends this email by default, so the setting keeps it on, unlike Question2Answer.
+				'register_notify_admin' => true,
+			),
 			'users'       => array(
 				'avatar_allow_upload' => true,
 				'avatar_store_size'   => 400,
+				'show_custom_welcome' => false,
+				'custom_welcome'      => '',
 			),
 			'posting'     => array(
 				'allow_close_questions'     => true,
@@ -221,8 +233,6 @@ final class Options {
 				'confirm_user_required'  => false,
 				'moderate_users'         => false,
 				'flagging_of_posts'      => true,
-				'flagging_notify_first'  => 1,
-				'flagging_notify_every'  => 2,
 				'flagging_hide_after'    => 5,
 				'moderate_anon_post'     => false,
 				'moderate_unapproved'    => false,
@@ -230,7 +240,6 @@ final class Options {
 				'moderate_by_points'     => false,
 				'moderate_points_limit'  => 150,
 				'moderate_edited_again'  => false,
-				'moderate_notify_admin'  => true,
 				'moderate_update_time'   => true,
 				'block_ips_write'        => '',
 				'max_rate_ip_qs'         => 20,

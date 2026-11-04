@@ -43,13 +43,14 @@ final class Form_Handler {
 	 * @var array<string, string[]>
 	 */
 	private const FIELDS = array(
-		'ask'     => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
-		'answer'  => array( 'content', 'notify', 'email', 'name' ),
-		'comment' => array( 'content', 'notify', 'email', 'name' ),
-		'edit'    => array( 'title', 'content', 'tags', 'category', 'silent' ),
-		'vote'    => array( 'vote' ),
-		'action'  => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
-		'account' => array( 'remove_avatar' ),
+		'ask'         => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
+		'answer'      => array( 'content', 'notify', 'email', 'name' ),
+		'comment'     => array( 'content', 'notify', 'email', 'name' ),
+		'edit'        => array( 'title', 'content', 'tags', 'category', 'silent' ),
+		'vote'        => array( 'vote' ),
+		'action'      => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
+		'account'     => array( 'remove_avatar', 'notifications' ),
+		'unsubscribe' => array( 'post', 'token' ),
 	);
 
 	/**
@@ -142,6 +143,7 @@ final class Form_Handler {
 			'edit'    => array( 'PUT', $this->edit_route( $target ) ),
 			'vote'    => array( 'POST', '/posts/' . $target . '/vote' ),
 			'account' => array( 'POST', '/users/me' ),
+			'unsubscribe' => array( 'POST', '/unsubscribe' ),
 			default   => array( 'POST', '/posts/' . $target . '/actions/' . $action ),
 		};
 
@@ -283,6 +285,10 @@ final class Form_Handler {
 			return Routes::url( 'account' );
 		}
 
+		if ( 'unsubscribe' === $form ) {
+			return Routes::url( 'home' );
+		}
+
 		$post     = Services::posts()->find( $id );
 		$question = null === $post ? null : Services::post_service()->question_of( $post );
 
@@ -318,6 +324,7 @@ final class Form_Handler {
 			'comment' => __( 'Your comment has been published.', 'easyq' ),
 			'edit'    => __( 'Your changes have been saved.', 'easyq' ),
 			'account' => __( 'Your profile has been saved.', 'easyq' ),
+			'unsubscribe' => __( 'You will no longer get emails about this post.', 'easyq' ),
 			default   => __( 'Done.', 'easyq' ),
 		};
 	}

@@ -43,6 +43,7 @@ final class REST_API {
 			new Categories_Controller(),
 			new Tags_Controller(),
 			new Users_Controller(),
+			new Unsubscribe_Controller(),
 		);
 
 		foreach ( $controllers as $controller ) {

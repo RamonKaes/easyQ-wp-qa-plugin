@@ -7,6 +7,7 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Mail\Unsubscribe;
 use EasyQ\REST\Schemas;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -131,6 +132,17 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$this->assert_matches( $this->request( 'POST', '/ips/198.51.100.7/unblock' ), '/ips/198.51.100.7/unblock' );
 		$this->assert_matches( $this->request( 'POST', '/ips/198.51.100.7/hide-all' ), '/ips/198.51.100.7/hide-all' );
 		$this->assert_matches( $this->request( 'POST', '/tools/recount_posts' ), '/tools/recount_posts' );
+		$this->assert_matches(
+			$this->request(
+				'POST',
+				'/unsubscribe',
+				array(
+					'post'  => $answer->id,
+					'token' => Unsubscribe::token( $answer->id ),
+				)
+			),
+			'/unsubscribe'
+		);
 
 		Options::update( 'posting', array( 'do_ask_check_qs' => true ) );
 		$similar = $this->request( 'GET', '/questions/similar', array( 'title' => 'Question for the schemas' ) );

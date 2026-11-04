@@ -11,6 +11,7 @@ namespace EasyQ\REST;
 use EasyQ\Events\Events;
 use EasyQ\Frontend\URLs;
 use EasyQ\Limits\Limits;
+use EasyQ\Mail\Notifications;
 use EasyQ\Points\Points;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -94,6 +95,10 @@ final class Users_Controller extends Controller {
 							'description' => __( 'Whether to remove the uploaded avatar.', 'easyq' ),
 							'type'        => 'boolean',
 							'default'     => false,
+						),
+						'notifications' => array(
+							'description' => __( 'Whether the user gets emails about their posts.', 'easyq' ),
+							'type'        => 'boolean',
 						),
 					),
 				),
@@ -282,6 +287,10 @@ final class Users_Controller extends Controller {
 			}
 		}
 
+		if ( $request->has_param( 'notifications' ) ) {
+			Notifications::set_enabled( $user_id, self::bool_param( $request, 'notifications' ) );
+		}
+
 		Events::dispatch( 'u_save', array( 'user_id' => $user_id ), $actor );
 
 		return $this->respond_with( $this->format( $user, ! self::embedded( $request ), all_fields: true ), $request );
@@ -343,7 +352,7 @@ final class Users_Controller extends Controller {
 				'downvotes_received' => $stats[ Points::DOWNVOTES_RECEIVED ],
 			),
 			'fields'      => $fields,
-		);
+		) + ( $all_fields ? array( 'notifications' => Notifications::enabled( $user->ID ) ) : array() );
 	}
 
 	/**

@@ -83,6 +83,7 @@ final class Fields {
 		return array(
 			'general'     => __( 'General', 'easyq' ),
 			'permissions' => __( 'Permissions', 'easyq' ),
+			'emails'      => __( 'Email', 'easyq' ),
 			'users'       => __( 'Users', 'easyq' ),
 			'posting'     => __( 'Posting', 'easyq' ),
 			'viewing'     => __( 'Viewing', 'easyq' ),
@@ -118,6 +119,7 @@ final class Fields {
 		return match ( $section ) {
 			'general'     => self::general(),
 			'permissions' => self::permissions(),
+			'emails'      => self::emails(),
 			'users'       => self::users(),
 			'posting'     => self::posting(),
 			'viewing'     => self::viewing(),
@@ -282,6 +284,9 @@ final class Fields {
 
 			case 'lines':
 				return is_string( $value ) ? sanitize_textarea_field( $value ) : $current;
+
+			case 'email':
+				return is_string( $value ) ? sanitize_email( $value ) : $current;
 
 			case 'role_levels':
 				if ( ! is_array( $value ) ) {
@@ -622,6 +627,40 @@ final class Fields {
 		return array(
 			'avatar_allow_upload' => self::bool( __( 'Allow users to upload an avatar', 'easyq' ) ),
 			'avatar_store_size'   => self::int( __( 'Largest stored avatar size, in pixels', 'easyq' ), 16, 1000 ),
+			'show_custom_welcome' => self::bool( __( 'Add a text to the welcome email', 'easyq' ) ),
+			'custom_welcome'      => array(
+				'type'  => 'lines',
+				'label' => __( 'Text in the welcome email', 'easyq' ),
+			),
+		);
+	}
+
+	/**
+	 * Returns the fields of the email section.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, array>
+	 *
+	 * @phpstan-return array<string, Field>
+	 */
+	private static function emails(): array {
+		return array(
+			'from_email'            => array(
+				'type'        => 'email',
+				'label'       => __( 'Sender address', 'easyq' ),
+				'description' => __( 'Address that emails come from. Leave empty for the default of WordPress.', 'easyq' ),
+			),
+			'feedback_email'        => array(
+				'type'        => 'email',
+				'label'       => __( 'Address of the site owner', 'easyq' ),
+				'description' => __( 'Address that gets the emails to the site owner. Leave empty for the administration email address.', 'easyq' ),
+			),
+			'notify_admin_q_post'   => self::bool( __( 'Email the site owner about every new question', 'easyq' ) ),
+			'moderate_notify_admin' => self::bool( __( 'Email the site owner about posts that wait for approval', 'easyq' ) ),
+			'flagging_notify_first' => self::int( __( 'Email the site owner about a post from this many flags', 'easyq' ), 1 ) + array( 'short' => __( 'From this many flags', 'easyq' ) ),
+			'flagging_notify_every' => self::int( __( 'Then with every so many further flags', 'easyq' ), 1 ) + array( 'short' => __( 'Then every so many', 'easyq' ) ),
+			'register_notify_admin' => self::bool( __( 'Email the site owner about new users', 'easyq' ) ),
 		);
 	}
 

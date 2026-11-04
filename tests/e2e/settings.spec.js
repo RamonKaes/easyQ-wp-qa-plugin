@@ -105,6 +105,7 @@ test.describe( 'Settings screen', () => {
 			'lists',
 			'feeds',
 			'spam',
+			'emails',
 		] ) {
 			await admin.visitAdminPage(
 				'admin.php',

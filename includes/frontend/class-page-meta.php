@@ -112,7 +112,7 @@ final class Page_Meta {
 		}
 
 		$question = $route->question();
-		if ( in_array( $route->name, array( 'search', 'ask', 'account' ), true ) || ( null !== $question && ! $question->is_visible() ) || Lists::main_list_is_empty() ) {
+		if ( in_array( $route->name, array( 'search', 'ask', 'account', 'unsubscribe' ), true ) || ( null !== $question && ! $question->is_visible() ) || Lists::main_list_is_empty() ) {
 			$robots['noindex'] = true;
 		}
 

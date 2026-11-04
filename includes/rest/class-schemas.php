@@ -130,18 +130,18 @@ final class Schemas {
 		return self::schema(
 			'easyq-user',
 			array(
-				'id'          => self::property( __( 'Unique identifier of the user.', 'easyq' ), 'integer', self::EMBED ),
-				'name'        => self::property( __( 'Display name of the user.', 'easyq' ), 'string', self::EMBED ),
-				'link'        => self::property( __( 'Address of the Q&A profile.', 'easyq' ), 'string', self::EMBED ) + array( 'format' => 'uri' ),
-				'avatar'      => self::property( __( 'Address of the avatar image; false without one.', 'easyq' ), array( 'string', 'boolean' ), self::EMBED ),
-				'level'       => self::property( __( 'Name of the Q&A level of the user.', 'easyq' ), 'string', self::EMBED ),
-				'title'       => self::property( __( 'Title earned with points.', 'easyq' ), 'string', self::EMBED ),
-				'points'      => self::property( __( 'Points of the user.', 'easyq' ), 'integer', self::EMBED ),
-				'url'         => self::property( __( 'Website of the user.', 'easyq' ), 'string' ),
-				'description' => self::property( __( 'Biographical info of the user.', 'easyq' ), 'string' ),
-				'registered'  => self::property( __( 'Time of the registration.', 'easyq' ), 'string' ) + array( 'format' => 'date-time' ),
-				'rank'        => self::property( __( 'Rank by points; null without points.', 'easyq' ), array( 'integer', 'null' ) ),
-				'counts'      => self::property( __( 'Activity of the user.', 'easyq' ), 'object' ) + array(
+				'id'            => self::property( __( 'Unique identifier of the user.', 'easyq' ), 'integer', self::EMBED ),
+				'name'          => self::property( __( 'Display name of the user.', 'easyq' ), 'string', self::EMBED ),
+				'link'          => self::property( __( 'Address of the Q&A profile.', 'easyq' ), 'string', self::EMBED ) + array( 'format' => 'uri' ),
+				'avatar'        => self::property( __( 'Address of the avatar image; false without one.', 'easyq' ), array( 'string', 'boolean' ), self::EMBED ),
+				'level'         => self::property( __( 'Name of the Q&A level of the user.', 'easyq' ), 'string', self::EMBED ),
+				'title'         => self::property( __( 'Title earned with points.', 'easyq' ), 'string', self::EMBED ),
+				'points'        => self::property( __( 'Points of the user.', 'easyq' ), 'integer', self::EMBED ),
+				'url'           => self::property( __( 'Website of the user.', 'easyq' ), 'string' ),
+				'description'   => self::property( __( 'Biographical info of the user.', 'easyq' ), 'string' ),
+				'registered'    => self::property( __( 'Time of the registration.', 'easyq' ), 'string' ) + array( 'format' => 'date-time' ),
+				'rank'          => self::property( __( 'Rank by points; null without points.', 'easyq' ), array( 'integer', 'null' ) ),
+				'counts'        => self::property( __( 'Activity of the user.', 'easyq' ), 'object' ) + array(
 					'properties' => array(
 						'questions'          => $count( __( 'Questions asked.', 'easyq' ) ),
 						'answers'            => $count( __( 'Answers written.', 'easyq' ) ),
@@ -151,7 +151,8 @@ final class Schemas {
 						'downvotes_received' => $count( __( 'Down votes received.', 'easyq' ) ),
 					),
 				),
-				'fields'      => self::property( __( 'Profile fields the viewer may see; the current user gets all of them.', 'easyq' ), 'array' ) + array(
+				'notifications' => self::property( __( 'Whether the user gets emails about their posts; only for the current user.', 'easyq' ), 'boolean' ),
+				'fields'        => self::property( __( 'Profile fields the viewer may see; the current user gets all of them.', 'easyq' ), 'array' ) + array(
 					'items' => array(
 						'type'       => 'object',
 						'properties' => array(
@@ -231,6 +232,23 @@ final class Schemas {
 				'done'        => self::property( __( 'Items done in the current step.', 'easyq' ), 'integer' ),
 				'total'       => self::property( __( 'Items of the current step.', 'easyq' ), 'integer' ),
 				'complete'    => self::property( __( 'Whether all steps are done.', 'easyq' ), 'boolean' ),
+			)
+		);
+	}
+
+	/**
+	 * Returns the schema of the response to stopping the emails about a post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function unsubscribe(): array {
+		return self::schema(
+			'easyq-unsubscribe',
+			array(
+				'post'   => self::property( __( 'The post.', 'easyq' ), 'integer' ),
+				'emails' => self::property( __( 'Whether emails about the post are sent; always false after this request.', 'easyq' ), 'boolean' ),
 			)
 		);
 	}

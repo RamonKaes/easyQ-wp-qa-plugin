@@ -406,6 +406,11 @@ final class Templates {
 				'description' => __( 'What a user did recently.', 'easyq' ),
 				'content'     => Layouts::user_page( $list ),
 			),
+			'easyq-unsubscribe'    => array(
+				'title'       => __( 'Q&A: Stop emails', 'easyq' ),
+				'description' => __( 'Form to stop the emails about a post, opened from a link in such an email.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/unsubscribe /-->',
+			),
 			'easyq-account'        => array(
 				'title'       => __( 'Q&A: Account', 'easyq' ),
 				'description' => __( 'Form for users to edit their Q&A profile.', 'easyq' ),

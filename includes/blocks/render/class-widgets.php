@@ -89,6 +89,7 @@ final class Widgets {
 			'users'      => self::user_sort_labels()[ $sort ] ?? __( 'Top users', 'easyq' ),
 			'user'       => self::user_title( $route ),
 			'account'    => __( 'My account', 'easyq' ),
+			'unsubscribe' => __( 'Stop emails', 'easyq' ),
 			'not_found'  => __( 'Page not found', 'easyq' ),
 			default      => __( 'Questions', 'easyq' ),
 		};

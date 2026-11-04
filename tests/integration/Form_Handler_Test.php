@@ -12,6 +12,8 @@ use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\URLs;
+use EasyQ\Mail\Notifications;
+use EasyQ\Mail\Unsubscribe;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 
@@ -226,6 +228,46 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertNull( Services::posts()->find( $answer->id ) );
 		$this->assertStringStartsWith( URLs::question( $question ), $url );
 		$this->assertSame( 'success', Flash::current()['type'] ?? null );
+	}
+
+	public function test_stops_the_emails_about_a_post(): void {
+		$question = $this->post( Services::post_service()->create_question( $this->user(), 'A question with emails', 'Text.', '', array(), null, '@' ) );
+
+		$this->submit(
+			'unsubscribe',
+			array(
+				'post'  => (string) $question->id,
+				'token' => 'wrong',
+			)
+		);
+		$this->assertSame( 'error', Flash::current()['type'] ?? null );
+		$this->assertSame( '@', $this->post( $question->id )->notify );
+
+		$url = $this->submit(
+			'unsubscribe',
+			array(
+				'post'  => (string) $question->id,
+				'token' => Unsubscribe::token( $question->id ),
+			)
+		);
+		$this->assertNull( $this->post( $question->id )->notify );
+		$this->assertStringStartsWith( Routes::url( 'home' ), $url );
+		$this->assertSame( 'You will no longer get emails about this post.', Flash::current()['message'] ?? null );
+	}
+
+	public function test_the_account_form_turns_emails_off_and_on(): void {
+		$user = $this->login();
+
+		$this->submit( 'account', array( 'notifications' => '0' ) );
+		$this->assertFalse( Notifications::enabled( $user ) );
+
+		$this->submit( 'account', array( 'notifications' => '1' ) );
+		$this->assertTrue( Notifications::enabled( $user ) );
+
+		$html = do_blocks( '<!-- wp:easyq/account /-->' );
+		$this->assertMatchesRegularExpression( '/name="notifications" value="1"\s+checked/', $html );
+		Notifications::set_enabled( $user, false );
+		$this->assertDoesNotMatchRegularExpression( '/name="notifications" value="1"\s+checked/', do_blocks( '<!-- wp:easyq/account /-->' ) );
 	}
 
 	public function test_saves_the_account(): void {

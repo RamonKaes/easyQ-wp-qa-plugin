@@ -339,6 +339,16 @@ final class Settings_Screen {
 				}
 				break;
 
+			case 'email':
+				printf(
+					'<input type="email" class="regular-text ltr" id="%1$s" name="%2$s" value="%3$s"%4$s>',
+					esc_attr( $id ),
+					esc_attr( $name ),
+					esc_attr( is_string( $value ) ? $value : '' ),
+					$described // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above.
+				);
+				break;
+
 			case 'lines':
 				printf(
 					'<textarea class="large-text" rows="4" id="%1$s" name="%2$s"%3$s>%4$s</textarea>',

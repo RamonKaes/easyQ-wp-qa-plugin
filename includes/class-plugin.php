@@ -36,6 +36,7 @@ final class Plugin {
 		( new Users\User_Events( Services::posts(), Services::points() ) )->register();
 		( new Users\Avatars() )->register();
 		( new Users\Registration() )->register();
+		( new Mail\Notifications() )->register();
 		( new REST\REST_API() )->register();
 
 		$router = new Frontend\Router();

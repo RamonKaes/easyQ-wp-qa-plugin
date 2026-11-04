@@ -130,8 +130,20 @@ final class Settings_Layout {
 				self::section( __( 'Moderation', 'easyq' ), array( 'permit_moderate', 'permit_hide_show', 'permit_delete_hidden', 'permit_anon_view_ips', 'permit_view_voters_flaggers' ) ),
 				self::section( __( 'Users', 'easyq' ), array( 'permit_view_new_users_page', 'permit_view_special_users_page', 'permit_post_wall' ) ),
 			),
+			'emails'      => array(
+				self::section( '', array( 'from_email', 'feedback_email' ) ),
+				self::section(
+					__( 'Emails to the site owner', 'easyq' ),
+					array(
+						self::row( __( 'Posts', 'easyq' ), array( 'notify_admin_q_post', 'moderate_notify_admin' ) ),
+						self::row( __( 'Flags', 'easyq' ), array( 'flagging_notify_first', 'flagging_notify_every' ) ),
+						self::row( __( 'Users', 'easyq' ), array( 'register_notify_admin' ) ),
+					)
+				),
+			),
 			'users'       => array(
 				self::section( '', array( self::row( __( 'Avatars', 'easyq' ), array( 'avatar_allow_upload', 'avatar_store_size' ) ) ) ),
+				self::section( __( 'Welcome email', 'easyq' ), array( self::row( __( 'Own text', 'easyq' ), array( 'show_custom_welcome' ) ), 'custom_welcome' ) ),
 			),
 			'posting'     => array(
 				self::section(
