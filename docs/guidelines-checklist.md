@@ -56,7 +56,7 @@ and axe.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Open, phase 8 | Section 11 of the [feature mapping](feature-mapping.md) |
-| Personal data exporter and eraser | Open, phase 8 | Same |
+| Personal data exporter and eraser | Open, phases 7 and 8 | Same; those of phase 7 data come with their blocks (decision 54) |
 | No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened, retention in phase 8 |
 
 ## Administration menus
@@ -107,7 +107,7 @@ and axe.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Schedule on activation, clear on deactivation | Not used yet | Comes with the IP address retention in phase 8 |
+| Schedule on activation, clear on deactivation | Not used yet | Newsletter batches in phase 7e as single events, IP address retention in phase 8 |
 
 ## Internationalization
 

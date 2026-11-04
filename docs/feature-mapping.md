@@ -88,7 +88,7 @@ Q2A uses 31 tables. The schema is created with `dbDelta()`, versioned through th
 | `widgets` | **–** | Replaced by blocks |
 | `cache` | **WP** Transients / object cache | |
 | Cached counts in `options` (`cache_qcount`, …) | **P** option `easyq_counts` | Invalidated on change and recalculated on the next read instead of incremental updates |
-| – | **N** `easyq_email_templates` *(or options)* | Editable email templates (section 8) |
+| – | **N** option `easyq_email_templates` | Edited email templates (section 8); no table of its own |
 
 **Uninstall (N):** `uninstall.php` removes tables, options and meta only if this is
 explicitly enabled in the settings (default: keep data).
@@ -368,16 +368,16 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 
 | Option | Target |
 | --- | --- |
-| `show_notice_visitor`, `notice_visitor` | **P** |
-| `show_notice_welcome`, `notice_welcome` | **P** |
-| `show_custom_welcome`, `custom_welcome` | **P** |
-| `show_custom_register`, `custom_register` | **P** via `register_form` on the WP registration form |
-| `show_register_terms`, `register_terms` | **P** required checkbox on the WP registration form; links the WP privacy policy page |
+| `show_notice_visitor`, `notice_visitor` | **P** in phase 7c |
+| `show_notice_welcome`, `notice_welcome` | **P** in phase 7c |
+| `show_custom_welcome`, `custom_welcome` | **P** in phase 7a, in the welcome mail through `wp_new_user_notification_email` |
+| `show_custom_register`, `custom_register` | **P** in phase 8, via `register_form` on the WP registration form |
+| `show_register_terms`, `register_terms` | **P** in phase 8, required checkbox on the WP registration form; links the WP privacy policy page |
 | `allow_login_email_only` | **WP** |
 | `allow_change_usernames` | **–** (section 2) |
 | `register_notify_admin` | **P** via `wp_send_new_user_notification_to_admin` |
 | `suspend_register_users` | **WP** "Anyone can register" |
-| `block_bad_usernames` | **P** via `registration_errors` |
+| `block_bad_usernames` | **P** in phase 8, via `registration_errors` |
 | `allow_private_messages`, `show_message_history`, `page_size_pms` | **P** |
 | `allow_user_walls`, `page_size_wall` | **P** |
 | `avatar_allow_gravatar`, `avatar_default_show` | **WP** Settings → Discussion (avatars) |
@@ -574,6 +574,7 @@ Q2A ships 20 templates; 18 are kept and sent through `wp_mail()`:
 - Defaults are translatable strings; once edited, the stored text wins. On
   multilingual sites the edited text is passed through the WPML/Polylang string
   translation hooks where available.
+- Placeholders use the format of core's own emails, `###SITENAME###`, not Q2A's `^site_title`.
 - Placeholders are replaced with escaped values; bodies are plain text (as in Q2A),
   optional HTML through a filter.
 - Filter `easyq_email_{name}` for programmatic changes.
@@ -668,8 +669,8 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
 | 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7 |
 | 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | Done: profile and users screens in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API); 6e done (dashboard, dashboard widget and tools, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
-| 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, newsletter (5.12) | Mails captured and asserted in tests | Open |
-| 8 Privacy and tooling | Section 11, WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
+| 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | Open; order 7a, 7b, 7c, 7d, 7e, as every other block sends mails through 7a |
+| 8 Privacy and tooling | Section 11: privacy policy text, exporters and erasers of posts, votes, flags and profile data (those of phase 7 data come with phase 7), IP retention; registration text, terms with stored consent and blocked user names (5.4); WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
 | 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
 | 10 Extensions | Selection from section 10 | | Open |
 
@@ -730,3 +731,8 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 49 | The start page and the questions page are two pages, as in Question2Answer: the start page lists the recent questions and answers (`page_size_home`, new setting), `questions/` the questions with their sort orders. They had been one page with the sort orders of `questions/`, without the list of questions and answers; the navigation names them Q&A and Questions, as Q2A does | 2026-10-29 |
 | 50 | Closing a question opens the question page in the state `close` (`?easyq_close={id}`), and the form appears below the question text with a cancel link, as Q2A does with `state=close`; it was a fold-out form inside the row of action buttons, which pushed the buttons aside | 2026-10-29 |
 | 51 | The REST controllers follow `WP_REST_Controller` strictly: one controller per resource (posts, categories and tags, IP addresses now apart), `get_item_schema()` cached in `$this->schema` with `add_additional_fields_schema()`, `prepare_item_for_response()` with `register_rest_field()` and `filter_response_by_context()`, contexts on every property and a `context` argument on reading routes, `deleted` with `previous` after deleting. The edit and close states of the question page are handled like core's `replytocom`: not indexed, linked with `rel="nofollow"`, cancel links back to the post | 2026-10-29 |
+| 52 | Phase 7 is split into 7a to 7e, each with a core model followed in all its parts: `wp_notify_postauthor()` and `wp_notify_moderator()` for notifications (filters for recipients, subject, text and headers, `switch_to_user_locale()`, decoded site name, `From` and `Reply-To`), `wp_new_user_notification_email` and `wp_new_user_notification_email_admin` for registration mails, the Settings API and a list table for the template editor, `WP_REST_Controller` for new endpoints, comments for the wall, `wp_send_user_request()` with its request keys for double opt-in, `wp_schedule_single_event()` for newsletter batches | 2026-11-04 |
+| 53 | Email placeholders use core's `###NAME###` format instead of Q2A's `^name`; edited templates are stored in one option, without a table of their own; mails are plain text as in Q2A and core, HTML only through a filter | 2026-11-04 |
+| 54 | The privacy exporters and erasers of favorites, events, messages and wall posts come with their blocks in phase 7, not in phase 8, so that no personal data exists without them | 2026-11-04 |
+| 55 | Of the user settings (5.4), notices go to 7c and the welcome text to 7a; registration text, terms with stored consent and blocked user names go to phase 8, as the consent record belongs to the privacy work | 2026-11-04 |
+| 56 | Until the captcha of phase 10, the feedback form is protected by a rate limit, a deliberate addition to Q2A, which only offers a captcha there | 2026-11-04 |
