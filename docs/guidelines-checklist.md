@@ -63,7 +63,7 @@ and axe.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Top-level menu only if needed | Met | easyQ has eight screens; a single page would belong under Settings |
+| Top-level menu only if needed | Met | easyQ has nine screens; a single page would belong under Settings |
 | Capability per screen | Met | `easyq_manage`, Posts from `easyq_moderate` |
 | Menu icon | Kept | `dashicons-format-chat`. Dashicons are to be replaced in menus (Developer Blog, October 2026), without a replacement yet; a base64 SVG would need `base64_encode()`, which the coding standards discourage. Switch once core offers the replacement |
 
@@ -94,6 +94,7 @@ and axe.
 | --- | --- | --- |
 | `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
+| Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
 | Stop emails with one click | Met | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
 | `Reply-To` of the author, as core's comment emails | Kept | Addresses stay private on a Q&A site; Q2A sets none there either |
 

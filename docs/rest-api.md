@@ -31,7 +31,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip` and `easyq-tool-batch`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch` and `easyq-email-template`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -150,6 +150,10 @@ category) and to the `move` action; a question may always keep the category it h
 
 | Endpoint | Purpose |
 | --- | --- |
+| `GET /email-templates`, `GET /email-templates/{name}` | Texts of the emails with who gets them, whether they were edited, their placeholders and a preview (`easyq_manage`) |
+| `PUT /email-templates/{name}` | Change `subject` and `body`; both are required, as an email needs them |
+| `DELETE /email-templates/{name}` | Go back to the default text; responds with `deleted` and `previous` |
+| `POST /email-templates/{name}/test` | Send the template with sample values to the current user; responds with `sent` and `to` |
 | `POST /unsubscribe` | Stop the emails about a post: `post` and `token` from the email, without logging in. Mail programs post here for a one-click unsubscribe (RFC 8058), from the `List-Unsubscribe` header |
 
 ### Moderation

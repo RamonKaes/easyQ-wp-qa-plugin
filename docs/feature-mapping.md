@@ -587,6 +587,9 @@ sent for now: setting the password through core's emailed link confirms the addr
 
 **Editable templates (N):**
 
+- The screen saves through the Settings API (`options.php`) into the option
+  `easyq_email_templates`; a text equal to the default is not stored. The REST API has
+  `/email-templates`.
 - Admin screen "Email templates" (section 5.1): subject and body per template,
   list of available placeholders, preview with sample data, test mail to the current
   user, reset to default.
@@ -594,6 +597,9 @@ sent for now: setting the password through core's emailed link confirms the addr
   multilingual sites the edited text is passed through the WPML/Polylang string
   translation hooks where available.
 - Placeholders use the format of core's own emails, `###SITENAME###`, not Q2A's `^site_title`.
+- Placeholders unknown to a template are saved with a warning. If the welcome email
+  loses `###LOGIN_LINK###`, core's link is added at the end, as a new user cannot set a
+  password without it.
 - Placeholders are replaced with escaped values; bodies are plain text (as in Q2A),
   optional HTML through a filter.
 - Filter `easyq_email_{name}` for programmatic changes.
@@ -688,7 +694,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
 | 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7 |
 | 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | Done: profile and users screens in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API); 6e done (dashboard, dashboard widget and tools, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
-| 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | 7a done; next 7b, 7c, 7d, 7e, in this order |
+| 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | 7a and 7b done; next 7c, 7d, 7e, in this order |
 | 8 Privacy and tooling | Section 11: privacy policy text, exporters and erasers of posts, votes, flags and profile data (those of phase 7 data come with phase 7), IP retention; registration text, terms with stored consent and blocked user names (5.4); WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
 | 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
 | 10 Extensions | Selection from section 10 | | Open |
