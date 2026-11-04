@@ -254,6 +254,59 @@ final class Schemas {
 	}
 
 	/**
+	 * Returns the schema of an email template.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function email_template(): array {
+		return self::schema(
+			'easyq-email-template',
+			array(
+				'name'         => self::property( __( 'Name of the template.', 'easyq' ), 'string', self::EMBED ),
+				'label'        => self::property( __( 'What the email is about.', 'easyq' ), 'string', self::EMBED ),
+				'audience'     => self::property( __( 'Who gets the email.', 'easyq' ), 'string' ),
+				'subject'      => array(
+					'description' => __( 'Subject of the email.', 'easyq' ),
+					'type'        => 'string',
+					'context'     => self::EMBED,
+				),
+				'body'         => array(
+					'description' => __( 'Text of the email.', 'easyq' ),
+					'type'        => 'string',
+					'context'     => self::VIEW,
+				),
+				'edited'       => self::property( __( 'Whether the text differs from the default.', 'easyq' ), 'boolean', self::EMBED ),
+				'placeholders' => self::property( __( 'Placeholders the template can use, with what they stand for.', 'easyq' ), 'object' ) + array( 'additionalProperties' => array( 'type' => 'string' ) ),
+				'preview'      => self::property( __( 'Subject and text with sample values.', 'easyq' ), 'object' ) + array(
+					'properties' => array(
+						'subject' => array( 'type' => 'string' ),
+						'message' => array( 'type' => 'string' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Returns the schema of the response to a test email.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function email_test(): array {
+		return self::schema(
+			'easyq-email-test',
+			array(
+				'sent' => self::property( __( 'Whether the email was handed over for sending.', 'easyq' ), 'boolean' ),
+				'to'   => self::property( __( 'Address of the current user, who gets the email.', 'easyq' ), 'string' ),
+			)
+		);
+	}
+
+	/**
 	 * Returns a read-only property.
 	 *
 	 * @since 0.1.0

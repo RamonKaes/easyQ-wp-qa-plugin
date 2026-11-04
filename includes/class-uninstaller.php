@@ -12,6 +12,7 @@ use EasyQ\Database\DB;
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Frontend\Router;
+use EasyQ\Mail\Templates;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Users\Site_Meta;
@@ -93,6 +94,7 @@ final class Uninstaller {
 	public static function uninstall_site(): void {
 		Schema::drop();
 		Options::delete_all();
+		delete_option( Templates::OPTION );
 		delete_option( Installer::DB_VERSION_OPTION );
 		delete_option( Counts::OPTION );
 		delete_option( Router::RULES_OPTION );

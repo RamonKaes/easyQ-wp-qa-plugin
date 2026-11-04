@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-04T13:44:32+00:00\n"
+"POT-Creation-Date: 2026-11-04T14:03:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: easyq\n"
@@ -84,14 +84,17 @@ msgid "No categories yet. To get started, add the first category."
 msgstr ""
 
 #. translators: %s: category name.
+#. translators: %s: name of the email.
 #. translators: %s: field label.
 #: includes/admin/class-categories-list-table.php:198
+#: includes/admin/class-email-templates-list-table.php:113
 #: includes/admin/class-user-fields-list-table.php:136
 #, php-format
 msgid "Edit “%s”"
 msgstr ""
 
 #: includes/admin/class-categories-list-table.php:199
+#: includes/admin/class-email-templates-list-table.php:114
 #: includes/admin/class-user-fields-list-table.php:137
 #: includes/blocks/render/class-post-fields.php:530
 msgid "Edit"
@@ -513,6 +516,88 @@ msgid_plural "%s flagged posts"
 msgstr[0] ""
 msgstr[1] ""
 
+#: includes/admin/class-email-templates-list-table.php:66
+#: includes/settings/class-fields.php:86
+msgid "Email"
+msgstr ""
+
+#: includes/admin/class-email-templates-list-table.php:67
+msgid "Goes to"
+msgstr ""
+
+#: includes/admin/class-email-templates-list-table.php:68
+#: includes/admin/class-email-templates-screen.php:210
+#: includes/admin/class-email-templates-screen.php:238
+msgid "Subject"
+msgstr ""
+
+#: includes/admin/class-email-templates-list-table.php:69
+#: includes/admin/class-email-templates-screen.php:216
+#: includes/admin/class-email-templates-screen.php:243
+#: includes/admin/class-settings-layout.php:163
+msgid "Text"
+msgstr ""
+
+#: includes/admin/class-email-templates-list-table.php:153
+msgid "Edited"
+msgstr ""
+
+#: includes/admin/class-email-templates-list-table.php:153
+#: includes/settings/class-fields.php:413
+msgid "Default"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:59
+#: includes/admin/class-email-templates-screen.php:177
+msgid "Email Templates"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:115
+msgid "Sorry, you are not allowed to manage the email templates."
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:178
+msgid "The texts of the emails easyQ sends. Edited texts are used in every language, unless a translation plugin provides others."
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:203
+msgid "Back to all email templates"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:220
+msgid "Placeholders"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:233
+msgid "Preview"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:234
+msgid "The saved text with sample values. Emails about a post also get links to stop them, which cannot be edited."
+msgstr ""
+
+#. translators: %s: email address.
+#: includes/admin/class-email-templates-screen.php:248
+#, php-format
+msgid "Send a test email to %s"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:250
+msgid "Reset to the default text"
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:302
+msgid "The default text is back."
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:303
+msgid "The test email has been sent."
+msgstr ""
+
+#: includes/admin/class-email-templates-screen.php:304
+msgid "The test email could not be sent."
+msgstr ""
+
 #: includes/admin/class-points-screen.php:78
 msgid "Settings saved. The points of all users were recalculated."
 msgstr ""
@@ -810,7 +895,8 @@ msgstr ""
 
 #. translators: %s: number of flags.
 #: includes/admin/class-posts-list-table.php:397
-#: includes/mail/class-notifications.php:299
+#: includes/mail/class-notifications.php:300
+#: includes/mail/class-templates.php:370
 #, php-format
 msgid "%s flag"
 msgid_plural "%s flags"
@@ -1118,10 +1204,6 @@ msgstr ""
 
 #: includes/admin/class-settings-layout.php:162
 msgid "Question titles"
-msgstr ""
-
-#: includes/admin/class-settings-layout.php:163
-msgid "Text"
 msgstr ""
 
 #: includes/admin/class-settings-layout.php:164
@@ -2477,16 +2559,197 @@ msgstr ""
 msgid "To stop all emails about your posts, go to your account: %s"
 msgstr ""
 
-#: includes/mail/class-notifications.php:519
-#: includes/mail/class-notifications.php:536
+#: includes/mail/class-notifications.php:524
+#: includes/mail/class-notifications.php:541
 msgid "anonymous"
 msgstr ""
 
-#: includes/mail/class-templates.php:45
+#: includes/mail/class-templates.php:89
+msgid "Email templates"
+msgstr ""
+
+#: includes/mail/class-templates.php:90
+msgid "Edited texts of the emails, keyed by template."
+msgstr ""
+
+#: includes/mail/class-templates.php:142
+msgid "An email needs a subject and a text. The template was not changed."
+msgstr ""
+
+#. translators: %s: placeholders, e.g. ###NAME###.
+#: includes/mail/class-templates.php:149
+#, php-format
+msgid "The text was saved, but this template has no such placeholders, so they stay as they are in the email: %s"
+msgstr ""
+
+#: includes/mail/class-templates.php:248
+msgid "Author of the post"
+msgstr ""
+
+#: includes/mail/class-templates.php:249
+msgid "Site owner"
+msgstr ""
+
+#: includes/mail/class-templates.php:250
+msgid "The user"
+msgstr ""
+
+#: includes/mail/class-templates.php:254
+msgid "Question answered"
+msgstr ""
+
+#: includes/mail/class-templates.php:258
+msgid "Comment on a question"
+msgstr ""
+
+#: includes/mail/class-templates.php:262
+msgid "Comment on an answer"
+msgstr ""
+
+#: includes/mail/class-templates.php:266
+msgid "Comment after a comment"
+msgstr ""
+
+#: includes/mail/class-templates.php:270
+msgid "Answer selected as the best"
+msgstr ""
+
+#: includes/mail/class-templates.php:274
+msgid "Related question to an answer"
+msgstr ""
+
+#: includes/mail/class-templates.php:278
+msgid "New question"
+msgstr ""
+
+#: includes/mail/class-templates.php:282
+msgid "Post waits for approval"
+msgstr ""
+
+#: includes/mail/class-templates.php:286
+msgid "Edited post waits for approval"
+msgstr ""
+
+#: includes/mail/class-templates.php:290
+msgid "Flagged post"
+msgstr ""
+
+#: includes/mail/class-templates.php:294
+msgid "New user"
+msgstr ""
+
+#: includes/mail/class-templates.php:298
+msgid "New user waits for approval"
+msgstr ""
+
+#: includes/mail/class-templates.php:302
+msgid "Welcome"
+msgstr ""
+
+#: includes/mail/class-templates.php:306
+msgid "User approved"
+msgstr ""
+
+#: includes/mail/class-templates.php:333
+msgid "Name of the site"
+msgstr ""
+
+#: includes/mail/class-templates.php:334
+msgid "Address of the questions and answers"
+msgstr ""
+
+#: includes/mail/class-templates.php:335
+msgid "Name of the recipient"
+msgstr ""
+
+#: includes/mail/class-templates.php:336
+msgid "Email address of the recipient"
+msgstr ""
+
+#: includes/mail/class-templates.php:337
+msgid "Who wrote the post or selected the answer"
+msgstr ""
+
+#: includes/mail/class-templates.php:338
+msgid "Title of the question"
+msgstr ""
+
+#: includes/mail/class-templates.php:339
+msgid "Text of the question"
+msgstr ""
+
+#: includes/mail/class-templates.php:340
+msgid "Text of the answer"
+msgstr ""
+
+#: includes/mail/class-templates.php:341
+msgid "Text of the comment"
+msgstr ""
+
+#: includes/mail/class-templates.php:342
+msgid "Title of the question or text of the answer the comment is on"
+msgstr ""
+
+#: includes/mail/class-templates.php:343
+msgid "Title and text of the post"
+msgstr ""
+
+#: includes/mail/class-templates.php:344
+msgid "Number of flags"
+msgstr ""
+
+#: includes/mail/class-templates.php:345
+msgid "Name of the new user"
+msgstr ""
+
+#: includes/mail/class-templates.php:346
+msgid "Address of the post or the profile"
+msgstr ""
+
+#: includes/mail/class-templates.php:347
+msgid "Address of the screen to review it"
+msgstr ""
+
+#: includes/mail/class-templates.php:348
+msgid "Own text from the settings"
+msgstr ""
+
+#: includes/mail/class-templates.php:349
+msgid "Link to set the password; added at the end if left out"
+msgstr ""
+
+#: includes/mail/class-templates.php:362
+#: includes/mail/class-templates.php:371
+msgid "Alex Example"
+msgstr ""
+
+#: includes/mail/class-templates.php:363
+#: includes/mail/class-templates.php:368
+msgid "How do I build a block theme?"
+msgstr ""
+
+#: includes/mail/class-templates.php:364
+msgid "I want to create my own block theme. Where do I start?"
+msgstr ""
+
+#: includes/mail/class-templates.php:365
+#: includes/mail/class-templates.php:367
+msgid "Start with the theme.json file and a templates folder."
+msgstr ""
+
+#: includes/mail/class-templates.php:366
+msgid "Thanks, that helps a lot."
+msgstr ""
+
+#: includes/mail/class-templates.php:375
+msgid "To set your password, visit the following address:"
+msgstr ""
+
+#: includes/mail/class-templates.php:456
 msgid "Your ###SITENAME### answer has a new comment"
 msgstr ""
 
-#: includes/mail/class-templates.php:46
+#: includes/mail/class-templates.php:457
 msgid ""
 "Your answer on ###SITENAME### has a new comment by ###AUTHOR###:\n"
 "\n"
@@ -2505,11 +2768,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:49
+#: includes/mail/class-templates.php:460
 msgid "Your ###SITENAME### answer has a related question"
 msgstr ""
 
-#: includes/mail/class-templates.php:50
+#: includes/mail/class-templates.php:461
 msgid ""
 "Your answer on ###SITENAME### has a new related question by ###AUTHOR###:\n"
 "\n"
@@ -2528,11 +2791,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:53
+#: includes/mail/class-templates.php:464
 msgid "Your ###SITENAME### answer has been selected!"
 msgstr ""
 
-#: includes/mail/class-templates.php:54
+#: includes/mail/class-templates.php:465
 msgid ""
 "Congratulations! Your answer on ###SITENAME### has been selected as the best by ###AUTHOR###:\n"
 "\n"
@@ -2551,11 +2814,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:57
+#: includes/mail/class-templates.php:468
 msgid "Your ###SITENAME### comment has been added to"
 msgstr ""
 
-#: includes/mail/class-templates.php:58
+#: includes/mail/class-templates.php:469
 msgid ""
 "A new comment by ###AUTHOR### has been added after your comment on ###SITENAME###:\n"
 "\n"
@@ -2574,11 +2837,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:61
+#: includes/mail/class-templates.php:472
 msgid "###SITENAME### has a flagged post"
 msgstr ""
 
-#: includes/mail/class-templates.php:62
+#: includes/mail/class-templates.php:473
 msgid ""
 "A post by ###AUTHOR### has received ###FLAGS###:\n"
 "\n"
@@ -2597,12 +2860,12 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:65
-#: includes/mail/class-templates.php:81
+#: includes/mail/class-templates.php:476
+#: includes/mail/class-templates.php:492
 msgid "###SITENAME### moderation"
 msgstr ""
 
-#: includes/mail/class-templates.php:66
+#: includes/mail/class-templates.php:477
 msgid ""
 "A post by ###AUTHOR### requires your approval:\n"
 "\n"
@@ -2621,11 +2884,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:69
+#: includes/mail/class-templates.php:480
 msgid "Your ###SITENAME### question was answered"
 msgstr ""
 
-#: includes/mail/class-templates.php:70
+#: includes/mail/class-templates.php:481
 msgid ""
 "Your question on ###SITENAME### has been answered by ###AUTHOR###:\n"
 "\n"
@@ -2644,11 +2907,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:73
+#: includes/mail/class-templates.php:484
 msgid "Your ###SITENAME### question has a new comment"
 msgstr ""
 
-#: includes/mail/class-templates.php:74
+#: includes/mail/class-templates.php:485
 msgid ""
 "Your question on ###SITENAME### has a new comment by ###AUTHOR###:\n"
 "\n"
@@ -2667,11 +2930,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:77
+#: includes/mail/class-templates.php:488
 msgid "###SITENAME### has a new question"
 msgstr ""
 
-#: includes/mail/class-templates.php:78
+#: includes/mail/class-templates.php:489
 msgid ""
 "A new question has been asked by ###AUTHOR###:\n"
 "\n"
@@ -2688,7 +2951,7 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:82
+#: includes/mail/class-templates.php:493
 msgid ""
 "An edited post by ###AUTHOR### requires your reapproval:\n"
 "\n"
@@ -2707,11 +2970,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:85
+#: includes/mail/class-templates.php:496
 msgid "Your ###SITENAME### user has been approved"
 msgstr ""
 
-#: includes/mail/class-templates.php:86
+#: includes/mail/class-templates.php:497
 msgid ""
 "You can see your new user profile here:\n"
 "\n"
@@ -2722,12 +2985,12 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:89
-#: includes/mail/class-templates.php:93
+#: includes/mail/class-templates.php:500
+#: includes/mail/class-templates.php:504
 msgid "###SITENAME### has a new registered user"
 msgstr ""
 
-#: includes/mail/class-templates.php:90
+#: includes/mail/class-templates.php:501
 msgid ""
 "A new user has registered as ###USER###.\n"
 "\n"
@@ -2740,7 +3003,7 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:94
+#: includes/mail/class-templates.php:505
 msgid ""
 "A new user has registered as ###USER###.\n"
 "\n"
@@ -2757,11 +3020,11 @@ msgid ""
 "###SITENAME###"
 msgstr ""
 
-#: includes/mail/class-templates.php:97
+#: includes/mail/class-templates.php:508
 msgid "Welcome to ###SITENAME###!"
 msgstr ""
 
-#: includes/mail/class-templates.php:98
+#: includes/mail/class-templates.php:509
 msgid ""
 "Thank you for registering for ###SITENAME###.\n"
 "\n"
@@ -2978,6 +3241,20 @@ msgstr ""
 
 #: includes/rest/class-controller.php:361
 msgid "Items per page."
+msgstr ""
+
+#: includes/rest/class-email-templates-controller.php:80
+#: includes/rest/class-schemas.php:271
+msgid "Subject of the email."
+msgstr ""
+
+#: includes/rest/class-email-templates-controller.php:85
+#: includes/rest/class-schemas.php:276
+msgid "Text of the email."
+msgstr ""
+
+#: includes/rest/class-email-templates-controller.php:173
+msgid "An email needs a subject and a text."
 msgstr ""
 
 #: includes/rest/class-post-input.php:38
@@ -3467,6 +3744,38 @@ msgstr ""
 msgid "Whether emails about the post are sent; always false after this request."
 msgstr ""
 
+#: includes/rest/class-schemas.php:267
+msgid "Name of the template."
+msgstr ""
+
+#: includes/rest/class-schemas.php:268
+msgid "What the email is about."
+msgstr ""
+
+#: includes/rest/class-schemas.php:269
+msgid "Who gets the email."
+msgstr ""
+
+#: includes/rest/class-schemas.php:280
+msgid "Whether the text differs from the default."
+msgstr ""
+
+#: includes/rest/class-schemas.php:281
+msgid "Placeholders the template can use, with what they stand for."
+msgstr ""
+
+#: includes/rest/class-schemas.php:282
+msgid "Subject and text with sample values."
+msgstr ""
+
+#: includes/rest/class-schemas.php:303
+msgid "Whether the email was handed over for sending."
+msgstr ""
+
+#: includes/rest/class-schemas.php:304
+msgid "Address of the current user, who gets the email."
+msgstr ""
+
 #: includes/rest/class-tags-controller.php:56
 msgid "Only tags starting with this text."
 msgstr ""
@@ -3543,10 +3852,6 @@ msgstr ""
 msgid "Permissions"
 msgstr ""
 
-#: includes/settings/class-fields.php:86
-msgid "Email"
-msgstr ""
-
 #: includes/settings/class-fields.php:89
 msgid "Viewing"
 msgstr ""
@@ -3565,10 +3870,6 @@ msgstr ""
 
 #: includes/settings/class-fields.php:412
 msgid "Wider"
-msgstr ""
-
-#: includes/settings/class-fields.php:413
-msgid "Default"
 msgstr ""
 
 #: includes/settings/class-fields.php:414

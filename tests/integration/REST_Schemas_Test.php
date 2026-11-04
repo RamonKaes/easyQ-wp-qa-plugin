@@ -117,6 +117,9 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$this->assert_matches( $this->request( 'GET', '/categories/' . $child ), '/categories/' . $child );
 		$this->assert_matches( $this->request( 'POST', '/categories/' . $parent . '/reassign', array( 'to' => $child ) ), '/categories/' . $parent . '/reassign' );
 		$this->assert_matches( $this->request( 'GET', '/tags' ), '/tags', true );
+		$this->assert_matches( $this->request( 'GET', '/email-templates' ), '/email-templates', true );
+		$this->assert_matches( $this->request( 'GET', '/email-templates/flagged' ), '/email-templates/flagged' );
+		$this->assert_matches( $this->request( 'POST', '/email-templates/flagged/test' ), '/email-templates/flagged/test' );
 		$this->assert_matches( $this->request( 'GET', '/users' ), '/users', true );
 		$this->assert_matches( $this->request( 'GET', '/users/me' ), '/users/me' );
 		$this->assert_matches( $this->request( 'GET', '/users/' . $author->user_id ), '/users/' . $author->user_id );

@@ -66,6 +66,7 @@ final class Notifications {
 			add_action( "easyq_{$type}_flag", array( $this, 'post_flagged' ) );
 		}
 
+		add_action( 'init', array( Templates::class, 'register_setting' ) );
 		add_filter( 'wp_send_new_user_notification_to_admin', array( $this, 'send_registration_to_admin' ) );
 		add_filter( 'wp_new_user_notification_email_admin', array( $this, 'registration_email_to_admin' ), 10, 2 );
 		add_filter( 'wp_new_user_notification_email', array( $this, 'welcome_email' ), 10, 2 );
@@ -380,21 +381,25 @@ final class Notifications {
 	 */
 	public function welcome_email( array $email, WP_User $user ): array {
 		$custom  = Options::get_bool( 'users', 'show_custom_welcome' ) ? trim( Options::get_string( 'users', 'custom_welcome' ) ) : '';
+		$link    = trim( is_string( $email['message'] ?? null ) ? $email['message'] : '' );
 		$content = Mailer::content(
 			'welcome',
 			array(
 				'###CUSTOM###'     => '' === $custom ? '' : $custom . "\n\n",
-				'###LOGIN_LINK###' => trim( is_string( $email['message'] ?? null ) ? $email['message'] : '' ),
+				'###LOGIN_LINK###' => $link,
 				'###USERNAME###'   => $user->user_login,
 				'###EMAIL###'      => $user->user_email,
 			)
 		);
 
+		// Without core's link a new user cannot set a password, so an edited text cannot lose it.
+		$message = str_contains( $content['message'], $link ) ? $content['message'] : $content['message'] . "\n\n" . $link;
+
 		return $this->core_email(
 			'welcome',
 			array(
 				'subject' => $content['subject'],
-				'message' => $content['message'],
+				'message' => $message,
 			) + $email
 		);
 	}

@@ -9,6 +9,7 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
+use EasyQ\Mail\Templates;
 use EasyQ\Settings\Options;
 use EasyQ\Uninstaller;
 use EasyQ\Users\Site_Meta;
@@ -62,13 +63,18 @@ final class Uninstaller_Test extends Test_Case {
 		$site_id = self::factory()->blog->create();
 
 		switch_to_blog( $site_id );
+		Templates::save( 'flagged', 'A subject', 'A text' );
+		$this->assertNotFalse( get_option( Templates::OPTION ) );
 		Uninstaller::uninstall_site();
 		$version  = get_option( Installer::DB_VERSION_OPTION );
 		$settings = get_option( Options::option_name( 'general' ) );
+		// With a default, as the registered setting has one, a deleted option reads as that default.
+		$templates = get_option( Templates::OPTION, false );
 		restore_current_blog();
 
 		$this->assertFalse( $version );
 		$this->assertFalse( $settings );
+		$this->assertFalse( $templates );
 		foreach ( Schema::table_names( $wpdb->get_blog_prefix( $site_id ) ) as $table ) {
 			$this->assertFalse( $this->table_exists( $table ), "Table $table was not dropped." );
 		}

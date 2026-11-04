@@ -60,6 +60,7 @@ final class Plugin {
 			( new Admin\Posts_Screen() )->register();
 			( new Admin\Points_Screen() )->register();
 			( new Admin\User_Fields_Screen() )->register();
+			( new Admin\Email_Templates_Screen() )->register();
 			( new Admin\Tools_Screen() )->register();
 		}
 	}
