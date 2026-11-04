@@ -88,6 +88,15 @@ and axe.
 | --- | --- | --- |
 | Check capabilities, not roles | Met | Meta capabilities in `map_meta_cap`; easyQ adds no roles |
 
+## Email
+
+| Rule | Status | Where |
+| --- | --- | --- |
+| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
+| Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
+| Stop emails with one click | Met | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
+| `Reply-To` of the author, as core's comment emails | Kept | Addresses stay private on a Q&A site; Q2A sets none there either |
+
 ## HTTP API
 
 | Rule | Status | Where |
@@ -139,7 +148,7 @@ and axe.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 46 blocks |
+| `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 47 blocks |
 | Component props `__next40pxDefaultSize` and `__nextHasNoMarginBottom` | Kept | Without effect since WordPress 7.1, but needed from 6.7 to 7.0; remove once the minimum is 7.1 |
 | Editor canvas is always an iframe (7.1) | Met | The editor script uses no global `document` or `window` |
 | Frontend markup styled by the theme, no plugin stylesheet | Met | Core block classes and style handles; forms take on the comment form block, so text fields, buttons and checkboxes look as in the theme's comment form ([feature mapping](feature-mapping.md), decision 46). Selects keep the browser look, as in core |

@@ -139,12 +139,18 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`) or users with special levels (`special`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages |
 | `GET /users/{id}` | Public Q&A profile: name, avatar, level, title, points, rank, activity counts and the profile fields the viewer may see. On multisite, users of other sites only have a profile once they took part |
 | `GET /users/me` | The profile of the current user, with all profile fields, including those hidden from others |
-| `POST /users/me` | Change the own profile: `fields` (object of field name and value), `remove_avatar`, or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; cropped to a square; counts towards the upload rate limit). Name, email address and password are changed in the WordPress profile |
+| `POST /users/me` | Change the own profile: `fields` (object of field name and value), `remove_avatar`, `notifications` (whether the user gets emails about their posts; only the current user sees this field), or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; cropped to a square; counts towards the upload rate limit). Name, email address and password are changed in the WordPress profile |
 
 Unless the site allows it in the posting settings, a question needs a category once
 categories exist, and that category must not have subcategories. This applies to
 `POST /questions`, to `category` in `PUT /questions/{id}` (`null` removes the
 category) and to the `move` action; a question may always keep the category it has.
+
+### Emails
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /unsubscribe` | Stop the emails about a post: `post` and `token` from the email, without logging in. Mail programs post here for a one-click unsubscribe (RFC 8058), from the `List-Unsubscribe` header |
 
 ### Moderation
 

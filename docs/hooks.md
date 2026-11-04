@@ -112,6 +112,9 @@ Message, wall and favorite events follow with the corresponding features.
 | `easyq_default_settings` | `array $defaults` | Default values of all settings, keyed by section and setting |
 | `easyq_search_providers` | `EasyQ\Search\Search_Provider[] $providers` | Add search engines; the built-in search is always kept |
 | `easyq_classic_template_content` | `string $content`, `string $slug` | Block markup of a Q&A page in classic themes, e.g. `easyq-question`; block themes edit the templates in the Site Editor instead |
+| `easyq_send_email` | `bool $send`, `string $name`, `EasyQ\Mail\Recipient $recipient` | Whether an email is sent |
+| `easyq_email_recipients` | `EasyQ\Mail\Recipient[] $recipients`, `string $name` | Recipients of an email |
+| `easyq_email_{name}` | `array $email` with `to`, `subject`, `message`, `headers` | An email before it is sent, like core's `wp_new_user_notification_email`; `{name}` is the template, e.g. `q_answered`. Also applies to `welcome`, `u_registered` and `u_to_approve`, which change core's registration emails |
 | `easyq_client_ip` | `string $ip` | IP address of the current request; easyQ trusts only `REMOTE_ADDR` by default. Sites behind a proxy return the client address from a trusted header here |
 
 ## Capabilities

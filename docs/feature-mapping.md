@@ -172,7 +172,7 @@ is only available in block themes.
 | `updates` | **P** | `easyq-updates`, phase 7 |
 | `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message`, phase 7 |
 | `feedback` | **P** | `easyq-feedback`, phase 7 |
-| `unsubscribe` | **P** | `easyq-unsubscribe` (plus `List-Unsubscribe` / one-click headers), phase 7 |
+| `unsubscribe` | **P** | `easyq-unsubscribe`: stops the emails about a post (7a), newsletter in 7e; with `List-Unsubscribe` / one-click headers |
 | `ip/{ip}` | **P → admin** | Posts screen filtered by the address (section 5.1) |
 | `login`, `register`, `forgot`, `reset`, `logout`, `confirm` | **WP** | Section 2 |
 | `admin/*` | **P → admin** | Section 5 |
@@ -358,7 +358,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 | Option | Target |
 | --- | --- |
 | `from_email` | **P** optional, otherwise WP default |
-| `feedback_email` | **P** |
+| `feedback_email` | **P**; empty means the administration email address |
 | `notify_admin_q_post` | **P** |
 | `feedback_enabled` | **P** |
 | `email_privacy` | **P** |
@@ -375,7 +375,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 | `show_register_terms`, `register_terms` | **P** in phase 8, required checkbox on the WP registration form; links the WP privacy policy page |
 | `allow_login_email_only` | **WP** |
 | `allow_change_usernames` | **–** (section 2) |
-| `register_notify_admin` | **P** via `wp_send_new_user_notification_to_admin` |
+| `register_notify_admin` | **P** via `wp_send_new_user_notification_to_admin`, on the Email tab, on by default as in core |
 | `suspend_register_users` | **WP** "Anyone can register" |
 | `block_bad_usernames` | **P** in phase 8, via `registration_errors` |
 | `allow_private_messages`, `show_message_history`, `page_size_pms` | **P** |
@@ -560,11 +560,30 @@ password) are mapped onto the core hooks.
 
 ## 8. Email
 
+**Sending (phase 7a):** `EasyQ\Mail\Mailer` follows core's `wp_notify_postauthor()` and
+`wp_notify_moderator()`: filters for sending, recipients and each email; each email in
+the language of its recipient, with the text read after switching; the decoded site
+name; plain text with `blog_charset`; `From` only if a sender address is set. Unlike
+core it sets no `Reply-To` with the address of the author, as addresses stay private,
+and adds neither the IP address and host name of the author nor links to delete, as
+Q2A does not either; a host name would also be an external request. Registration emails
+change core's emails through `wp_send_new_user_notification_to_admin`,
+`wp_new_user_notification_email_admin` and `wp_new_user_notification_email`; the
+welcome email keeps core's link to set the password. Unlike Q2A, the email about new
+users stays on by default, as core sends it.
+
+**Stopping emails (N):** emails about a post carry a signed link and the
+`List-Unsubscribe` headers. The link opens a page with a form, as mail programs and
+scanners open links; the header posts directly (RFC 8058). Users can also turn off all
+emails about their posts on their account page. Emails to the site owner have neither.
+
 Q2A ships 20 templates; 18 are kept and sent through `wp_mail()`:
 `a_commented`, `a_followed`, `a_selected`, `c_commented`, `confirm`, `feedback`,
 `flagged`, `moderate`, `remoderate`, `private_message`, `q_answered`, `q_commented`,
 `q_posted`, `u_registered`, `u_to_approve`, `u_approved`, `wall_post`, `welcome`.
-`new_password` and `reset` are dropped in favour of the core emails.
+`new_password` and `reset` are dropped in favour of the core emails. `confirm` is not
+sent for now: setting the password through core's emailed link confirms the address
+(section 2), so nothing triggers it.
 
 **Editable templates (N):**
 
@@ -669,7 +688,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
 | 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7 |
 | 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | Done: profile and users screens in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API); 6e done (dashboard, dashboard widget and tools, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
-| 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | Open; order 7a, 7b, 7c, 7d, 7e, as every other block sends mails through 7a |
+| 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | 7a done; next 7b, 7c, 7d, 7e, in this order |
 | 8 Privacy and tooling | Section 11: privacy policy text, exporters and erasers of posts, votes, flags and profile data (those of phase 7 data come with phase 7), IP retention; registration text, terms with stored consent and blocked user names (5.4); WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
 | 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
 | 10 Extensions | Selection from section 10 | | Open |
@@ -736,3 +755,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 54 | The privacy exporters and erasers of favorites, events, messages and wall posts come with their blocks in phase 7, not in phase 8, so that no personal data exists without them | 2026-11-04 |
 | 55 | Of the user settings (5.4), notices go to 7c and the welcome text to 7a; registration text, terms with stored consent and blocked user names go to phase 8, as the consent record belongs to the privacy work | 2026-11-04 |
 | 56 | Until the captcha of phase 10, the feedback form is protected by a rate limit, a deliberate addition to Q2A, which only offers a captcha there | 2026-11-04 |
+| 57 | The tab Email holds all settings about emails, also `moderate_notify_admin` and `flagging_notify_*` from Q2A's Spam page and `register_notify_admin` from its Users page. `feedback_enabled` and `email_privacy` follow with the feedback form in 7e, as a setting gets its field once it works | 2026-11-04 |
