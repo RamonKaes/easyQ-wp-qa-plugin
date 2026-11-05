@@ -116,7 +116,7 @@ The full mapping of Question2Answer features to WordPress is documented in
 ### Prerequisites
 
 - PHP 8.2+ and [Composer](https://getcomposer.org/)
-- Node.js 20+ and npm
+- Node.js 22.13+ and npm
 - Docker (for [`wp-env`](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/))
 
 ### Setup
