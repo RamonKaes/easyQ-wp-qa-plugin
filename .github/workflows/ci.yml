@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.files.outputs.code }}
+      docs: ${{ steps.files.outputs.docs }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,6 +47,13 @@ jobs:
             code=false
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
+          # Without code changes, changed documents are still checked against the code.
+          if [ "$code" = false ] && git diff --name-only "$BASE" HEAD | grep -q '\.md$'; then
+            docs=true
+          else
+            docs=false
+          fi
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
 
   lint-md:
     name: Markdown
@@ -88,6 +96,88 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint:js
       - run: npm run lint:pkg-json
+
+  audit:
+    name: Known vulnerabilities
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: composer audit
+      # What the published plugin is built from; development tools run on no site.
+      - run: npm audit --omit=dev
+
+  docs:
+    name: Documents against the code
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npx wp-env start --config=.wp-env.test.json
+      - run: npm run test:php -- --filter Docs_Test
+
+  coverage:
+    name: Test coverage (report only)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: easyq
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: easyq
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: easyq/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npx wp-env start --config=.wp-env.test.json --xdebug=coverage
+      # A lower bound: @covers limits what a test counts for. Failing tests fail the integration jobs.
+      - name: Measure and report
+        run: |
+          npx wp-env run --config=.wp-env.test.json cli --env-cwd=wp-content/plugins/easyq env XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-filter includes --coverage-text --colors=never > coverage.txt || true
+          {
+            echo '```'
+            grep -A4 'Code Coverage Report' coverage.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   unit:
     name: Unit tests (PHP ${{ matrix.php }})
