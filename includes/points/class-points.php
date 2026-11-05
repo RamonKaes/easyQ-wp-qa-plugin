@@ -210,22 +210,33 @@ final class Points {
 	public function register(): void {
 		$option = Options::option_name( 'points' );
 
-		add_action(
-			"update_option_{$option}",
-			static function ( mixed $old, mixed $value ): void {
-				Services::points()->apply_settings( is_array( $old ) ? $old : array(), is_array( $value ) ? $value : array() );
-			},
-			10,
-			2
-		);
-		add_action(
-			"add_option_{$option}",
-			static function ( string $name, mixed $value ): void {
-				Services::points()->apply_settings( Options::defaults()['points'], is_array( $value ) ? $value : array() );
-			},
-			10,
-			2
-		);
+		add_action( "update_option_{$option}", array( self::class, 'settings_updated' ), 10, 2 );
+		add_action( "add_option_{$option}", array( self::class, 'settings_added' ), 10, 2 );
+	}
+
+	/**
+	 * Follows a change of the points settings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $old   Settings before the change.
+	 * @param mixed $value Settings after the change.
+	 */
+	public static function settings_updated( mixed $old, mixed $value ): void {
+		Services::points()->apply_settings( is_array( $old ) ? $old : array(), is_array( $value ) ? $value : array() );
+	}
+
+	/**
+	 * Follows the first save of the points settings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $name  Option name.
+	 * @param mixed  $value Saved settings.
+	 */
+	public static function settings_added( string $name, mixed $value ): void {
+		unset( $name );
+		Services::points()->apply_settings( Options::defaults()['points'], is_array( $value ) ? $value : array() );
 	}
 
 	/**

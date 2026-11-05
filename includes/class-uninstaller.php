@@ -38,6 +38,13 @@ final class Uninstaller {
 	public const USER_META_PREFIX = 'easyq_';
 
 	/**
+	 * Prefix of the names of all transients.
+	 *
+	 * @var string
+	 */
+	private const TRANSIENT_PREFIX = 'easyq_';
+
+	/**
 	 * Removes the data of every site that opted in.
 	 *
 	 * @since 0.1.0
@@ -98,7 +105,31 @@ final class Uninstaller {
 		delete_option( Installer::DB_VERSION_OPTION );
 		delete_option( Counts::OPTION );
 		delete_option( Router::RULES_OPTION );
+		self::delete_transients();
 		self::delete_site_user_meta();
+	}
+
+	/**
+	 * Removes the transients of the current site: messages after redirects and counted views.
+	 *
+	 * Their names hold tokens, so `delete_transient()` cannot find them; see `delete_expired_transients()`.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function delete_transients(): void {
+		$wpdb = DB::wpdb();
+
+		$sql = $wpdb->prepare(
+			'DELETE FROM %i WHERE option_name LIKE %s OR option_name LIKE %s',
+			$wpdb->options,
+			$wpdb->esc_like( '_transient_' . self::TRANSIENT_PREFIX ) . '%',
+			$wpdb->esc_like( '_transient_timeout_' . self::TRANSIENT_PREFIX ) . '%'
+		);
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- One-off cleanup on uninstall; no API deletes transients by prefix. Prepared above.
+			$wpdb->query( $sql );
+		}
+		wp_cache_delete( 'alloptions', 'options' );
 	}
 
 	/**

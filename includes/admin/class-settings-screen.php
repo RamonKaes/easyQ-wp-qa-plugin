@@ -55,13 +55,17 @@ final class Settings_Screen {
 	public function add_menu(): void {
 		$hook = add_submenu_page( Dashboard_Screen::PAGE, __( 'Q&A Settings', 'easyq' ), __( 'Settings', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
 		if ( false !== $hook ) {
-			add_action(
-				'load-' . $hook,
-				static function (): void {
-					add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
-				}
-			);
+			add_action( 'load-' . $hook, array( $this, 'load' ) );
 		}
+	}
+
+	/**
+	 * Prepares the settings page while it loads.
+	 *
+	 * @since 0.1.0
+	 */
+	public function load(): void {
+		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 	}
 
 	/**

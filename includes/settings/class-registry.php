@@ -63,8 +63,19 @@ final class Registry {
 			);
 
 			// Users who manage easyQ may save its settings without managing the whole site.
-			add_filter( 'option_page_capability_' . $group, static fn (): string => Capabilities::MANAGE );
+			add_filter( 'option_page_capability_' . $group, array( self::class, 'capability' ) );
 		}
+	}
+
+	/**
+	 * Returns the capability needed to save the settings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	public static function capability(): string {
+		return Capabilities::MANAGE;
 	}
 
 	/**

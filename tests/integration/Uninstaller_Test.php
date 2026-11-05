@@ -9,8 +9,10 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
+use EasyQ\Frontend\Flash;
 use EasyQ\Mail\Templates;
 use EasyQ\Settings\Options;
+use EasyQ\Stats\Counts;
 use EasyQ\Uninstaller;
 use EasyQ\Users\Site_Meta;
 
@@ -65,13 +67,23 @@ final class Uninstaller_Test extends Test_Case {
 		switch_to_blog( $site_id );
 		Templates::save( 'flagged', 'A subject', 'A text' );
 		$this->assertNotFalse( get_option( Templates::OPTION ) );
+		$flash = Flash::store( 'success', 'Saved.' );
+		set_transient( 'easyq_view_' . str_repeat( 'b', 32 ), 1, HOUR_IN_SECONDS );
+		Counts::get( Counts::QUESTIONS );
+		$names   = fn (): array => $wpdb->get_col( $wpdb->prepare( 'SELECT option_name FROM %i WHERE option_name LIKE %s', $wpdb->options, '%easyq%' ) );
+		$options = $names();
 		Uninstaller::uninstall_site();
+		$left     = $names();
 		$version  = get_option( Installer::DB_VERSION_OPTION );
 		$settings = get_option( Options::option_name( 'general' ) );
 		// With a default, as the registered setting has one, a deleted option reads as that default.
 		$templates = get_option( Templates::OPTION, false );
 		restore_current_blog();
 
+		$this->assertContains( '_transient_easyq_flash_' . $flash, $options );
+		$this->assertContains( '_transient_timeout_easyq_view_' . str_repeat( 'b', 32 ), $options );
+		$this->assertContains( Counts::OPTION, $options );
+		$this->assertSame( array(), $left );
 		$this->assertFalse( $version );
 		$this->assertFalse( $settings );
 		$this->assertFalse( $templates );
