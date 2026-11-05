@@ -24,6 +24,15 @@ defined( 'ABSPATH' ) || exit;
 final class Templates {
 
 	/**
+	 * Routes about the logged in user, which visitors cannot see.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string[]
+	 */
+	private const LOGIN_REQUIRED = array( 'favorites' );
+
+	/**
 	 * Rendered Q&A page for classic themes.
 	 *
 	 * @since 0.1.0
@@ -59,6 +68,7 @@ final class Templates {
 	public function register(): void {
 		add_action( 'init', array( $this, 'register_templates' ) );
 		add_filter( 'template_include', array( $this, 'template_include' ), 20 );
+		add_action( 'template_redirect', array( $this, 'require_login' ) );
 	}
 
 	/**
@@ -111,6 +121,19 @@ final class Templates {
 		}
 
 		return locate_block_template( $template, $slug, array( $slug ) );
+	}
+
+	/**
+	 * Sends visitors of pages about the logged in user to the login form, as `auth_redirect()` does.
+	 *
+	 * @since 0.1.0
+	 */
+	public function require_login(): void {
+		$route = $this->router->current();
+		if ( null !== $route && in_array( $route->name, self::LOGIN_REQUIRED, true ) && ! is_user_logged_in() ) {
+			wp_safe_redirect( wp_login_url( Routes::url( $route->name ) ) );
+			exit;
+		}
 	}
 
 	/**
@@ -418,6 +441,11 @@ final class Templates {
 				'title'       => __( 'Q&A: Activity of a user', 'easyq' ),
 				'description' => __( 'What a user did recently.', 'easyq' ),
 				'content'     => Layouts::user_page( $list ),
+			),
+			'easyq-favorites'      => array(
+				'title'       => __( 'Q&A: Favorites', 'easyq' ),
+				'description' => __( 'The questions, users, tags and categories a user follows.', 'easyq' ),
+				'content'     => Layouts::favorites(),
 			),
 			'easyq-unsubscribe'    => array(
 				'title'       => __( 'Q&A: Stop emails', 'easyq' ),

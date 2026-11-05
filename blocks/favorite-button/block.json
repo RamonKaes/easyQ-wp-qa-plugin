@@ -1,0 +1,35 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/favorite-button",
+	"title": "Favorite Button",
+	"category": "easyq",
+	"description": "Adds the current question, user, tag or category to the favorites of the visitor.",
+	"textdomain": "easyq",
+	"usesContext": [
+		"easyq/postId",
+		"easyq/userId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"viewScriptModule": "easyq-view",
+	"style": [
+		"wp-block-buttons",
+		"wp-block-button"
+	]
+}

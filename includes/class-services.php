@@ -9,6 +9,7 @@
 namespace EasyQ;
 
 use EasyQ\Categories\Categories;
+use EasyQ\Favorites\Favorites;
 use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
 use EasyQ\Posts\Activity_Query;
@@ -147,6 +148,17 @@ final class Services {
 	 */
 	public static function user_levels(): User_Levels {
 		return self::shared( User_Levels::class, static fn (): User_Levels => new User_Levels() );
+	}
+
+	/**
+	 * Returns the favorites service.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Favorites
+	 */
+	public static function favorites(): Favorites {
+		return self::shared( Favorites::class, static fn (): Favorites => new Favorites( self::posts(), self::categories() ) );
 	}
 
 	/**

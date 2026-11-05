@@ -44,6 +44,7 @@ final class REST_API {
 			new Tags_Controller(),
 			new Users_Controller(),
 			new Unsubscribe_Controller(),
+			new Favorites_Controller(),
 			new Email_Templates_Controller(),
 		);
 

@@ -168,7 +168,7 @@ is only available in block themes.
 | `users/blocked` | **WP** | View in the WP users list |
 | `user/{name}` (+ `/questions`, `/answers`, `/activity`, `/wall`) | **P** | `easyq-user`, `easyq-user-questions`, `easyq-user-answers`, `easyq-user-activity`; the wall follows in phase 7 |
 | `account` | **P/WP** | `easyq-account` for Q&A data (profile fields, avatar, notifications, privacy choices); email and password via the WP profile |
-| `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites`, phase 7 |
+| `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites` on one route: every list has its own pagination, so the sub-pages Q2A needs to page further are not needed. Visitors go to the login form, as in Q2A (decision 61) |
 | `updates` | **P** | `easyq-updates`, phase 7 |
 | `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message`, phase 7 |
 | `feedback` | **P** | `easyq-feedback`, phase 7 |
@@ -765,3 +765,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 58 | Rows of a list or post use core's columns, as the comment template of Twenty Twenty-Three does: a fixed column beside a free one, stacked on phones. Only `wp-block-column` lets long words break inside flex rows; titles take `wp-block-post-title` and related questions `wp-block-latest-posts` for the same reason. Tags stay on one line where the theme says so: Twenty Twenty-Five sets `white-space: nowrap` on `.wp-block-post-terms a`, for core's own terms block as well | 2026-11-05 |
 | 59 | Buttons with the outline style are rendered through the core button block, whose style variation support adds the class and styles that make them outlined in every theme. On classic themes, whose blocks easyQ renders before the head, those styles are printed in the footer after the global styles, as in core | 2026-11-05 |
 | 60 | The templates set a hierarchy of sizes by default, with the `fontSize` attribute and the presets of the theme as core patterns do, no CSS of their own: list titles `medium`; votes, tags, sort links, breadcrumbs, authors, comments and related questions `small`. Users change them in the Site Editor | 2026-11-05 |
+| 61 | Favorites use `POST` and `DELETE /favorites`, and the button adds them with the markup of the vote button. One page lists questions, users, tags and categories, each list paged on its own instead of Q2A's sub-pages. Favorites are private; only the user sees them | 2026-11-05 |

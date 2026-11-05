@@ -148,7 +148,8 @@ final class Layouts {
 <div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-status /-->
 <!-- wp:easyq/post-tags /-->
 <!-- wp:easyq/post-category /-->
-<!-- wp:easyq/post-view-count /--></div>
+<!-- wp:easyq/post-view-count /-->
+<!-- wp:easyq/favorite-button {"fontSize":"small"} /--></div>
 <!-- /wp:group -->'
 		) . '
 ' . $post_body . '
@@ -246,12 +247,36 @@ final class Layouts {
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:easyq/page-title /-->
 <!-- wp:easyq/user-title {"fontSize":"small"} /-->
-<!-- wp:easyq/user-points {"showRank":true,"fontSize":"small"} /--></div>
+<!-- wp:easyq/user-points {"showRank":true,"fontSize":"small"} /-->
+<!-- wp:easyq/favorite-button {"fontSize":"small"} /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:group -->
 <!-- wp:easyq/user-navigation {"fontSize":"small"} /-->
 ' . $content . '
 <!-- /wp:easyq/user -->';
+	}
+
+	/**
+	 * Returns the markup of the favorites page: questions, users, tags and categories the viewer follows.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	public static function favorites(): string {
+		$heading = static fn ( string $title ): string => '<!-- wp:heading -->
+<h2 class="wp-block-heading">' . esc_html( $title ) . '</h2>
+<!-- /wp:heading -->';
+
+		return '<!-- wp:easyq/page-title /-->
+' . $heading( __( 'Questions', 'easyq' ) ) . '
+' . self::question_list( array( 'source' => 'favorites' ), 2 ) . '
+' . $heading( __( 'Users', 'easyq' ) ) . '
+' . self::user_list( array( 'sort' => 'favorites' ), 3 ) . '
+' . $heading( __( 'Tags', 'easyq' ) ) . '
+' . self::breaking_words( '<!-- wp:easyq/tags {"favorites":true} /-->' ) . '
+' . $heading( __( 'Categories', 'easyq' ) ) . '
+<!-- wp:easyq/categories {"favorites":true} /-->';
 	}
 
 	/**

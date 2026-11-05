@@ -97,7 +97,16 @@ logs carry over.
 | `u_block`, `u_unblock` | A user was blocked or unblocked | `user_id` |
 | `u_delete_before`, `u_delete` | A user is deleted; their posts stay, without author or with the user chosen to receive them | `user_id` |
 
-Message, wall and favorite events follow with the corresponding features.
+### Favorites
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `q_favorite`, `q_unfavorite` | A user added or removed a question | `post_id` |
+| `u_favorite`, `u_unfavorite` | A user added or removed another user | `user_id` |
+| `tag_favorite`, `tag_unfavorite` | A user added or removed a tag | `word_id`, `tag` |
+| `cat_favorite`, `cat_unfavorite` | A user added or removed a category | `category_id` |
+
+Message and wall events follow with the corresponding features.
 
 ### IP addresses
 

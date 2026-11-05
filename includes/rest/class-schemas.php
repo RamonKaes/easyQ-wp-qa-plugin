@@ -254,6 +254,25 @@ final class Schemas {
 	}
 
 	/**
+	 * Returns the schema of a favorite.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function favorite(): array {
+		return self::schema(
+			'easyq-favorite',
+			array(
+				'type'  => self::property( __( 'Type of the favorite.', 'easyq' ), 'string' ),
+				'id'    => self::property( __( 'ID of the question, user or category, or the name of the tag.', 'easyq' ), array( 'integer', 'string' ) ),
+				'title' => self::property( __( 'Title or name.', 'easyq' ), 'string' ),
+				'link'  => self::property( __( 'Address of its page.', 'easyq' ), 'string' ),
+			)
+		);
+	}
+
+	/**
 	 * Returns the schema of an email template.
 	 *
 	 * @since 0.1.0

@@ -10,6 +10,7 @@ namespace EasyQ\Categories;
 
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
+use EasyQ\Favorites\Favorites;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Search\Search;
@@ -465,6 +466,7 @@ final class Categories {
 
 		$this->set_position( $id, PHP_INT_MAX );
 		Schema::delete_all_meta( 'easyq_category', $id );
+		Favorites::forget( 'category', $id );
 		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'categories' ), $id );
 		if ( null !== $sql ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.

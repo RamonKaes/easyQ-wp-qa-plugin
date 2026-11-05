@@ -147,6 +147,13 @@ final class REST_Schemas_Test extends REST_Test_Case {
 			'/unsubscribe'
 		);
 
+		$favorite = array(
+			'type' => 'user',
+			'id'   => (int) $author->user_id,
+		);
+		$this->assert_matches( $this->request( 'POST', '/favorites', $favorite ), '/favorites' );
+		$this->assert_matches( $this->request( 'GET', '/favorites', array( 'type' => 'user' ) ), '/favorites', true );
+
 		Options::update( 'posting', array( 'do_ask_check_qs' => true ) );
 		$similar = $this->request( 'GET', '/questions/similar', array( 'title' => 'Question for the schemas' ) );
 		$this->assertNotSame( array(), $this->data( $similar )['questions'] );

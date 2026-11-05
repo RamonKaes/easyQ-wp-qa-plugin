@@ -91,12 +91,20 @@ final class Users_Render {
 		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : Options::get_int( 'lists', 'page_size_users' );
 		$per_page = max( 1, min( User_Query::MAX_PER_PAGE, $per_page ) );
 
-		$found = null === self::permission_error( $sort )
-			? Services::user_query()->find( $sort, $page, $per_page )
-			: array(
-				'ids'   => array(),
-				'total' => 0,
+		if ( 'favorites' === ( $query['sort'] ?? '' ) ) {
+			$ids   = Services::favorites()->ids( (int) Block_Context::viewer()->user_id, 'user' );
+			$found = array(
+				'ids'   => array_slice( $ids, ( $page - 1 ) * $per_page, $per_page ),
+				'total' => count( $ids ),
 			);
+		} else {
+			$found = null === self::permission_error( $sort )
+				? Services::user_query()->find( $sort, $page, $per_page )
+				: array(
+					'ids'   => array(),
+					'total' => 0,
+				);
+		}
 
 		Lists::store( $list_id, $found['ids'], $found['total'], $page, $per_page, $page_var );
 

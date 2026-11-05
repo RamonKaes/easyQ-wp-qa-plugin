@@ -37,6 +37,8 @@ final class Plugin {
 		( new Users\Avatars() )->register();
 		( new Users\Registration() )->register();
 		( new Mail\Notifications() )->register();
+		Services::favorites()->register();
+		( new Privacy\Privacy() )->register();
 		( new REST\REST_API() )->register();
 
 		$router = new Frontend\Router();

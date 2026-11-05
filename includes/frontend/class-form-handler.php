@@ -51,6 +51,7 @@ final class Form_Handler {
 		'action'      => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
 		'account'     => array( 'remove_avatar', 'notifications' ),
 		'unsubscribe' => array( 'post', 'token' ),
+		'favorite'    => array( 'type', 'id', 'favorite' ),
 	);
 
 	/**
@@ -144,6 +145,7 @@ final class Form_Handler {
 			'vote'    => array( 'POST', '/posts/' . $target . '/vote' ),
 			'account' => array( 'POST', '/users/me' ),
 			'unsubscribe' => array( 'POST', '/unsubscribe' ),
+			'favorite' => array( '1' === ( $values['favorite'] ?? '' ) ? 'POST' : 'DELETE', '/favorites' ),
 			default   => array( 'POST', '/posts/' . $target . '/actions/' . $action ),
 		};
 
@@ -289,6 +291,10 @@ final class Form_Handler {
 			return Routes::url( 'home' );
 		}
 
+		if ( 'favorite' === $form ) {
+			return $back;
+		}
+
 		$post     = Services::posts()->find( $id );
 		$question = null === $post ? null : Services::post_service()->question_of( $post );
 
@@ -325,6 +331,7 @@ final class Form_Handler {
 			'edit'    => __( 'Your changes have been saved.', 'easyq' ),
 			'account' => __( 'Your profile has been saved.', 'easyq' ),
 			'unsubscribe' => __( 'You will no longer get emails about this post.', 'easyq' ),
+			'favorite' => __( 'Your favorites have been saved.', 'easyq' ),
 			default   => __( 'Done.', 'easyq' ),
 		};
 	}

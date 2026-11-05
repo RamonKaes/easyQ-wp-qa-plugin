@@ -117,6 +117,7 @@ final class Question_Query {
 	 *     @type int|null $category_id Only questions in this category or its subcategories.
 	 *     @type string   $tag         Only questions with this tag.
 	 *     @type int|null $user_id     Only questions by this user.
+	 *     @type int      $favorites_of Only favorite questions of this user.
 	 *     @type int      $page        Page number, starting at 1.
 	 *     @type int      $per_page    Questions per page, at most MAX_PER_PAGE.
 	 * }
@@ -152,7 +153,8 @@ final class Question_Query {
 			$word_id = $word_ids[ $tag ];
 		}
 
-		$user_id = is_numeric( $args['user_id'] ?? null ) ? (int) $args['user_id'] : 0;
+		$user_id      = is_numeric( $args['user_id'] ?? null ) ? (int) $args['user_id'] : 0;
+		$favorites_of = is_numeric( $args['favorites_of'] ?? null ) ? (int) $args['favorites_of'] : 0;
 
 		// One fixed statement for every list: each filter only applies when its value is set,
 		// i.e. a source of UNANSWERED, or a category, tag or user ID other than 0.
@@ -171,6 +173,7 @@ final class Question_Query {
 						AND ( %d = 0 OR p.%i = %d )
 						AND ( %d = 0 OR p.id IN (SELECT post_id FROM %i WHERE word_id = %d) )
 						AND ( %d = 0 OR p.user_id = %d )
+						AND ( %d = 0 OR p.id IN (SELECT entity_id FROM %i WHERE user_id = %d AND entity_type = 'Q') )
 					ORDER BY p.%i DESC, p.created DESC, p.id DESC LIMIT %d, %d",
 					$posts,
 					$source,
@@ -185,6 +188,9 @@ final class Question_Query {
 					$word_id,
 					$user_id,
 					$user_id,
+					$favorites_of,
+					Schema::table( 'userfavorites' ),
+					$favorites_of,
 					self::ORDERS[ $source ] ?? self::ORDERS['recent'],
 					( $page - 1 ) * $per_page,
 					$per_page
@@ -202,7 +208,8 @@ final class Question_Query {
 					AND ( %s <> 'unupvoted' OR p.answer_max_votes = 0 )
 					AND ( %d = 0 OR p.%i = %d )
 					AND ( %d = 0 OR p.id IN (SELECT post_id FROM %i WHERE word_id = %d) )
-					AND ( %d = 0 OR p.user_id = %d )",
+					AND ( %d = 0 OR p.user_id = %d )
+					AND ( %d = 0 OR p.id IN (SELECT entity_id FROM %i WHERE user_id = %d AND entity_type = 'Q') )",
 				$posts,
 				$source,
 				$source,
@@ -215,7 +222,10 @@ final class Question_Query {
 				$tags,
 				$word_id,
 				$user_id,
-				$user_id
+				$user_id,
+				$favorites_of,
+				Schema::table( 'userfavorites' ),
+				$favorites_of
 			)
 		);
 

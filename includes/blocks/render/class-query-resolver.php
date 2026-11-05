@@ -157,12 +157,17 @@ final class Query_Resolver {
 		$tag      = is_string( $query['tag'] ?? null ) && '' !== $query['tag'] ? $query['tag'] : null;
 		$author   = is_numeric( $query['author'] ?? null ) && (int) $query['author'] > 0 ? (int) $query['author'] : null;
 
+		// The favorites of the viewer; of nobody for visitors.
+		$source       = is_string( $query['source'] ?? null ) ? $query['source'] : 'recent';
+		$favorites_of = 'favorites' === $source ? ( Block_Context::viewer()->user_id ?? PHP_INT_MAX ) : null;
+
 		return array_filter(
 			array(
-				'source'      => is_string( $query['source'] ?? null ) ? $query['source'] : 'recent',
-				'category_id' => $category,
-				'tag'         => $tag,
-				'user_id'     => $author,
+				'source'       => null === $favorites_of ? $source : 'recent',
+				'category_id'  => $category,
+				'tag'          => $tag,
+				'user_id'      => $author,
+				'favorites_of' => $favorites_of,
 			),
 			static fn ( $value ): bool => null !== $value
 		);

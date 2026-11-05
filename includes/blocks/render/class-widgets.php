@@ -89,6 +89,7 @@ final class Widgets {
 			'users'      => self::user_sort_labels()[ $sort ] ?? __( 'Top users', 'easyq' ),
 			'user'       => self::user_title( $route ),
 			'account'    => __( 'My account', 'easyq' ),
+			'favorites'  => __( 'My favorites', 'easyq' ),
 			'unsubscribe' => __( 'Stop emails', 'easyq' ),
 			'not_found'  => __( 'Page not found', 'easyq' ),
 			default      => __( 'Questions', 'easyq' ),
@@ -156,9 +157,11 @@ final class Widgets {
 	 */
 	public static function tags( array $attributes ): string {
 		$count  = is_numeric( $attributes['perPage'] ?? null ) && (int) $attributes['perPage'] > 0 ? (int) $attributes['perPage'] : Options::get_int( 'lists', 'page_size_tags' );
-		$result = ( new Tags() )->popular( '', 1, $count );
+		$result = empty( $attributes['favorites'] )
+			? ( new Tags() )->popular( '', 1, $count )
+			: array( 'tags' => Services::favorites()->tags( (int) Block_Context::viewer()->user_id ) );
 		if ( array() === $result['tags'] ) {
-			return '';
+			return empty( $attributes['favorites'] ) ? '' : sprintf( '<p %s>%s</p>', get_block_wrapper_attributes(), esc_html__( 'No favorite tags yet.', 'easyq' ) );
 		}
 
 		$show_counts = $attributes['showCounts'] ?? true;
@@ -193,9 +196,104 @@ final class Widgets {
 			$parent_id = $current->id;
 		}
 
+		if ( ! empty( $attributes['favorites'] ) ) {
+			return self::favorite_categories( (bool) ( $attributes['showCounts'] ?? true ) );
+		}
+
 		$list = self::category_list( $parent_id, (bool) ( $attributes['showCounts'] ?? true ) );
 
 		return '' === $list ? '' : sprintf( '<nav %s aria-label="%s">%s</nav>', get_block_wrapper_attributes(), esc_attr__( 'Categories', 'easyq' ), $list );
+	}
+
+	/**
+	 * Renders the categories the viewer follows.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param bool $show_counts Whether to show the number of questions.
+	 * @return string
+	 */
+	private static function favorite_categories( bool $show_counts ): string {
+		$items = '';
+		foreach ( Services::favorites()->ids( (int) Block_Context::viewer()->user_id, 'category' ) as $id ) {
+			$category = Services::categories()->find( $id );
+			if ( null !== $category ) {
+				$items .= sprintf(
+					'<li><a href="%s">%s</a>%s</li>',
+					esc_url( URLs::category( $category ) ),
+					esc_html( $category->title ),
+					$show_counts ? ' <span>(' . esc_html( number_format_i18n( $category->question_count ) ) . ')</span>' : ''
+				);
+			}
+		}
+
+		return '' === $items
+			? sprintf( '<p %s>%s</p>', get_block_wrapper_attributes(), esc_html__( 'No favorite categories yet.', 'easyq' ) )
+			: sprintf( '<nav %s aria-label="%s"><ul>%s</ul></nav>', get_block_wrapper_attributes(), esc_attr__( 'Favorite categories', 'easyq' ), $items );
+	}
+
+	/**
+	 * Renders the button to add the current question, user, tag or category to the favorites.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @param string               $content    Inner blocks.
+	 * @param WP_Block             $block      Block.
+	 * @return string
+	 */
+	public static function favorite_button( array $attributes, string $content, WP_Block $block ): string {
+		$viewer = Block_Context::viewer()->user_id;
+		if ( null === $viewer ) {
+			return '';
+		}
+
+		$route         = Block_Context::router()->current();
+		$post          = Block_Context::post( $block );
+		$user          = Block_Context::user( $block );
+		[ $type, $id ] = match ( true ) {
+			null !== $post                  => array( 'question', $post->id ),
+			null !== $user                  => array( 'user', $user->ID ),
+			null !== $route?->tag()         => array( 'tag', $route->tag() ),
+			null !== $route?->category()    => array( 'category', $route->category()->id ),
+			default                         => array( '', 0 ),
+		};
+
+		if ( '' === $type || ( 'user' === $type && $id === $viewer ) || null === Services::favorites()->entity_id( $type, $id ) ) {
+			return '';
+		}
+
+		$favorite = Services::favorites()->has( $viewer, $type, $id );
+		$labels   = array(
+			'add'    => __( 'Add to favorites', 'easyq' ),
+			'remove' => __( 'Remove from favorites', 'easyq' ),
+		);
+
+		return sprintf(
+			'<div %s data-wp-interactive="easyq" %s>%s</div>',
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-buttons' ) ),
+			wp_interactivity_data_wp_context(
+				array(
+					'favoriteType' => $type,
+					'favoriteId'   => $id,
+					'favorite'     => $favorite,
+					'label'        => $favorite ? $labels['remove'] : $labels['add'],
+					'labels'       => $labels,
+				)
+			),
+			Render::action_button(
+				'favorite',
+				0,
+				$favorite ? $labels['remove'] : $labels['add'],
+				array(
+					'type'     => $type,
+					'id'       => $id,
+					'favorite' => $favorite ? 0 : 1,
+				),
+				array( 'data-wp-text' => 'context.label' ),
+				'data-wp-on--submit="actions.favorite"'
+			)
+		);
 	}
 
 	/**

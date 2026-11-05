@@ -173,5 +173,43 @@ const { state } = store( 'easyq', {
 			context.down = post.votes.down;
 			context.vote = post.votes.user;
 		},
+
+		/**
+		 * Adds or removes a favorite. If that is refused, the form is submitted
+		 * normally so the page explains why.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param {SubmitEvent} event Submit event of the favorite form.
+		 */
+		*favorite( event ) {
+			event.preventDefault();
+			const form = event.target;
+			const context = getContext();
+
+			const response = yield fetch( `${ state.restUrl }favorites`, {
+				method: context.favorite ? 'DELETE' : 'POST',
+				credentials: 'same-origin',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': state.nonce,
+				},
+				body: JSON.stringify( {
+					type: context.favoriteType,
+					id: context.favoriteId,
+				} ),
+			} );
+
+			if ( ! response.ok ) {
+				form.submit();
+				return;
+			}
+
+			context.favorite = ! context.favorite;
+			context.label = context.favorite
+				? context.labels.remove
+				: context.labels.add;
+			form.elements.favorite.value = context.favorite ? '0' : '1';
+		},
 	},
 } );

@@ -110,7 +110,7 @@ final class Routing_Test extends Test_Case {
 	}
 
 	public function test_routes_without_a_template_are_not_found(): void {
-		$this->go_to( Routes::url( 'favorites' ) );
+		$this->go_to( Routes::url( 'updates' ) );
 		$templates = new Templates( Block_Context::router() );
 
 		$template = $templates->template_include( 'index.php' );

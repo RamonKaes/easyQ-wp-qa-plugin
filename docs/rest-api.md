@@ -31,7 +31,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip`, `easyq-tool-batch` and `easyq-email-template`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template` and `easyq-favorite`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -146,6 +146,14 @@ Unless the site allows it in the posting settings, a question needs a category o
 categories exist, and that category must not have subcategories. This applies to
 `POST /questions`, to `category` in `PUT /questions/{id}` (`null` removes the
 category) and to the `move` action; a question may always keep the category it has.
+
+### Favorites
+
+| Method and route | Description |
+| --- | --- |
+| `GET /favorites` | The favorites of the logged in user: `type` (`question`, `user`, `tag`, `category`), `page`, `per_page`. Each item has `type`, `id`, `title` and `link` |
+| `POST /favorites` | Add a favorite: `type`, and `id` with the ID, for tags the name. Adding it twice changes nothing. Your own user answers `400`, what does not exist `404` |
+| `DELETE /favorites` | Remove a favorite: `type` and `id`; responds with `deleted` and `previous` |
 
 ### Emails
 
