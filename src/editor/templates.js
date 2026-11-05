@@ -21,7 +21,7 @@ export const QUESTION_ITEM = [
 		[
 			[
 				'core/column',
-				{ width: '14rem' },
+				{ width: '8rem' },
 				[
 					[
 						'core/group',

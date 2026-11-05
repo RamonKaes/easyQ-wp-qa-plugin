@@ -58,8 +58,8 @@ final class Layouts {
 		) . ' -->
 <!-- wp:easyq/question-template -->
 <!-- wp:columns -->
-<div class="wp-block-columns"><!-- wp:column {"width":"14rem"} -->
-<div class="wp-block-column" style="flex-basis:14rem"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"top"}} -->
+<div class="wp-block-columns"><!-- wp:column {"width":"8rem"} -->
+<div class="wp-block-column" style="flex-basis:8rem"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"top"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
 <!-- wp:easyq/post-answer-count /--></div>
 <!-- /wp:group --></div>
