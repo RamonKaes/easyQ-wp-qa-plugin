@@ -99,6 +99,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 
 | Method and route | Description |
 | --- | --- |
+| `GET /posts/{id}` | A question, answer or comment by its ID, with the fields of its type; `context=edit` adds the raw content for users who may edit it. Posts the user may not see answer `404` |
 | `GET /posts/{id}/comments` | Comments on a question or answer, oldest first |
 | `POST /posts/{id}/comments` | Comment: `content`, `format`, `notify`, `email`, `name` |
 | `GET /comments/{id}` | A comment |
