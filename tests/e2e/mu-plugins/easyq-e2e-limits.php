@@ -12,6 +12,19 @@ if ( function_exists( 'tests_add_filter' ) ) {
 }
 
 add_filter( 'option_easyq_settings_spam', 'easyq_e2e_raise_limits' );
+add_filter( 'easyq_default_settings', 'easyq_e2e_raise_default_limits' );
+
+/**
+ * Raises the limits while the spam settings were never saved: core does not filter a missing option.
+ *
+ * @param array<string, array<string, mixed>> $defaults Default values of all settings.
+ * @return array<string, array<string, mixed>>
+ */
+function easyq_e2e_raise_default_limits( $defaults ) {
+	$defaults['spam'] = easyq_e2e_raise_limits( $defaults['spam'] );
+
+	return $defaults;
+}
 
 /**
  * Raises every rate limit of the spam settings.
