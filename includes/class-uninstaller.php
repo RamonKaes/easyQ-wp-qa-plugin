@@ -15,6 +15,7 @@ use EasyQ\Frontend\Router;
 use EasyQ\Mail\Templates;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
+use EasyQ\Updates\Updates;
 use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
@@ -105,6 +106,7 @@ final class Uninstaller {
 		delete_option( Installer::DB_VERSION_OPTION );
 		delete_option( Counts::OPTION );
 		delete_option( Router::RULES_OPTION );
+		delete_option( Updates::THRESHOLD_OPTION );
 		self::delete_transients();
 		self::delete_site_user_meta();
 	}

@@ -30,7 +30,7 @@ final class Templates {
 	 *
 	 * @var string[]
 	 */
-	private const LOGIN_REQUIRED = array( 'favorites' );
+	private const LOGIN_REQUIRED = array( 'favorites', 'updates' );
 
 	/**
 	 * Rendered Q&A page for classic themes.
@@ -446,6 +446,11 @@ final class Templates {
 				'title'       => __( 'Q&A: Favorites', 'easyq' ),
 				'description' => __( 'The questions, users, tags and categories a user follows.', 'easyq' ),
 				'content'     => Layouts::favorites(),
+			),
+			'easyq-updates'        => array(
+				'title'       => __( 'Q&A: Updates', 'easyq' ),
+				'description' => __( 'What happened to the favorites and posts of a user.', 'easyq' ),
+				'content'     => Layouts::updates(),
 			),
 			'easyq-unsubscribe'    => array(
 				'title'       => __( 'Q&A: Stop emails', 'easyq' ),

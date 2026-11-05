@@ -8,6 +8,8 @@
 
 namespace EasyQ\Blocks;
 
+use EasyQ\Frontend\Routes;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -277,6 +279,35 @@ final class Layouts {
 ' . self::breaking_words( '<!-- wp:easyq/tags {"favorites":true} /-->' ) . '
 ' . $heading( __( 'Categories', 'easyq' ) ) . '
 <!-- wp:easyq/categories {"favorites":true} /-->';
+	}
+
+	/**
+	 * Returns the markup of the updates page: what happened to the favorites and posts of the viewer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	public static function updates(): string {
+		return '<!-- wp:easyq/page-title /-->
+<!-- wp:easyq/sort-navigation {"fontSize":"small"} /-->
+<!-- wp:easyq/question-query ' . self::json(
+			array(
+				'queryId' => 1,
+				'query'   => array( 'inherit' => true ),
+			)
+		) . ' -->
+<!-- wp:easyq/question-template -->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+<div class="wp-block-group"><!-- wp:easyq/post-title {"isLink":true,"fontSize":"medium"} /-->
+<!-- wp:easyq/post-activity {"fontSize":"small"} /--></div>
+<!-- /wp:group -->
+<!-- /wp:easyq/question-template -->
+<!-- wp:easyq/query-no-results ' . self::json( array( 'message' => __( 'No recent updates', 'easyq' ) ) ) . ' /-->
+<!-- /wp:easyq/question-query -->
+<!-- wp:paragraph {"fontSize":"small"} -->
+<p class="has-small-font-size"><a href="' . esc_url( Routes::url( 'favorites' ) ) . '">' . esc_html__( 'For more updates, add items to your favorites.', 'easyq' ) . '</a></p>
+<!-- /wp:paragraph -->';
 	}
 
 	/**

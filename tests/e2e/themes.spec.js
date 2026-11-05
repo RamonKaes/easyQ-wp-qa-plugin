@@ -346,6 +346,7 @@ test.describe( 'Themes', () => {
 				route( 'users' ),
 				route( 'account' ),
 				route( 'favorites' ),
+				route( 'updates' ),
 				...longTitles,
 			];
 

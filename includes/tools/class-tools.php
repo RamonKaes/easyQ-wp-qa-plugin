@@ -54,6 +54,10 @@ final class Tools {
 			'posts'     => 1000,
 			'counts'    => 0,
 		),
+		'refill_events'     => array(
+			'truncate'  => 0,
+			'questions' => 20,
+		),
 		'delete_hidden'     => array(
 			'comments'  => 100,
 			'answers'   => 100,
@@ -74,6 +78,7 @@ final class Tools {
 			'reindex'           => array( __( 'Rebuild the search index', 'easyq' ), __( 'For searching and for related questions.', 'easyq' ) ),
 			'recalc_points'     => array( __( 'Recalculate points', 'easyq' ), __( 'The points and statistics of every user, for ranks and titles.', 'easyq' ) ),
 			'recalc_categories' => array( __( 'Recalculate categories', 'easyq' ), __( 'The category of each post and the number of questions in each category.', 'easyq' ) ),
+			'refill_events'     => array( __( 'Refill events', 'easyq' ), __( 'What the updates pages of users show, from the questions, answers and comments there are.', 'easyq' ) ),
 			'delete_hidden'     => array( __( 'Delete hidden posts', 'easyq' ), __( 'Deletes all hidden questions, answers and comments without answers or comments of their own. This cannot be undone.', 'easyq' ) ),
 		);
 	}
@@ -225,6 +230,7 @@ final class Tools {
 			'users' === $step                                => array( 'users', '' ),
 			'recount_posts' === $tool && 'answers' === $step => array( 'posts', 'Q,Q_QUEUED,Q_HIDDEN' ),
 			'reindex' === $tool                              => array( 'posts', 'Q,Q_QUEUED,Q_HIDDEN' ),
+			'refill_events' === $tool                        => array( 'posts', 'Q,Q_HIDDEN' ),
 			'delete_hidden' === $tool && 'comments' === $step => array( 'posts', 'C_HIDDEN' ),
 			'delete_hidden' === $tool && 'answers' === $step  => array( 'posts', 'A_HIDDEN' ),
 			'delete_hidden' === $tool                        => array( 'posts', 'Q_HIDDEN' ),
@@ -268,6 +274,16 @@ final class Tools {
 
 			case 'recount_posts/counts':
 				Counts::invalidate( Counts::QUESTIONS, Counts::ANSWERS, Counts::COMMENTS, Counts::UNANSWERED, Counts::UNSELECTED, Counts::UNUPVOTED, Counts::QUEUED, Counts::FLAGGED, Counts::TAGS );
+				break;
+
+			case 'refill_events/truncate':
+				Services::updates()->truncate();
+				break;
+
+			case 'refill_events/questions':
+				foreach ( $ids as $id ) {
+					Services::updates()->refill( $id );
+				}
 				break;
 
 			case 'reindex/questions':

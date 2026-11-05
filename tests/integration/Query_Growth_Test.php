@@ -148,6 +148,24 @@ final class Query_Growth_Test extends Test_Case {
 		$this->assert_no_growth( $member, $this->queries( 'easyq-question', $route() ), 'member' );
 	}
 
+	public function test_the_updates_page_queries_the_same_with_more_updates(): void {
+		$viewer = $this->user();
+		wp_set_current_user( (int) $viewer->user_id );
+		$fill = function ( int $count, string $prefix ) use ( $viewer ): void {
+			for ( $i = 0; $i < $count; $i++ ) {
+				$question = $this->ask( $viewer, "$prefix question number $i" );
+				$this->answer( $this->user(), $question );
+			}
+		};
+
+		$fill( 3, 'few' );
+		$short = $this->queries( 'easyq-updates', new Route( 'updates' ) );
+		$this->assertCount( 3, Services::updates()->items( (int) $viewer->user_id ) );
+
+		$fill( 10, 'many' );
+		$this->assert_no_growth( $short, $this->queries( 'easyq-updates', new Route( 'updates' ) ), 'updates' );
+	}
+
 	public function test_primed_values_are_those_of_single_lookups(): void {
 		$author   = $this->user();
 		$stranger = (int) $this->user()->user_id;

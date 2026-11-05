@@ -8,6 +8,8 @@
 
 namespace EasyQ\Posts;
 
+use EasyQ\Updates\Updates;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -28,6 +30,7 @@ final class Activity_Item {
 	 * @param string      $time        Time of the activity, MySQL format in UTC.
 	 * @param string|null $update_type Kind of change (see the Post::UPDATE_* constants), or null if the post was created.
 	 * @param int|null    $user_id     User who created or changed the post.
+	 * @param bool        $personal    Whether it is about the post of the user who reads it.
 	 */
 	public function __construct(
 		public readonly int $question_id,
@@ -35,7 +38,8 @@ final class Activity_Item {
 		public readonly string $base_type,
 		public readonly string $time,
 		public readonly ?string $update_type,
-		public readonly ?int $user_id
+		public readonly ?int $user_id,
+		public readonly bool $personal = false
 	) {
 	}
 
@@ -44,7 +48,7 @@ final class Activity_Item {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array{postId: int, baseType: string, time: string, updateType: string|null, userId: int|null}
+	 * @return array{postId: int, baseType: string, time: string, updateType: string|null, userId: int|null, personal: bool}
 	 */
 	public function to_context(): array {
 		return array(
@@ -53,6 +57,7 @@ final class Activity_Item {
 			'time'       => $this->time,
 			'updateType' => $this->update_type,
 			'userId'     => $this->user_id,
+			'personal'   => $this->personal,
 		);
 	}
 
@@ -76,7 +81,8 @@ final class Activity_Item {
 			$context['baseType'],
 			$context['time'],
 			is_string( $context['updateType'] ?? null ) ? $context['updateType'] : null,
-			is_numeric( $context['userId'] ?? null ) ? (int) $context['userId'] : null
+			is_numeric( $context['userId'] ?? null ) ? (int) $context['userId'] : null,
+			! empty( $context['personal'] )
 		);
 	}
 
@@ -104,6 +110,10 @@ final class Activity_Item {
 	 * @return string
 	 */
 	public function label( ?Post $post = null ): string {
+		if ( $this->personal ) {
+			return $this->personal_label( $post );
+		}
+
 		return match ( $this->base_type . '-' . (string) $this->update_type ) {
 			'Q-'                           => __( 'asked', 'easyq' ),
 			'Q-' . Post::UPDATE_VISIBLE    => __( 'reshown', 'easyq' ),
@@ -114,11 +124,43 @@ final class Activity_Item {
 			'A-' . Post::UPDATE_SELECTED   => __( 'answer selected', 'easyq' ),
 			'A-' . Post::UPDATE_VISIBLE    => __( 'answer reshown', 'easyq' ),
 			'A-' . Post::UPDATE_CONTENT    => __( 'answer edited', 'easyq' ),
-			'C-'                           => __( 'commented', 'easyq' ),
+			'Q-' . Updates::FOLLOWS        => __( 'asked related question', 'easyq' ),
+			'C-', 'C-' . Updates::FOLLOWS, 'C-' . Updates::COMMENT_ON_QUESTION, 'C-' . Updates::COMMENT_ON_ANSWER => __( 'commented', 'easyq' ),
 			'C-' . Post::UPDATE_TYPE, 'C-' . Post::UPDATE_PARENT => __( 'comment moved', 'easyq' ),
 			'C-' . Post::UPDATE_VISIBLE    => __( 'comment reshown', 'easyq' ),
 			'C-' . Post::UPDATE_CONTENT    => __( 'comment edited', 'easyq' ),
 			default                        => __( 'edited', 'easyq' ),
+		};
+	}
+
+	/**
+	 * Returns the description for the user whose post it is, as the Q2A texts `your_*`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post|null $post The post the activity is about.
+	 * @return string
+	 */
+	private function personal_label( ?Post $post ): string {
+		$hidden = null !== $post && $post->is_hidden();
+
+		return match ( $this->base_type . '-' . (string) $this->update_type ) {
+			'Q-' . Post::UPDATE_VISIBLE    => $hidden ? __( 'your question hidden', 'easyq' ) : __( 'your question reshown', 'easyq' ),
+			'Q-' . Post::UPDATE_CLOSED     => null !== $post && $post->is_closed() ? __( 'your question closed', 'easyq' ) : __( 'your question reopened', 'easyq' ),
+			'Q-' . Post::UPDATE_TAGS       => __( 'your question retagged', 'easyq' ),
+			'Q-' . Post::UPDATE_CATEGORY   => __( 'your question recategorized', 'easyq' ),
+			'Q-' . Updates::FOLLOWS        => __( 'asked on your answer', 'easyq' ),
+			'A-'                           => __( 'your question answered', 'easyq' ),
+			'A-' . Post::UPDATE_SELECTED   => __( 'your answer selected', 'easyq' ),
+			'A-' . Post::UPDATE_VISIBLE    => $hidden ? __( 'your answer hidden', 'easyq' ) : __( 'your answer reshown', 'easyq' ),
+			'A-' . Post::UPDATE_CONTENT    => __( 'your answer edited', 'easyq' ),
+			'C-' . Updates::COMMENT_ON_QUESTION => __( 'your question commented', 'easyq' ),
+			'C-' . Updates::COMMENT_ON_ANSWER => __( 'your answer commented', 'easyq' ),
+			'C-' . Updates::FOLLOWS        => __( 'your comment followed', 'easyq' ),
+			'C-' . Post::UPDATE_TYPE, 'C-' . Post::UPDATE_PARENT => __( 'your comment moved', 'easyq' ),
+			'C-' . Post::UPDATE_VISIBLE    => $hidden ? __( 'your comment hidden', 'easyq' ) : __( 'your comment reshown', 'easyq' ),
+			'C-' . Post::UPDATE_CONTENT    => __( 'your comment edited', 'easyq' ),
+			default                        => __( 'your question edited', 'easyq' ),
 		};
 	}
 }

@@ -75,6 +75,8 @@ final class Navigation {
 			'tags'       => __( 'Tags', 'easyq' ),
 			'categories' => __( 'Categories', 'easyq' ),
 			'users'      => __( 'Users', 'easyq' ),
+			'favorites'  => __( 'My favorites', 'easyq' ),
+			'updates'    => __( 'My updates', 'easyq' ),
 			'account'    => __( 'My account', 'easyq' ),
 		);
 	}

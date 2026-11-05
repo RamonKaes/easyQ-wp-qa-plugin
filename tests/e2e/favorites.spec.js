@@ -71,6 +71,43 @@ test.describe( 'Favorites', () => {
 		await context.close();
 	} );
 
+	test( 'tells of updates to favorites', async ( { page, requestUtils } ) => {
+		const followed = await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/questions',
+			data: {
+				title: `Question with updates ${ Date.now() }`,
+				content: 'A question that gets an answer.',
+			},
+		} );
+		await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/favorites',
+			data: { type: 'question', id: followed.id },
+		} );
+		await requestUtils.rest( {
+			method: 'POST',
+			path: `/easyq/v1/questions/${ followed.id }/answers`,
+			data: { content: 'An answer that the updates page shows.' },
+		} );
+
+		await page.goto( '/?easyq_route=updates' );
+		await expect(
+			page.getByRole( 'link', { name: followed.title.rendered } )
+		).toBeVisible();
+		await page
+			.getByRole( 'link', { name: 'My favorites', exact: true } )
+			.first()
+			.click();
+		await expect(
+			page.getByRole( 'link', { name: followed.title.rendered } )
+		).toBeVisible();
+		const results = await new AxeBuilder( { page } )
+			.include( '[class*="wp-block-easyq-"]' )
+			.analyze();
+		expect( results.violations ).toEqual( [] );
+	} );
+
 	test( 'sends visitors to the login form', async ( {
 		browser,
 		requestUtils,

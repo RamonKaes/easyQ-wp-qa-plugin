@@ -20,6 +20,7 @@ use EasyQ\Posts\Question_Query;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Posts\Post_Validator;
 use EasyQ\Search\Search;
+use EasyQ\Updates\Updates;
 use EasyQ\Users\Permissions;
 use EasyQ\Users\User_Fields;
 use EasyQ\Users\User_Levels;
@@ -159,6 +160,17 @@ final class Services {
 	 */
 	public static function favorites(): Favorites {
 		return self::shared( Favorites::class, static fn (): Favorites => new Favorites( self::posts(), self::categories() ) );
+	}
+
+	/**
+	 * Returns the updates service.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Updates
+	 */
+	public static function updates(): Updates {
+		return self::shared( Updates::class, static fn (): Updates => new Updates( self::posts(), self::categories() ) );
 	}
 
 	/**

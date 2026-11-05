@@ -38,6 +38,7 @@ final class Plugin {
 		( new Users\Registration() )->register();
 		( new Mail\Notifications() )->register();
 		Services::favorites()->register();
+		Services::updates()->register();
 		( new Privacy\Privacy() )->register();
 		( new REST\REST_API() )->register();
 

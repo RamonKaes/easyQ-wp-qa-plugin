@@ -169,7 +169,7 @@ is only available in block themes.
 | `user/{name}` (+ `/questions`, `/answers`, `/activity`, `/wall`) | **P** | `easyq-user`, `easyq-user-questions`, `easyq-user-answers`, `easyq-user-activity`; the wall follows in phase 7 |
 | `account` | **P/WP** | `easyq-account` for Q&A data (profile fields, avatar, notifications, privacy choices); email and password via the WP profile |
 | `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites` on one route: every list has its own pagination, so the sub-pages Q2A needs to page further are not needed. Visitors go to the login form, as in Q2A (decision 61) |
-| `updates` | **P** | `easyq-updates`, phase 7 |
+| `updates` | **P** | `easyq-updates`, with `?show=favorites` and `?show=content` as in Q2A; visitors go to the login form |
 | `messages/`, `message/{name}` | **P** | `easyq-messages`, `easyq-message`, phase 7 |
 | `feedback` | **P** | `easyq-feedback`, phase 7 |
 | `unsubscribe` | **P** | `easyq-unsubscribe`: stops the emails about a post (7a), newsletter in 7e; with `List-Unsubscribe` / one-click headers |
@@ -502,7 +502,7 @@ WordPress's conditional GET (based on its own posts) is turned off for these fee
 | User titles (points → title) | **P**, part of the points settings (`user_titles`) |
 | User fields (name, type, visibility, on registration) | **P**; fields appear in the WP profile, the account block and optionally on the registration form |
 | Tools: rebuild search index, recount posts (with hotness), recalculate points, recalculate categories, delete hidden posts | **P** batches through `POST /easyq/v1/tools/{tool}` with a progress bar; `wp easyq recalc …` comes with WP-CLI in phase 8 |
-| Tools: refill events | **P** in phase 7, with the updates page that the events are for |
+| Tools: refill events | **P** `refill_events`, with the updates page that the events are for |
 | Tools: move blobs to disk/database, clear cache | **–** (Media Library / object cache) |
 | Version check (`ajax/version`) | **WP** plugin updates |
 
@@ -766,3 +766,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 59 | Buttons with the outline style are rendered through the core button block, whose style variation support adds the class and styles that make them outlined in every theme. On classic themes, whose blocks easyQ renders before the head, those styles are printed in the footer after the global styles, as in core | 2026-11-05 |
 | 60 | The templates set a hierarchy of sizes by default, with the `fontSize` attribute and the presets of the theme as core patterns do, no CSS of their own: list titles `medium`; votes, tags, sort links, breadcrumbs, authors, comments and related questions `small`. Users change them in the Site Editor | 2026-11-05 |
 | 61 | Favorites use `POST` and `DELETE /favorites`, and the button adds them with the markup of the vote button. One page lists questions, users, tags and categories, each list paged on its own instead of Q2A's sub-pages. Favorites are private; only the user sees them | 2026-11-05 |
+| 62 | Updates port the streams of Q2A with their limits (5 events per question, 50 per stream, shared streams from 10 followers on), driven by the events. Unlike Q2A, streams are trimmed by time and ID, as events of the same second would otherwise go together, and deleted posts and users leave the streams at once | 2026-11-05 |

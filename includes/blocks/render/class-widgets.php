@@ -67,6 +67,7 @@ final class Widgets {
 		$sort = isset( $_GET['sort'] ) && is_string( $_GET['sort'] ) ? sanitize_key( $_GET['sort'] ) : '';
 		$by   = isset( $_GET['by'] ) && is_string( $_GET['by'] ) ? sanitize_key( $_GET['by'] ) : '';
 		$q    = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+		$show = isset( $_GET['show'] ) && is_string( $_GET['show'] ) ? sanitize_key( $_GET['show'] ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		return match ( $route->name ) {
@@ -90,10 +91,25 @@ final class Widgets {
 			'user'       => self::user_title( $route ),
 			'account'    => __( 'My account', 'easyq' ),
 			'favorites'  => __( 'My favorites', 'easyq' ),
+			'updates'    => self::update_labels()[ $show ] ?? __( 'Recent updates for me', 'easyq' ),
 			'unsubscribe' => __( 'Stop emails', 'easyq' ),
 			'not_found'  => __( 'Page not found', 'easyq' ),
 			default      => __( 'Questions', 'easyq' ),
 		};
+	}
+
+	/**
+	 * Returns the titles of the updates page, by the value of `show`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, string>
+	 */
+	private static function update_labels(): array {
+		return array(
+			'favorites' => __( 'Recent updates for my favorites', 'easyq' ),
+			'content'   => __( 'Recent updates for my content', 'easyq' ),
+		);
 	}
 
 	/**
@@ -111,6 +127,15 @@ final class Widgets {
 			$labels  = self::unanswered_labels();
 			$default = 'unanswered';
 			$base    = Routes::url( 'unanswered' );
+		} elseif ( 'updates' === $route?->name ) {
+			$param   = 'show';
+			$labels  = array(
+				'all'       => __( 'All my updates', 'easyq' ),
+				'favorites' => __( 'My favorites', 'easyq' ),
+				'content'   => __( 'My content', 'easyq' ),
+			);
+			$default = 'all';
+			$base    = Routes::url( 'updates' );
 		} elseif ( 'users' === $route?->name ) {
 			$param   = 'sort';
 			$labels  = array_filter(

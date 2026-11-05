@@ -81,7 +81,13 @@ final class Query_Resolver {
 		$per_page = max( 1, min( Question_Query::MAX_PER_PAGE, $per_page ) );
 		$activity = array();
 
-		if ( isset( $args['search'] ) && is_string( $args['search'] ) ) {
+		if ( 'updates' === $source ) {
+			$activity = self::updates();
+			$ids      = array_map( static fn ( Activity_Item $item ): int => $item->question_id, $activity );
+			$total    = count( $ids );
+			$page     = 1;
+			$per_page = max( 1, $total );
+		} elseif ( isset( $args['search'] ) && is_string( $args['search'] ) ) {
 			$start   = ( $page - 1 ) * $per_page;
 			$results = Services::search()->search( $args['search'], $start, $per_page + 1, Block_Context::viewer()->user_id );
 			$ids     = array_slice( array_map( static fn ( $result ): int => $result->question_id, $results ), 0, $per_page );
@@ -127,6 +133,7 @@ final class Query_Resolver {
 			return match ( $route->name ) {
 				// Recent questions and answers, as the Question2Answer start page shows them.
 				'home'       => array( 'source' => 'recent_qa' ),
+				'updates'    => array( 'source' => 'updates' ),
 				'hot'        => array( 'source' => 'hot' ),
 				'unanswered' => array( 'source' => in_array( $by, self::UNANSWERED, true ) ? $by : 'unanswered' ),
 				'activity'   => array( 'source' => 'activity' ),
@@ -170,6 +177,35 @@ final class Query_Resolver {
 				'favorites_of' => $favorites_of,
 			),
 			static fn ( $value ): bool => null !== $value
+		);
+	}
+
+	/**
+	 * Lists the updates of the viewer that they may see, as `show` asks for.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return list<Activity_Item>
+	 */
+	private static function updates(): array {
+		$viewer = Block_Context::viewer();
+		if ( null === $viewer->user_id ) {
+			return array();
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading a list filter.
+		$show  = isset( $_GET['show'] ) && is_string( $_GET['show'] ) ? sanitize_key( $_GET['show'] ) : '';
+		$items = Services::updates()->items( $viewer->user_id, 'content' !== $show, 'favorites' !== $show );
+
+		$questions = Services::posts()->find_many( array_map( static fn ( Activity_Item $item ): int => $item->question_id, $items ) );
+		// The check of each question asks for the votes of the viewer.
+		Services::votes()->prime( array_keys( $questions ), $viewer->user_id );
+
+		return array_values(
+			array_filter(
+				$items,
+				static fn ( Activity_Item $item ): bool => isset( $questions[ $item->question_id ] ) && Services::permissions()->post_rules( $questions[ $item->question_id ], $viewer )['viewable']
+			)
 		);
 	}
 

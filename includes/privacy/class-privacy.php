@@ -48,6 +48,11 @@ final class Privacy {
 			'callback'               => array( self::class, 'export_favorites' ),
 		);
 
+		$exporters['easyq-updates'] = array(
+			'exporter_friendly_name' => __( 'Q&A updates', 'easyq' ),
+			'callback'               => array( self::class, 'export_updates' ),
+		);
+
 		return $exporters;
 	}
 
@@ -65,7 +70,79 @@ final class Privacy {
 			'callback'             => array( self::class, 'erase_favorites' ),
 		);
 
+		$erasers['easyq-updates'] = array(
+			'eraser_friendly_name' => __( 'Q&A updates', 'easyq' ),
+			'callback'             => array( self::class, 'erase_updates' ),
+		);
+
 		return $erasers;
+	}
+
+	/**
+	 * Exports the updates a user was told of, and the events the user caused.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{data: list<array<string, mixed>>, done: bool}
+	 */
+	public static function export_updates( string $email ): array {
+		$user = get_user_by( 'email', $email );
+		$data = array();
+		if ( false !== $user ) {
+			foreach ( Services::updates()->items( $user->ID ) as $item ) {
+				$question = Services::posts()->find( $item->question_id );
+				$post     = Services::posts()->find( $item->post_id );
+				if ( null === $question || ! $question->is_visible() ) {
+					continue;
+				}
+
+				$data[] = array(
+					'group_id'          => 'easyq-updates',
+					'group_label'       => __( 'Q&A updates', 'easyq' ),
+					'group_description' => __( 'What the updates page shows you.', 'easyq' ),
+					'item_id'           => 'easyq-update-' . $item->question_id,
+					'data'              => array(
+						array(
+							'name'  => __( 'Question', 'easyq' ),
+							'value' => Services::content_renderer()->text( (string) $question->title ),
+						),
+						array(
+							'name'  => __( 'Update', 'easyq' ),
+							'value' => $item->label( $post ),
+						),
+						array(
+							'name'  => __( 'Date', 'easyq' ),
+							'value' => $item->time,
+						),
+					),
+				);
+			}
+		}
+
+		return array(
+			'data' => $data,
+			'done' => true,
+		);
+	}
+
+	/**
+	 * Erases the updates of a user and their name from the events of others.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{items_removed: bool, items_retained: bool, messages: string[], done: bool}
+	 */
+	public static function erase_updates( string $email ): array {
+		$user = get_user_by( 'email', $email );
+
+		return array(
+			'items_removed'  => false !== $user && Services::updates()->forget_user( $user->ID ) > 0,
+			'items_retained' => false,
+			'messages'       => array(),
+			'done'           => true,
+		);
 	}
 
 	/**
