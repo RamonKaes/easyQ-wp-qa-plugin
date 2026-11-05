@@ -14,33 +14,42 @@ const meta = [
 	],
 ];
 
-// Counts keep their natural width next to long titles (core flex child sizing).
-const noShrink = {
-	layout: { selfStretch: 'fixedNoShrink', flexSize: 'max-content' },
-};
-
 export const QUESTION_ITEM = [
 	[
-		'core/group',
-		{
-			layout: {
-				type: 'flex',
-				flexWrap: 'nowrap',
-				verticalAlignment: 'top',
-			},
-		},
+		'core/columns',
+		{},
 		[
 			[
-				'easyq/post-votes',
-				{
-					style: noShrink,
-					layout: { type: 'flex', orientation: 'vertical' },
-				},
+				'core/column',
+				{ width: '14rem' },
+				[
+					[
+						'core/group',
+						{
+							layout: {
+								type: 'flex',
+								flexWrap: 'wrap',
+								verticalAlignment: 'top',
+							},
+						},
+						[
+							[
+								'easyq/post-votes',
+								{
+									layout: {
+										type: 'flex',
+										orientation: 'vertical',
+									},
+								},
+							],
+							[ 'easyq/post-answer-count' ],
+						],
+					],
+				],
 			],
-			[ 'easyq/post-answer-count', { style: noShrink } ],
 			[
-				'core/group',
-				{ layout: { type: 'constrained' } },
+				'core/column',
+				{},
 				[ [ 'easyq/post-title', { isLink: true } ], meta ],
 			],
 		],
@@ -55,22 +64,22 @@ export const QUESTION_LIST = [
 
 const POST_BODY = [
 	[
-		'core/group',
-		{
-			layout: {
-				type: 'flex',
-				flexWrap: 'nowrap',
-				verticalAlignment: 'top',
-			},
-		},
+		'core/columns',
+		{},
 		[
 			[
-				'easyq/post-votes',
-				{ layout: { type: 'flex', orientation: 'vertical' } },
+				'core/column',
+				{ width: '6rem' },
+				[
+					[
+						'easyq/post-votes',
+						{ layout: { type: 'flex', orientation: 'vertical' } },
+					],
+				],
 			],
 			[
-				'core/group',
-				{ layout: { type: 'constrained' } },
+				'core/column',
+				{},
 				[
 					[ 'easyq/post-content' ],
 					[
@@ -120,34 +129,60 @@ export const QUESTION_PAGE = [
 	[ 'easyq/breadcrumbs' ],
 	[ 'easyq/post-title', { level: 1 } ],
 	[
-		'core/group',
-		{ layout: { type: 'flex', flexWrap: 'wrap' } },
+		'core/columns',
+		{},
 		[
-			[ 'easyq/post-status' ],
-			[ 'easyq/post-tags' ],
-			[ 'easyq/post-category' ],
-			[ 'easyq/post-view-count' ],
+			[
+				'core/column',
+				{},
+				[
+					[
+						'core/group',
+						{ layout: { type: 'flex', flexWrap: 'wrap' } },
+						[
+							[ 'easyq/post-status' ],
+							[ 'easyq/post-tags' ],
+							[ 'easyq/post-category' ],
+							[ 'easyq/post-view-count' ],
+						],
+					],
+				],
+			],
 		],
 	],
 	...POST_BODY,
 	[ 'easyq/answer-list' ],
 	[ 'easyq/answer-form' ],
-	[ 'easyq/related-questions' ],
+	[
+		'core/columns',
+		{},
+		[ [ 'core/column', {}, [ [ 'easyq/related-questions' ] ] ] ],
+	],
 ];
 
 export const USER_ITEM = [
 	[
-		'core/group',
-		{ layout: { type: 'flex', flexWrap: 'nowrap' } },
+		'core/columns',
+		{ isStackedOnMobile: false },
 		[
-			[ 'easyq/user-avatar', { avatarSize: 48 } ],
 			[
-				'core/group',
-				{ layout: { type: 'flex', orientation: 'vertical' } },
+				'core/column',
+				{ width: '48px' },
+				[ [ 'easyq/user-avatar', { avatarSize: 48 } ] ],
+			],
+			[
+				'core/column',
+				{},
 				[
-					[ 'easyq/user-name' ],
-					[ 'easyq/user-points' ],
-					[ 'easyq/user-title' ],
+					[
+						'core/group',
+						{ layout: { type: 'flex', orientation: 'vertical' } },
+						[
+							[ 'easyq/user-name' ],
+							[ 'easyq/user-points' ],
+							[ 'easyq/user-title' ],
+						],
+					],
 				],
 			],
 		],
@@ -157,7 +192,7 @@ export const USER_ITEM = [
 export const USER_LIST = [
 	[
 		'easyq/user-template',
-		{ layout: { type: 'grid', columnCount: 3 } },
+		{ layout: { type: 'grid', minimumColumnWidth: '14rem' } },
 		USER_ITEM,
 	],
 	[ 'easyq/query-pagination' ],

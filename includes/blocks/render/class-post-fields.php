@@ -55,7 +55,7 @@ final class Post_Fields {
 			$title = sprintf( '<a href="%s">%s</a>', esc_url( URLs::question( $post ) ), $title );
 		}
 
-		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes(), $title );
+		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes( array( 'class' => 'wp-block-post-title' ) ), $title );
 	}
 
 	/**

@@ -31,5 +31,6 @@
 			"padding": true
 		}
 	},
-	"editorScript": "easyq-editor"
+	"editorScript": "easyq-editor",
+	"style": "wp-block-latest-posts"
 }

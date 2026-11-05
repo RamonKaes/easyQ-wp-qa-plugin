@@ -359,7 +359,7 @@ final class Templates {
 			'easyq-tags'           => array(
 				'title'       => __( 'Q&A: Tags', 'easyq' ),
 				'description' => __( 'All tags by popularity.', 'easyq' ),
-				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/tags /-->',
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . Layouts::breaking_words( '<!-- wp:easyq/tags /-->' ),
 			),
 			'easyq-categories'     => array(
 				'title'       => __( 'Q&A: Categories', 'easyq' ),

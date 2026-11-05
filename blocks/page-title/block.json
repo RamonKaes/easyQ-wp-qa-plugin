@@ -32,5 +32,6 @@
 			"full"
 		]
 	},
-	"editorScript": "easyq-editor"
+	"editorScript": "easyq-editor",
+	"style": "wp-block-post-title"
 }

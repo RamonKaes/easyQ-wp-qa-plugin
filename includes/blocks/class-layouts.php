@@ -57,18 +57,22 @@ final class Layouts {
 			)
 		) . ' -->
 <!-- wp:easyq/question-template -->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-votes {"style":{"layout":{"selfStretch":"fixedNoShrink","flexSize":"max-content"}},"layout":{"type":"flex","orientation":"vertical"}} /-->
-<!-- wp:easyq/post-answer-count {"style":{"layout":{"selfStretch":"fixedNoShrink","flexSize":"max-content"}}} /-->
-<!-- wp:group {"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-title {"isLink":true} /-->
+<!-- wp:columns -->
+<div class="wp-block-columns"><!-- wp:column {"width":"14rem"} -->
+<div class="wp-block-column" style="flex-basis:14rem"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"top"}} -->
+<div class="wp-block-group"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
+<!-- wp:easyq/post-answer-count /--></div>
+<!-- /wp:group --></div>
+<!-- /wp:column -->
+<!-- wp:column -->
+<div class="wp-block-column"><!-- wp:easyq/post-title {"isLink":true} /-->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-tags /-->
 <!-- wp:easyq/post-category /-->
 <!-- wp:easyq/post-activity /--></div>
 <!-- /wp:group --></div>
-<!-- /wp:group --></div>
-<!-- /wp:group -->
+<!-- /wp:column --></div>
+<!-- /wp:columns -->
 <!-- /wp:easyq/question-template -->
 <!-- wp:easyq/query-pagination /-->
 <!-- wp:easyq/query-no-results /-->
@@ -112,10 +116,12 @@ final class Layouts {
 	 * @return string
 	 */
 	public static function question_page(): string {
-		$post_body = '<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
-<!-- wp:group {"layout":{"type":"constrained"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-content /-->
+		$post_body = '<!-- wp:columns -->
+<div class="wp-block-columns"><!-- wp:column {"width":"6rem"} -->
+<div class="wp-block-column" style="flex-basis:6rem"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /--></div>
+<!-- /wp:column -->
+<!-- wp:column -->
+<div class="wp-block-column"><!-- wp:easyq/post-content /-->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-actions /-->
 <!-- wp:easyq/post-author /--></div>
@@ -131,18 +137,20 @@ final class Layouts {
 <!-- /wp:easyq/comment-template -->
 <!-- wp:easyq/comment-form /-->
 <!-- /wp:easyq/comment-list --></div>
-<!-- /wp:group --></div>
-<!-- /wp:group -->';
+<!-- /wp:column --></div>
+<!-- /wp:columns -->';
 
 		return '<!-- wp:easyq/question -->
 <!-- wp:easyq/breadcrumbs /-->
 <!-- wp:easyq/post-title {"level":1} /-->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
+' . self::breaking_words(
+			'<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-status /-->
 <!-- wp:easyq/post-tags /-->
 <!-- wp:easyq/post-category /-->
 <!-- wp:easyq/post-view-count /--></div>
-<!-- /wp:group -->
+<!-- /wp:group -->'
+		) . '
 ' . $post_body . '
 <!-- wp:easyq/answer-list {"queryId":2} -->
 <!-- wp:easyq/answer-template -->
@@ -151,7 +159,7 @@ final class Layouts {
 <!-- wp:easyq/query-pagination /-->
 <!-- /wp:easyq/answer-list -->
 <!-- wp:easyq/answer-form /-->
-<!-- wp:easyq/related-questions /-->
+' . self::breaking_words( '<!-- wp:easyq/related-questions /-->' ) . '
 <!-- /wp:easyq/question -->';
 	}
 
@@ -171,15 +179,19 @@ final class Layouts {
 				'query'   => $query,
 			)
 		) . ' -->
-<!-- wp:easyq/user-template {"layout":{"type":"grid","columnCount":3}} -->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->
-<div class="wp-block-group"><!-- wp:easyq/user-avatar {"avatarSize":48} /-->
-<!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
+<!-- wp:easyq/user-template {"layout":{"type":"grid","minimumColumnWidth":"14rem"}} -->
+<!-- wp:columns {"isStackedOnMobile":false} -->
+<div class="wp-block-columns is-not-stacked-on-mobile"><!-- wp:column {"width":"48px"} -->
+<div class="wp-block-column" style="flex-basis:48px"><!-- wp:easyq/user-avatar {"avatarSize":48} /--></div>
+<!-- /wp:column -->
+<!-- wp:column -->
+<div class="wp-block-column"><!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:easyq/user-name /-->
 <!-- wp:easyq/user-points /-->
 <!-- wp:easyq/user-title /--></div>
 <!-- /wp:group --></div>
-<!-- /wp:group -->
+<!-- /wp:column --></div>
+<!-- /wp:columns -->
 <!-- /wp:easyq/user-template -->
 <!-- wp:easyq/query-pagination /-->
 <!-- wp:easyq/query-no-results ' . self::json( array( 'message' => __( 'No users found.', 'easyq' ) ) ) . ' /-->
@@ -203,11 +215,17 @@ final class Layouts {
 			)
 		) . ' -->
 <!-- wp:easyq/user-template -->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"nowrap"}} -->
-<div class="wp-block-group"><!-- wp:easyq/user-avatar {"avatarSize":32} /-->
-<!-- wp:easyq/user-name /-->
+<!-- wp:columns {"isStackedOnMobile":false} -->
+<div class="wp-block-columns is-not-stacked-on-mobile"><!-- wp:column {"width":"32px"} -->
+<div class="wp-block-column" style="flex-basis:32px"><!-- wp:easyq/user-avatar {"avatarSize":32} /--></div>
+<!-- /wp:column -->
+<!-- wp:column -->
+<div class="wp-block-column"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
+<div class="wp-block-group"><!-- wp:easyq/user-name /-->
 <!-- wp:easyq/user-points {"fontSize":"small"} /--></div>
-<!-- /wp:group -->
+<!-- /wp:group --></div>
+<!-- /wp:column --></div>
+<!-- /wp:columns -->
 <!-- /wp:easyq/user-template -->
 <!-- wp:easyq/query-no-results ' . self::json( array( 'message' => __( 'No users found.', 'easyq' ) ) ) . ' /-->
 <!-- /wp:easyq/user-query -->';
@@ -234,6 +252,24 @@ final class Layouts {
 <!-- wp:easyq/user-navigation /-->
 ' . $content . '
 <!-- /wp:easyq/user -->';
+	}
+
+	/**
+	 * Wraps blocks in a single core column, the core block that breaks long words and may shrink.
+	 *
+	 * Flex rows and inline blocks are as wide as their longest word, so long tags and links need this.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $content Blocks.
+	 * @return string
+	 */
+	public static function breaking_words( string $content ): string {
+		return '<!-- wp:columns -->
+<div class="wp-block-columns"><!-- wp:column -->
+<div class="wp-block-column">' . $content . '</div>
+<!-- /wp:column --></div>
+<!-- /wp:columns -->';
 	}
 
 	/**

@@ -47,7 +47,7 @@ final class Widgets {
 
 		$level = is_numeric( $attributes['level'] ?? null ) ? max( 1, min( 6, (int) $attributes['level'] ) ) : 1;
 
-		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes(), esc_html( $title ) );
+		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes( array( 'class' => 'wp-block-post-title' ) ), esc_html( $title ) );
 	}
 
 	/**
@@ -229,7 +229,7 @@ final class Widgets {
 			}
 		}
 
-		return sprintf( '<section %s><h2>%s</h2><ul>%s</ul></section>', get_block_wrapper_attributes(), esc_html__( 'Related questions', 'easyq' ), $items );
+		return sprintf( '<section %s><h2>%s</h2><ul class="wp-block-latest-posts wp-block-latest-posts__list">%s</ul></section>', get_block_wrapper_attributes(), esc_html__( 'Related questions', 'easyq' ), $items );
 	}
 
 	/**
