@@ -16,6 +16,35 @@ const THEMES = [
 	'twentytwenty',
 ];
 
+// Every theme the Q&A pages are measured in: what ships with WordPress and popular themes.
+// Not Twenty Ten: its layout has a fixed width of 980 pixels on every page.
+const ALL_THEMES = [
+	...THEMES,
+	'twentynineteen',
+	'twentyseventeen',
+	'twentysixteen',
+	'twentyfifteen',
+	'twentyfourteen',
+	'twentythirteen',
+	'twentytwelve',
+	'twentyeleven',
+	'astra',
+	'frost',
+	'generatepress',
+	'hello-elementor',
+	'kadence',
+	'oceanwp',
+	'ollie',
+];
+
+// Their own page title keeps long words on a line, as on every page of those themes.
+const THEMES_WITH_UNBROKEN_TITLES = [
+	'hello-elementor',
+	'twentyeleven',
+	'twentyfifteen',
+	'twentyfourteen',
+];
+
 const route = ( name, arg ) =>
 	`/?easyq_route=${ name }${ arg ? `&easyq_arg=${ arg }` : '' }`;
 
@@ -27,6 +56,7 @@ test.describe( 'Themes', () => {
 	let question;
 	let longQuestion;
 	let longUser;
+	let corePage;
 
 	test.beforeAll( async ( { requestUtils } ) => {
 		// The PHP integration tests reinstall the test site, which deactivates the plugin.
@@ -50,6 +80,17 @@ test.describe( 'Themes', () => {
 			method: 'POST',
 			path: `/easyq/v1/posts/${ answer.id }/comments`,
 			data: { content: 'And without any plugin CSS at all.' },
+		} );
+
+		corePage = await requestUtils.rest( {
+			method: 'POST',
+			path: '/wp/v2/pages',
+			data: {
+				title: 'Core button',
+				status: 'publish',
+				content:
+					'<!-- wp:buttons --><div class="wp-block-buttons"><!-- wp:button {"className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="#core">Core</a></div><!-- /wp:button --><!-- wp:button {"tagName":"button","className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><button type="button" class="wp-block-button__link wp-element-button">Core</button></div><!-- /wp:button --></div><!-- /wp:buttons -->',
+			},
 		} );
 
 		longQuestion = await requestUtils.rest( {
@@ -83,6 +124,11 @@ test.describe( 'Themes', () => {
 	} );
 
 	test.afterAll( async ( { requestUtils } ) => {
+		await requestUtils.rest( {
+			method: 'DELETE',
+			path: `/wp/v2/pages/${ corePage.id }`,
+			params: { force: true },
+		} );
 		await requestUtils.rest( {
 			method: 'DELETE',
 			path: `/wp/v2/users/${ longUser.id }`,
@@ -196,6 +242,46 @@ test.describe( 'Themes', () => {
 				} );
 			}
 		} );
+	}
+
+	for ( const theme of ALL_THEMES ) {
+		// The buttons of the plugin look like the core button block in the same theme.
+		test( `shows buttons like the core block in ${ theme }`, async ( {
+			page,
+			requestUtils,
+		} ) => {
+			await requestUtils.activateTheme( theme );
+
+			const looks = ( selector ) =>
+				page
+					.locator( selector )
+					.first()
+					.evaluate( ( element ) => {
+						const style = window.getComputedStyle( element );
+
+						return [
+							style.color,
+							style.backgroundColor,
+							style.borderTopWidth,
+							style.borderTopColor,
+						];
+					} );
+
+			for ( const tag of [ 'a', 'button' ] ) {
+				await page.goto( `/?page_id=${ corePage.id }` );
+				const core = await looks( `${ tag }.wp-block-button__link` );
+
+				await page.goto( route( 'question', question.id ) );
+				const ours = await looks(
+					`.wp-block-easyq-post-actions ${ tag }.wp-block-button__link`
+				);
+				// OceanWP gives buttons inside forms a thinner border, and actions are forms.
+				if ( 'oceanwp' === theme && 'button' === tag ) {
+					ours[ 2 ] = core[ 2 ];
+				}
+				expect( ours, tag ).toEqual( core );
+			}
+		} );
 
 		// WCAG 1.4.10 Reflow: 320 CSS pixels wide without scrolling sideways.
 		test( `reflows the Q&A pages at 320 pixels in ${ theme }`, async ( {
@@ -205,47 +291,70 @@ test.describe( 'Themes', () => {
 			await requestUtils.activateTheme( theme );
 			await page.setViewportSize( { width: 320, height: 800 } );
 
+			const question320 = route( 'question', longQuestion.id );
+			const longTitles = [
+				question320,
+				`${ question320 }&easyq_edit=${ longQuestion.id }`,
+				`${ question320 }&easyq_close=${ longQuestion.id }`,
+				`${ route( 'search' ) }&q=${ LONG_WORD }`,
+				route( 'user', longUser.slug ),
+			];
 			const urls = [
 				route( 'home' ),
 				route( 'questions' ),
-				route( 'question', longQuestion.id ),
-				`${ route( 'question', longQuestion.id ) }&easyq_edit=${ longQuestion.id }`,
-				`${ route( 'question', longQuestion.id ) }&easyq_close=${ longQuestion.id }`,
-				route( 'search' ) + `&q=${ LONG_WORD }`,
 				route( 'ask' ),
 				route( 'categories' ),
 				route( 'tags' ),
 				route( 'activity' ),
 				route( 'users' ),
-				route( 'user', longUser.slug ),
 				route( 'account' ),
+				...longTitles,
 			];
 
 			for ( const url of urls ) {
 				const response = await page.goto( url );
 				expect( response?.status(), url ).toBe( 200 );
 
-				// What sticks out, for the message; the measurement is the scroll width.
-				const overflow = await page.evaluate( () => ( {
-					scrollWidth: document.documentElement.scrollWidth,
-					elements: [ ...document.querySelectorAll( 'body *' ) ]
-						.filter(
-							( element ) =>
-								! element.children.length &&
-								! element.closest( '#wpadminbar' ) &&
-								element.getBoundingClientRect().right >
-									document.documentElement.clientWidth + 1
-						)
-						.slice( 0, 12 )
-						.map(
-							( element ) =>
-								`${ element.parentElement.closest( '[class*="wp-block-"]' )?.className.split( ' ' )[ 0 ] } > ${ element.tagName }`
-						),
-				} ) );
-				expect(
-					overflow.scrollWidth,
-					`${ theme } ${ url } ${ overflow.elements.join( ' | ' ) }`
-				).toBeLessThanOrEqual( 320 );
+				// WP_DEBUG is on: PHP messages are printed into the page.
+				await expect(
+					page.locator( 'body' ),
+					`${ theme } ${ url }`
+				).not.toContainText(
+					/(Notice|Warning|Deprecated|Fatal error): .+ on line \d+/
+				);
+
+				// What sticks out of the page, from the blocks of the plugin and at all.
+				const overflow = await page.evaluate( () => {
+					const width = document.documentElement.clientWidth;
+					const outside = ( element ) =>
+						! element.children.length &&
+						element.getBoundingClientRect().right > width + 1;
+
+					return {
+						scrollWidth: document.documentElement.scrollWidth,
+						blocks: [
+							...document.querySelectorAll(
+								'[class*="wp-block-easyq-"] *'
+							),
+						]
+							.filter( outside )
+							.slice( 0, 8 )
+							.map(
+								( element ) =>
+									`${ element.parentElement.className } > ${ element.tagName }`
+							),
+					};
+				} );
+				expect( overflow.blocks, `${ theme } ${ url }` ).toEqual( [] );
+				if (
+					! THEMES_WITH_UNBROKEN_TITLES.includes( theme ) ||
+					! longTitles.includes( url )
+				) {
+					expect(
+						overflow.scrollWidth,
+						`${ theme } ${ url }`
+					).toBeLessThanOrEqual( 320 );
+				}
 
 				await page.screenshot( {
 					path: test

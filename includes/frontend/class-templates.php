@@ -130,6 +130,10 @@ final class Templates {
 	private function classic_template( string $slug ): string {
 		$content = '<!-- wp:easyq/notices /-->' . "\n" . $this->definitions()[ $slug ]['content'];
 
+		// In core, classic themes render blocks after the head, so these styles follow the global styles in the footer.
+		remove_action( 'wp_enqueue_scripts', 'wp_enqueue_block_style_variation_styles', 1 );
+		add_action( 'wp_footer', array( self::class, 'enqueue_style_variations' ) );
+
 		/**
 		 * Filters the block markup of a Q&A page in classic themes.
 		 *
@@ -164,6 +168,15 @@ final class Templates {
 		}
 
 		return \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php';
+	}
+
+	/**
+	 * Enqueues the styles of block style variations rendered before the head.
+	 *
+	 * @since 0.1.0
+	 */
+	public static function enqueue_style_variations(): void {
+		wp_enqueue_style( 'block-style-variation-styles' );
 	}
 
 	/**

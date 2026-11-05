@@ -18,8 +18,8 @@ nothing the chapter applies to), **Kept** (a deliberate choice, with the reason)
 
 Automated checks cover part of this on every change: PHPCS with the WordPress Coding
 Standards (escaping, sanitizing, nonces, prepared SQL, i18n), Plugin Check, PHPStan,
-axe, every Q&A page at 320 pixels in six themes, the number of queries of every list,
-named hook callbacks, the options an uninstalled site keeps, the documents against the
+axe, every Q&A page at 320 pixels and the buttons against the core block in 21 themes,
+PHP messages on the pages, the number of queries of every list, named hook callbacks, the options an uninstalled site keeps, the documents against the
 code, and known vulnerabilities of the dependencies.
 
 ## Plugin basics
@@ -156,7 +156,8 @@ code, and known vulnerabilities of the dependencies.
 | Editor canvas is always an iframe (7.1) | Met | The editor script uses no global `document` or `window` |
 | Frontend markup styled by the theme, no plugin stylesheet | Met | Core block classes and style handles; forms take on the comment form block, so text fields, buttons and checkboxes look as in the theme's comment form ([feature mapping](feature-mapping.md), decision 46). Selects keep the browser look, as in core |
 | Buttons in a buttons block, as core places them | Met | Vote buttons and post actions (decision 47) |
-| Reflow at 320 pixels (WCAG 1.4.10) | Met | Core columns break long words (decision 58); the E2E run loads every page in six themes |
+| Reflow at 320 pixels (WCAG 1.4.10) | Met | Core columns break long words (decision 58); the E2E run loads every page in 21 themes |
+| Outline buttons as in core | Met | Rendered through the core button block; the E2E run compares them with it in 21 themes (decision 59) |
 | Classic themes | Met | The theme's own page template shows the Q&A pages, with its title, containers and sidebars (decision 48) |
 
 ## Admin list tables

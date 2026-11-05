@@ -46,6 +46,19 @@ test.describe( 'Question page in place', () => {
 		expect( await page.evaluate( () => window.easyqNoReload ) ).toBe(
 			true
 		);
+
+		// The buttons of the new answer have the style of the theme, too.
+		const background = ( locator ) =>
+			locator.evaluate(
+				( element ) =>
+					window.getComputedStyle( element ).backgroundColor
+			);
+		const actions = page.locator(
+			'.wp-block-easyq-post-actions .wp-block-button__link'
+		);
+		expect( await background( actions.last() ) ).toBe(
+			await background( actions.first() )
+		);
 	} );
 
 	test( 'shows errors next to the field without reloading the page', async ( {

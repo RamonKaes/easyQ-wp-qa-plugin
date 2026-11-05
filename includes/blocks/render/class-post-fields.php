@@ -594,20 +594,17 @@ final class Post_Fields {
 	 * @return string
 	 */
 	private static function vote_button( int $post_id, int $direction, bool $pressed, string $label, string $symbol ): string {
-		return str_replace(
-			'<form method="post" class="wp-block-button is-style-outline">',
-			sprintf( '<form method="post" class="wp-block-button is-style-outline" data-wp-on--submit="actions.vote" %s>', wp_interactivity_data_wp_context( array( 'direction' => $direction ) ) ),
-			Render::action_button(
-				'vote',
-				$post_id,
-				$symbol,
-				array( 'vote' => $pressed ? 0 : $direction ),
-				array(
-					'aria-label'                 => $label,
-					'aria-pressed'               => $pressed ? 'true' : 'false',
-					'data-wp-bind--aria-pressed' => 'state.isPressed',
-				)
-			)
+		return Render::action_button(
+			'vote',
+			$post_id,
+			$symbol,
+			array( 'vote' => $pressed ? 0 : $direction ),
+			array(
+				'aria-label'                 => $label,
+				'aria-pressed'               => $pressed ? 'true' : 'false',
+				'data-wp-bind--aria-pressed' => 'state.isPressed',
+			),
+			'data-wp-on--submit="actions.vote" ' . wp_interactivity_data_wp_context( array( 'direction' => $direction ) )
 		);
 	}
 
@@ -622,11 +619,13 @@ final class Post_Fields {
 	 * @return string
 	 */
 	private static function link_button( string $url, string $label, bool $nofollow = false ): string {
-		return sprintf(
-			'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button has-small-font-size"%s href="%s">%s</a></div>',
-			$nofollow ? ' rel="nofollow"' : '',
-			esc_url( $url ),
-			esc_html( $label )
+		return Render::outline_button(
+			sprintf(
+				'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button has-small-font-size"%s href="%s">%s</a></div>',
+				$nofollow ? ' rel="nofollow"' : '',
+				esc_url( $url ),
+				esc_html( $label )
+			)
 		);
 	}
 

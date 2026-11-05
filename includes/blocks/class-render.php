@@ -77,9 +77,10 @@ final class Render {
 	 * @param string                $label   Button text.
 	 * @param array<string, mixed>  $fields  Further hidden fields.
 	 * @param array<string, string> $button  Further button attributes.
+	 * @param string                $form_attributes Further form attributes, escaped.
 	 * @return string
 	 */
-	public static function action_button( string $form, int $post_id, string $label, array $fields = array(), array $button = array() ): string {
+	public static function action_button( string $form, int $post_id, string $label, array $fields = array(), array $button = array(), string $form_attributes = '' ): string {
 		$hidden = Form_Handler::hidden_fields( $form ) . sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
 		foreach ( $fields as $name => $value ) {
 			$hidden .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
@@ -90,11 +91,37 @@ final class Render {
 			$attributes .= sprintf( ' %s="%s"', esc_attr( $name ), esc_attr( $value ) );
 		}
 
-		return sprintf(
-			'<form method="post" class="wp-block-button is-style-outline">%s<button type="submit" class="wp-block-button__link wp-element-button has-small-font-size"%s>%s</button></form>',
-			$hidden,
-			$attributes,
-			esc_html( $label )
+		return self::outline_button(
+			sprintf(
+				'<form method="post" class="wp-block-button is-style-outline"%s>%s<button type="submit" class="wp-block-button__link wp-element-button has-small-font-size"%s>%s</button></form>',
+				'' === $form_attributes ? '' : ' ' . $form_attributes,
+				$hidden,
+				$attributes,
+				esc_html( $label )
+			)
+		);
+	}
+
+	/**
+	 * Renders the markup of a button with the outline style as a core button block.
+	 *
+	 * Core gives the block a class and styles of its own for the variation of the theme, see
+	 * `wp_render_block_style_variation_support_styles()`; without them the fill of the theme wins.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $html Markup of the button with its wrapper, escaped.
+	 * @return string
+	 */
+	public static function outline_button( string $html ): string {
+		return render_block(
+			array(
+				'blockName'    => 'core/button',
+				'attrs'        => array( 'className' => 'is-style-outline' ),
+				'innerBlocks'  => array(),
+				'innerHTML'    => $html,
+				'innerContent' => array( $html ),
+			)
 		);
 	}
 

@@ -5,6 +5,15 @@
 	"plugins": [
 		"."
 	],
+	"themes": [
+		"https://downloads.wordpress.org/theme/astra.4.14.1.zip",
+		"https://downloads.wordpress.org/theme/frost.1.0.10.zip",
+		"https://downloads.wordpress.org/theme/generatepress.3.6.1.zip",
+		"https://downloads.wordpress.org/theme/hello-elementor.3.5.1.zip",
+		"https://downloads.wordpress.org/theme/kadence.1.5.2.zip",
+		"https://downloads.wordpress.org/theme/oceanwp.4.2.8.zip",
+		"https://downloads.wordpress.org/theme/ollie.1.6.5.zip"
+	],
 	"port": 8889,
 	"testsEnvironment": false,
 	"config": {
