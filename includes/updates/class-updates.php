@@ -458,13 +458,14 @@ final class Updates {
 	public function forget_user( int $user_id ): int {
 		$wpdb    = DB::wpdb();
 		$changed = 0;
-		foreach (
-			array(
-				$wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userevents' ), $user_id ),
-				$wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', Schema::table( 'userevents' ), $user_id ),
-				$wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', Schema::table( 'sharedevents' ), $user_id ),
-			) as $sql
-		) {
+		$sql     = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userevents' ), $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$changed += (int) $wpdb->query( $sql );
+		}
+
+		foreach ( array( 'userevents', 'sharedevents' ) as $table ) {
+			$sql = $wpdb->prepare( 'UPDATE %i SET last_user_id = NULL WHERE last_user_id = %d', Schema::table( $table ), $user_id );
 			if ( null !== $sql ) {
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
 				$changed += (int) $wpdb->query( $sql );
