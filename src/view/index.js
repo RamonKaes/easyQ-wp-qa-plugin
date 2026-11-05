@@ -36,7 +36,7 @@ function* navigateTo( url ) {
 	}
 
 	const notice = document.querySelector(
-		'[data-wp-router-region="easyq/notices"]:not([hidden])'
+		'[data-wp-router-region="easyq/notices"]:not([hidden]) [role]'
 	);
 	if ( notice ) {
 		const { speak } = yield import( '@wordpress/a11y' );
@@ -172,6 +172,35 @@ const { state } = store( 'easyq', {
 			context.up = post.votes.up;
 			context.down = post.votes.down;
 			context.vote = post.votes.user;
+		},
+
+		/**
+		 * Dismisses a notice. If that is refused, the form is submitted normally.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param {SubmitEvent} event Submit event of the notice form.
+		 */
+		*dismissNotice( event ) {
+			event.preventDefault();
+			const form = event.target;
+			const context = getContext();
+
+			const response = yield fetch(
+				`${ state.restUrl }notices/${ context.noticeId }`,
+				{
+					method: 'DELETE',
+					credentials: 'same-origin',
+					headers: { 'X-WP-Nonce': state.nonce },
+				}
+			);
+
+			if ( ! response.ok ) {
+				form.submit();
+				return;
+			}
+
+			context.dismissed = true;
 		},
 
 		/**

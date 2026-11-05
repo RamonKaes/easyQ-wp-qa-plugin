@@ -52,6 +52,7 @@ final class Form_Handler {
 		'account'     => array( 'remove_avatar', 'notifications' ),
 		'unsubscribe' => array( 'post', 'token' ),
 		'favorite'    => array( 'type', 'id', 'favorite' ),
+		'notice'      => array(),
 	);
 
 	/**
@@ -145,6 +146,7 @@ final class Form_Handler {
 			'vote'    => array( 'POST', '/posts/' . $target . '/vote' ),
 			'account' => array( 'POST', '/users/me' ),
 			'unsubscribe' => array( 'POST', '/unsubscribe' ),
+			'notice'   => array( 'DELETE', '/notices/' . ( isset( $_POST['easyq_notice'] ) && is_string( $_POST['easyq_notice'] ) ? sanitize_key( wp_unslash( $_POST['easyq_notice'] ) ) : '' ) ),
 			'favorite' => array( '1' === ( $values['favorite'] ?? '' ) ? 'POST' : 'DELETE', '/favorites' ),
 			default   => array( 'POST', '/posts/' . $target . '/actions/' . $action ),
 		};
@@ -291,7 +293,7 @@ final class Form_Handler {
 			return Routes::url( 'home' );
 		}
 
-		if ( 'favorite' === $form ) {
+		if ( 'favorite' === $form || 'notice' === $form ) {
 			return $back;
 		}
 
@@ -332,6 +334,7 @@ final class Form_Handler {
 			'account' => __( 'Your profile has been saved.', 'easyq' ),
 			'unsubscribe' => __( 'You will no longer get emails about this post.', 'easyq' ),
 			'favorite' => __( 'Your favorites have been saved.', 'easyq' ),
+			'notice'   => __( 'The notice was dismissed.', 'easyq' ),
 			default   => __( 'Done.', 'easyq' ),
 		};
 	}

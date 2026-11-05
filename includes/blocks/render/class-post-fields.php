@@ -145,13 +145,7 @@ final class Post_Fields {
 		$can_vote = null === $viewer->user_id || user_can( $viewer->user_id, 'easyq_vote_post', $post );
 		$can_down = null === $viewer->user_id || user_can( $viewer->user_id, 'easyq_vote_down_post', $post );
 
-		wp_interactivity_state(
-			'easyq',
-			array(
-				'restUrl' => esc_url_raw( rest_url( 'easyq/v1/' ) ),
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
-			)
-		);
+		Render::rest_state();
 
 		$context = array(
 			'postId' => $post->id,

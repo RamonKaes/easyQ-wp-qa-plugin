@@ -254,6 +254,23 @@ final class Schemas {
 	}
 
 	/**
+	 * Returns the schema of a notice.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function notice(): array {
+		return self::schema(
+			'easyq-notice',
+			array(
+				'id'      => self::property( __( 'ID of the notice: a number, `visitor` or `welcome`.', 'easyq' ), 'string' ),
+				'content' => self::property( __( 'Text of the notice as HTML.', 'easyq' ), 'string' ),
+			)
+		);
+	}
+
+	/**
 	 * Returns the schema of a favorite.
 	 *
 	 * @since 0.1.0

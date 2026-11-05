@@ -121,6 +121,10 @@ final class Options {
 				'avatar_store_size'   => 400,
 				'show_custom_welcome' => false,
 				'custom_welcome'      => '',
+				'show_notice_visitor' => false,
+				'notice_visitor'      => '',
+				'show_notice_welcome' => false,
+				'notice_welcome'      => '',
 			),
 			'posting'     => array(
 				'allow_close_questions'     => true,

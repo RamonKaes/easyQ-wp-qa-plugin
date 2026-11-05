@@ -200,3 +200,8 @@ $results  = EasyQ\Services::search()->search( 'block themes', 0, 10 );
 | `Services::user_fields()` | `EasyQ\Users\User_Fields`: profile fields |
 
 The services do not check permissions; the REST API and the blocks do that.
+
+## Notices for single users
+
+`EasyQ\Services::notices()->add( $user_id, $content, $format, $tags )` shows a notice to a
+user until they dismiss it. `$format` is `html` for the HTML of posts, or empty for plain text.

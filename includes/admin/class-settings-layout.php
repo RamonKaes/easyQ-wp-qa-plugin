@@ -144,6 +144,15 @@ final class Settings_Layout {
 			'users'       => array(
 				self::section( '', array( self::row( __( 'Avatars', 'easyq' ), array( 'avatar_allow_upload', 'avatar_store_size' ) ) ) ),
 				self::section( __( 'Welcome email', 'easyq' ), array( self::row( __( 'Own text', 'easyq' ), array( 'show_custom_welcome' ) ), 'custom_welcome' ) ),
+				self::section(
+					__( 'Notices', 'easyq' ),
+					array(
+						self::row( __( 'First-time visitors', 'easyq' ), array( 'show_notice_visitor' ) ),
+						'notice_visitor',
+						self::row( __( 'New users', 'easyq' ), array( 'show_notice_welcome' ) ),
+						'notice_welcome',
+					)
+				),
 			),
 			'posting'     => array(
 				self::section(

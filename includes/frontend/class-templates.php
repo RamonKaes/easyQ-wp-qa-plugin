@@ -370,12 +370,12 @@ final class Templates {
 			'easyq-tag'            => array(
 				'title'       => __( 'Q&A: Tag', 'easyq' ),
 				'description' => __( 'Questions with a tag.', 'easyq' ),
-				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . $list,
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/favorite-button {"fontSize":"small"} /-->' . "\n" . $list,
 			),
 			'easyq-category'       => array(
 				'title'       => __( 'Q&A: Category', 'easyq' ),
 				'description' => __( 'Questions in a category.', 'easyq' ),
-				'content'     => '<!-- wp:easyq/breadcrumbs {"fontSize":"small"} /-->' . "\n" . '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/categories {"showChildrenOfCurrent":true} /-->' . "\n" . $list,
+				'content'     => '<!-- wp:easyq/breadcrumbs {"fontSize":"small"} /-->' . "\n" . '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/favorite-button {"fontSize":"small"} /-->' . "\n" . '<!-- wp:easyq/categories {"showChildrenOfCurrent":true} /-->' . "\n" . $list,
 			),
 			'easyq-search'         => array(
 				'title'       => __( 'Q&A: Search results', 'easyq' ),

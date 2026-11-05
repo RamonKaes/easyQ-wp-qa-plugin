@@ -285,6 +285,9 @@ final class Fields {
 			case 'lines':
 				return is_string( $value ) ? sanitize_textarea_field( $value ) : $current;
 
+			case 'html':
+				return is_string( $value ) ? wp_kses_post( $value ) : $current;
+
 			case 'email':
 				return is_string( $value ) ? sanitize_email( $value ) : $current;
 
@@ -631,6 +634,16 @@ final class Fields {
 			'custom_welcome'      => array(
 				'type'  => 'lines',
 				'label' => __( 'Text in the welcome email', 'easyq' ),
+			),
+			'show_notice_visitor' => self::bool( __( 'Show a notice to first-time visitors', 'easyq' ) ),
+			'notice_visitor'      => array(
+				'type'  => 'html',
+				'label' => __( 'Notice for first-time visitors, HTML allowed', 'easyq' ),
+			),
+			'show_notice_welcome' => self::bool( __( 'Show a notice to new users', 'easyq' ) ),
+			'notice_welcome'      => array(
+				'type'  => 'html',
+				'label' => __( 'Notice for new users, HTML allowed', 'easyq' ),
 			),
 		);
 	}

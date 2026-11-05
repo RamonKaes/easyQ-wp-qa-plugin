@@ -108,6 +108,36 @@ test.describe( 'Favorites', () => {
 		expect( results.violations ).toEqual( [] );
 	} );
 
+	test( 'adds a tag in place on a page without other buttons', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/questions',
+			data: {
+				title: `Question with a tag ${ Date.now() }`,
+				content: 'A question to give a tag to.',
+				tags: [ 'favoritetag' ],
+			},
+		} );
+		await page.goto( '/?easyq_route=tag&easyq_arg=favoritetag' );
+		await page.evaluate( () => ( window.easyqNoReload = true ) );
+		await page.getByRole( 'button', { name: 'Add to favorites' } ).click();
+		await expect(
+			page.getByRole( 'button', { name: 'Remove from favorites' } )
+		).toBeVisible();
+		expect( await page.evaluate( () => window.easyqNoReload ) ).toBe(
+			true
+		);
+		await page
+			.getByRole( 'button', { name: 'Remove from favorites' } )
+			.click();
+		await expect(
+			page.getByRole( 'button', { name: 'Add to favorites' } )
+		).toBeVisible();
+	} );
+
 	test( 'sends visitors to the login form', async ( {
 		browser,
 		requestUtils,

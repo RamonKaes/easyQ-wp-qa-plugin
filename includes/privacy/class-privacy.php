@@ -8,10 +8,13 @@
 
 namespace EasyQ\Privacy;
 
+use EasyQ\Actor;
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Frontend\URLs;
+use EasyQ\Notices\Notices;
 use EasyQ\Services;
+use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -53,6 +56,11 @@ final class Privacy {
 			'callback'               => array( self::class, 'export_updates' ),
 		);
 
+		$exporters['easyq-notices'] = array(
+			'exporter_friendly_name' => __( 'Q&A notices', 'easyq' ),
+			'callback'               => array( self::class, 'export_notices' ),
+		);
+
 		return $exporters;
 	}
 
@@ -75,7 +83,76 @@ final class Privacy {
 			'callback'             => array( self::class, 'erase_updates' ),
 		);
 
+		$erasers['easyq-notices'] = array(
+			'eraser_friendly_name' => __( 'Q&A notices', 'easyq' ),
+			'callback'             => array( self::class, 'erase_notices' ),
+		);
+
 		return $erasers;
+	}
+
+	/**
+	 * Exports the notices of a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{data: list<array<string, mixed>>, done: bool}
+	 */
+	public static function export_notices( string $email ): array {
+		$user = get_user_by( 'email', $email );
+		$data = array();
+		if ( false !== $user ) {
+			$actor = new Actor( $user->ID, null );
+			foreach ( Services::notices()->for_actor( $actor ) as $notice ) {
+				$data[] = array(
+					'group_id'          => 'easyq-notices',
+					'group_label'       => __( 'Q&A notices', 'easyq' ),
+					'group_description' => __( 'Notices for you in the Q&A area.', 'easyq' ),
+					'item_id'           => 'easyq-notice-' . $notice['id'],
+					'data'              => array(
+						array(
+							'name'  => __( 'Notice', 'easyq' ),
+							'value' => $notice['content'],
+						),
+					),
+				);
+			}
+		}
+
+		return array(
+			'data' => $data,
+			'done' => true,
+		);
+	}
+
+	/**
+	 * Erases the notices of a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{items_removed: bool, items_retained: bool, messages: string[], done: bool}
+	 */
+	public static function erase_notices( string $email ): array {
+		$user    = get_user_by( 'email', $email );
+		$removed = 0;
+		if ( false !== $user ) {
+			$wpdb = DB::wpdb();
+			$sql  = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'usernotices' ), $user->ID );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				$removed = (int) $wpdb->query( $sql );
+			}
+			Site_Meta::delete( $user->ID, Notices::WELCOME_META );
+		}
+
+		return array(
+			'items_removed'  => $removed > 0,
+			'items_retained' => false,
+			'messages'       => array(),
+			'done'           => true,
+		);
 	}
 
 	/**

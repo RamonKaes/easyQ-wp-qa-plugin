@@ -31,7 +31,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template` and `easyq-favorite`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite` and `easyq-notice`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -154,6 +154,13 @@ category) and to the `move` action; a question may always keep the category it h
 | `GET /favorites` | The favorites of the logged in user: `type` (`question`, `user`, `tag`, `category`), `page`, `per_page`. Each item has `type`, `id`, `title` and `link` |
 | `POST /favorites` | Add a favorite: `type`, and `id` with the ID, for tags the name. Adding it twice changes nothing. Your own user answers `400`, what does not exist `404` |
 | `DELETE /favorites` | Remove a favorite: `type` and `id`; responds with `deleted` and `previous` |
+
+### Notices
+
+| Method and route | Description |
+| --- | --- |
+| `GET /notices` | The notices of the current user or visitor, with `id` and `content` as HTML |
+| `DELETE /notices/{id}` | Dismiss a notice: its number, `welcome`, or `visitor`, which sets the cookie `easyq_noticed`. Only your own; others answer `404` |
 
 ### Emails
 

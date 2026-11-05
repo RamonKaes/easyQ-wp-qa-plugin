@@ -288,6 +288,8 @@ final class Widgets {
 			return '';
 		}
 
+		Render::rest_state();
+
 		$favorite = Services::favorites()->has( $viewer, $type, $id );
 		$labels   = array(
 			'add'    => __( 'Add to favorites', 'easyq' ),
@@ -435,17 +437,36 @@ final class Widgets {
 		// The element is always there, hidden when empty: it is a router region that answering updates in place, see src/view.
 		$region = 'data-wp-interactive="easyq" data-wp-router-region="easyq/notices"';
 
+		$items = '';
+		foreach ( Services::notices()->for_actor( Block_Context::viewer() ) as $notice ) {
+			Render::rest_state();
+			$items .= sprintf(
+				'<div data-wp-bind--hidden="context.dismissed" %s><div>%s</div><div class="wp-block-buttons">%s</div></div>',
+				wp_interactivity_data_wp_context(
+					array(
+						'noticeId'  => $notice['id'],
+						'dismissed' => false,
+					)
+				),
+				$notice['content'],
+				Render::action_button( 'notice', 0, __( 'Dismiss this notice', 'easyq' ), array( 'easyq_notice' => $notice['id'] ), array(), 'data-wp-on--submit="actions.dismissNotice"' )
+			);
+		}
+
 		// Forms show their own errors next to the fields.
 		if ( null === $flash || ( 'error' === $flash['type'] && in_array( $flash['form'], Forms::INLINE_NOTICES, true ) ) ) {
-			return sprintf( '<div %s %s hidden></div>', get_block_wrapper_attributes(), $region );
+			return '' === $items
+				? sprintf( '<div %s %s hidden></div>', get_block_wrapper_attributes(), $region )
+				: sprintf( '<div %s %s>%s</div>', get_block_wrapper_attributes(), $region, $items );
 		}
 
 		return sprintf(
-			'<div %s %s role="%s"><p>%s</p></div>',
+			'<div %s %s><p role="%s">%s</p>%s</div>',
 			get_block_wrapper_attributes(),
 			$region,
 			'error' === $flash['type'] ? 'alert' : 'status',
-			esc_html( $flash['message'] )
+			esc_html( $flash['message'] ),
+			$items
 		);
 	}
 

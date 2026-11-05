@@ -354,6 +354,7 @@ final class Settings_Screen {
 				break;
 
 			case 'lines':
+			case 'html':
 				printf(
 					'<textarea class="large-text" rows="4" id="%1$s" name="%2$s"%3$s>%4$s</textarea>',
 					esc_attr( $id ),

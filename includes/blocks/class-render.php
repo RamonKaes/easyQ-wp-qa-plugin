@@ -103,6 +103,21 @@ final class Render {
 	}
 
 	/**
+	 * Tells the script how to reach the REST API, for blocks that send requests from the browser.
+	 *
+	 * @since 0.1.0
+	 */
+	public static function rest_state(): void {
+		wp_interactivity_state(
+			'easyq',
+			array(
+				'restUrl' => esc_url_raw( rest_url( 'easyq/v1/' ) ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+			)
+		);
+	}
+
+	/**
 	 * Renders the markup of a button with the outline style as a core button block.
 	 *
 	 * Core gives the block a class and styles of its own for the variation of the theme, see
