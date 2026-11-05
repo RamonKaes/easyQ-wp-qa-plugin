@@ -471,6 +471,36 @@ final class Points {
 	}
 
 	/**
+	 * Loads the points of several users at once, for lists that show them per item.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $user_ids User IDs.
+	 */
+	public function prime( array $user_ids ): void {
+		$wpdb    = DB::wpdb();
+		$missing = array_values( array_diff( array_unique( array_map( 'intval', $user_ids ) ), array_keys( $this->loaded ) ) );
+		if ( array() === $missing ) {
+			return;
+		}
+
+		$this->loaded += array_fill_keys( $missing, Options::get_int( 'points', 'points_base' ) );
+
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, points FROM %i WHERE user_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ')',
+					array_merge( array( Schema::table( 'userpoints' ) ), $missing )
+				)
+			)
+		);
+		foreach ( $rows as $row ) {
+			$this->loaded[ Row::int( $row, 'user_id' ) ] = Row::int( $row, 'points' );
+		}
+	}
+
+	/**
 	 * Forgets the points of a user loaded during the current request.
 	 *
 	 * Call it after changing the userpoints table outside this class.

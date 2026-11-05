@@ -63,11 +63,20 @@ final class Lists_Render {
 		$result  = Query_Resolver::questions( $query, $list_id );
 		$items   = array();
 
-		// The blocks of every item ask for the votes and flags of the viewer; load them at once.
+		// The blocks of every item ask for the votes and flags of the viewer and for the authors; load them at once.
 		$viewer = Block_Context::viewer();
 		if ( null !== $viewer->user_id ) {
 			Services::votes()->prime( $result['ids'], $viewer->user_id );
 		}
+		$shown = $result['ids'];
+		$users = array();
+		foreach ( $result['activity'] as $activity ) {
+			if ( null !== $activity ) {
+				$shown[] = $activity->post_id;
+				$users[] = $activity->user_id;
+			}
+		}
+		Render::prime_authors( Services::posts()->find_many( $shown ), $users );
 
 		foreach ( $result['ids'] as $index => $id ) {
 			$activity = $result['activity'][ $index ] ?? null;
@@ -188,16 +197,19 @@ final class Lists_Render {
 			return '';
 		}
 
-		// The blocks of the question, its answers and comments ask for the votes and flags of the viewer; load them at once.
+		// The blocks of the question, its answers and comments ask for their children, the authors
+		// and the votes and flags of the viewer; load them at once.
+		$posts = Services::posts();
+		$posts->prime_children( $question->id );
+		$shown = array( $question->id => $question );
+		foreach ( $posts->children( $question->id ) as $child ) {
+			$shown += array( $child->id => $child ) + $posts->children( $child->id );
+		}
+		Render::prime_authors( $shown );
+
 		$viewer = Block_Context::viewer();
 		if ( null !== $viewer->user_id ) {
-			$posts = Services::posts();
-			$posts->prime_children( $question->id );
-			$ids = array( $question->id );
-			foreach ( $posts->children( $question->id ) as $child ) {
-				$ids = array_merge( $ids, array( $child->id ), array_keys( $posts->children( $child->id ) ) );
-			}
-			Services::votes()->prime( $ids, $viewer->user_id );
+			Services::votes()->prime( array_keys( $shown ), $viewer->user_id );
 		}
 
 		// A router region: answering and loading comments update it in place, see src/view.

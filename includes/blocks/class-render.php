@@ -27,6 +27,26 @@ defined( 'ABSPATH' ) || exit;
 final class Render {
 
 	/**
+	 * Loads the authors of posts and their points at once, as `update_post_author_caches()` does in core.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<int, Post> $posts    Posts about to be shown.
+	 * @param array<?int>      $user_ids Further users about to be shown.
+	 */
+	public static function prime_authors( array $posts, array $user_ids = array() ): void {
+		$ids = $user_ids;
+		foreach ( $posts as $post ) {
+			$ids[] = $post->user_id;
+			$ids[] = $post->last_user_id;
+		}
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+
+		cache_users( $ids );
+		Services::points()->prime( $ids );
+	}
+
+	/**
 	 * Renders the inner blocks of a block once with extra context, like core loops do.
 	 *
 	 * @since 0.1.0

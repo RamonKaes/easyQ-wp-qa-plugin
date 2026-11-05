@@ -243,6 +243,40 @@ final class User_Levels {
 	}
 
 	/**
+	 * Loads the category levels of several users at once, for lists that show them per item.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $user_ids User IDs.
+	 */
+	public function prime_category_levels( array $user_ids ): void {
+		$wpdb     = DB::wpdb();
+		$user_ids = array_values( array_unique( array_map( 'intval', $user_ids ) ) );
+		$cached   = array() === $user_ids ? array() : wp_cache_get_multiple( $user_ids, 'easyq_userlevels' );
+		$missing  = array_keys( array_filter( $cached, static fn ( mixed $levels ): bool => ! is_array( $levels ) ) );
+		if ( array() === $missing ) {
+			return;
+		}
+
+		$rows = DB::rows(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT user_id, entity_id, level FROM %i WHERE user_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ') AND entity_type = %s AND level IS NOT NULL',
+					array_merge( array( Schema::table( 'userlevels' ) ), $missing, array( self::ENTITY_CATEGORY ) )
+				)
+			)
+		);
+
+		$levels = array_fill_keys( $missing, array() );
+		foreach ( $rows as $row ) {
+			$levels[ Row::int( $row, 'user_id' ) ][ Row::int( $row, 'entity_id' ) ] = Row::int( $row, 'level' );
+		}
+
+		wp_cache_set_multiple( $levels, 'easyq_userlevels' );
+	}
+
+	/**
 	 * Sets the level of a user within a category, or removes it.
 	 *
 	 * @since 0.1.0
