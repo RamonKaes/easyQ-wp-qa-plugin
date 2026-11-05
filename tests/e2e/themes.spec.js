@@ -283,6 +283,43 @@ test.describe( 'Themes', () => {
 			}
 		} );
 
+		// Details are smaller than what they belong to, by the sizes of the theme.
+		test( `shows details smaller than the text in ${ theme }`, async ( {
+			page,
+			requestUtils,
+		} ) => {
+			await requestUtils.activateTheme( theme );
+
+			const size = async ( selector ) =>
+				parseFloat(
+					await page
+						.locator( selector )
+						.first()
+						.evaluate(
+							( element ) =>
+								window.getComputedStyle( element ).fontSize
+						)
+				);
+
+			await page.goto( route( 'questions' ) );
+			expect(
+				await size( '.wp-block-easyq-post-activity' )
+			).toBeLessThan( await size( '.wp-block-easyq-post-title' ) );
+
+			await page.goto( route( 'question', question.id ) );
+			const text = await size(
+				'.wp-block-easyq-question > .wp-block-columns .wp-block-easyq-post-content'
+			);
+			expect( await size( '.wp-block-easyq-post-author' ) ).toBeLessThan(
+				text
+			);
+			expect(
+				await size(
+					'.wp-block-easyq-comment-template .wp-block-easyq-post-content'
+				)
+			).toBeLessThan( text );
+		} );
+
 		// WCAG 1.4.10 Reflow: 320 CSS pixels wide without scrolling sideways.
 		test( `reflows the Q&A pages at 320 pixels in ${ theme }`, async ( {
 			page,

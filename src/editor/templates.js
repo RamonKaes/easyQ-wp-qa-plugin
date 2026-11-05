@@ -4,9 +4,11 @@
  * @since 0.1.0
  */
 
+const small = { fontSize: 'small' };
+
 const meta = [
 	'core/group',
-	{ layout: { type: 'flex', flexWrap: 'wrap' } },
+	{ layout: { type: 'flex', flexWrap: 'wrap' }, ...small },
 	[
 		[ 'easyq/post-tags' ],
 		[ 'easyq/post-category' ],
@@ -31,6 +33,7 @@ export const QUESTION_ITEM = [
 								flexWrap: 'wrap',
 								verticalAlignment: 'top',
 							},
+							...small,
 						},
 						[
 							[
@@ -50,7 +53,13 @@ export const QUESTION_ITEM = [
 			[
 				'core/column',
 				{},
-				[ [ 'easyq/post-title', { isLink: true } ], meta ],
+				[
+					[
+						'easyq/post-title',
+						{ isLink: true, fontSize: 'medium' },
+					],
+					meta,
+				],
 			],
 		],
 	],
@@ -91,7 +100,10 @@ const POST_BODY = [
 								justifyContent: 'space-between',
 							},
 						},
-						[ [ 'easyq/post-actions' ], [ 'easyq/post-author' ] ],
+						[
+							[ 'easyq/post-actions' ],
+							[ 'easyq/post-author', small ],
+						],
 					],
 					[ 'easyq/comment-list' ],
 				],
@@ -105,10 +117,10 @@ export const COMMENT_LIST = [
 		'easyq/comment-template',
 		{},
 		[
-			[ 'easyq/post-content' ],
+			[ 'easyq/post-content', small ],
 			[
 				'core/group',
-				{ layout: { type: 'flex', flexWrap: 'wrap' } },
+				{ layout: { type: 'flex', flexWrap: 'wrap' }, ...small },
 				[
 					[ 'easyq/post-author', { showAvatar: false } ],
 					[ 'easyq/post-date' ],
@@ -117,7 +129,7 @@ export const COMMENT_LIST = [
 			],
 		],
 	],
-	[ 'easyq/comment-form' ],
+	[ 'easyq/comment-form', small ],
 ];
 
 export const ANSWER_LIST = [
@@ -126,7 +138,7 @@ export const ANSWER_LIST = [
 ];
 
 export const QUESTION_PAGE = [
-	[ 'easyq/breadcrumbs' ],
+	[ 'easyq/breadcrumbs', small ],
 	[ 'easyq/post-title', { level: 1 } ],
 	[
 		'core/columns',
@@ -138,7 +150,10 @@ export const QUESTION_PAGE = [
 				[
 					[
 						'core/group',
-						{ layout: { type: 'flex', flexWrap: 'wrap' } },
+						{
+							layout: { type: 'flex', flexWrap: 'wrap' },
+							...small,
+						},
 						[
 							[ 'easyq/post-status' ],
 							[ 'easyq/post-tags' ],
@@ -156,7 +171,7 @@ export const QUESTION_PAGE = [
 	[
 		'core/columns',
 		{},
-		[ [ 'core/column', {}, [ [ 'easyq/related-questions' ] ] ] ],
+		[ [ 'core/column', {}, [ [ 'easyq/related-questions', small ] ] ] ],
 	],
 ];
 
@@ -179,8 +194,8 @@ export const USER_ITEM = [
 						{ layout: { type: 'flex', orientation: 'vertical' } },
 						[
 							[ 'easyq/user-name' ],
-							[ 'easyq/user-points' ],
-							[ 'easyq/user-title' ],
+							[ 'easyq/user-points', small ],
+							[ 'easyq/user-title', small ],
 						],
 					],
 				],
@@ -216,13 +231,13 @@ export const USER_PAGE = [
 				{ layout: { type: 'flex', orientation: 'vertical' } },
 				[
 					[ 'easyq/user-name', { isLink: false } ],
-					[ 'easyq/user-title' ],
-					[ 'easyq/user-points', { showRank: true } ],
+					[ 'easyq/user-title', small ],
+					[ 'easyq/user-points', { showRank: true, ...small } ],
 				],
 			],
 		],
 	],
-	[ 'easyq/user-navigation' ],
+	[ 'easyq/user-navigation', small ],
 	[ 'easyq/user-fields' ],
 	[ 'easyq/user-stats' ],
 ];

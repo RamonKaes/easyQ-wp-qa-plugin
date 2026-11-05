@@ -37,7 +37,7 @@ final class Layouts {
 	 * @return string
 	 */
 	public static function questions(): string {
-		return '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . self::question_list();
+		return '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation {"fontSize":"small"} /-->' . "\n" . self::question_list();
 	}
 
 	/**
@@ -59,15 +59,15 @@ final class Layouts {
 <!-- wp:easyq/question-template -->
 <!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"8rem"} -->
-<div class="wp-block-column" style="flex-basis:8rem"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"top"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
+<div class="wp-block-column" style="flex-basis:8rem"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"top"},"fontSize":"small"} -->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
 <!-- wp:easyq/post-answer-count /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:column -->
 <!-- wp:column -->
-<div class="wp-block-column"><!-- wp:easyq/post-title {"isLink":true} /-->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-tags /-->
+<div class="wp-block-column"><!-- wp:easyq/post-title {"isLink":true,"fontSize":"medium"} /-->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-tags /-->
 <!-- wp:easyq/post-category /-->
 <!-- wp:easyq/post-activity /--></div>
 <!-- /wp:group --></div>
@@ -124,28 +124,28 @@ final class Layouts {
 <div class="wp-block-column"><!-- wp:easyq/post-content /-->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-actions /-->
-<!-- wp:easyq/post-author /--></div>
+<!-- wp:easyq/post-author {"fontSize":"small"} /--></div>
 <!-- /wp:group -->
 <!-- wp:easyq/comment-list -->
 <!-- wp:easyq/comment-template -->
-<!-- wp:easyq/post-content /-->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-author {"showAvatar":false} /-->
+<!-- wp:easyq/post-content {"fontSize":"small"} /-->
+<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-author {"showAvatar":false} /-->
 <!-- wp:easyq/post-date /-->
 <!-- wp:easyq/post-actions /--></div>
 <!-- /wp:group -->
 <!-- /wp:easyq/comment-template -->
-<!-- wp:easyq/comment-form /-->
+<!-- wp:easyq/comment-form {"fontSize":"small"} /-->
 <!-- /wp:easyq/comment-list --></div>
 <!-- /wp:column --></div>
 <!-- /wp:columns -->';
 
 		return '<!-- wp:easyq/question -->
-<!-- wp:easyq/breadcrumbs /-->
+<!-- wp:easyq/breadcrumbs {"fontSize":"small"} /-->
 <!-- wp:easyq/post-title {"level":1} /-->
 ' . self::breaking_words(
-			'<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-status /-->
+			'<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-status /-->
 <!-- wp:easyq/post-tags /-->
 <!-- wp:easyq/post-category /-->
 <!-- wp:easyq/post-view-count /--></div>
@@ -159,7 +159,7 @@ final class Layouts {
 <!-- wp:easyq/query-pagination /-->
 <!-- /wp:easyq/answer-list -->
 <!-- wp:easyq/answer-form /-->
-' . self::breaking_words( '<!-- wp:easyq/related-questions /-->' ) . '
+' . self::breaking_words( '<!-- wp:easyq/related-questions {"fontSize":"small"} /-->' ) . '
 <!-- /wp:easyq/question -->';
 	}
 
@@ -187,8 +187,8 @@ final class Layouts {
 <!-- wp:column -->
 <div class="wp-block-column"><!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:easyq/user-name /-->
-<!-- wp:easyq/user-points /-->
-<!-- wp:easyq/user-title /--></div>
+<!-- wp:easyq/user-points {"fontSize":"small"} /-->
+<!-- wp:easyq/user-title {"fontSize":"small"} /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:column --></div>
 <!-- /wp:columns -->
@@ -245,11 +245,11 @@ final class Layouts {
 <div class="wp-block-group"><!-- wp:easyq/user-avatar {"avatarSize":96} /-->
 <!-- wp:group {"layout":{"type":"flex","orientation":"vertical"}} -->
 <div class="wp-block-group"><!-- wp:easyq/page-title /-->
-<!-- wp:easyq/user-title /-->
-<!-- wp:easyq/user-points {"showRank":true} /--></div>
+<!-- wp:easyq/user-title {"fontSize":"small"} /-->
+<!-- wp:easyq/user-points {"showRank":true,"fontSize":"small"} /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:group -->
-<!-- wp:easyq/user-navigation /-->
+<!-- wp:easyq/user-navigation {"fontSize":"small"} /-->
 ' . $content . '
 <!-- /wp:easyq/user -->';
 	}

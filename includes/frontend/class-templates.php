@@ -337,7 +337,7 @@ final class Templates {
 			'easyq-hot'            => array(
 				'title'       => __( 'Q&A: Hot questions', 'easyq' ),
 				'description' => __( 'Questions sorted by recent activity, answers and votes.', 'easyq' ),
-				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . $list,
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation {"fontSize":"small"} /-->' . "\n" . $list,
 			),
 			'easyq-unanswered'     => array(
 				'title'       => __( 'Q&A: Unanswered questions', 'easyq' ),
@@ -352,7 +352,7 @@ final class Templates {
 			'easyq-category'       => array(
 				'title'       => __( 'Q&A: Category', 'easyq' ),
 				'description' => __( 'Questions in a category.', 'easyq' ),
-				'content'     => '<!-- wp:easyq/breadcrumbs /-->' . "\n" . '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/categories {"showChildrenOfCurrent":true} /-->' . "\n" . $list,
+				'content'     => '<!-- wp:easyq/breadcrumbs {"fontSize":"small"} /-->' . "\n" . '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/categories {"showChildrenOfCurrent":true} /-->' . "\n" . $list,
 			),
 			'easyq-search'         => array(
 				'title'       => __( 'Q&A: Search results', 'easyq' ),
@@ -397,7 +397,7 @@ final class Templates {
 			'easyq-users'          => array(
 				'title'       => __( 'Q&A: Users', 'easyq' ),
 				'description' => __( 'Users by points, newest users and users with special levels.', 'easyq' ),
-				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation /-->' . "\n" . Layouts::user_list(),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/sort-navigation {"fontSize":"small"} /-->' . "\n" . Layouts::user_list(),
 			),
 			'easyq-user'           => array(
 				'title'       => __( 'Q&A: User profile', 'easyq' ),
