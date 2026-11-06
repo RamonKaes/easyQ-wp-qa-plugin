@@ -15,6 +15,15 @@
 		"isLink": {
 			"type": "boolean",
 			"default": true
+		},
+		"linkTarget": {
+			"type": "string",
+			"enum": [
+				"_self",
+				"_blank"
+			],
+			"default": "_self",
+			"role": "content"
 		}
 	},
 	"usesContext": [

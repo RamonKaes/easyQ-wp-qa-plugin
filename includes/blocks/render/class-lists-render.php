@@ -142,6 +142,7 @@ final class Lists_Render {
 					'current'   => $result['page'],
 					'total'     => $pages,
 					'prev_next' => false,
+					'mid_size'  => is_numeric( $attributes['midSize'] ?? null ) ? max( 0, (int) $attributes['midSize'] ) : 2,
 					'type'      => 'plain',
 				)
 			);
@@ -244,7 +245,7 @@ final class Lists_Render {
 			number_format_i18n( $count )
 		);
 
-		return sprintf( '<section %s><h2>%s</h2>%s</section>', get_block_wrapper_attributes(), esc_html( $title ), $content );
+		return sprintf( '<section %s>%s%s</section>', get_block_wrapper_attributes(), Render::heading( $attributes, $title ), $content );
 	}
 
 	/**

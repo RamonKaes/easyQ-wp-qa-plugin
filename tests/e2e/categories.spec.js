@@ -124,4 +124,49 @@ test.describe( 'Categories screen', () => {
 			expect( results.violations, query || 'list' ).toEqual( [] );
 		}
 	} );
+
+	test( 'opens a category from the dropdown of the categories block without JavaScript', async ( {
+		browser,
+		page,
+		requestUtils,
+	} ) => {
+		const parent = await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/categories',
+			data: { title: 'Gadgets' },
+		} );
+		await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/categories',
+			data: { title: 'Phones', parent: parent.id },
+		} );
+		const post = await requestUtils.createPage( {
+			title: 'Category dropdown',
+			status: 'publish',
+			content: '<!-- wp:easyq/categories {"displayAsDropdown":true} /-->',
+		} );
+
+		await page.goto( post.link );
+		const results = await new AxeBuilder( { page } )
+			.include( '.wp-block-easyq-categories' )
+			.analyze();
+		expect( results.violations ).toEqual( [] );
+
+		const context = await browser.newContext( {
+			javaScriptEnabled: false,
+		} );
+		const plain = await context.newPage();
+		await plain.goto( post.link );
+
+		await plain
+			.getByRole( 'combobox', { name: 'Categories' } )
+			.selectOption( 'gadgets/phones' );
+		await plain.getByRole( 'button', { name: 'Go' } ).click();
+
+		await expect(
+			plain.getByRole( 'heading', { level: 1, name: /Phones/ } )
+		).toBeVisible();
+		await context.close();
+		await requestUtils.deleteAllPages();
+	} );
 } );

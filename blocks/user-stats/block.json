@@ -11,6 +11,23 @@
 		"points"
 	],
 	"textdomain": "easyq",
+	"attributes": {
+		"rows": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			},
+			"default": [
+				"member",
+				"points",
+				"questions",
+				"answers",
+				"comments",
+				"votes_given",
+				"votes_received"
+			]
+		}
+	},
 	"usesContext": [
 		"easyq/userId"
 	],

@@ -229,9 +229,94 @@ final class Widgets {
 			return self::favorite_categories( (bool) ( $attributes['showCounts'] ?? true ) );
 		}
 
-		$list = self::category_list( $parent_id, (bool) ( $attributes['showCounts'] ?? true ) );
+		$options = array(
+			'counts'    => (bool) ( $attributes['showCounts'] ?? true ),
+			'hierarchy' => (bool) ( $attributes['showHierarchy'] ?? true ),
+			'empty'     => (bool) ( $attributes['showEmpty'] ?? true ),
+		);
+		$tree    = self::category_tree( $parent_id, $options['empty'] );
+		if ( array() === $tree ) {
+			return '';
+		}
 
-		return '' === $list ? '' : sprintf( '<nav %s aria-label="%s">%s</nav>', get_block_wrapper_attributes(), esc_attr__( 'Categories', 'easyq' ), $list );
+		if ( ! empty( $attributes['displayAsDropdown'] ) ) {
+			return self::category_dropdown( $tree, $options );
+		}
+
+		$list = self::category_list( $tree, $options['counts'], $options['hierarchy'] );
+
+		return sprintf( '<nav %s aria-label="%s">%s</nav>', get_block_wrapper_attributes(), esc_attr__( 'Categories', 'easyq' ), $list );
+	}
+
+	/**
+	 * Returns the categories below a parent in tree order with their depth, without empty ones if asked.
+	 *
+	 * As `hide_empty` of `wp_list_categories()`, an empty category stays when it has categories with questions below it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $parent_id  Parent category, null for the top level.
+	 * @param bool     $show_empty Whether to keep categories without questions.
+	 * @param int      $depth      Depth of the children below the first parent.
+	 * @return list<array{category: Category, depth: int}>
+	 */
+	private static function category_tree( ?int $parent_id, bool $show_empty, int $depth = 0 ): array {
+		$nodes = array();
+		foreach ( Services::categories()->children( $parent_id ) as $category ) {
+			$children = self::category_tree( $category->id, $show_empty, $depth + 1 );
+			if ( $show_empty || $category->question_count > 0 || array() !== $children ) {
+				$nodes[] = array(
+					'category' => $category,
+					'depth'    => $depth,
+				);
+				array_push( $nodes, ...$children );
+			}
+		}
+
+		return $nodes;
+	}
+
+	/**
+	 * Renders the categories as a select that opens the chosen category.
+	 *
+	 * Core's Categories block navigates with a script; this form works without JavaScript: it sends
+	 * the route and the path of the category as the query variables the router reads.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param list<array{category: Category, depth: int}>       $tree    Categories in tree order.
+	 * @param array{counts: bool, hierarchy: bool, empty: bool} $options Display options.
+	 * @return string
+	 */
+	private static function category_dropdown( array $tree, array $options ): string {
+		$current = Block_Context::router()->current()?->category();
+		$id      = wp_unique_id( 'easyq-categories-' );
+		$items   = '';
+		foreach ( $tree as $node ) {
+			$category = $node['category'];
+			$items   .= sprintf(
+				'<option value="%s"%s>%s%s%s</option>',
+				esc_attr( implode( '/', $category->path_slugs() ) ),
+				selected( $current?->id, $category->id, false ),
+				$options['hierarchy'] ? str_repeat( '&nbsp;&nbsp;&nbsp;', $node['depth'] ) : '',
+				esc_html( $category->title ),
+				$options['counts'] ? '&nbsp;&nbsp;(' . esc_html( number_format_i18n( $category->question_count ) ) . ')' : ''
+			);
+		}
+
+		return sprintf(
+			'<form method="get" action="%s" %s><label class="wp-block-categories__label screen-reader-text" for="%s">%s</label><input type="hidden" name="%s" value="category" /><select id="%s" name="%s" required><option value="">%s</option>%s</select> <button type="submit" class="wp-element-button">%s</button></form>',
+			esc_url( home_url( '/' ) ),
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-categories-dropdown' ) ),
+			esc_attr( $id ),
+			esc_html__( 'Categories', 'easyq' ),
+			esc_attr( Routes::ROUTE_VAR ),
+			esc_attr( $id ),
+			esc_attr( Routes::ARG_VAR ),
+			esc_html__( 'Select category', 'easyq' ),
+			$items,
+			esc_html__( 'Go', 'easyq' )
+		);
 	}
 
 	/**
@@ -362,7 +447,7 @@ final class Widgets {
 			}
 		}
 
-		return sprintf( '<section %s><h2>%s</h2><ul class="wp-block-latest-posts wp-block-latest-posts__list">%s</ul></section>', get_block_wrapper_attributes(), esc_html__( 'Related questions', 'easyq' ), $items );
+		return sprintf( '<section %s>%s<ul class="wp-block-latest-posts wp-block-latest-posts__list">%s</ul></section>', get_block_wrapper_attributes(), Render::heading( $attributes, __( 'Related questions', 'easyq' ) ), $items );
 	}
 
 	/**
@@ -370,26 +455,34 @@ final class Widgets {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param array<string, mixed> $attributes Attributes; `rows` lists the numbers shown.
 	 * @return string
 	 */
-	public static function activity_count(): string {
-		$numbers = array(
-			/* translators: %s: number of questions. */
-			_n( '%s question', '%s questions', Counts::get( Counts::QUESTIONS ), 'easyq' ) => Counts::get( Counts::QUESTIONS ),
-			/* translators: %s: number of answers. */
-			_n( '%s answer', '%s answers', Counts::get( Counts::ANSWERS ), 'easyq' )       => Counts::get( Counts::ANSWERS ),
-			/* translators: %s: number of comments. */
-			_n( '%s comment', '%s comments', Counts::get( Counts::COMMENTS ), 'easyq' )    => Counts::get( Counts::COMMENTS ),
-			/* translators: %s: number of users. */
-			_n( '%s user', '%s users', Counts::get( Counts::USERS_WITH_POINTS ), 'easyq' ) => Counts::get( Counts::USERS_WITH_POINTS ),
+	public static function activity_count( array $attributes = array() ): string {
+		$counts = array(
+			'questions' => Counts::QUESTIONS,
+			'answers'   => Counts::ANSWERS,
+			'comments'  => Counts::COMMENTS,
+			'users'     => Counts::USERS_WITH_POINTS,
 		);
 
 		$items = '';
-		foreach ( $numbers as $format => $number ) {
+		foreach ( Render::rows( $attributes, array_keys( $counts ) ) as $row ) {
+			$number = Counts::get( $counts[ $row ] );
+			$format = match ( $row ) {
+				/* translators: %s: number of questions. */
+				'questions' => _n( '%s question', '%s questions', $number, 'easyq' ),
+				/* translators: %s: number of answers. */
+				'answers'   => _n( '%s answer', '%s answers', $number, 'easyq' ),
+				/* translators: %s: number of comments. */
+				'comments'  => _n( '%s comment', '%s comments', $number, 'easyq' ),
+				/* translators: %s: number of users. */
+				default     => _n( '%s user', '%s users', $number, 'easyq' ),
+			};
 			$items .= sprintf( '<li>%s</li>', esc_html( sprintf( $format, Render::number( $number ) ) ) );
 		}
 
-		return sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes(), $items );
+		return '' === $items ? '' : sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes(), $items );
 	}
 
 	/**
@@ -479,32 +572,35 @@ final class Widgets {
 	}
 
 	/**
-	 * Returns a nested list of categories below a parent.
+	 * Renders categories in tree order as nested list, or as flat list.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int|null $parent_id   Parent category.
-	 * @param bool     $show_counts Whether to show question counts.
+	 * @param list<array{category: Category, depth: int}> $tree        Categories in tree order.
+	 * @param bool                                        $show_counts Whether to show the number of questions.
+	 * @param bool                                        $hierarchy   Whether to nest subcategories below their parent.
 	 * @return string
 	 */
-	private static function category_list( ?int $parent_id, bool $show_counts ): string {
-		$children = Services::categories()->children( $parent_id );
-		if ( array() === $children ) {
-			return '';
-		}
-
-		$items = '';
-		foreach ( $children as $category ) {
-			$items .= sprintf(
-				'<li><a href="%s">%s</a>%s%s</li>',
+	private static function category_list( array $tree, bool $show_counts, bool $hierarchy ): string {
+		$html     = '<ul>';
+		$previous = 0;
+		foreach ( $tree as $index => $node ) {
+			$depth = $hierarchy ? $node['depth'] : 0;
+			if ( $index > 0 ) {
+				// In tree order a category is at most one level deeper than the one before it.
+				$html .= $depth > $previous ? '<ul>' : '</li>' . str_repeat( '</ul></li>', $previous - $depth );
+			}
+			$previous = $depth;
+			$category = $node['category'];
+			$html    .= sprintf(
+				'<li><a href="%s">%s</a>%s',
 				esc_url( URLs::category( $category ) ),
 				esc_html( $category->title ),
-				$show_counts ? ' <span>(' . esc_html( number_format_i18n( $category->question_count ) ) . ')</span>' : '',
-				self::category_list( $category->id, $show_counts )
+				$show_counts ? ' <span>(' . esc_html( number_format_i18n( $category->question_count ) ) . ')</span>' : ''
 			);
 		}
 
-		return '<ul>' . $items . '</ul>';
+		return $html . '</li>' . str_repeat( '</ul></li>', $previous ) . '</ul>';
 	}
 
 	/**

@@ -456,4 +456,145 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( '<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">Answer</button></p>', $html );
 		$this->assertMatchesRegularExpression( '/<details class="wp-block-details wp-block-easyq-comment-form[^"]*" id="easyq-comment-form-' . $answer->id . '">/', $html );
 	}
+
+	public function test_the_date_has_a_format_of_its_own(): void {
+		$question = $this->ask( $this->user() );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$expected = (string) wp_date( 'd/m/Y', (int) strtotime( $question->created . ' UTC' ) );
+
+		$this->assertStringContainsString( '>' . $expected . '</time>', do_blocks( '<!-- wp:easyq/post-date {"display":"absolute","format":"d/m/Y"} /-->' ) );
+		$this->assertStringContainsString( '>' . wp_date( (string) get_option( 'date_format' ), (int) strtotime( $question->created . ' UTC' ) ) . '</time>', do_blocks( '<!-- wp:easyq/post-date {"display":"absolute"} /-->' ), 'Without a format the site format applies.' );
+	}
+
+	public function test_links_can_open_in_a_new_tab(): void {
+		$author   = $this->user();
+		$user     = get_userdata( (int) $author->user_id );
+		$question = $this->ask( $author );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$this->assertInstanceOf( \WP_User::class, $user );
+
+		$title = do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-title {"isLink":true,"linkTarget":"_blank","rel":"nofollow"} /--><!-- /wp:easyq/question -->' );
+		$this->assertMatchesRegularExpression( '~<a href="[^"]+" target="_blank" rel="nofollow">~', $title );
+		$this->assertStringNotContainsString( 'target=', do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-title {"isLink":true} /--><!-- /wp:easyq/question -->' ) );
+
+		$author_html = do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-author {"isLink":false,"showAvatar":false} /--><!-- /wp:easyq/question -->' );
+		$this->assertStringContainsString( '<span>' . $user->display_name . '</span>', $author_html );
+		$this->assertStringNotContainsString( '<a ', $author_html );
+
+		Block_Context::router()->set_current( new Route( 'user', $user ) );
+		$this->assertStringContainsString( '" target="_blank">' . $user->display_name . '</a>', do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-name {"linkTarget":"_blank"} /--><!-- /wp:easyq/user -->' ) );
+		$avatar = do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-avatar {"isLink":true,"linkTarget":"_blank"} /--><!-- /wp:easyq/user -->' );
+		$this->assertStringContainsString( 'target="_blank"', $avatar );
+		$this->assertStringContainsString( "alt='" . $user->display_name . " (opens in a new tab)'", $avatar );
+	}
+
+	public function test_headings_can_be_hidden_or_take_another_level(): void {
+		$question = $this->ask( $this->user() );
+		$this->answer( $this->user(), $question );
+
+		$this->assertStringContainsString( '<h2>1 answer</h2>', $this->answers( $question, array( 'order' => '' ) ) );
+		$this->assertStringContainsString( '<h4>1 answer</h4>', $this->answers( $question, array( 'level' => 4 ) ) );
+		$this->assertStringNotContainsString( '1 answer', $this->answers( $question, array( 'showTitle' => false ) ) );
+
+		Options::update( 'permissions', array( 'permit_post_a' => \EasyQ\Users\Permits::ALL ) );
+		$_GET[ Forms::ANSWER_VAR ] = (string) $question->id;
+		$this->assertStringContainsString( '<h3>Your answer</h3>', do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form {"level":3} /--><!-- /wp:easyq/question -->' ) );
+		$this->assertStringNotContainsString( '<h2>Your answer</h2>', do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form {"showTitle":false} /--><!-- /wp:easyq/question -->' ) );
+	}
+
+	public function test_search_fields_have_the_options_of_the_core_search_block(): void {
+		$default = do_blocks( '<!-- wp:easyq/search /-->' );
+		$this->assertMatchesRegularExpression( '~class="wp-block-search wp-block-search__button-outside wp-block-search__text-button wp-block-easyq-search~', $default );
+		$this->assertStringContainsString( '<label class="wp-block-search__label" for=', $default );
+		$this->assertStringContainsString( '>Search questions</label>', $default );
+		$this->assertStringContainsString( '<button type="submit" class="wp-block-search__button wp-element-button">Search</button>', $default );
+
+		$custom = do_blocks( '<!-- wp:easyq/search {"label":"Find","showLabel":false,"buttonText":"Go","buttonPosition":"button-inside"} /-->' );
+		$this->assertStringContainsString( 'wp-block-search__button-inside', $custom );
+		$this->assertStringContainsString( '<label class="wp-block-search__label screen-reader-text" for=', $custom );
+		$this->assertStringContainsString( '>Find</label>', $custom );
+		$this->assertStringContainsString( 'wp-element-button">Go</button>', $custom );
+
+		$ask = do_blocks( '<!-- wp:easyq/ask-box {"buttonPosition":"no-button"} /-->' );
+		$this->assertStringContainsString( 'wp-block-search__no-button', $ask );
+		$this->assertStringNotContainsString( '<button', $ask );
+		$this->assertStringNotContainsString( '__text-button', $ask );
+		$this->assertStringContainsString( 'name="title"', $ask );
+	}
+
+	public function test_pagination_shows_as_many_page_numbers_as_mid_size_says(): void {
+		Lists::store( 'list', array( 1, 2 ), 20, 5, 2, 'easyq_page' );
+		$render = static fn ( array $attributes ): string => ( new WP_Block(
+			array(
+				'blockName'    => 'easyq/query-pagination',
+				'attrs'        => $attributes,
+				'innerBlocks'  => array(),
+				'innerHTML'    => '',
+				'innerContent' => array(),
+			),
+			array( 'easyq/listId' => 'list' )
+		) )->render();
+
+		$number  = static fn ( int $page ): string => sprintf( '<a class="page-numbers" href="?easyq_page=%d">', $page );
+		$default = $render( array() );
+		$this->assertStringContainsString( $number( 3 ), $default );
+		$this->assertStringContainsString( $number( 7 ), $default );
+		$this->assertStringNotContainsString( $number( 8 ), $default );
+
+		$narrow = $render( array( 'midSize' => 0 ) );
+		$this->assertStringNotContainsString( $number( 4 ), $narrow );
+		$this->assertStringContainsString( $number( 10 ), $narrow, 'The first and last page stay.' );
+	}
+
+	public function test_categories_can_be_flat_without_empty_ones_or_a_dropdown(): void {
+		$software = (int) Services::categories()->create( null, 'Software' );
+		$themes   = (int) Services::categories()->create( $software, 'Themes' );
+		Services::categories()->create( null, 'Hardware' );
+		$this->ask( $this->user(), 'A question about themes', 'x', array(), $themes );
+
+		$nested = do_blocks( '<!-- wp:easyq/categories /-->' );
+		$this->assertMatchesRegularExpression( '~>Software</a>[^<]*<span>\(\d+\)</span><ul><li><a [^>]+>Themes</a>~', $nested );
+		$this->assertStringContainsString( '>Hardware</a>', $nested );
+
+		$flat = do_blocks( '<!-- wp:easyq/categories {"showHierarchy":false,"showCounts":false} /-->' );
+		$this->assertMatchesRegularExpression( '~>Software</a></li><li><a [^>]+>Themes</a></li>~', $flat );
+
+		$filled = do_blocks( '<!-- wp:easyq/categories {"showEmpty":false} /-->' );
+		$this->assertStringNotContainsString( 'Hardware', $filled );
+		$this->assertStringContainsString( '>Themes</a>', $filled, 'An empty parent of a category with questions stays.' );
+
+		$dropdown = do_blocks( '<!-- wp:easyq/categories {"displayAsDropdown":true,"showCounts":false} /-->' );
+		$this->assertStringContainsString( '<input type="hidden" name="easyq_route" value="category" />', $dropdown );
+		$this->assertMatchesRegularExpression( '~<select id="[^"]+" name="easyq_arg" required>~', $dropdown );
+		$this->assertStringContainsString( '<option value="software/themes">&nbsp;&nbsp;&nbsp;Themes</option>', $dropdown );
+		$this->assertStringContainsString( '<button type="submit" class="wp-element-button">Go</button>', $dropdown );
+	}
+
+	public function test_rows_choose_what_counts_and_profiles_show(): void {
+		$this->ask( $this->user() );
+		$counts = do_blocks( '<!-- wp:easyq/activity-count {"rows":["questions"]} /-->' );
+		$this->assertStringContainsString( '1 question', $counts );
+		$this->assertStringNotContainsString( 'user', $counts );
+		$this->assertStringContainsString( ' user</li>', do_blocks( '<!-- wp:easyq/activity-count /-->' ) );
+
+		$id = self::factory()->user->create(
+			array(
+				'user_url'    => 'https://example.org',
+				'description' => 'Keeps walruses.',
+			)
+		);
+		Block_Context::router()->set_current( new Route( 'user', get_userdata( $id ) ) );
+
+		$stats = do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-stats {"rows":["points","comments"]} /--><!-- /wp:easyq/user -->' );
+		$this->assertStringContainsString( 'Points', $stats );
+		$this->assertStringContainsString( 'Comments', $stats );
+		$this->assertStringNotContainsString( 'Member for', $stats );
+		$this->assertStringContainsString( 'Member for', do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-stats /--><!-- /wp:easyq/user -->' ) );
+
+		$fields = do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-fields {"rows":["about"]} /--><!-- /wp:easyq/user -->' );
+		$this->assertStringContainsString( 'Keeps walruses.', $fields );
+		$this->assertStringNotContainsString( 'example.org', $fields );
+		$this->assertStringContainsString( 'example.org', do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-fields /--><!-- /wp:easyq/user -->' ) );
+		$this->assertStringNotContainsString( '<dl', do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-fields {"rows":[]} /--><!-- /wp:easyq/user -->' ) );
+	}
 }

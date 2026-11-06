@@ -256,9 +256,10 @@ final class Render {
 	 *
 	 * @param string $mysql_gmt Time in UTC, MySQL format.
 	 * @param string $display   `relative` ("5 minutes ago"), `absolute`, or empty for the site setting (relative for recent dates).
+	 * @param string $format    PHP date format of absolute dates, empty for the site's date format.
 	 * @return string
 	 */
-	public static function date( string $mysql_gmt, string $display = '' ): string {
+	public static function date( string $mysql_gmt, string $display = '', string $format = '' ): string {
 		$timestamp = (int) strtotime( $mysql_gmt . ' UTC' );
 		$days      = Options::get_int( 'viewing', 'show_full_date_days' );
 		$relative  = match ( $display ) {
@@ -272,10 +273,73 @@ final class Render {
 			return sprintf( __( '%s ago', 'easyq' ), human_time_diff( $timestamp ) );
 		}
 
-		$format = get_option( 'date_format' );
-		$date   = wp_date( is_string( $format ) && '' !== $format ? $format : 'Y-m-d', $timestamp );
+		if ( '' === $format ) {
+			$site   = get_option( 'date_format' );
+			$format = is_string( $site ) && '' !== $site ? $site : 'Y-m-d';
+		}
+		$date = wp_date( $format, $timestamp );
 
 		return false === $date ? '' : $date;
+	}
+
+	/**
+	 * Returns the heading of a block, or nothing when the block hides it.
+	 *
+	 * Blocks with a heading have the attributes `showTitle` and `level`, as the core Comments Title block.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @param string               $text       Heading, not escaped.
+	 * @param string               $extra      Further attributes of the heading, escaped.
+	 * @param int                  $level      Level without the attribute.
+	 * @return string
+	 */
+	public static function heading( array $attributes, string $text, string $extra = '', int $level = 2 ): string {
+		if ( ! ( $attributes['showTitle'] ?? true ) ) {
+			return '';
+		}
+
+		$level = is_numeric( $attributes['level'] ?? null ) ? max( 1, min( 6, (int) $attributes['level'] ) ) : $level;
+
+		return sprintf( '<h%1$d%2$s>%3$s</h%1$d>', $level, '' === $extra ? '' : ' ' . $extra, esc_html( $text ) );
+	}
+
+	/**
+	 * Returns the rows a block shows, from its attribute `rows`, in the order of the block.
+	 *
+	 * Without the attribute every row is shown; unknown keys are ignored.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @param string[]             $keys       Keys of all rows, in order.
+	 * @return string[]
+	 */
+	public static function rows( array $attributes, array $keys ): array {
+		if ( ! is_array( $attributes['rows'] ?? null ) ) {
+			return $keys;
+		}
+
+		return array_values( array_intersect( $keys, array_filter( $attributes['rows'], 'is_string' ) ) );
+	}
+
+	/**
+	 * Returns the `target` and `rel` attributes of a link, as the core blocks with a link target.
+	 *
+	 * `rel` comes from the attribute of the same name, see the core Post Title block; core adds
+	 * nothing for `_blank`, as browsers imply `noopener` for it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $attributes Block attributes.
+	 * @return string Escaped attributes with a leading space, or empty.
+	 */
+	public static function link_attributes( array $attributes ): string {
+		$html = '_blank' === ( $attributes['linkTarget'] ?? '_self' ) ? ' target="_blank"' : '';
+		$rel  = is_string( $attributes['rel'] ?? null ) ? trim( $attributes['rel'] ) : '';
+
+		return '' === $rel ? $html : $html . sprintf( ' rel="%s"', esc_attr( $rel ) );
 	}
 
 	/**

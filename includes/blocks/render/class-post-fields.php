@@ -52,7 +52,7 @@ final class Post_Fields {
 		$title = esc_html( Services::content_renderer()->text( (string) $post->title ) );
 
 		if ( ! empty( $attributes['isLink'] ) ) {
-			$title = sprintf( '<a href="%s">%s</a>', esc_url( URLs::question( $post ) ), $title );
+			$title = sprintf( '<a href="%s"%s>%s</a>', esc_url( URLs::question( $post ) ), Render::link_attributes( $attributes ), $title );
 		}
 
 		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes( array( 'class' => 'wp-block-post-title' ) ), $title );
@@ -252,10 +252,11 @@ final class Post_Fields {
 		}
 
 		$display = is_string( $attributes['display'] ?? null ) ? $attributes['display'] : '';
+		$format  = is_string( $attributes['format'] ?? null ) ? $attributes['format'] : '';
 		$html    = sprintf(
 			'<time datetime="%s">%s</time>',
 			esc_attr( mysql_to_rfc3339( $post->created ) ),
-			esc_html( Render::date( $post->created, $display ) )
+			esc_html( Render::date( $post->created, $display, $format ) )
 		);
 
 		$show_modified = ( $attributes['showModified'] ?? true ) && Options::get_bool( 'viewing', 'show_post_update_meta' );
@@ -264,7 +265,7 @@ final class Post_Fields {
 			$html  .= ' · ' . sprintf(
 				/* translators: %s: time of the change. */
 				esc_html__( 'edited %s', 'easyq' ),
-				sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated, $display ) ) )
+				sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated, $display, $format ) ) )
 			);
 			if ( false !== $editor && $editor->ID !== $post->user_id ) {
 				/* translators: %s: name of the user who changed the post. */
@@ -300,7 +301,7 @@ final class Post_Fields {
 			$html .= sprintf( '<div class="wp-block-avatar">%s</div>', Render::avatar( false === $user ? 0 : $user->ID, $size, '' ) );
 		}
 
-		$html .= false === $user ? sprintf( '<span>%s</span>', $name ) : sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name );
+		$html .= false === $user || ! ( $attributes['isLink'] ?? true ) ? sprintf( '<span>%s</span>', $name ) : sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name );
 
 		// The title of the user's level or points, as Question2Answer shows it after the name.
 		if ( false !== $user && ( $attributes['showTitle'] ?? true ) && Options::get_bool( 'viewing', 'show_user_titles' ) ) {

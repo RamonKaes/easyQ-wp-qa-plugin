@@ -4,8 +4,14 @@
  * @since 0.1.0
  */
 import { __ } from '@wordpress/i18n';
-import { InspectorControls } from '@wordpress/block-editor';
 import {
+	InspectorControls,
+	// The core Date block uses the same picker; it has no stable export yet (WordPress 6.7 to 7.1).
+	// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
+	__experimentalDateFormatPicker as DateFormatPicker,
+} from '@wordpress/block-editor';
+import {
+	BaseControl,
 	ComboboxControl,
 	PanelBody,
 	RangeControl,
@@ -13,6 +19,8 @@ import {
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
+
+import { getSettings as getDateSettings } from '@wordpress/date';
 
 import { useEasyQ } from './data';
 
@@ -55,6 +63,40 @@ const LABELS = {
 	showNumbers: __( 'Show page numbers', 'easyq' ),
 	arrow: __( 'Arrow', 'easyq' ),
 	showLabel: __( 'Show labels', 'easyq' ),
+	format: __( 'Date format', 'easyq' ),
+	linkTarget: __( 'Open in new tab', 'easyq' ),
+	rel: __( 'Link relation', 'easyq' ),
+	label: __( 'Label', 'easyq' ),
+	buttonText: __( 'Button text', 'easyq' ),
+	buttonPosition: __( 'Button position', 'easyq' ),
+	midSize: __( 'Number of links', 'easyq' ),
+	showHierarchy: __( 'Show hierarchy', 'easyq' ),
+	showEmpty: __( 'Show empty categories', 'easyq' ),
+	displayAsDropdown: __( 'Display as dropdown', 'easyq' ),
+	favorites: __( 'Only favorites of the visitor', 'easyq' ),
+	rows: __( 'Shown rows', 'easyq' ),
+};
+
+/**
+ * Labels of the blocks with a heading, which have `showTitle` and `level` as the core Comments Title block.
+ *
+ * @since 0.1.0
+ *
+ * @type {Object<string, string>}
+ */
+const HEADING_LABELS = {
+	showTitle: __( 'Show heading', 'easyq' ),
+};
+
+/**
+ * Labels of the search fields, as in the core Search block.
+ *
+ * @since 0.1.0
+ *
+ * @type {Object<string, string>}
+ */
+const SEARCH_LABELS = {
+	showLabel: __( 'Show label', 'easyq' ),
 };
 
 /**
@@ -65,14 +107,24 @@ const LABELS = {
  * @type {Object<string, Object<string, string>>}
  */
 const BLOCK_LABELS = {
-	'easyq/answer-list': {
-		perPage: __( 'Answers per page', 'easyq' ),
-	},
 	'easyq/post-date': {
 		display: __( 'Date', 'easyq' ),
 	},
 	'easyq/post-votes': {
 		display: __( 'Votes', 'easyq' ),
+	},
+	'easyq/answer-list': {
+		perPage: __( 'Answers per page', 'easyq' ),
+		...HEADING_LABELS,
+	},
+	'easyq/answer-form': HEADING_LABELS,
+	'easyq/related-questions': HEADING_LABELS,
+	'easyq/user-wall': HEADING_LABELS,
+	'easyq/messages': HEADING_LABELS,
+	'easyq/search': SEARCH_LABELS,
+	'easyq/ask-box': SEARCH_LABELS,
+	'easyq/post-author': {
+		isLink: __( 'Link to the profile', 'easyq' ),
 	},
 };
 
@@ -96,6 +148,86 @@ const HELP = {
 		'Without labels the arrows are shown; screen readers still read the labels.',
 		'easyq'
 	),
+	midSize: __(
+		'Specify how many links can appear before and after the current page number. Links to the first, current and last page are always visible.',
+		'easyq'
+	),
+	favorites: __(
+		'Shows what the visitor follows instead of all; visitors who are not signed in see a hint.',
+		'easyq'
+	),
+	label: __( 'Empty uses the default label.', 'easyq' ),
+	buttonText: __( 'Empty uses the default text.', 'easyq' ),
+	displayAsDropdown: __(
+		'A select with a button that opens the chosen category; works without JavaScript.',
+		'easyq'
+	),
+};
+
+/**
+ * Help texts that differ for some blocks.
+ *
+ * @since 0.1.0
+ *
+ * @type {Object<string, Object<string, string|undefined>>}
+ */
+const BLOCK_HELP = {
+	'easyq/search': { showLabel: undefined },
+	'easyq/ask-box': { showLabel: undefined },
+	'easyq/messages': {
+		showTitle: __(
+			'The heading of the conversation with a user.',
+			'easyq'
+		),
+	},
+};
+
+/**
+ * Conditions under which an attribute is shown, as core hides link options of unlinked blocks.
+ *
+ * @since 0.1.0
+ *
+ * @type {Object<string, (attributes: Object) => boolean>}
+ */
+const SHOWN_IF = {
+	linkTarget: ( attributes ) => attributes.isLink !== false,
+	rel: ( attributes ) => attributes.isLink !== false,
+	midSize: ( attributes ) => attributes.showNumbers !== false,
+	format: ( attributes ) => attributes.display !== 'relative',
+	showHierarchy: ( attributes ) => ! attributes.favorites,
+	showEmpty: ( attributes ) => ! attributes.favorites,
+	displayAsDropdown: ( attributes ) => ! attributes.favorites,
+};
+
+/**
+ * Rows of the blocks with the attribute `rows`, in the order of the block.
+ *
+ * The rows of the profile fields block also include the fields of the site, see RowsControl.
+ *
+ * @since 0.1.0
+ *
+ * @type {Object<string, Array<{value: string, label: string}>>}
+ */
+const ROWS = {
+	'easyq/activity-count': [
+		{ value: 'questions', label: __( 'Questions', 'easyq' ) },
+		{ value: 'answers', label: __( 'Answers', 'easyq' ) },
+		{ value: 'comments', label: __( 'Comments', 'easyq' ) },
+		{ value: 'users', label: __( 'Users', 'easyq' ) },
+	],
+	'easyq/user-stats': [
+		{ value: 'member', label: __( 'Member for', 'easyq' ) },
+		{ value: 'points', label: __( 'Points', 'easyq' ) },
+		{ value: 'questions', label: __( 'Questions', 'easyq' ) },
+		{ value: 'answers', label: __( 'Answers', 'easyq' ) },
+		{ value: 'comments', label: __( 'Comments', 'easyq' ) },
+		{ value: 'votes_given', label: __( 'Votes given', 'easyq' ) },
+		{ value: 'votes_received', label: __( 'Votes received', 'easyq' ) },
+	],
+	'easyq/user-fields': [
+		{ value: 'website', label: __( 'Website', 'easyq' ) },
+		{ value: 'about', label: __( 'About', 'easyq' ) },
+	],
 };
 
 const SITE_DEFAULT = { value: '', label: __( 'Site default', 'easyq' ) };
@@ -136,6 +268,14 @@ const OPTIONS = {
 			value: 'separated',
 			label: __( 'Up and down votes separately', 'easyq' ),
 		},
+	],
+	buttonPosition: [
+		{
+			value: 'button-outside',
+			label: __( 'Button outside', 'easyq' ),
+		},
+		{ value: 'button-inside', label: __( 'Button inside', 'easyq' ) },
+		{ value: 'no-button', label: __( 'No button', 'easyq' ) },
 	],
 	arrow: [
 		{ value: 'none', label: __( 'None', 'easyq' ) },
@@ -228,6 +368,60 @@ export function UserPicker( { label, help, value, onChange } ) {
 }
 
 /**
+ * Toggles that choose the rows a block shows; without the attribute every row is shown.
+ *
+ * @since 0.1.0
+ *
+ * @param {Object}                              props           Properties.
+ * @param {string}                              props.blockName Block name.
+ * @param {string}                              props.label     Label.
+ * @param {string[]|undefined}                  props.value     Keys of the shown rows.
+ * @param {(value: string[]|undefined) => void} props.onChange  Updates the value.
+ * @return {Element} Control.
+ */
+function RowsControl( { blockName, label, value, onChange } ) {
+	// The profile fields of the site come with the profile of the editor, which includes all fields.
+	const me = useEasyQ(
+		blockName === 'easyq/user-fields' ? 'users/me' : null
+	);
+	const rows = [
+		...( ROWS[ blockName ] ?? [] ),
+		...( me?.fields ?? [] ).map( ( field ) => ( {
+			value: field.name,
+			label: field.label,
+		} ) ),
+	];
+	const all = rows.map( ( row ) => row.value );
+	const shown = Array.isArray( value ) ? value : all;
+
+	return (
+		<fieldset>
+			<legend>{ label }</legend>
+			{ rows.map( ( row ) => (
+				<ToggleControl
+					key={ row.value }
+					__nextHasNoMarginBottom
+					label={ row.label }
+					checked={ shown.includes( row.value ) }
+					onChange={ ( checked ) => {
+						const next = all.filter( ( key ) =>
+							key === row.value ? checked : shown.includes( key )
+						);
+						// All rows again: the attribute is removed, so that new profile fields show up too.
+						onChange(
+							next.length === all.length &&
+								blockName === 'easyq/user-fields'
+								? undefined
+								: next
+						);
+					} }
+				/>
+			) ) }
+		</fieldset>
+	);
+}
+
+/**
  * Returns the control of one attribute.
  *
  * @since 0.1.0
@@ -256,8 +450,44 @@ function AttributeControl( {
 		return null;
 	}
 
-	const help = HELP[ name ];
+	const blockHelp = BLOCK_HELP[ blockName ] ?? {};
+	const help = name in blockHelp ? blockHelp[ name ] : HELP[ name ];
 	const onChange = ( next ) => setAttributes( { [ name ]: next } );
+
+	if ( name === 'format' ) {
+		// As the core Date block: the picker offers the site format, common formats and a custom one.
+		return (
+			<BaseControl __nextHasNoMarginBottom>
+				<DateFormatPicker
+					format={ value || undefined }
+					defaultFormat={ getDateSettings().formats.date }
+					onChange={ ( next ) => onChange( next ?? '' ) }
+				/>
+			</BaseControl>
+		);
+	}
+
+	if ( name === 'linkTarget' ) {
+		return (
+			<ToggleControl
+				__nextHasNoMarginBottom
+				label={ label }
+				checked={ value === '_blank' }
+				onChange={ ( blank ) => onChange( blank ? '_blank' : '_self' ) }
+			/>
+		);
+	}
+
+	if ( name === 'rows' ) {
+		return (
+			<RowsControl
+				blockName={ blockName }
+				label={ label }
+				value={ value }
+				onChange={ onChange }
+			/>
+		);
+	}
 
 	if ( name === 'questionId' ) {
 		return (
@@ -374,7 +604,8 @@ function AttributeControl( {
  */
 export default function Inspector( { metadata, attributes, setAttributes } ) {
 	const names = Object.keys( metadata.attributes ?? {} ).filter(
-		( name ) => LABELS[ name ]
+		( name ) =>
+			LABELS[ name ] && ( SHOWN_IF[ name ]?.( attributes ) ?? true )
 	);
 	if ( ! names.length ) {
 		return null;

@@ -34,6 +34,12 @@
 		"showLabel": {
 			"type": "boolean",
 			"default": true
+		},
+		"midSize": {
+			"type": "number",
+			"default": 2,
+			"minimum": 0,
+			"maximum": 5
 		}
 	},
 	"usesContext": [

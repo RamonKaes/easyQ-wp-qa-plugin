@@ -11,6 +11,14 @@
 		"about"
 	],
 	"textdomain": "easyq",
+	"attributes": {
+		"rows": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		}
+	},
 	"usesContext": [
 		"easyq/userId"
 	],

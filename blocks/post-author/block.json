@@ -30,6 +30,10 @@
 		"showPoints": {
 			"type": "boolean",
 			"default": true
+		},
+		"isLink": {
+			"type": "boolean",
+			"default": true
 		}
 	},
 	"usesContext": [

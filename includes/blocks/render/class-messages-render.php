@@ -92,10 +92,10 @@ final class Messages_Render {
 		}
 
 		return sprintf(
-			'<section %s id="wall"><h2>%s</h2>%s%s%s</section>',
+			'<section %s id="wall">%s%s%s%s</section>',
 			get_block_wrapper_attributes(),
 			/* translators: %s: user name. */
-			esc_html( sprintf( __( 'Wall of %s', 'easyq' ), $owner->display_name ) ),
+			Render::heading( $attributes, sprintf( __( 'Wall of %s', 'easyq' ), $owner->display_name ) ),
 			$form,
 			'' === $items ? sprintf( '<p>%s</p>', esc_html__( 'Nothing posted yet.', 'easyq' ) ) : '<ol class="wp-block-comment-template">' . $items . '</ol>',
 			self::pagination( $found['messages'], $page, $found['total'], $per_page )
@@ -107,16 +107,17 @@ final class Messages_Render {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param array<string, mixed> $attributes Attributes.
 	 * @return string
 	 */
-	public static function messages(): string {
+	public static function messages( array $attributes = array() ): string {
 		$viewer = Block_Context::viewer();
 		$route  = Block_Context::router()->current();
 		if ( null === $viewer->user_id || ! Options::get_bool( 'users', 'allow_private_messages' ) ) {
 			return '';
 		}
 
-		return 'message' === $route?->name ? self::conversation( (int) $viewer->user_id, $route->user() ) : self::box( (int) $viewer->user_id );
+		return 'message' === $route?->name ? self::conversation( (int) $viewer->user_id, $route->user(), $attributes ) : self::box( (int) $viewer->user_id );
 	}
 
 	/**
@@ -124,11 +125,12 @@ final class Messages_Render {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int           $user_id Reader.
-	 * @param \WP_User|null $other   The other user.
+	 * @param int                  $user_id    Reader.
+	 * @param \WP_User|null        $other      The other user.
+	 * @param array<string, mixed> $attributes Attributes of the block, for the heading.
 	 * @return string
 	 */
-	private static function conversation( int $user_id, ?\WP_User $other ): string {
+	private static function conversation( int $user_id, ?\WP_User $other, array $attributes ): string {
 		if ( null === $other ) {
 			return '';
 		}
@@ -166,9 +168,9 @@ final class Messages_Render {
 			get_block_wrapper_attributes(),
 			$form,
 			'' === $items ? '' : sprintf(
-				'<h2>%s</h2><ol class="wp-block-comment-template">%s</ol>',
+				'%s<ol class="wp-block-comment-template">%s</ol>',
 				/* translators: %s: user name. */
-				esc_html( sprintf( __( 'Recent messages with %s', 'easyq' ), $other->display_name ) ),
+				Render::heading( $attributes, sprintf( __( 'Recent messages with %s', 'easyq' ), $other->display_name ) ),
 				$items
 			)
 		);

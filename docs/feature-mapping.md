@@ -219,7 +219,12 @@ arranged and styled in the Site Editor without plugin CSS.
 - **Block settings** in the sidebar for what belongs to the block. Settings that have a Q2A
   option (answer order, best answer first, answers per page, collapsing comments, relative
   dates, separated votes) default to the site setting and can be overridden per block.
-  Questions, users and categories are picked by name.
+  Questions, users and categories are picked by name. Options that a core counterpart has
+  carry its attribute name and behaviour: `format` with the date format picker (Date),
+  `linkTarget` and `rel` (Title, Author Name, Avatar), `isLink`, `showTitle` and `level`
+  for fixed headings (Comments Title), `label`, `showLabel`, `buttonText` and
+  `buttonPosition` (Search), `midSize` (Page Numbers), `showHierarchy`, `showEmpty` and
+  `displayAsDropdown` (Terms List); blocks with several rows choose them with `rows`.
 - **Icons** from `@wordpress/icons`, the same as the core counterpart where there is one,
   and inserter previews (`example`) for the blocks that work without a question or user.
 - **Interactivity API** for voting, favorites, loading more comments, inline answering –
@@ -236,56 +241,64 @@ arranged and styled in the Site Editor without plugin CSS.
 
 | Block | Q2A source | Key attributes |
 | --- | --- | --- |
-| `easyq/question-query` | All question lists | Source (recent, hot, votes, answers, views, unanswered variants, activity), category, tag, author, favorites, per page, inherit from route |
+| `easyq/question-query` | All question lists | Source (recent, hot, votes, answers, views, unanswered variants, recent questions and answers, activity, recently answered or commented, favorites, updates), category, tag, author, per page, inherit from route |
 | `easyq/question-template` | List item | – (repeats inner blocks per item) |
-| `easyq/query-pagination` (+ previous, numbers, next) | Paging | Same markup as core pagination; page numbers, arrows (none, ←→, «»), labels |
-| `easyq/query-no-results` | Empty lists | Inner blocks |
-| `easyq/question` | Question page | Provides the current question from the route |
-| `easyq/answer-list` / `easyq/answer-template` | Answers | Sort order, selected first, page size |
+| `easyq/query-pagination` | Paging | One block with the markup of the core Query Pagination block and its previous, numbers and next parts; page numbers with `midSize` (default 2), arrows (none, ←→, «»), labels |
+| `easyq/query-no-results` | Empty lists | `message` (empty: “No questions found.”); no inner blocks |
+| `easyq/question` | Question page | Provides the current question from the route, or a chosen question |
+| `easyq/answer-list` / `easyq/answer-template` | Answers | Sort order, selected first, page size; heading “N answers” with `showTitle` and `level` |
 | `easyq/comment-list` / `easyq/comment-template` | Comments | Show fewer from / count |
-| `easyq/user-query` / `easyq/user-template` | User lists | Sort (points, newest, special), columns, per page |
-| `easyq/user` | Profile page | Provides the current user from the route |
+| `easyq/user-query` / `easyq/user-template` | User lists | Sort (points, newest, special, favorites), inherit from route, per page; columns through the layout of the template, as in core |
+| `easyq/user` | Profile page | Provides the current user from the route, or a chosen user |
 
 ### Field blocks (consume context)
 
 | Block | Content |
 | --- | --- |
-| `easyq/post-title` | Question title (link optional) |
+| `easyq/post-title` | Question title; heading level, link with `linkTarget` and `rel` |
 | `easyq/post-content` | Formatted content |
 | `easyq/post-excerpt` | Shortened content (list items) |
 | `easyq/post-votes` | Vote score and buttons; difference or up and down votes separately (`votes_separated`) |
 | `easyq/post-answer-count` | Answer count, "selected" state |
 | `easyq/post-view-count` | Views |
-| `easyq/post-date` | Created/updated, relative or absolute |
-| `easyq/post-author` | Avatar, name, points, user title |
+| `easyq/post-date` | Created/updated, relative or absolute, date `format` (empty: site format) |
+| `easyq/post-author` | Avatar, name (linked unless `isLink` is off), points, user title |
 | `easyq/post-category` | Category, with prefix and suffix |
 | `easyq/post-tags` | Tags, with separator, prefix and suffix |
 | `easyq/post-status` | Closed, selected, hidden, queued |
 | `easyq/post-actions` | Answer, comment, edit, close, select, flag, hide, delete … depending on permissions |
-| `easyq/user-name`, `easyq/user-avatar`, `easyq/user-points`, `easyq/user-title`, `easyq/user-fields`, `easyq/user-stats` | Profile pieces |
+| `easyq/user-name`, `easyq/user-avatar` | Name and avatar, linked to the profile, optionally in a new tab (`linkTarget`) |
+| `easyq/user-points`, `easyq/user-title` | Points with rank, title |
+| `easyq/user-fields` | Website, about and the profile fields; `rows` picks them (without the attribute all, also fields added later) |
+| `easyq/user-stats` | Member for, points, questions, answers, comments, votes given and received; `rows` picks them |
 
 ### Forms and standalone blocks
 
-| Block | Q2A source |
-| --- | --- |
-| `easyq/ask-form` | `ask` (similar-question check, tag suggestions, category picker, extra field) |
-| `easyq/answer-form` | Question page |
-| `easyq/comment-form` | Question page |
-| `easyq/ask-box` | Widget "Ask box" |
-| `easyq/search` | Search form (core search markup) |
-| `easyq/categories` | Widget "Category list", `categories` |
-| `easyq/tags` | `tags` |
-| `easyq/related-questions` | Widget "Related questions" |
-| `easyq/activity-count` | Widget "Activity count" |
-| `easyq/post-activity` | What happened last to a question in activity lists ("answered 5 minutes ago by …") |
-| `easyq/user-wall` | Wall |
-| `easyq/account` | `account` |
-| `easyq/updates` | `updates` |
-| `easyq/messages` | `messages`, `message` |
-| `easyq/feedback-form` | `feedback` |
-| `easyq/notices` | Visitor, welcome and user notices |
-| `easyq/sort-navigation` | Sort tabs of the question lists (rendered as a core-style list of links) |
-| `easyq/breadcrumbs` | Category path |
+| Block | Q2A source | Settings |
+| --- | --- | --- |
+| `easyq/ask-form` | `ask` (similar-question check, tag suggestions, category picker, extra field) | – |
+| `easyq/answer-form` | Question page | Heading “Your answer” with `showTitle` and `level` |
+| `easyq/comment-form` | Question page | – |
+| `easyq/ask-box` | Widget "Ask box" | As `easyq/search` |
+| `easyq/search` | Search form (core search markup) | `placeholder`, `label`, `showLabel`, `buttonText`, `buttonPosition` (outside, inside, no button) |
+| `easyq/categories` | Widget "Category list", `categories` | Counts, subcategories of the current category, favorites of the visitor, `showHierarchy`, `showEmpty`, `displayAsDropdown` (a form that works without JavaScript) |
+| `easyq/tags` | `tags` | Number, counts, favorites of the visitor |
+| `easyq/related-questions` | Widget "Related questions" | Number; heading with `showTitle` and `level` |
+| `easyq/activity-count` | Widget "Activity count" | `rows`: questions, answers, comments, users |
+| `easyq/post-activity` | What happened last to a question in activity lists ("answered 5 minutes ago by …") | Who did it, points |
+| `easyq/favorite-button` | Favorite buttons of questions, users, tags and categories | – |
+| `easyq/user-wall` | Wall | Heading with `showTitle` and `level` |
+| `easyq/user-navigation` | Profile sections | – |
+| `easyq/account` | `account` | – |
+| `easyq/messages` | `messages`, `message` | Heading of the conversation with `showTitle` and `level` |
+| `easyq/feedback-form` | `feedback` | – |
+| `easyq/unsubscribe` | Unsubscribe and newsletter confirmation links | – |
+| `easyq/notices` | Visitor, welcome and user notices | – |
+| `easyq/page-title` | Page titles | Heading level |
+| `easyq/sort-navigation` | Sort tabs of the question lists (rendered as a core-style list of links) | – |
+| `easyq/breadcrumbs` | Category path | – |
+
+The `updates` page of Q2A is a `easyq/question-query` with the source `updates`; there is no block of its own.
 
 **Patterns** for typical layouts, built from the blocks above and core blocks, in the
 pattern category "Questions and answers". Every Q2A layout can be rebuilt with these
@@ -704,7 +717,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 2 Core domain | Posts (Q/A/C), states, categories, tags, votes, flags, points, hotness, search index, limits, events | Unit and integration tests cover the ported logic; results match Q2A | Done |
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
-| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7. Addendum 2026-11: block supports, keywords and variations aligned with the core blocks; heading level in the toolbar; number settings bounded by `minimum` and `maximum` in `block.json` (decision 67). Addendum 2026-11: theme compatibility – template parts by area, button font sizes from the block, core buttons and pagination blocks, the field classes of the core comment form, SEO plugins print canonical and JSON-LD themselves, writing REST routes check in their permission callbacks (decision 69) |
+| 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7. Addendum 2026-11: block supports, keywords and variations aligned with the core blocks; heading level in the toolbar; number settings bounded by `minimum` and `maximum` in `block.json` (decision 67). Addendum 2026-11: theme compatibility – template parts by area, button font sizes from the block, core buttons and pagination blocks, the field classes of the core comment form, SEO plugins print canonical and JSON-LD themselves, writing REST routes check in their permission callbacks (decision 69). Addendum 2026-11: per-block options of the core counterparts – date format, link target and `rel`, linking the author, heading on/off and level, label and button of the search fields, `midSize`, category hierarchy, empty categories and dropdown, rows of counts, statistics and profile fields (decision 70) |
 | 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | Done: profile and users screens in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API); 6e done (dashboard, dashboard widget and tools, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `do_complete_tags`. Addendum 2026-11: page sizes of hot, unanswered, tag and search lists, the answer form shown right away or behind an Answer button, texts above the ask, answer and comment forms, user titles with authors and the matching of related questions; settings replaced by block placement or without a feature removed; submitted values without a field are dropped (decision 68). Still open from Q2A: the extra question field (`extra_field_*`), `pages_prev_next`, avatar sizes as site defaults, `show_c_reply_buttons` |
 | 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | 7a to 7e done |
 | 8 Privacy and tooling | Section 11: privacy policy text, exporters and erasers of posts, votes, flags and profile data (those of phase 7 data come with phase 7), IP retention; registration text, terms with stored consent and blocked user names (5.4); WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
@@ -786,3 +799,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 67 | Every block declares the block supports of its core counterpart (`post-title`, `post-terms`, `post-template`, `comments`, `group`, `avatar` and others): anchor, gradients, the full typography set, border, text alignment on text blocks, block gap on flex rows, alignment on containers; `get_block_wrapper_attributes()` renders them, so nothing changes in the render code. Keywords on every block, variations for the question and user lists, the heading level in the toolbar as on core headings | 2026-11-06 |
 | 68 | Phase 6 addendum: the Q2A settings `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search`, `show_a_form_immediate`, `show_custom_ask`/`_answer`/`_comment` with their texts, `show_user_titles` and `match_related_qs` get fields and readers, with the Q2A defaults. `voting_on_q_page_only`, `show_when_created`, `show_view_counts` and `show_view_count_q_page` are removed, as placing the blocks does their job, and `allow_view_q_bots`, as there is no bot detection; stored values vanish with the next save. The answer button opens the form in place with JavaScript and through `?easyq_answer={id}` without, which is not indexed, like the edit and close states. Settings without a field change only through `Options::update()`; submitted values for them are dropped | 2026-11-06 |
 | 69 | Theme compatibility follows only official WordPress mechanisms and correctly built block themes: block templates use the template part of each area that `theme.json` declares (the slug `header` or `footer` only without one); buttons take the font size of their block as class or inline style through the style engine, as the typography support of core does, instead of a fixed `has-small-font-size`, so the layouts set `fontSize: small` on votes and actions and themes without a `small` preset keep their button size; other buttons sit in a rendered core buttons block, the message lists use the pagination block, and form fields carry the classes of the core comment form (`comment-form-comment`, `-author`, `-email`, `-cookies-consent`, `comment-notes`, `p.form-submit.wp-block-button`). Canonical and JSON-LD go through the filter `easyq_print_seo_meta`, off when Yoast SEO or Rank Math is active. Every button keeps the style variation CSS that core prints for each outline button block; that is core behaviour and stays (review point 44). Profile field values and the time of the last post are stored per site, like the other user meta; values stored before are not moved, as there is no live site yet | 2026-11-06 |
+| 70 | Block options that a core block has take its attribute name, default and markup: `format` with the date format picker of the core Date block (empty for the site format, passed to `wp_date()`), `linkTarget` as toggle “Open in new tab” and `rel` as on the core Title, `isLink`, `showTitle` and `level` as on the core Comments Title, `label`, `showLabel`, `buttonText` and `buttonPosition` with the classes of the core Search block, `midSize` of the core Page Numbers, `showHierarchy`, `showEmpty` and `displayAsDropdown` of the core Terms List. Differences: the target is only written for a new tab (core also writes `_self`); labels and button texts are plain text (core allows HTML); the search fields have no icon button and no width; the category dropdown is a form with a button that sends the route as query variables, so it works without the script core uses; the messages block has a heading only in a conversation. Blocks with several rows choose them with `rows`, an array of keys in the order of the block; without the attribute the profile fields block shows all fields, also those added later | 2026-11-06 |

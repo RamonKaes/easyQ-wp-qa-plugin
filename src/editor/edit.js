@@ -20,6 +20,7 @@ import {
 	ToggleControl,
 } from '@wordpress/components';
 import { useInstanceId } from '@wordpress/compose';
+import { dateI18n, getSettings as getDateSettings } from '@wordpress/date';
 import { RawHTML, useEffect } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
 
@@ -157,10 +158,14 @@ function FieldPreview( { name, attributes, context, title } ) {
 				</div>
 			);
 		case 'easyq/post-date':
+			// The REST API gives the time in UTC without offset.
 			return (
 				<div { ...blockProps }>
 					<time dateTime={ post.date_gmt }>
-						{ new Date( post.date_gmt ).toLocaleDateString() }
+						{ dateI18n(
+							attributes.format || getDateSettings().formats.date,
+							`${ post.date_gmt }Z`
+						) }
 					</time>
 				</div>
 			);
@@ -175,7 +180,17 @@ function FieldPreview( { name, attributes, context, title } ) {
 							height={ attributes.avatarSize }
 						/>
 					) }
-					<span>{ post.author.name }</span>
+					{ attributes.isLink === false || ! post.author.id ? (
+						<span>{ post.author.name }</span>
+					) : (
+						// As the core Author Name block, a link that goes nowhere in the editor.
+						<a
+							href="#post-author-pseudo-link"
+							onClick={ ( event ) => event.preventDefault() }
+						>
+							{ post.author.name }
+						</a>
+					) }
 				</div>
 			);
 		case 'easyq/post-tags':
@@ -286,10 +301,15 @@ function UserFieldPreview( { name, attributes, context, title } ) {
 			return user.title ? (
 				<div { ...blockProps }>{ user.title }</div>
 			) : null;
-		case 'easyq/user-fields':
-			return user.fields?.length ? (
+		case 'easyq/user-fields': {
+			const fields = ( user.fields ?? [] ).filter(
+				( field ) =>
+					! Array.isArray( attributes.rows ) ||
+					attributes.rows.includes( field.name )
+			);
+			return fields.length ? (
 				<dl { ...blockProps }>
-					{ user.fields.flatMap( ( field ) =>
+					{ fields.flatMap( ( field ) =>
 						term( field.label, field.value )
 					) }
 				</dl>
@@ -298,18 +318,30 @@ function UserFieldPreview( { name, attributes, context, title } ) {
 					<p>{ title }</p>
 				</div>
 			);
-		case 'easyq/user-stats':
+		}
+		case 'easyq/user-stats': {
+			const shown = ( row ) =>
+				! Array.isArray( attributes.rows ) ||
+				attributes.rows.includes( row );
 			return (
 				<dl { ...blockProps }>
-					{ term( __( 'Points', 'easyq' ), user.points ) }
-					{ term(
-						__( 'Questions', 'easyq' ),
-						user.counts.questions
-					) }
-					{ term( __( 'Answers', 'easyq' ), user.counts.answers ) }
-					{ term( __( 'Comments', 'easyq' ), user.counts.comments ) }
+					{ shown( 'points' ) &&
+						term( __( 'Points', 'easyq' ), user.points ) }
+					{ shown( 'questions' ) &&
+						term(
+							__( 'Questions', 'easyq' ),
+							user.counts.questions
+						) }
+					{ shown( 'answers' ) &&
+						term( __( 'Answers', 'easyq' ), user.counts.answers ) }
+					{ shown( 'comments' ) &&
+						term(
+							__( 'Comments', 'easyq' ),
+							user.counts.comments
+						) }
 				</dl>
 			);
+		}
 		case 'easyq/user-navigation':
 			return (
 				<nav { ...blockProps }>

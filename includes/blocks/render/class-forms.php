@@ -371,7 +371,7 @@ final class Forms {
 			)
 			: self::permission_message( $reason );
 
-		$heading = sprintf( '<h2>%s</h2>', esc_html__( 'Your answer', 'easyq' ) );
+		$heading = Render::heading( $attributes, __( 'Your answer', 'easyq' ) );
 		if ( null !== $reason || self::answer_form_open( $question ) ) {
 			return sprintf( '<section %s id="easyq-answer-form">%s%s</section>', get_block_wrapper_attributes(), $heading, $body );
 		}
@@ -487,7 +487,7 @@ final class Forms {
 	public static function ask_box( array $attributes ): string {
 		$placeholder = is_string( $attributes['placeholder'] ?? null ) && '' !== $attributes['placeholder'] ? $attributes['placeholder'] : __( 'What is your question?', 'easyq' );
 
-		return self::single_field_form( Routes::url( 'ask' ), 'title', __( 'Ask a question', 'easyq' ), $placeholder, __( 'Ask', 'easyq' ), '' );
+		return self::single_field_form( Routes::url( 'ask' ), 'title', $attributes, __( 'Ask a question', 'easyq' ), $placeholder, __( 'Ask', 'easyq' ), '' );
 	}
 
 	/**
@@ -503,7 +503,7 @@ final class Forms {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Shows the current search terms.
 		$value = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
 
-		return self::single_field_form( Routes::url( 'search' ), 'q', __( 'Search questions', 'easyq' ), $placeholder, __( 'Search', 'easyq' ), $value, 'search' );
+		return self::single_field_form( Routes::url( 'search' ), 'q', $attributes, __( 'Search questions', 'easyq' ), $placeholder, __( 'Search', 'easyq' ), $value, 'search' );
 	}
 
 	/**
@@ -846,20 +846,24 @@ final class Forms {
 	}
 
 	/**
-	 * Returns a form with one field and a button, using the markup of the core search block.
+	 * Returns a form with one field and a button, with the markup and options of the core Search block.
+	 *
+	 * The attributes `label`, `showLabel`, `buttonText` and `buttonPosition` work as in core, see
+	 * `render_block_core_search()`; a hidden label stays for screen readers.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $action      Form address.
-	 * @param string $name        Field name.
-	 * @param string $label       Field label.
-	 * @param string $placeholder Placeholder.
-	 * @param string $button      Button label.
-	 * @param string $value       Field value.
-	 * @param string $role        ARIA role of the form, e.g. `search`.
+	 * @param string               $action        Form address.
+	 * @param string               $name          Field name.
+	 * @param array<string, mixed> $attributes    Block attributes.
+	 * @param string               $label         Default field label.
+	 * @param string               $placeholder   Placeholder.
+	 * @param string               $button        Default button label.
+	 * @param string               $value         Field value.
+	 * @param string               $role          ARIA role of the form, e.g. `search`.
 	 * @return string
 	 */
-	private static function single_field_form( string $action, string $name, string $label, string $placeholder, string $button, string $value, string $role = '' ): string {
+	private static function single_field_form( string $action, string $name, array $attributes, string $label, string $placeholder, string $button, string $value, string $role = '' ): string {
 		$id     = wp_unique_id( 'easyq-field-' );
 		$hidden = '';
 
@@ -872,11 +876,17 @@ final class Forms {
 			}
 		}
 
+		$label    = is_string( $attributes['label'] ?? null ) && '' !== $attributes['label'] ? $attributes['label'] : $label;
+		$button   = is_string( $attributes['buttonText'] ?? null ) && '' !== $attributes['buttonText'] ? $attributes['buttonText'] : $button;
+		$position = in_array( $attributes['buttonPosition'] ?? null, array( 'button-inside', 'no-button' ), true ) ? (string) $attributes['buttonPosition'] : 'button-outside';
+		$classes  = 'wp-block-search wp-block-search__' . $position . ( 'no-button' === $position ? '' : ' wp-block-search__text-button' );
+
 		return sprintf(
-			'<form method="get" action="%s" %s%s><label class="wp-block-search__label" for="%s">%s</label><div class="wp-block-search__inside-wrapper">%s<input class="wp-block-search__input" type="%s" id="%s" name="%s" value="%s" placeholder="%s" required /><button type="submit" class="wp-block-search__button wp-element-button">%s</button></div></form>',
+			'<form method="get" action="%s" %s%s><label class="wp-block-search__label%s" for="%s">%s</label><div class="wp-block-search__inside-wrapper">%s<input class="wp-block-search__input" type="%s" id="%s" name="%s" value="%s" placeholder="%s" required />%s</div></form>',
 			esc_url( $action ),
-			get_block_wrapper_attributes( array( 'class' => 'wp-block-search wp-block-search__button-outside wp-block-search__text-button' ) ),
+			get_block_wrapper_attributes( array( 'class' => $classes ) ),
 			'' === $role ? '' : sprintf( ' role="%s"', esc_attr( $role ) ),
+			( $attributes['showLabel'] ?? true ) ? '' : ' screen-reader-text',
 			esc_attr( $id ),
 			esc_html( $label ),
 			$hidden,
@@ -885,7 +895,7 @@ final class Forms {
 			esc_attr( $name ),
 			esc_attr( $value ),
 			esc_attr( $placeholder ),
-			esc_html( $button )
+			'no-button' === $position ? '' : sprintf( '<button type="submit" class="wp-block-search__button wp-element-button">%s</button>', esc_html( $button ) )
 		);
 	}
 }

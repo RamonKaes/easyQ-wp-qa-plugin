@@ -11,6 +11,20 @@
 		"numbers"
 	],
 	"textdomain": "easyq",
+	"attributes": {
+		"rows": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			},
+			"default": [
+				"questions",
+				"answers",
+				"comments",
+				"users"
+			]
+		}
+	},
 	"supports": {
 		"anchor": true,
 		"html": false,

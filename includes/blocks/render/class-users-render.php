@@ -146,7 +146,7 @@ final class Users_Render {
 		return sprintf(
 			'<div %s>%s</div>',
 			get_block_wrapper_attributes(),
-			( $attributes['isLink'] ?? true ) ? sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name ) : $name
+			( $attributes['isLink'] ?? true ) ? sprintf( '<a href="%s"%s>%s</a>', esc_url( URLs::user( $user ) ), Render::link_attributes( array( 'linkTarget' => $attributes['linkTarget'] ?? '_self' ) ), $name ) : $name
 		);
 	}
 
@@ -170,12 +170,17 @@ final class Users_Render {
 		$is_link = (bool) ( $attributes['isLink'] ?? false );
 
 		// A linked avatar needs a text alternative; otherwise the name is shown next to it.
-		$avatar = Render::avatar( $user->ID, $size, $is_link ? $user->display_name : '' );
+		// A new tab is announced, as the core Avatar block does with its label.
+		$alt = '_blank' === ( $attributes['linkTarget'] ?? '_self' )
+			/* translators: %s: user name. */
+			? sprintf( __( '%s (opens in a new tab)', 'easyq' ), $user->display_name )
+			: $user->display_name;
+		$avatar = Render::avatar( $user->ID, $size, $is_link ? $alt : '' );
 
 		return sprintf(
 			'<div %s>%s</div>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-avatar' ) ),
-			$is_link ? sprintf( '<a class="wp-block-avatar__link" href="%s">%s</a>', esc_url( URLs::user( $user ) ), $avatar ) : $avatar
+			$is_link ? sprintf( '<a class="wp-block-avatar__link" href="%s"%s>%s</a>', esc_url( URLs::user( $user ) ), Render::link_attributes( array( 'linkTarget' => $attributes['linkTarget'] ?? '_self' ) ), $avatar ) : $avatar
 		);
 	}
 
@@ -241,16 +246,23 @@ final class Users_Render {
 			return '';
 		}
 
+		// The rows are `website`, `about` and the names of the profile fields.
+		$fields = Services::user_fields()->all();
+		$rows   = Render::rows( $attributes, array_merge( array( 'website', 'about' ), array_map( static fn ( $field ): string => $field->name, $fields ) ) );
+
 		$items = '';
-		if ( '' !== $user->user_url ) {
+		if ( '' !== $user->user_url && in_array( 'website', $rows, true ) ) {
 			$items .= self::item( __( 'Website', 'easyq' ), sprintf( '<a href="%1$s" rel="nofollow ugc">%2$s</a>', esc_url( $user->user_url ), esc_html( $user->user_url ) ) );
 		}
-		if ( '' !== $user->description ) {
+		if ( '' !== $user->description && in_array( 'about', $rows, true ) ) {
 			$items .= self::item( __( 'About', 'easyq' ), wpautop( esc_html( $user->description ) ) );
 		}
 
 		$viewer = Block_Context::viewer();
-		foreach ( Services::user_fields()->all() as $field ) {
+		foreach ( $fields as $field ) {
+			if ( ! in_array( $field->name, $rows, true ) ) {
+				continue;
+			}
 			$value = Services::user_fields()->value( $user->ID, $field );
 			if ( '' === $value || ( null !== $field->permit && ! Services::permissions()->meets( $field->permit, $viewer ) ) ) {
 				continue;
@@ -289,37 +301,53 @@ final class Users_Render {
 		$number = static fn ( string $key ): string => Render::number( $stats[ $key ] ?? 0 );
 		$items  = '';
 
-		$registered = (int) strtotime( $user->user_registered . ' UTC' );
-		if ( $registered > 0 ) {
-			$items .= self::item( __( 'Member for', 'easyq' ), esc_html( human_time_diff( $registered ) ) );
+		$rows = Render::rows( $attributes, array( 'member', 'points', 'questions', 'answers', 'comments', 'votes_given', 'votes_received' ) );
+		foreach ( $rows as $row ) {
+			switch ( $row ) {
+				case 'member':
+					$registered = (int) strtotime( $user->user_registered . ' UTC' );
+					if ( $registered > 0 ) {
+						$items .= self::item( __( 'Member for', 'easyq' ), esc_html( human_time_diff( $registered ) ) );
+					}
+					break;
+				case 'points':
+					$points = esc_html( $number( 'points' ) );
+					if ( null !== $rank ) {
+						/* translators: %s: rank of the user by points. */
+						$points .= ' ' . esc_html( sprintf( __( '(ranked #%s)', 'easyq' ), number_format_i18n( $rank ) ) );
+					}
+					$items .= self::item( __( 'Points', 'easyq' ), $points );
+					break;
+				case 'questions':
+					$items .= self::item( __( 'Questions', 'easyq' ), esc_html( $number( Points::QUESTIONS ) ) );
+					break;
+				case 'answers':
+					$items .= self::item(
+						__( 'Answers', 'easyq' ),
+						esc_html(
+							sprintf(
+								/* translators: 1: number of answers, 2: number of answers selected as best answer. */
+								__( '%1$s (%2$s selected as best)', 'easyq' ),
+								$number( Points::ANSWERS ),
+								$number( Points::ANSWERS_SELECTED )
+							)
+						)
+					);
+					break;
+				case 'comments':
+					$items .= self::item( __( 'Comments', 'easyq' ), esc_html( $number( Points::COMMENTS ) ) );
+					break;
+				case 'votes_given':
+					$given_up   = ( $stats[ Points::QUESTION_UPVOTES ] ?? 0 ) + ( $stats[ Points::ANSWER_UPVOTES ] ?? 0 ) + ( $stats[ Points::COMMENT_UPVOTES ] ?? 0 );
+					$given_down = ( $stats[ Points::QUESTION_DOWNVOTES ] ?? 0 ) + ( $stats[ Points::ANSWER_DOWNVOTES ] ?? 0 ) + ( $stats[ Points::COMMENT_DOWNVOTES ] ?? 0 );
+					$items     .= self::item( __( 'Votes given', 'easyq' ), esc_html( self::votes( $given_up, $given_down ) ) );
+					break;
+				default:
+					$items .= self::item( __( 'Votes received', 'easyq' ), esc_html( self::votes( $stats[ Points::UPVOTES_RECEIVED ] ?? 0, $stats[ Points::DOWNVOTES_RECEIVED ] ?? 0 ) ) );
+			}
 		}
 
-		$points = esc_html( $number( 'points' ) );
-		if ( null !== $rank ) {
-			/* translators: %s: rank of the user by points. */
-			$points .= ' ' . esc_html( sprintf( __( '(ranked #%s)', 'easyq' ), number_format_i18n( $rank ) ) );
-		}
-		$items .= self::item( __( 'Points', 'easyq' ), $points );
-		$items .= self::item( __( 'Questions', 'easyq' ), esc_html( $number( Points::QUESTIONS ) ) );
-		$items .= self::item(
-			__( 'Answers', 'easyq' ),
-			esc_html(
-				sprintf(
-					/* translators: 1: number of answers, 2: number of answers selected as best answer. */
-					__( '%1$s (%2$s selected as best)', 'easyq' ),
-					$number( Points::ANSWERS ),
-					$number( Points::ANSWERS_SELECTED )
-				)
-			)
-		);
-		$items .= self::item( __( 'Comments', 'easyq' ), esc_html( $number( Points::COMMENTS ) ) );
-
-		$given_up   = ( $stats[ Points::QUESTION_UPVOTES ] ?? 0 ) + ( $stats[ Points::ANSWER_UPVOTES ] ?? 0 ) + ( $stats[ Points::COMMENT_UPVOTES ] ?? 0 );
-		$given_down = ( $stats[ Points::QUESTION_DOWNVOTES ] ?? 0 ) + ( $stats[ Points::ANSWER_DOWNVOTES ] ?? 0 ) + ( $stats[ Points::COMMENT_DOWNVOTES ] ?? 0 );
-		$items     .= self::item( __( 'Votes given', 'easyq' ), esc_html( self::votes( $given_up, $given_down ) ) );
-		$items     .= self::item( __( 'Votes received', 'easyq' ), esc_html( self::votes( $stats[ Points::UPVOTES_RECEIVED ] ?? 0, $stats[ Points::DOWNVOTES_RECEIVED ] ?? 0 ) ) );
-
-		return sprintf( '<dl %s>%s</dl>', get_block_wrapper_attributes(), $items );
+		return '' === $items ? '' : sprintf( '<dl %s>%s</dl>', get_block_wrapper_attributes(), $items );
 	}
 
 	/**

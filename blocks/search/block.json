@@ -15,6 +15,29 @@
 		"placeholder": {
 			"type": "string",
 			"default": ""
+		},
+		"label": {
+			"type": "string",
+			"default": "",
+			"role": "content"
+		},
+		"showLabel": {
+			"type": "boolean",
+			"default": true
+		},
+		"buttonText": {
+			"type": "string",
+			"default": "",
+			"role": "content"
+		},
+		"buttonPosition": {
+			"type": "string",
+			"enum": [
+				"button-outside",
+				"button-inside",
+				"no-button"
+			],
+			"default": "button-outside"
 		}
 	},
 	"supports": {

@@ -23,6 +23,18 @@
 		"favorites": {
 			"type": "boolean",
 			"default": false
+		},
+		"showHierarchy": {
+			"type": "boolean",
+			"default": true
+		},
+		"showEmpty": {
+			"type": "boolean",
+			"default": true
+		},
+		"displayAsDropdown": {
+			"type": "boolean",
+			"default": false
 		}
 	},
 	"supports": {

@@ -24,6 +24,10 @@
 				"absolute"
 			],
 			"default": ""
+		},
+		"format": {
+			"type": "string",
+			"default": ""
 		}
 	},
 	"usesContext": [
