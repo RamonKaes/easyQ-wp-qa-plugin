@@ -47,6 +47,7 @@ final class REST_API {
 			new Favorites_Controller(),
 			new Notices_Controller(),
 			new Messages_Controller(),
+			new Feedback_Controller(),
 			new Email_Templates_Controller(),
 		);
 

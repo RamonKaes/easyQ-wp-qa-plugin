@@ -55,6 +55,7 @@ final class Templates {
 		'a_followed'      => array( '###AUTHOR###', '###QUESTION_TITLE###', '###ANSWER###', '###URL###' ),
 		'a_selected'      => array( '###AUTHOR###', '###ANSWER###', '###QUESTION_TITLE###', '###URL###' ),
 		'c_commented'     => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
+		'feedback'        => array( '###MESSAGE###', '###NAME###', '###EMAIL###', '###PREVIOUS###', '###URL###', '###IP###' ),
 		'flagged'         => array( '###AUTHOR###', '###FLAGS###', '###POST###', '###URL###', '###ADMIN_URL###' ),
 		'moderate'        => array( '###AUTHOR###', '###POST###', '###URL###', '###ADMIN_URL###' ),
 		'private_message' => array( '###AUTHOR###', '###MESSAGE###', '###URL###' ),
@@ -292,6 +293,10 @@ final class Templates {
 				'label'    => __( 'Flagged post', 'easyq' ),
 				'audience' => $owner,
 			),
+			'feedback'        => array(
+				'label'    => __( 'Feedback', 'easyq' ),
+				'audience' => $owner,
+			),
 			'u_registered'    => array(
 				'label'    => __( 'New user', 'easyq' ),
 				'audience' => $owner,
@@ -355,7 +360,10 @@ final class Templates {
 			'###USER###'           => __( 'Name of the new user', 'easyq' ),
 			'###URL###'            => __( 'Address of the post or the profile', 'easyq' ),
 			'###ADMIN_URL###'      => __( 'Address of the screen to review it', 'easyq' ),
-			'###MESSAGE###'        => __( 'Text of the message or wall post', 'easyq' ),
+			'###MESSAGE###'        => __( 'Text of the message, wall post or feedback', 'easyq' ),
+			'###NAME###'           => __( 'Name the sender of the feedback gave', 'easyq' ),
+			'###PREVIOUS###'       => __( 'Page the sender of the feedback came from', 'easyq' ),
+			'###IP###'             => __( 'IP address of the sender', 'easyq' ),
 			'###CUSTOM###'         => __( 'Own text from the settings', 'easyq' ),
 			'###LOGIN_LINK###'     => __( 'Link to set the password; added at the end if left out', 'easyq' ),
 		);
@@ -378,6 +386,9 @@ final class Templates {
 			'###CONTEXT###'        => __( 'Start with the theme.json file and a templates folder.', 'easyq' ),
 			'###POST###'           => __( 'How do I build a block theme?', 'easyq' ),
 			'###MESSAGE###'        => __( 'Hello! Could you help me with my block theme?', 'easyq' ),
+			'###NAME###'           => __( 'Alex Example', 'easyq' ),
+			'###PREVIOUS###'       => 'https://example.org/questions/',
+			'###IP###'             => '198.51.100.7',
 			/* translators: %s: number of flags. */
 			'###FLAGS###'          => sprintf( _n( '%s flag', '%s flags', 2, 'easyq' ), number_format_i18n( 2 ) ),
 			'###USER###'           => __( 'Alex Example', 'easyq' ),
@@ -490,6 +501,10 @@ final class Templates {
 			'c_commented'     => array(
 				'subject' => __( 'Your ###SITENAME### comment has been added to', 'easyq' ),
 				'body'    => __( "A new comment by ###AUTHOR### has been added after your comment on ###SITENAME###:\n\n###COMMENT###\n\nThe discussion is following:\n\n###CONTEXT###\n\nYou may respond by adding another comment:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
+			),
+			'feedback'        => array(
+				'subject' => __( '###SITENAME### feedback', 'easyq' ),
+				'body'    => __( "Comments:\n###MESSAGE###\n\nName:\n###NAME###\n\nEmail:\n###EMAIL###\n\nPrevious page:\n###PREVIOUS###\n\nUser:\n###URL###\n\nIP address:\n###IP###", 'easyq' ),
 			),
 			'flagged'         => array(
 				'subject' => __( '###SITENAME### has a flagged post', 'easyq' ),

@@ -222,6 +222,10 @@ final class Mailer {
 			$headers = 'From: "' . self::site_name() . '" <' . $from . ">\n" . $headers;
 		}
 
+		if ( null !== $recipient->reply_to && is_email( $recipient->reply_to ) ) {
+			$headers .= 'Reply-To: ' . $recipient->reply_to . "\n";
+		}
+
 		if ( null !== $recipient->post ) {
 			$headers .= 'List-Unsubscribe: <' . Unsubscribe::one_click_url( $recipient->post->id ) . ">\n";
 			$headers .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\n";

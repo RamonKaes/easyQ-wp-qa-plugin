@@ -118,6 +118,15 @@ final class Limits {
 	public const WALL_POSTS = 'W';
 
 	/**
+	 * Rate limit of feedback, a protection that Question2Answer leaves to its captcha.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const FEEDBACK = 'K';
+
+	/**
 	 * Settings with the maximum per user and per IP address for each action.
 	 *
 	 * @since 0.1.0
@@ -135,6 +144,7 @@ final class Limits {
 		self::FLAGS         => array( 'max_rate_user_flags', 'max_rate_ip_flags' ),
 		self::MESSAGES      => array( 'max_rate_user_messages', 'max_rate_ip_messages' ),
 		self::WALL_POSTS    => array( 'max_rate_user_messages', 'max_rate_ip_messages' ),
+		self::FEEDBACK      => array( 'max_rate_user_feedback', 'max_rate_ip_feedback' ),
 	);
 
 	/**
@@ -169,6 +179,7 @@ final class Limits {
 		'c_flag'      => self::FLAGS,
 		'u_message'   => self::MESSAGES,
 		'u_wall_post' => self::WALL_POSTS,
+		'feedback'    => self::FEEDBACK,
 	);
 
 	/**

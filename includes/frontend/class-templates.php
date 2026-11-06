@@ -9,6 +9,7 @@
 namespace EasyQ\Frontend;
 
 use EasyQ\Blocks\Layouts;
+use EasyQ\Settings\Options;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -103,7 +104,8 @@ final class Templates {
 			return $template;
 		}
 
-		if ( 'not_found' === $route->name || ! isset( $this->definitions()[ $route->template_slug() ] ) ) {
+		$off = 'feedback' === $route->name && ! Options::get_bool( 'emails', 'feedback_enabled' );
+		if ( $off || 'not_found' === $route->name || ! isset( $this->definitions()[ $route->template_slug() ] ) ) {
 			global $wp_query;
 			if ( $wp_query instanceof \WP_Query ) {
 				$wp_query->set_404();
@@ -459,6 +461,11 @@ final class Templates {
 				'title'       => __( 'Q&A: Private message', 'easyq' ),
 				'description' => __( 'The form to write to a user, with the latest messages between both.', 'easyq' ),
 				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/messages /-->',
+			),
+			'easyq-feedback'       => array(
+				'title'       => __( 'Q&A: Feedback', 'easyq' ),
+				'description' => __( 'Form to send feedback to the site owner.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/feedback-form /-->',
 			),
 			'easyq-favorites'      => array(
 				'title'       => __( 'Q&A: Favorites', 'easyq' ),

@@ -28,12 +28,14 @@ final class Recipient {
 	 * @param int|null    $user_id User, for the language of the email and the link to the account page.
 	 * @param string|null $name    Name for the salutation; null for none.
 	 * @param Post|null   $post    Post the email is about because its author asked for it; adds the links to stop the emails.
+	 * @param string|null $reply_to Address that replies go to, as core sets for comment authors.
 	 */
 	public function __construct(
 		public readonly string $email,
 		public readonly ?int $user_id = null,
 		public readonly ?string $name = null,
-		public readonly ?Post $post = null
+		public readonly ?Post $post = null,
+		public readonly ?string $reply_to = null
 	) {
 	}
 }

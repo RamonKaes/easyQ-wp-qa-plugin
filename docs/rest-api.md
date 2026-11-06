@@ -31,7 +31,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice` and `easyq-message`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice`, `easyq-message` and `easyq-feedback`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -165,6 +165,12 @@ category) and to the `move` action; a question may always keep the category it h
 | `GET /messages` | Private messages of the logged in user: `box` (`inbox`, `sent`), `page`, `per_page`; or `with` a user for the latest 20 between both, oldest first. `404` without the message history |
 | `POST /messages` | Send a private message: `to`, `content`. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
 | `DELETE /messages/{id}` | Delete a message from your box; it is gone once both sides deleted it |
+
+### Feedback
+
+| Method and route | Description |
+| --- | --- |
+| `POST /feedback` | Send feedback to the site owner: `message`, and optionally `name`, `email` (the address replies go to) and `previous` (the page the sender came from). Open to visitors, limited per hour like posting; `404` while the form is off |
 
 ### Notices
 

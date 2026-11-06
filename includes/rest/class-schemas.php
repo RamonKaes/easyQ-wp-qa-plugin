@@ -256,6 +256,22 @@ final class Schemas {
 	}
 
 	/**
+	 * Returns the schema of the response to feedback.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function feedback(): array {
+		return self::schema(
+			'easyq-feedback',
+			array(
+				'sent' => self::property( __( 'Whether the feedback was sent.', 'easyq' ), 'boolean' ),
+			)
+		);
+	}
+
+	/**
 	 * Returns the schema of a wall post or private message.
 	 *
 	 * @since 0.1.0

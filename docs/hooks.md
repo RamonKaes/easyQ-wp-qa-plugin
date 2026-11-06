@@ -114,6 +114,12 @@ logs carry over.
 | `u_wall_delete` | A wall post was deleted | `message_id`, `old` (`EasyQ\Messages\Message`) |
 | `u_message` | A private message was sent | `user_id` (recipient), `message_id` (null without the message history), `message` |
 
+### Feedback
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `feedback` | Feedback was sent to the site owner | `email`, `name`, `message`, `previous` |
+
 ### IP addresses
 
 | Event | When | Notable parameters |

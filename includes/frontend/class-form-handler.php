@@ -56,6 +56,7 @@ final class Form_Handler {
 		'wall'           => array( 'content' ),
 		'wall_delete'    => array(),
 		'message'        => array( 'content', 'to' ),
+		'feedback'       => array( 'message', 'name', 'email', 'previous' ),
 		'message_delete' => array(),
 	);
 
@@ -153,6 +154,7 @@ final class Form_Handler {
 			'wall'     => array( 'POST', '/users/' . $target . '/wall' ),
 			'wall_delete' => array( 'DELETE', '/users/' . $target . '/wall/' . $this->message_id() ),
 			'message'  => array( 'POST', '/messages' ),
+			'feedback' => array( 'POST', '/feedback' ),
 			'message_delete' => array( 'DELETE', '/messages/' . $this->message_id() ),
 			'notice'   => array( 'DELETE', '/notices/' . ( isset( $_POST['easyq_notice'] ) && is_string( $_POST['easyq_notice'] ) ? sanitize_key( wp_unslash( $_POST['easyq_notice'] ) ) : '' ) ),
 			'favorite' => array( '1' === ( $values['favorite'] ?? '' ) ? 'POST' : 'DELETE', '/favorites' ),
@@ -313,7 +315,7 @@ final class Form_Handler {
 			return Routes::url( 'home' );
 		}
 
-		if ( in_array( $form, array( 'favorite', 'notice', 'wall', 'wall_delete', 'message', 'message_delete' ), true ) ) {
+		if ( in_array( $form, array( 'favorite', 'notice', 'wall', 'wall_delete', 'message', 'message_delete', 'feedback' ), true ) ) {
 			return $back;
 		}
 
@@ -358,6 +360,7 @@ final class Form_Handler {
 			'wall'     => __( 'Your post is on the wall.', 'easyq' ),
 			'wall_delete', 'message_delete' => __( 'Deleted.', 'easyq' ),
 			'message'  => __( 'Your message has been sent.', 'easyq' ),
+			'feedback' => __( 'Thank you for your feedback.', 'easyq' ),
 			default   => __( 'Done.', 'easyq' ),
 		};
 	}

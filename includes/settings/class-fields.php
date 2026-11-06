@@ -674,6 +674,11 @@ final class Fields {
 				'label'       => __( 'Address of the site owner', 'easyq' ),
 				'description' => __( 'Address that gets the emails to the site owner. Leave empty for the administration email address.', 'easyq' ),
 			),
+			'feedback_enabled'      => self::bool( __( 'Show the feedback form', 'easyq' ) ),
+			'email_privacy'         => array(
+				'type'  => 'lines',
+				'label' => __( 'Note on privacy below fields for email addresses', 'easyq' ),
+			),
 			'notify_admin_q_post'   => self::bool( __( 'Email the site owner about every new question', 'easyq' ) ),
 			'moderate_notify_admin' => self::bool( __( 'Email the site owner about posts that wait for approval', 'easyq' ) ),
 			'flagging_notify_first' => self::int( __( 'Email the site owner about a post from this many flags', 'easyq' ), 1 ) + array( 'short' => __( 'From this many flags', 'easyq' ) ),
@@ -859,6 +864,8 @@ final class Fields {
 			'max_rate_user_uploads'  => __( 'Uploads per user', 'easyq' ),
 			'max_rate_ip_messages'   => __( 'Messages per IP address', 'easyq' ),
 			'max_rate_user_messages' => __( 'Messages per user', 'easyq' ),
+			'max_rate_ip_feedback'   => __( 'Feedback per IP address', 'easyq' ),
+			'max_rate_user_feedback' => __( 'Feedback per user', 'easyq' ),
 			'max_rate_ip_registers'  => __( 'Registrations per IP address', 'easyq' ),
 			'max_rate_ip_logins'     => __( 'Login attempts per IP address', 'easyq' ),
 		);

@@ -109,6 +109,8 @@ final class Options {
 			'emails'      => array(
 				'from_email'            => '',
 				'feedback_email'        => '',
+				'feedback_enabled'      => true,
+				'email_privacy'         => __( 'Privacy: Your email address will not be shared or sold to third parties.', 'easyq' ),
 				'notify_admin_q_post'   => false,
 				'moderate_notify_admin' => true,
 				'flagging_notify_first' => 1,
@@ -265,6 +267,8 @@ final class Options {
 				'max_rate_user_uploads'  => 10,
 				'max_rate_ip_messages'   => 10,
 				'max_rate_user_messages' => 5,
+				'max_rate_ip_feedback'   => 5,
+				'max_rate_user_feedback' => 5,
 				'max_rate_ip_registers'  => 5,
 				'max_rate_ip_logins'     => 20,
 				'ip_retention_days'      => 30,

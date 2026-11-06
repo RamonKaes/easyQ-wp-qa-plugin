@@ -109,7 +109,8 @@ final class Routing_Test extends Test_Case {
 		$this->assertSame( 'not_found', Block_Context::router()->current()?->name );
 	}
 
-	public function test_routes_without_a_template_are_not_found(): void {
+	public function test_the_feedback_page_is_not_found_when_turned_off(): void {
+		\EasyQ\Settings\Options::update( 'emails', array( 'feedback_enabled' => false ) );
 		$this->go_to( Routes::url( 'feedback' ) );
 		$templates = new Templates( Block_Context::router() );
 

@@ -22,6 +22,7 @@
 		"SCRIPT_DEBUG": true
 	},
 	"mappings": {
-		"wp-content/mu-plugins/easyq-e2e-limits.php": "./tests/e2e/mu-plugins/easyq-e2e-limits.php"
+		"wp-content/mu-plugins/easyq-e2e-limits.php": "./tests/e2e/mu-plugins/easyq-e2e-limits.php",
+		"wp-content/mu-plugins/easyq-e2e-mail.php": "./tests/e2e/mu-plugins/easyq-e2e-mail.php"
 	}
 }

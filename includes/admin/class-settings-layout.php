@@ -132,6 +132,7 @@ final class Settings_Layout {
 			),
 			'emails'      => array(
 				self::section( '', array( 'from_email', 'feedback_email' ) ),
+				self::section( __( 'Feedback', 'easyq' ), array( self::row( __( 'Form', 'easyq' ), array( 'feedback_enabled' ) ), 'email_privacy' ) ),
 				self::section(
 					__( 'Emails to the site owner', 'easyq' ),
 					array(
@@ -253,6 +254,7 @@ final class Settings_Layout {
 						self::row( __( 'Flags', 'easyq' ), array( 'max_rate_ip_flags', 'max_rate_user_flags' ) ),
 						self::row( __( 'Uploads', 'easyq' ), array( 'max_rate_ip_uploads', 'max_rate_user_uploads' ) ),
 						self::row( __( 'Messages', 'easyq' ), array( 'max_rate_ip_messages', 'max_rate_user_messages' ) ),
+						self::row( __( 'Feedback', 'easyq' ), array( 'max_rate_ip_feedback', 'max_rate_user_feedback' ) ),
 						self::row( __( 'Accounts', 'easyq' ), array( 'max_rate_ip_registers', 'max_rate_ip_logins' ) ),
 					),
 					__( 'How often each IP address or user may do something, per hour; 0 blocks it.', 'easyq' )

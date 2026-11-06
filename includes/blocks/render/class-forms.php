@@ -14,8 +14,8 @@ use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
 use EasyQ\Mail\Notifications;
-use EasyQ\Messages\Messages;
 use EasyQ\Mail\Unsubscribe;
+use EasyQ\Messages\Messages;
 use EasyQ\Posts\Post;
 use EasyQ\REST\Post_Input;
 use EasyQ\Services;
@@ -43,7 +43,7 @@ final class Forms {
 	 *
 	 * @var string[]
 	 */
-	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account', 'wall', 'message' );
+	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account', 'wall', 'message', 'feedback' );
 
 	/**
 	 * Forms on the question page that are sent in the background and update the page in place.
@@ -181,6 +181,45 @@ final class Forms {
 		);
 
 		return self::form( 'account', 0, $fields, __( 'Save profile', 'easyq' ), array() );
+	}
+
+	/**
+	 * Renders the feedback form, as `pages/feedback.php`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	public static function feedback_form(): string {
+		$viewer = Block_Context::viewer();
+		$reason = Services::feedback()->error( $viewer );
+		if ( 'off' === $reason ) {
+			return '';
+		}
+		if ( null !== $reason ) {
+			return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), self::permission_message( $reason ) );
+		}
+
+		$user     = null === $viewer->user_id ? false : get_userdata( $viewer->user_id );
+		$value    = static fn ( string $field, string $fallback ): string => '' === Flash::value( 'feedback', $field ) ? $fallback : Flash::value( 'feedback', $field );
+		$previous = wp_get_referer();
+
+		$fields = self::field(
+			'feedback',
+			'message',
+			/* translators: %s: site name. */
+			sprintf( __( 'Your feedback or suggestion for %s', 'easyq' ), get_bloginfo( 'name' ) ),
+			'textarea',
+			Flash::value( 'feedback', 'message' ),
+			array(
+				'rows'     => '8',
+				'required' => 'required',
+			)
+		);
+		$fields .= self::field( 'feedback', 'name', __( 'Your name (optional)', 'easyq' ), 'text', $value( 'name', false === $user ? '' : $user->display_name ), array( 'autocomplete' => 'name' ) );
+		$fields .= self::field( 'feedback', 'email', __( 'Your email address (optional)', 'easyq' ), 'email', $value( 'email', false === $user ? '' : $user->user_email ), array( 'autocomplete' => 'email' ), Options::get_string( 'emails', 'email_privacy' ) );
+
+		return self::form( 'feedback', 0, $fields, __( 'Send feedback', 'easyq' ), array( 'previous' => false === $previous ? '' : $previous ) );
 	}
 
 	/**
@@ -489,7 +528,7 @@ final class Forms {
 		}
 
 		// The markup of the comment form block, so that the theme styles the fields as it styles that form.
-		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
+		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe', 'feedback' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
 		$notice  = self::form_notice( $form );
 
 		return sprintf(

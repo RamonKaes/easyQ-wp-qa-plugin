@@ -20,11 +20,11 @@ use WP_Block_Type_Registry;
 final class Docs_Test extends Test_Case {
 
 	/**
-	 * Blocks that the feature mapping describes before they exist: the updates page uses a question list, the feedback form comes in phase 7e.
+	 * Blocks that the feature mapping names but that are not built: the updates page shows a question list.
 	 *
 	 * @var string[]
 	 */
-	private const PLANNED_BLOCKS = array( 'easyq/updates', 'easyq/feedback-form' );
+	private const PLANNED_BLOCKS = array( 'easyq/updates' );
 
 	/**
 	 * Returns the directory of the plugin.

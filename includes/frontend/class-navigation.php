@@ -78,6 +78,7 @@ final class Navigation {
 			'favorites'  => __( 'My favorites', 'easyq' ),
 			'updates'    => __( 'My updates', 'easyq' ),
 			'messages'   => __( 'Private messages', 'easyq' ),
+			'feedback'   => __( 'Feedback', 'easyq' ),
 			'account'    => __( 'My account', 'easyq' ),
 		);
 	}

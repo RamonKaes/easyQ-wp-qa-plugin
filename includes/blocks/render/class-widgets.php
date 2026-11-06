@@ -93,6 +93,7 @@ final class Widgets {
 			'favorites'  => __( 'My favorites', 'easyq' ),
 			'messages'   => 'sent' === Messages_Render::box_name() ? __( 'Sent messages', 'easyq' ) : __( 'Private messages', 'easyq' ),
 			'message'    => __( 'Send a private message', 'easyq' ),
+			'feedback'   => __( 'Send feedback', 'easyq' ),
 			'updates'    => self::update_labels()[ $show ] ?? __( 'Recent updates for me', 'easyq' ),
 			'unsubscribe' => __( 'Stop emails', 'easyq' ),
 			'not_found'  => __( 'Page not found', 'easyq' ),

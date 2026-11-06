@@ -171,7 +171,7 @@ is only available in block themes.
 | `favorites`, `favorites/{questions,users,tags}` | **P** | `easyq-favorites` on one route: every list has its own pagination, so the sub-pages Q2A needs to page further are not needed. Visitors go to the login form, as in Q2A (decision 61) |
 | `updates` | **P** | `easyq-updates`, with `?show=favorites` and `?show=content` as in Q2A; visitors go to the login form |
 | `messages/`, `message/{name}` | **P** | `easyq-messages` (with `?box=sent` for Q2A's `messages/sent`), `easyq-message`; visitors go to the login form |
-| `feedback` | **P** | `easyq-feedback`, phase 7 |
+| `feedback` | **P** | `easyq-feedback`; not found while the form is off |
 | `unsubscribe` | **P** | `easyq-unsubscribe`: stops the emails about a post (7a), newsletter in 7e; with `List-Unsubscribe` / one-click headers |
 | `ip/{ip}` | **P → admin** | Posts screen filtered by the address (section 5.1) |
 | `login`, `register`, `forgot`, `reset`, `logout`, `confirm` | **WP** | Section 2 |
@@ -769,3 +769,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 62 | Updates port the streams of Q2A with their limits (5 events per question, 50 per stream, shared streams from 10 followers on), driven by the events. Unlike Q2A, streams are trimmed by time and ID, as events of the same second would otherwise go together, and deleted posts and users leave the streams at once | 2026-11-05 |
 | 63 | Notices follow Q2A: for first-time visitors with the cookie `easyq_noticed`, which is set only after dismissing a notice or being logged in on a Q&A page, for new users until dismissed, and for single users in `usernotices`, added with `Services::notices()->add()` as Q2A has no form for them. The texts allow the HTML of posts | 2026-11-05 |
 | 64 | Walls and private messages share the messages table as in Q2A and follow its rules: authors delete their wall post until someone else posts after it; a private message is gone once both sides deleted it; without the message history messages are only emailed. Lists take the markup of the core comment template. Deleting a user, or erasing their data, deletes the messages they wrote or received and the posts on their wall | 2026-11-06 |
+| 65 | The feedback form follows Q2A and `wp_notify_moderator()`: a plain mail to the site owner with `Reply-To` set to the sender. The browser of the sender is left out of the mail, as nobody needs it to answer; the IP address stays for abuse. A rate limit of its own protects the form until the captcha of phase 10 (decision 56). Nothing of the feedback is stored but the counts of the limit | 2026-11-06 |

@@ -10,6 +10,7 @@ namespace EasyQ;
 
 use EasyQ\Categories\Categories;
 use EasyQ\Favorites\Favorites;
+use EasyQ\Feedback\Feedback;
 use EasyQ\Limits\Limits;
 use EasyQ\Messages\Messages;
 use EasyQ\Notices\Notices;
@@ -162,6 +163,17 @@ final class Services {
 	 */
 	public static function favorites(): Favorites {
 		return self::shared( Favorites::class, static fn (): Favorites => new Favorites( self::posts(), self::categories() ) );
+	}
+
+	/**
+	 * Returns the feedback service.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Feedback
+	 */
+	public static function feedback(): Feedback {
+		return self::shared( Feedback::class, static fn (): Feedback => new Feedback() );
 	}
 
 	/**
