@@ -107,6 +107,20 @@ final class Newsletter_Test extends REST_Test_Case {
 		);
 	}
 
+	public function test_turning_it_off_and_on_sends_no_flood_of_emails(): void {
+		$user = (int) $this->user()->user_id;
+		$this->subscribe( $user );
+		$this->request( 'POST', '/users/me', array( 'newsletter' => false ) );
+
+		$again = $this->request( 'POST', '/users/me', array( 'newsletter' => true ) );
+		$this->assertSame( 429, $again->get_status() );
+		$this->assertCount( 1, tests_retrieve_phpmailer_instance()->mock_sent );
+
+		Site_Meta::update( $user, Newsletter::SENT_META, time() - Newsletter::CONFIRMATION_PAUSE - 1 );
+		$this->subscribe( $user );
+		$this->assertCount( 2, tests_retrieve_phpmailer_instance()->mock_sent );
+	}
+
 	public function test_confirmation_keys_expire(): void {
 		$user = (int) $this->user()->user_id;
 		$key  = $this->subscribe( $user );
@@ -204,6 +218,7 @@ final class Newsletter_Test extends REST_Test_Case {
 		$this->assertSame( array(), Privacy::export_newsletter( $email )['data'] );
 
 		wp_set_current_user( $this->administrator() );
+		$this->assertSame( '', (string) Site_Meta::get( $user, Newsletter::SENT_META ), 'Erasing forgets the time of the last email.' );
 		Services::newsletter()->confirm( $user, $this->subscribe( $user ) );
 		wp_set_current_user( $this->administrator() );
 		$this->request( 'POST', '/newsletter/start' );

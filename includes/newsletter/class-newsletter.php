@@ -58,6 +58,24 @@ final class Newsletter {
 	public const CONSENT_META = 'easyq_newsletter_consent';
 
 	/**
+	 * User meta: when the last confirmation email went out, kept when unsubscribing.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const SENT_META = 'easyq_newsletter_sent';
+
+	/**
+	 * Time between two confirmation emails to a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const CONFIRMATION_PAUSE = 10 * MINUTE_IN_SECONDS;
+
+	/**
 	 * Option with the state of the current sending.
 	 *
 	 * @since 0.1.0
@@ -123,6 +141,13 @@ final class Newsletter {
 		if ( 'confirmed' === self::state( $user->ID ) ) {
 			return true;
 		}
+
+		// Turning the newsletter off and on again does not send one email after the other.
+		$sent = Site_Meta::get( $user->ID, self::SENT_META );
+		if ( is_numeric( $sent ) && time() < (int) $sent + self::CONFIRMATION_PAUSE ) {
+			return new WP_Error( 'easyq_limit', __( 'A confirmation email was sent a moment ago. Please check your inbox, or try again in a few minutes.', 'easyq' ), array( 'status' => 429 ) );
+		}
+		Site_Meta::update( $user->ID, self::SENT_META, time() );
 
 		// As core stores request keys: only a hash, with the time for the expiry.
 		$key = wp_generate_password( 20, false );
@@ -192,12 +217,13 @@ final class Newsletter {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $user_id User ID.
+	 * @param int  $user_id User ID.
+	 * @param bool $forget  Whether to forget the time of the last confirmation email too, as erasing personal data does.
 	 * @return bool Whether there was a subscription or request.
 	 */
-	public static function unsubscribe( int $user_id ): bool {
+	public static function unsubscribe( int $user_id, bool $forget = false ): bool {
 		$had = '' !== self::state( $user_id );
-		foreach ( array( self::STATE_META, self::KEY_META, self::CONSENT_META ) as $key ) {
+		foreach ( array_merge( array( self::STATE_META, self::KEY_META, self::CONSENT_META ), $forget ? array( self::SENT_META ) : array() ) as $key ) {
 			Site_Meta::delete( $user_id, $key );
 		}
 

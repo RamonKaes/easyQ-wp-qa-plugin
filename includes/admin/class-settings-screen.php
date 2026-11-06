@@ -39,6 +39,15 @@ final class Settings_Screen {
 	public const PAGE = 'easyq-settings';
 
 	/**
+	 * Transient, per user, with the error of the last newsletter action.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private const ERROR_TRANSIENT = 'easyq_newsletter_error_';
+
+	/**
 	 * Hooks the screen into WordPress.
 	 *
 	 * @since 0.1.0
@@ -228,8 +237,17 @@ final class Settings_Screen {
 	 */
 	private function render_newsletter_actions(): void {
 		$progress = Newsletter::progress();
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only shows the result of an action.
-		$message = isset( $_GET['easyq_newsletter'] ) && is_string( $_GET['easyq_newsletter'] ) ? sanitize_text_field( wp_unslash( $_GET['easyq_newsletter'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only picks which of the known results to show.
+		$result  = isset( $_GET['easyq_newsletter'] ) && is_string( $_GET['easyq_newsletter'] ) ? sanitize_key( $_GET['easyq_newsletter'] ) : '';
+		$stored  = get_transient( self::ERROR_TRANSIENT . get_current_user_id() );
+		$message = match ( $result ) {
+			'started'   => __( 'The newsletter is being sent.', 'easyq' ),
+			'cancelled' => __( 'Sending was cancelled.', 'easyq' ),
+			'tested'    => __( 'The test email was sent to you.', 'easyq' ),
+			'error'     => is_string( $stored ) ? $stored : '',
+			default     => '',
+		};
+		delete_transient( self::ERROR_TRANSIENT . get_current_user_id() );
 
 		echo '<h2>' . esc_html__( 'Send the newsletter', 'easyq' ) . '</h2>';
 		if ( '' !== $message ) {
@@ -268,10 +286,14 @@ final class Settings_Screen {
 
 		$response = rest_do_request( new \WP_REST_Request( 'POST', '/easyq/v1/newsletter/' . $action ) );
 		$error    = $response->as_error();
-		$message  = null !== $error ? $error->get_error_message() : match ( $action ) {
-			'start'  => __( 'The newsletter is being sent.', 'easyq' ),
-			'cancel' => __( 'Sending was cancelled.', 'easyq' ),
-			default  => __( 'The test email was sent to you.', 'easyq' ),
+		if ( null !== $error ) {
+			// The text of an error stays on the server; the address only says that there is one.
+			set_transient( self::ERROR_TRANSIENT . get_current_user_id(), $error->get_error_message(), MINUTE_IN_SECONDS );
+		}
+		$result = null !== $error ? 'error' : match ( $action ) {
+			'start'  => 'started',
+			'cancel' => 'cancelled',
+			default  => 'tested',
 		};
 
 		wp_safe_redirect(
@@ -279,7 +301,7 @@ final class Settings_Screen {
 				array(
 					'page'             => self::PAGE,
 					'tab'              => 'newsletter',
-					'easyq_newsletter' => rawurlencode( $message ),
+					'easyq_newsletter' => $result,
 				),
 				admin_url( 'admin.php' )
 			)

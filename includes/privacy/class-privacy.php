@@ -168,7 +168,7 @@ final class Privacy {
 		$user = get_user_by( 'email', $email );
 
 		return array(
-			'items_removed'  => false !== $user && Newsletter::unsubscribe( $user->ID ),
+			'items_removed'  => false !== $user && Newsletter::unsubscribe( $user->ID, forget: true ),
 			'items_retained' => false,
 			'messages'       => array(),
 			'done'           => true,
