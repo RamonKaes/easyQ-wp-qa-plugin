@@ -80,7 +80,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 
 | Method and route | Description |
 | --- | --- |
-| `GET /questions` | List questions. Parameters: `source` (`recent`, `hot`, `votes`, `answers`, `views`, `unanswered`, `unselected`, `unupvoted`), `category` (includes subcategories), `tag`, `author`, `page`, `per_page`. Totals in the `X-WP-Total` and `X-WP-TotalPages` headers |
+| `GET /questions` | List questions. Parameters: `source` (`recent`, `hot`, `votes`, `answers`, `views`, `unanswered`, `unselected`, `unupvoted`, or `favorites` for the favorites of the current user), `category` (includes subcategories), `tag`, `author`, `page`, `per_page`. Totals in the `X-WP-Total` and `X-WP-TotalPages` headers |
 | `POST /questions` | Ask a question: `title`, `content`, `format` (empty for plain text or `html`), `tags` (array, or text as entered by users), `category`, `notify`, `email` and `name` (anonymous authors), `extra` |
 | `GET /questions/similar` | Similar questions and suggested tags for a `title`, as configured for the ask form |
 | `GET /questions/{id}` | A question; `context=edit` adds the raw content for users who may edit |
@@ -137,7 +137,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `DELETE /categories/{id}` | Delete a category without subcategories; `reassign` names the category that receives its posts (0 or omitted for none). Needs `easyq_manage` |
 | `POST /categories/{id}/reassign` | Move the posts directly in a category, not those in its subcategories, to the category `to` (0 for none); the ID 0 stands for posts without a category. Returns the number of moved questions. Needs `easyq_manage` |
 | `GET /tags` | Tags by popularity; `search` completes a prefix |
-| `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`) or users with special levels (`special`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages |
+| `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`), users with special levels (`special`) or the favorites of the current user (`favorites`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages |
 | `GET /users/{id}` | Public Q&A profile: name, avatar, level, title, points, rank, activity counts and the profile fields the viewer may see. On multisite, users of other sites only have a profile once they took part |
 | `GET /users/me` | The profile of the current user, with all profile fields, including those hidden from others |
 | `POST /users/me` | Change the own profile: `fields` (object of field name and value), `remove_avatar`, `notifications` (whether the user gets emails about their posts; only the current user sees this field), or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; cropped to a square; counts towards the upload rate limit). Name, email address and password are changed in the WordPress profile |

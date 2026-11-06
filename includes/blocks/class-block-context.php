@@ -120,8 +120,9 @@ final class Block_Context {
 	 * @return string
 	 */
 	public static function list_id( WP_Block $block ): string {
+		// The list blocks declare `queryId` as a number; core passes it on as is.
 		$id = $block->context['easyq/listId'] ?? '';
 
-		return is_string( $id ) ? $id : '';
+		return is_string( $id ) || is_int( $id ) ? (string) $id : '';
 	}
 }

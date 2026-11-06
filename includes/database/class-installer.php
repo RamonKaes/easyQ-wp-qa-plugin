@@ -91,8 +91,39 @@ final class Installer {
 	 * Data is kept; it is only removed on uninstall when the site owner asked for it.
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param bool $network_wide Whether the plugin is being deactivated for the whole network.
 	 */
-	public static function deactivate(): void {
+	public static function deactivate( bool $network_wide = false ): void {
+		if ( ! is_multisite() || ! $network_wide ) {
+			self::deactivate_site();
+			return;
+		}
+
+		if ( wp_is_large_network() ) {
+			return;
+		}
+
+		$site_ids = get_sites(
+			array(
+				'fields' => 'ids',
+				'number' => 0,
+			)
+		);
+
+		foreach ( $site_ids as $site_id ) {
+			switch_to_blog( (int) $site_id );
+			self::deactivate_site();
+			restore_current_blog();
+		}
+	}
+
+	/**
+	 * Removes the temporary data of the current site: rewrite rules and scheduled events.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function deactivate_site(): void {
 		// WordPress rebuilds the rewrite rules without the Q&A routes on the next request.
 		delete_option( 'rewrite_rules' );
 		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );

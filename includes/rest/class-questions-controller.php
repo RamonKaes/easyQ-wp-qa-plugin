@@ -143,14 +143,18 @@ final class Questions_Controller extends Controller {
 	 */
 	public function get_items( $request ): WP_REST_Response {
 		$per_page = self::int_param( $request, 'per_page' ) ?? 20;
-		$result   = Services::question_query()->find(
+		$source   = self::string_param( $request, 'source' );
+		// The favorites of the current user, as the favorites page lists them; of nobody for visitors.
+		$favorites = 'favorites' === $source;
+		$result    = Services::question_query()->find(
 			array(
-				'source'      => self::string_param( $request, 'source' ),
-				'category_id' => self::int_param( $request, 'category' ),
-				'tag'         => self::string_param( $request, 'tag' ),
-				'user_id'     => self::int_param( $request, 'author' ),
-				'page'        => self::int_param( $request, 'page' ),
-				'per_page'    => $per_page,
+				'source'       => $favorites ? 'recent' : $source,
+				'category_id'  => self::int_param( $request, 'category' ),
+				'tag'          => self::string_param( $request, 'tag' ),
+				'user_id'      => self::int_param( $request, 'author' ),
+				'favorites_of' => $favorites ? ( get_current_user_id() > 0 ? get_current_user_id() : PHP_INT_MAX ) : null,
+				'page'         => self::int_param( $request, 'page' ),
+				'per_page'     => $per_page,
 			)
 		);
 
@@ -429,9 +433,9 @@ final class Questions_Controller extends Controller {
 	public function get_collection_params(): array {
 		return array(
 			'source'   => array(
-				'description' => __( 'Which questions to list and how to sort them.', 'easyq' ),
+				'description' => __( 'Which questions to list and how to sort them; `favorites` lists the favorites of the current user.', 'easyq' ),
 				'type'        => 'string',
-				'enum'        => Question_Query::sources(),
+				'enum'        => array_merge( Question_Query::sources(), array( 'favorites' ) ),
 				'default'     => 'recent',
 			),
 			'category' => array(

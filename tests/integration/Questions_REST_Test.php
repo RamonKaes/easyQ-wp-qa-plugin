@@ -64,6 +64,20 @@ final class Questions_REST_Test extends REST_Test_Case {
 		$this->assertSame( 400, $this->request( 'GET', '/questions', array( 'source' => 'bogus' ) )->get_status() );
 	}
 
+	public function test_lists_the_favorites_of_the_current_user(): void {
+		$author   = $this->user();
+		$followed = $this->ask( $author, 'Question that is followed here' );
+		$this->ask( $author, 'Question that is not followed' );
+		$fan = $this->user();
+		Services::favorites()->set( $fan, 'question', $followed->id, true );
+
+		wp_set_current_user( (int) $fan->user_id );
+		$this->assertSame( array( $followed->id ), array_column( $this->data( $this->request( 'GET', '/questions', array( 'source' => 'favorites' ) ) ), 'id' ) );
+
+		wp_set_current_user( 0 );
+		$this->assertSame( array(), $this->data( $this->request( 'GET', '/questions', array( 'source' => 'favorites' ) ) ), 'Visitors have no favorites.' );
+	}
+
 	public function test_returns_a_question_with_permissions_for_the_viewer(): void {
 		$author   = $this->user();
 		$question = $this->ask( $author, 'Readable question title', 'Visit https://example.com today.' );

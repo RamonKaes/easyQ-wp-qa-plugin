@@ -33,6 +33,24 @@ final class Multisite_Installer_Test extends Test_Case {
 		$this->assertSame( Installer::DB_VERSION, $version );
 	}
 
+	public function test_network_wide_deactivation_clears_the_scheduled_events_of_every_site(): void {
+		$this->activate_network_wide();
+		$site_id = self::factory()->blog->create();
+		$hook    = \EasyQ\Newsletter\Newsletter::CRON_HOOK;
+
+		switch_to_blog( $site_id );
+		wp_schedule_single_event( time() + HOUR_IN_SECONDS, $hook );
+		$this->assertNotFalse( wp_next_scheduled( $hook ) );
+		restore_current_blog();
+
+		Installer::deactivate( true );
+
+		switch_to_blog( $site_id );
+		$scheduled = wp_next_scheduled( $hook );
+		restore_current_blog();
+		$this->assertFalse( $scheduled, 'Network-wide deactivation reaches every site.' );
+	}
+
 	public function test_new_site_gets_no_tables_without_network_activation(): void {
 		global $wpdb;
 

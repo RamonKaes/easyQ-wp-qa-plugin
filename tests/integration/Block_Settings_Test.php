@@ -104,6 +104,25 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( 'Show 2 previous comments', $html );
 		$this->assertStringContainsString( 'Comment number three here.', $html );
 		$this->assertStringNotContainsString( 'Comment number one here.', $html );
+		// The link is part of the list, so the layout classes of the block land on the list.
+		$this->assertMatchesRegularExpression( '~<ul class="[^"]*wp-block-easyq-comment-template[^"]*is-layout-flow[^"]*"><li><a [^>]*>Show 2 previous comments</a></li><li id="easyq-post-~', $html );
+	}
+
+	public function test_two_fixed_lists_on_one_page_are_paginated_separately(): void {
+		foreach ( range( 1, 3 ) as $number ) {
+			$this->ask( $this->user(), "Question number $number of enough length" );
+		}
+		Block_Context::router()->set_current( new Route( 'questions' ) );
+
+		$list = static fn ( int $id, string $source ): string => '<!-- wp:easyq/question-query {"queryId":' . $id . ',"query":{"source":"' . $source . '","perPage":1,"inherit":false}} --><!-- wp:easyq/question-template --><!-- wp:easyq/post-title /--><!-- /wp:easyq/question-template --><!-- wp:easyq/query-pagination /--><!-- /wp:easyq/question-query -->';
+		$html = do_blocks( $list( 7, 'recent' ) . $list( 8, 'votes' ) );
+
+		// The list IDs are numbers in the block markup; each list gets its own page parameter.
+		$this->assertStringContainsString( 'easyq_page_7=2', $html );
+		$this->assertStringContainsString( 'easyq_page_8=2', $html );
+		$this->assertStringNotContainsString( 'easyq_page_=', $html );
+		// The pagination is a flex layout of the theme, not a hard-coded class.
+		$this->assertStringContainsString( 'wp-block-easyq-query-pagination-is-layout-flex', $html );
 	}
 
 	public function test_the_date_can_be_relative_or_absolute(): void {

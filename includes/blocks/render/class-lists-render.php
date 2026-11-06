@@ -150,7 +150,7 @@ final class Lists_Render {
 
 		return sprintf(
 			'<nav %s aria-label="%s">%s%s%s</nav>',
-			get_block_wrapper_attributes( array( 'class' => 'wp-block-query-pagination is-layout-flex' ) ),
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-query-pagination' ) ),
 			esc_attr__( 'Pages', 'easyq' ),
 			$previous,
 			$numbers,
@@ -349,17 +349,18 @@ final class Lists_Render {
 		$show_all = isset( $_GET[ self::SHOW_COMMENTS_VAR ] ) && is_string( $_GET[ self::SHOW_COMMENTS_VAR ] ) && absint( $_GET[ self::SHOW_COMMENTS_VAR ] ) === $parent->id;
 
 		if ( count( $ids ) > $from && ! $show_all ) {
-			$hidden  = count( $ids ) - $keep;
-			$ids     = array_slice( $ids, -$keep );
+			$hidden = count( $ids ) - $keep;
+			$ids    = array_slice( $ids, -$keep );
+			// The link is the first item of the list, so the block wrapper and its layout classes stay on the list.
 			$earlier = sprintf(
-				'<p><a href="%s" data-wp-on--click="actions.navigate">%s</a></p>',
+				'<li><a href="%s" data-wp-on--click="actions.navigate">%s</a></li>',
 				esc_url( add_query_arg( self::SHOW_COMMENTS_VAR, $parent->id ) . '#easyq-comments-' . $parent->id ),
 				/* translators: %s: number of comments. */
 				esc_html( sprintf( _n( 'Show %s previous comment', 'Show %s previous comments', $hidden, 'easyq' ), number_format_i18n( $hidden ) ) )
 			);
 		}
 
-		return $earlier . self::loop( $block, $ids, 'li' );
+		return self::loop( $block, $ids, 'li', $earlier );
 	}
 
 	/**
@@ -367,12 +368,13 @@ final class Lists_Render {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_Block $block Template block.
-	 * @param int[]    $ids   Post IDs.
-	 * @param string   $tag   Element of each item.
+	 * @param WP_Block $block  Template block.
+	 * @param int[]    $ids    Post IDs.
+	 * @param string   $tag    Element of each item.
+	 * @param string   $before Markup of an extra first item, already escaped.
 	 * @return string
 	 */
-	private static function loop( WP_Block $block, array $ids, string $tag ): string {
+	private static function loop( WP_Block $block, array $ids, string $tag, string $before = '' ): string {
 		return self::render_items(
 			$block,
 			array_map(
@@ -382,7 +384,8 @@ final class Lists_Render {
 				),
 				$ids
 			),
-			$tag
+			$tag,
+			$before
 		);
 	}
 
@@ -393,15 +396,16 @@ final class Lists_Render {
 	 *
 	 * @param WP_Block                                             $block Template block.
 	 * @param array<array{id: int, context: array<string, mixed>}> $items Items with the post ID of the element and the block context.
-	 * @param string                                               $tag   Element of each item.
+	 * @param string                                               $tag    Element of each item.
+	 * @param string                                               $before Markup of an extra first item, already escaped.
 	 * @return string
 	 */
-	private static function render_items( WP_Block $block, array $items, string $tag = 'li' ): string {
+	private static function render_items( WP_Block $block, array $items, string $tag = 'li', string $before = '' ): string {
 		if ( array() === $items ) {
 			return '';
 		}
 
-		$html = '';
+		$html = $before;
 		foreach ( $items as $item ) {
 			$html .= sprintf(
 				'<%1$s id="easyq-post-%2$d">%3$s</%1$s>',

@@ -14,6 +14,7 @@ const ACTIVITY_SOURCES = [
 	'recent_qa',
 	'recent_answers',
 	'recent_comments',
+	'updates',
 ];
 
 /**

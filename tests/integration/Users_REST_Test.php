@@ -8,6 +8,7 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Actor;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
 use WP_REST_Request;
@@ -63,6 +64,21 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertArrayHasKey( 'link', $data[0] );
 		$this->assertArrayNotHasKey( 'fields', $data[0] );
 		$this->assertSame( '1', $response->get_headers()['X-WP-Total'] );
+	}
+
+	public function test_lists_the_favorite_users_of_the_current_user(): void {
+		$followed = $this->user();
+		$this->user();
+		$fan = $this->user();
+		Services::favorites()->set( $fan, 'user', (int) $followed->user_id, true );
+
+		wp_set_current_user( (int) $fan->user_id );
+		$response = $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) );
+		$this->assertSame( array( $followed->user_id ), array_column( $this->data( $response ), 'id' ) );
+		$this->assertSame( '1', $response->get_headers()['X-WP-Total'] );
+
+		wp_set_current_user( 0 );
+		$this->assertSame( array(), $this->data( $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) ) ), 'Visitors have no favorites.' );
 	}
 
 	public function test_newest_users_need_permission(): void {

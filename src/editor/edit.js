@@ -493,6 +493,13 @@ function QueryInspector( { attributes, setAttributes } ) {
 									label: __( 'Recently commented', 'easyq' ),
 									value: 'recent_comments',
 								},
+								{
+									label: __(
+										'Favorites of the visitor',
+										'easyq'
+									),
+									value: 'favorites',
+								},
 							] }
 							onChange={ ( source ) => update( { source } ) }
 						/>
@@ -594,6 +601,13 @@ function UserQueryInspector( { attributes, setAttributes } ) {
 								label: __( 'Special users', 'easyq' ),
 								value: 'special',
 							},
+							{
+								label: __(
+									'Favorites of the visitor',
+									'easyq'
+								),
+								value: 'favorites',
+							},
 						] }
 						onChange={ ( sort ) => update( { sort } ) }
 					/>
@@ -692,12 +706,19 @@ export default function editFor( metadata ) {
 						<UserEdit userId={ attributes.userId } />
 					</>
 				);
-			case 'easyq/account':
+			// These blocks need the visitor, a question or a signed link, so the server renders nothing in the editor.
 			case 'easyq/favorite-button':
 			case 'easyq/messages':
-			case 'easyq/feedback-form':
 			case 'easyq/user-wall':
 			case 'easyq/unsubscribe':
+				return (
+					<>
+						{ inspector }
+						<Placeholder label={ metadata.title } />
+					</>
+				);
+			case 'easyq/account':
+			case 'easyq/feedback-form':
 			case 'easyq/tags':
 			case 'easyq/categories':
 			case 'easyq/activity-count':

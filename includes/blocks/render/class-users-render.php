@@ -170,12 +170,12 @@ final class Users_Render {
 		$is_link = (bool) ( $attributes['isLink'] ?? false );
 
 		// A linked avatar needs a text alternative; otherwise the name is shown next to it.
-		$avatar = (string) get_avatar( $user->ID, $size, '', $is_link ? $user->display_name : '' );
+		$avatar = Render::avatar( $user->ID, $size, $is_link ? $user->display_name : '' );
 
 		return sprintf(
 			'<div %s>%s</div>',
-			get_block_wrapper_attributes(),
-			$is_link ? sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $avatar ) : $avatar
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-avatar' ) ),
+			$is_link ? sprintf( '<a class="wp-block-avatar__link" href="%s">%s</a>', esc_url( URLs::user( $user ) ), $avatar ) : $avatar
 		);
 	}
 

@@ -296,8 +296,8 @@ final class Post_Fields {
 		$html = '';
 
 		if ( $attributes['showAvatar'] ?? true ) {
-			$size  = is_numeric( $attributes['avatarSize'] ?? null ) ? (int) $attributes['avatarSize'] : 24;
-			$html .= get_avatar( false === $user ? '' : $user->ID, $size, '', '' );
+			$size  = is_numeric( $attributes['avatarSize'] ?? null ) ? max( 16, (int) $attributes['avatarSize'] ) : 24;
+			$html .= sprintf( '<div class="wp-block-avatar">%s</div>', Render::avatar( false === $user ? 0 : $user->ID, $size, '' ) );
 		}
 
 		$html .= false === $user ? sprintf( '<span>%s</span>', $name ) : sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name );

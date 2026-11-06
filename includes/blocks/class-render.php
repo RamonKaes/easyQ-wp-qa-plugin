@@ -187,6 +187,23 @@ final class Render {
 	}
 
 	/**
+	 * Returns the avatar image of a user with the class of the core Avatar block,
+	 * so the theme's avatar styles (e.g. the border radius) apply.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int    $user_id User ID; 0 for an anonymous author.
+	 * @param int    $size    Size in pixels.
+	 * @param string $alt     Alternative text; empty when the name is shown next to the avatar.
+	 * @return string
+	 */
+	public static function avatar( int $user_id, int $size, string $alt ): string {
+		$avatar = get_avatar( 0 === $user_id ? '' : $user_id, $size, '', $alt, array( 'class' => 'wp-block-avatar__image' ) );
+
+		return false === $avatar ? '' : $avatar;
+	}
+
+	/**
 	 * Formats a count compactly if configured, e.g. 1.2k.
 	 *
 	 * @since 0.1.0

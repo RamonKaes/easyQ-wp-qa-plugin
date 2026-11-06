@@ -187,6 +187,9 @@ final class User_Blocks_Test extends Test_Case {
 
 		$this->assertStringContainsString( 'Expert', $html );
 		$this->assertStringContainsString( 'alt=\'Hedy\'', $html );
+		// The markup of the core Avatar block, so the theme's avatar styles apply.
+		$this->assertStringContainsString( 'wp-block-avatar wp-block-easyq-user-avatar"><a class="wp-block-avatar__link"', $html );
+		$this->assertStringContainsString( 'wp-block-avatar__image', $html );
 	}
 
 	public function test_user_bindings(): void {

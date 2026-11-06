@@ -61,9 +61,9 @@ final class Users_Controller extends Controller {
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 					'args'                => array(
 						'sort' => array(
-							'description' => __( 'Users by points, the newest users, or users with special levels.', 'easyq' ),
+							'description' => __( 'Users by points, the newest users, users with special levels, or the favorites of the current user.', 'easyq' ),
 							'type'        => 'string',
-							'enum'        => array_keys( User_Query::SORTS ),
+							'enum'        => array_merge( array_keys( User_Query::SORTS ), array( 'favorites' ) ),
 							'default'     => 'points',
 						),
 					// Lists show users as they are embedded, as core embeds authors: without profile fields and counts.
@@ -162,7 +162,19 @@ final class Users_Controller extends Controller {
 	 */
 	public function get_items( $request ): WP_REST_Response {
 		$per_page = (int) self::int_param( $request, 'per_page' );
-		$found    = Services::user_query()->find( (string) self::string_param( $request, 'sort' ), (int) self::int_param( $request, 'page' ), $per_page );
+		$page     = max( 1, (int) self::int_param( $request, 'page' ) );
+		$sort     = (string) self::string_param( $request, 'sort' );
+
+		if ( 'favorites' === $sort ) {
+			// The users the viewer follows, as the favorites page lists them; nothing for visitors.
+			$ids   = Services::favorites()->ids( get_current_user_id(), 'user' );
+			$found = array(
+				'ids'   => array_slice( $ids, ( $page - 1 ) * $per_page, $per_page ),
+				'total' => count( $ids ),
+			);
+		} else {
+			$found = Services::user_query()->find( $sort, $page, $per_page );
+		}
 
 		cache_users( $found['ids'] );
 

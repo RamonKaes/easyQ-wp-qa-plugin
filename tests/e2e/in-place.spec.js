@@ -102,7 +102,9 @@ test.describe( 'Question page in place', () => {
 		}
 
 		await page.goto( questionUrl( question.id ) );
-		const comments = page.locator( `#easyq-comments-${ answer.id } li` );
+		const comments = page.locator(
+			`#easyq-comments-${ answer.id } li[id^="easyq-post-"]`
+		);
 		await expect( comments ).toHaveCount( 5 );
 		await expect(
 			page.getByText( 'Comment number 11 of the discussion.' )
@@ -135,7 +137,9 @@ test.describe( 'Question page in place', () => {
 			.getByRole( 'link', { name: 'Show 6 previous comments' } )
 			.click();
 		await expect(
-			plain.locator( `#easyq-comments-${ answer.id } li` )
+			plain.locator(
+				`#easyq-comments-${ answer.id } li[id^="easyq-post-"]`
+			)
 		).toHaveCount( 11 );
 		await context.close();
 	} );
