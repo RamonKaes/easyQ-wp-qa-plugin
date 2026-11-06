@@ -61,6 +61,19 @@ const { state } = store( 'easyq', {
 			return context.vote === context.direction;
 		},
 	},
+	callbacks: {
+		/**
+		 * Moves the focus into the answer form once the Answer button opened it,
+		 * as the button disappears.
+		 *
+		 * @since 0.1.0
+		 */
+		focusAnswer() {
+			if ( getContext().answerOpen ) {
+				getElement().ref.querySelector( 'textarea' )?.focus();
+			}
+		},
+	},
 	actions: {
 		/**
 		 * Follows a link within the Q&A area without reloading the page, e.g.
@@ -82,6 +95,28 @@ const { state } = store( 'easyq', {
 			}
 			event.preventDefault();
 			yield* navigateTo( getElement().ref.href );
+		},
+
+		/**
+		 * Opens the answer form in place of the Answer button, which without
+		 * JavaScript loads the page with the form.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param {MouseEvent} event Click event of the button.
+		 */
+		openAnswer( event ) {
+			if (
+				event.button !== 0 ||
+				event.metaKey ||
+				event.ctrlKey ||
+				event.shiftKey ||
+				event.altKey
+			) {
+				return;
+			}
+			event.preventDefault();
+			getContext().answerOpen = true;
 		},
 
 		/**

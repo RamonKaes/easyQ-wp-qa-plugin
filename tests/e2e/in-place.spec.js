@@ -13,6 +13,10 @@ test.describe( 'Question page in place', () => {
 		await requestUtils.activateTheme( 'twentytwentyfive' );
 	} );
 
+	// The admin asks the questions, and the author of a question gets an Answer button, as in Q2A.
+	const openAnswerForm = ( page ) =>
+		page.getByRole( 'link', { name: 'Answer', exact: true } ).click();
+
 	const ask = ( requestUtils, title ) =>
 		requestUtils.rest( {
 			method: 'POST',
@@ -29,6 +33,7 @@ test.describe( 'Question page in place', () => {
 		await page.evaluate( () => ( window.easyqNoReload = true ) );
 
 		const text = 'This answer was sent in the background.';
+		await openAnswerForm( page );
 		await page.getByLabel( 'Your answer' ).fill( text );
 		await page.getByRole( 'button', { name: 'Answer' } ).click();
 
@@ -69,6 +74,7 @@ test.describe( 'Question page in place', () => {
 		await page.goto( questionUrl( question.id ) );
 		await page.evaluate( () => ( window.easyqNoReload = true ) );
 
+		await openAnswerForm( page );
 		await page.getByLabel( 'Your answer' ).fill( 'x' );
 		await page.getByRole( 'button', { name: 'Answer' } ).click();
 
@@ -79,6 +85,44 @@ test.describe( 'Question page in place', () => {
 		expect( await page.evaluate( () => window.easyqNoReload ) ).toBe(
 			true
 		);
+	} );
+
+	test( 'opens the answer form with the Answer button, with and without JavaScript', async ( {
+		browser,
+		page,
+		requestUtils,
+	} ) => {
+		const question = await ask( requestUtils, 'Answer button' );
+		await page.goto( questionUrl( question.id ) );
+		await page.evaluate( () => ( window.easyqNoReload = true ) );
+
+		const button = page.getByRole( 'link', {
+			name: 'Answer',
+			exact: true,
+		} );
+		await expect( button ).toHaveAttribute( 'aria-expanded', 'false' );
+		await expect( page.getByLabel( 'Your answer' ) ).toBeHidden();
+		await button.click();
+
+		await expect( page.getByLabel( 'Your answer' ) ).toBeFocused();
+		await expect( button ).toBeHidden();
+		expect( await page.evaluate( () => window.easyqNoReload ) ).toBe(
+			true
+		);
+
+		const context = await browser.newContext( {
+			javaScriptEnabled: false,
+			storageState: requestUtils.storageStatePath,
+		} );
+		const plain = await context.newPage();
+		await plain.goto(
+			`${ requestUtils.baseURL }${ questionUrl( question.id ) }`
+		);
+		await plain
+			.getByRole( 'link', { name: 'Answer', exact: true } )
+			.click();
+		await expect( plain.getByLabel( 'Your answer' ) ).toBeVisible();
+		await context.close();
 	} );
 
 	test( 'shows the latest comments and loads the earlier ones, with and without JavaScript', async ( {

@@ -13,6 +13,7 @@ use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
+use EasyQ\Frontend\URLs;
 use EasyQ\Mail\Notifications;
 use EasyQ\Mail\Unsubscribe;
 use EasyQ\Messages\Messages;
@@ -86,6 +87,15 @@ final class Forms {
 	public const EDIT_VAR = 'easyq_edit';
 
 	/**
+	 * Query variable that opens the answer form of a question when it is not shown right away.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWER_VAR = 'easyq_answer';
+
+	/**
 	 * Renders the form to ask a question.
 	 *
 	 * @since 0.1.0
@@ -102,7 +112,8 @@ final class Forms {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Prefills the title from the ask box.
 		$title = isset( $_GET['title'] ) && is_string( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : Flash::value( 'ask', 'title' );
 
-		$fields = self::field( 'ask', 'title', __( 'Your question in one sentence', 'easyq' ), 'text', $title, array( 'required' => 'required' ) )
+		$fields = self::custom_text( 'ask' )
+			. self::field( 'ask', 'title', __( 'Your question in one sentence', 'easyq' ), 'text', $title, array( 'required' => 'required' ) )
 			. self::field( 'ask', 'content', __( 'More information for the question', 'easyq' ), 'textarea', Flash::value( 'ask', 'content' ) );
 
 		if ( Post_Input::uses_categories() && array() !== Services::categories()->all() ) {
@@ -352,19 +363,74 @@ final class Forms {
 			? self::form(
 				'answer',
 				$question->id,
-				self::field( 'answer', 'content', __( 'Your answer', 'easyq' ), 'textarea', Flash::value( 'answer', 'content' ), array( 'required' => 'required' ) )
+				self::custom_text( 'answer' )
+				. self::field( 'answer', 'content', __( 'Your answer', 'easyq' ), 'textarea', Flash::value( 'answer', 'content' ), array( 'required' => 'required' ) )
 				. self::author_fields( 'answer', __( 'Email me if my answer is selected or commented on', 'easyq' ) ),
 				__( 'Answer', 'easyq' ),
 				array()
 			)
 			: self::permission_message( $reason );
 
+		$heading = sprintf( '<h2>%s</h2>', esc_html__( 'Your answer', 'easyq' ) );
+		if ( null !== $reason || self::answer_form_open( $question ) ) {
+			return sprintf( '<section %s id="easyq-answer-form">%s%s</section>', get_block_wrapper_attributes(), $heading, $body );
+		}
+
+		// An Answer button opens the form: without JavaScript as a link to the page with the form, with
+		// JavaScript in place, see src/view. The heading belongs to the form and appears with it.
+		$button = Render::outline_button(
+			sprintf(
+				'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="%s" rel="nofollow" aria-controls="easyq-answer-body" aria-expanded="false" data-wp-on--click="actions.openAnswer" data-wp-bind--aria-expanded="context.answerOpen">%s</a></div>',
+				esc_url( add_query_arg( self::ANSWER_VAR, $question->id, URLs::question( $question ) ) . '#easyq-answer-form' ),
+				esc_html__( 'Answer', 'easyq' )
+			)
+		);
+
 		return sprintf(
-			'<section %s id="easyq-answer-form"><h2>%s</h2>%s</section>',
+			'<section %s id="easyq-answer-form" data-wp-interactive="easyq" %s><div class="wp-block-buttons" data-wp-bind--hidden="context.answerOpen">%s</div><div id="easyq-answer-body" hidden data-wp-bind--hidden="!context.answerOpen" data-wp-watch="callbacks.focusAnswer">%s%s</div></section>',
 			get_block_wrapper_attributes(),
-			esc_html__( 'Your answer', 'easyq' ),
+			wp_interactivity_data_wp_context( array( 'answerOpen' => false ) ),
+			$button,
+			$heading,
 			$body
 		);
+	}
+
+	/**
+	 * Whether the answer form is shown right away, as `show_a_form_immediate` says.
+	 *
+	 * As in Question2Answer, "if no answers" does not count for the author of the question.
+	 * The form also opens when the page asks for it, or after a failed submission.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $question Question.
+	 * @return bool
+	 */
+	private static function answer_form_open( Post $question ): bool {
+		if ( self::requested( self::ANSWER_VAR ) === $question->id || '' !== Flash::error( 'answer', 'content' ) || '' !== Flash::value( 'answer', 'content' ) ) {
+			return true;
+		}
+
+		return match ( Options::get_string( 'viewing', 'show_a_form_immediate' ) ) {
+			'always' => true,
+			'never'  => false,
+			default  => 0 === $question->answer_count && ! Render::rules( $question )['by_user'],
+		};
+	}
+
+	/**
+	 * Returns the site owner's text above a form, from the posting settings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $form `ask`, `answer` or `comment`.
+	 * @return string
+	 */
+	private static function custom_text( string $form ): string {
+		$text = Options::get_bool( 'posting', 'show_custom_' . $form ) ? trim( Options::get_string( 'posting', 'custom_' . $form ) ) : '';
+
+		return '' === $text ? '' : sprintf( '<div>%s</div>', wp_kses_post( $text ) );
 	}
 
 	/**
@@ -393,7 +459,8 @@ final class Forms {
 			? self::form(
 				'comment',
 				$post->id,
-				self::field( 'comment', 'content', __( 'Your comment', 'easyq' ), 'textarea', '', array( 'required' => 'required' ), '', 'easyq-comment-' . $post->id )
+				self::custom_text( 'comment' )
+				. self::field( 'comment', 'content', __( 'Your comment', 'easyq' ), 'textarea', '', array( 'required' => 'required' ), '', 'easyq-comment-' . $post->id )
 				. self::author_fields( 'comment', __( 'Email me if a comment is added after mine', 'easyq' ), 'easyq-comment-' . $post->id ),
 				__( 'Add comment', 'easyq' ),
 				array()
@@ -533,7 +600,7 @@ final class Forms {
 	 * @return bool
 	 */
 	public static function opens_a_form(): bool {
-		return null !== self::requested( self::CLOSE_VAR ) || null !== self::requested( self::EDIT_VAR );
+		return null !== self::requested( self::CLOSE_VAR ) || null !== self::requested( self::EDIT_VAR ) || null !== self::requested( self::ANSWER_VAR );
 	}
 
 	/**

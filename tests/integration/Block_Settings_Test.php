@@ -9,15 +9,21 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
+use EasyQ\Blocks\Render\Forms;
 use EasyQ\Blocks\Render\Query_Resolver;
 use EasyQ\Frontend\Route;
 use EasyQ\Posts\Post;
+use EasyQ\Search\Indexed_Post;
+use EasyQ\Search\Search_Provider;
+use EasyQ\Search\Search_Result;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use WP_Block;
 
 /**
+ * @covers \EasyQ\Blocks\Render\Forms
  * @covers \EasyQ\Blocks\Render\Lists_Render
+ * @covers \EasyQ\Blocks\Render\Widgets
  * @covers \EasyQ\Blocks\Render\Post_Fields
  * @covers \EasyQ\Blocks\Render\Query_Resolver
  * @covers \EasyQ\Blocks\Render
@@ -30,7 +36,9 @@ final class Block_Settings_Test extends Test_Case {
 	}
 
 	public function tear_down(): void {
+		unset( $_GET['q'], $_GET[ Forms::ANSWER_VAR ] );
 		Block_Context::router()->set_current( null );
+		Services::reset();
 		Lists::reset();
 		parent::tear_down();
 	}
@@ -219,5 +227,200 @@ final class Block_Settings_Test extends Test_Case {
 		);
 		$this->assertStringContainsString( 'Asked by the chosen author', $html );
 		$this->assertStringNotContainsString( 'Asked by someone else', $html );
+	}
+
+	public function test_question_lists_take_the_page_size_of_their_source(): void {
+		$author = $this->user();
+		foreach ( array( 'First', 'Second', 'Third', 'Fourth', 'Fifth' ) as $word ) {
+			$this->ask( $author, $word . ' paging question about walruses', 'Text.', array( 'paging' ) );
+		}
+		Options::update(
+			'lists',
+			array(
+				'page_size_qs'     => 5,
+				'page_size_hot_qs' => 1,
+				'page_size_una_qs' => 2,
+				'page_size_tag_qs' => 3,
+				'page_size_search' => 4,
+			)
+		);
+		$count = static fn ( array $query ): int => count( Query_Resolver::questions( $query + array( 'inherit' => false ), 'size' )['ids'] );
+
+		$this->assertSame( 5, $count( array( 'source' => 'recent' ) ) );
+		$this->assertSame( 1, $count( array( 'source' => 'hot' ) ) );
+		$this->assertSame( 2, $count( array( 'source' => 'unanswered' ) ) );
+		$this->assertSame( 2, $count( array( 'source' => 'unselected' ) ) );
+		$this->assertSame( 3, $count( array( 'tag' => 'paging' ) ) );
+		// A page size of the block still wins.
+		$this->assertSame(
+			4,
+			$count(
+				array(
+					'source'  => 'hot',
+					'perPage' => 4,
+				)
+			)
+		);
+
+		Block_Context::router()->set_current( new Route( 'search' ) );
+		$_GET['q'] = 'walruses';
+		$this->assertSame( 4, count( Query_Resolver::questions( array( 'inherit' => true ), 'search' )['ids'] ) );
+	}
+
+	/**
+	 * Renders the answer form of a question for the current user.
+	 *
+	 * @param Post $question Question.
+	 * @return string
+	 */
+	private function answer_form( Post $question ): string {
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+
+		return do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- /wp:easyq/question -->' );
+	}
+
+	public function test_the_answer_form_is_shown_right_away_as_the_setting_says(): void {
+		$asker    = $this->user();
+		$question = $this->ask( $asker );
+		wp_set_current_user( (int) $this->user()->user_id );
+
+		// By default the form is shown while the question has no answers, as in Question2Answer.
+		$html = $this->answer_form( $question );
+		$this->assertStringContainsString( 'id="easyq-answer-content"', $html );
+		$this->assertStringNotContainsString( 'actions.openAnswer', $html );
+
+		$this->answer( $this->user(), $question );
+		$question = Services::posts()->find( $question->id );
+		$this->assertNotNull( $question );
+		$html = $this->answer_form( $question );
+		$this->assertStringContainsString( 'data-wp-on--click="actions.openAnswer"', $html );
+		$this->assertStringContainsString( 'aria-controls="easyq-answer-body" aria-expanded="false"', $html );
+		$this->assertStringContainsString( 'easyq_answer=' . $question->id, $html );
+		$this->assertMatchesRegularExpression( '/<div id="easyq-answer-body" hidden[^>]*>.*id="easyq-answer-content"/s', $html );
+
+		// The address of the button opens the form without JavaScript.
+		$_GET[ Forms::ANSWER_VAR ] = (string) $question->id;
+		$this->assertStringNotContainsString( 'actions.openAnswer', $this->answer_form( $question ) );
+		unset( $_GET[ Forms::ANSWER_VAR ] );
+
+		Options::update( 'viewing', array( 'show_a_form_immediate' => 'always' ) );
+		$this->assertStringNotContainsString( 'actions.openAnswer', $this->answer_form( $question ) );
+
+		// The author of the question gets the button while there are no answers, too.
+		Options::update( 'viewing', array( 'show_a_form_immediate' => 'if_no_as' ) );
+		wp_set_current_user( (int) $asker->user_id );
+		$unanswered = $this->ask( $asker, 'A question nobody answered yet' );
+		$this->assertStringContainsString( 'actions.openAnswer', $this->answer_form( $unanswered ) );
+
+		Options::update( 'viewing', array( 'show_a_form_immediate' => 'never' ) );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertStringContainsString( 'actions.openAnswer', $this->answer_form( $unanswered ) );
+	}
+
+	public function test_forms_show_the_site_owners_text_above_them(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		wp_set_current_user( (int) $this->user()->user_id );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$forms = static fn (): string => do_blocks( '<!-- wp:easyq/ask-form /-->' )
+			. do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->' );
+
+		Options::update(
+			'posting',
+			array(
+				'custom_ask'     => '<p>Search <strong>first</strong>.</p><script>alert(1)</script>',
+				'custom_answer'  => '<p>Answer kindly.</p>',
+				'custom_comment' => '<p>Comment briefly.</p>',
+			)
+		);
+		$this->assertStringNotContainsString( 'Answer kindly.', $forms() );
+
+		Options::update(
+			'posting',
+			array(
+				'show_custom_ask'     => true,
+				'show_custom_answer'  => true,
+				'show_custom_comment' => true,
+			)
+		);
+		$_GET[ Forms::ANSWER_VAR ] = (string) $question->id;
+		$html                      = $forms();
+		$this->assertStringContainsString( '<div><p>Search <strong>first</strong>.</p>alert(1)</div>', $html );
+		$this->assertStringNotContainsString( '<script>', $html );
+		$this->assertMatchesRegularExpression( '/<div><p>Answer kindly\.<\/p><\/div>.*id="easyq-answer-content"/s', $html );
+		$this->assertMatchesRegularExpression( '/<div><p>Comment briefly\.<\/p><\/div>.*id="easyq-comment-' . $answer->id . '-content"/s', $html );
+	}
+
+	public function test_the_author_shows_their_title_unless_turned_off(): void {
+		Options::update( 'points', array( 'user_titles' => array( 0 => 'Walrus keeper' ) ) );
+		$question = $this->ask( $this->user() );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$author = static fn ( string $attributes = '' ): string => do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-author ' . $attributes . ' /--><!-- /wp:easyq/question -->' );
+
+		$this->assertStringContainsString( '<span>Walrus keeper</span>', $author() );
+		$this->assertStringNotContainsString( 'Walrus keeper', $author( '{"showTitle":false}' ) );
+
+		Options::update( 'viewing', array( 'show_user_titles' => false ) );
+		$this->assertStringNotContainsString( 'Walrus keeper', $author() );
+	}
+
+	public function test_related_questions_must_match_as_closely_as_the_setting_says(): void {
+		$question = $this->ask( $this->user(), 'Feeding the walrus module' );
+		$close    = $this->ask( $this->user(), 'A closely related question' );
+		$loose    = $this->ask( $this->user(), 'A loosely related question' );
+
+		// A search provider with fixed scores, as the scores of the built-in search depend on all posts.
+		$provider = new class( array(
+			$close->id => 7.0,
+			$loose->id => 3.0,
+		) ) implements Search_Provider {
+			/**
+			 * @param array<int, float> $scores Scores by question ID.
+			 */
+			public function __construct( private readonly array $scores ) {
+			}
+
+			public function id(): string {
+				return 'fixed';
+			}
+
+			public function label(): string {
+				return 'Fixed';
+			}
+
+			public function index_post( Indexed_Post $post ): void {
+			}
+
+			public function unindex_post( int $post_id ): void {
+			}
+
+			public function move_post( int $post_id, ?int $category_id ): void {
+			}
+
+			public function search( string $query, int $start, int $count, ?int $user_id ): array {
+				$results = array();
+				foreach ( $this->scores as $id => $score ) {
+					$results[] = new Search_Result( $id, $score, 'Q', $id );
+				}
+
+				return $results;
+			}
+		};
+		add_filter( 'easyq_search_providers', static fn ( array $providers ): array => array_merge( $providers, array( $provider ) ) );
+		Services::reset();
+		Options::update( 'lists', array( 'search_provider' => 'fixed' ) );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$related = static fn (): string => do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/related-questions /--><!-- /wp:easyq/question -->' );
+
+		// The default needs a score of 4, as `qa_match_to_min_score()` gives for 3.
+		$html = $related();
+		$this->assertStringContainsString( 'A closely related question', $html );
+		$this->assertStringNotContainsString( 'A loosely related question', $html );
+
+		Options::update( 'viewing', array( 'match_related_qs' => 5 ) );
+		$this->assertStringContainsString( 'A loosely related question', $related() );
+
+		Options::update( 'viewing', array( 'match_related_qs' => 1 ) );
+		$this->assertStringNotContainsString( 'related question', $related() );
 	}
 }

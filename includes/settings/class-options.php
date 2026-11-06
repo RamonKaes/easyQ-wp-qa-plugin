@@ -17,7 +17,8 @@ defined( 'ABSPATH' ) || exit;
  * Stores settings grouped by section, one option per section.
  *
  * Stored values are merged with the defaults, so new settings work without an
- * upgrade routine. Unknown stored keys are ignored. Setting names follow the
+ * upgrade routine. Unknown stored keys are ignored and dropped with the next save,
+ * so removed settings need no upgrade routine either. Setting names follow the
  * Question2Answer option names, see docs/feature-mapping.md.
  *
  * @since 0.1.0
@@ -32,6 +33,15 @@ final class Options {
 	 * @var string
 	 */
 	public const OPTION_PREFIX = 'easyq_settings_';
+
+	/**
+	 * Whether the plugin itself is saving a section through update(), see Fields::sanitize().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var bool
+	 */
+	private static bool $updating = false;
 
 	/**
 	 * Returns the default values of all sections.
@@ -58,7 +68,6 @@ final class Options {
 			),
 			'permissions' => array(
 				'permit_view_q_page'                    => Permits::ALL,
-				'allow_view_q_bots'                     => true,
 				'permit_post_q'                         => Permits::USERS,
 				'permit_post_a'                         => Permits::USERS,
 				'permit_post_c'                         => Permits::USERS,
@@ -170,31 +179,36 @@ final class Options {
 				'match_example_tags'        => 3,
 				'do_complete_tags'          => true,
 				'page_size_ask_tags'        => 5,
+				'show_custom_ask'           => false,
+				'custom_ask'                => '',
+				'show_custom_answer'        => false,
+				'custom_answer'             => '',
+				'show_custom_comment'       => false,
+				'custom_comment'            => '',
 			),
 			'viewing'     => array(
-				'voting_on_qs'           => true,
-				'voting_on_q_page_only'  => false,
-				'voting_on_as'           => true,
-				'voting_on_cs'           => false,
-				'votes_separated'        => false,
-				'do_count_q_views'       => true,
-				'recalc_hotness_q_view'  => true,
-				'show_url_links'         => true,
-				'links_in_new_window'    => false,
-				'q_urls_title_length'    => 50,
-				'show_when_created'      => true,
-				'show_full_date_days'    => 7,
-				'show_user_points'       => true,
-				'show_post_update_meta'  => true,
-				'show_view_counts'       => false,
-				'show_view_count_q_page' => false,
-				'show_compact_numbers'   => true,
-				'sort_answers_by'        => 'created',
-				'show_selected_first'    => true,
-				'page_size_q_as'         => 10,
-				'show_fewer_cs_from'     => 10,
-				'show_fewer_cs_count'    => 5,
-				'sitemap_users'          => false,
+				'voting_on_qs'          => true,
+				'voting_on_as'          => true,
+				'voting_on_cs'          => false,
+				'votes_separated'       => false,
+				'do_count_q_views'      => true,
+				'recalc_hotness_q_view' => true,
+				'show_url_links'        => true,
+				'links_in_new_window'   => false,
+				'q_urls_title_length'   => 50,
+				'show_full_date_days'   => 7,
+				'show_user_points'      => true,
+				'show_user_titles'      => true,
+				'show_post_update_meta' => true,
+				'show_compact_numbers'  => true,
+				'sort_answers_by'       => 'created',
+				'show_selected_first'   => true,
+				'page_size_q_as'        => 10,
+				'show_a_form_immediate' => 'if_no_as',
+				'show_fewer_cs_from'    => 10,
+				'show_fewer_cs_count'   => 5,
+				'match_related_qs'      => 3,
+				'sitemap_users'         => false,
 			),
 			'lists'       => array(
 				'hot_weight_q_age'   => 100,
@@ -205,6 +219,9 @@ final class Options {
 				'search_provider'    => 'basic',
 				'page_size_home'     => 20,
 				'page_size_qs'       => 20,
+				'page_size_hot_qs'   => 20,
+				'page_size_una_qs'   => 20,
+				'page_size_tag_qs'   => 20,
 				'page_size_search'   => 10,
 				'page_size_tags'     => 30,
 				'page_size_users'    => 30,
@@ -405,7 +422,26 @@ final class Options {
 	 * @param array<string, mixed> $values  New values keyed by setting name.
 	 */
 	public static function update( string $section, array $values ): void {
-		update_option( self::option_name( $section ), array_merge( self::get_section( $section ), $values ) );
+		self::$updating = true;
+		try {
+			update_option( self::option_name( $section ), array_merge( self::get_section( $section ), $values ) );
+		} finally {
+			self::$updating = false;
+		}
+	}
+
+	/**
+	 * Whether the current save comes from update(), so settings without a field may change too.
+	 *
+	 * Settings without a field are not part of the settings screen or the REST schema; only
+	 * the plugin itself sets them, through update().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return bool
+	 */
+	public static function updating(): bool {
+		return self::$updating;
 	}
 
 	/**

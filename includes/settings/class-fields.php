@@ -136,8 +136,10 @@ final class Fields {
 	/**
 	 * Sanitizes the values of a section before they are stored.
 	 *
-	 * Values without a field are kept as passed, values of fields that are invalid
-	 * keep their stored value. A field that is not passed keeps its stored value too.
+	 * Values of fields that are invalid keep their stored value. Settings without a
+	 * field, such as those of features still to come, keep their stored value too,
+	 * unless the plugin sets them through Options::update(); submitted keys that are
+	 * no setting at all are dropped. A field that is not passed keeps its stored value.
 	 *
 	 * @since 0.1.0
 	 *
@@ -157,7 +159,12 @@ final class Fields {
 				continue;
 			}
 
-			$values[ $key ] = isset( $fields[ $key ] ) ? self::sanitize_value( $fields[ $key ], $input[ $key ], $current ) : $input[ $key ];
+			if ( isset( $fields[ $key ] ) ) {
+				$values[ $key ] = self::sanitize_value( $fields[ $key ], $input[ $key ], $current );
+			} elseif ( Options::updating() && gettype( $input[ $key ] ) === gettype( $current ) ) {
+				// Settings without a field change only through Options::update(), and keep their type.
+				$values[ $key ] = $input[ $key ];
+			}
 		}
 
 		return $values;
@@ -771,6 +778,21 @@ final class Fields {
 			'do_example_tags'           => self::bool( __( 'Suggest tags from similar questions while asking', 'easyq' ) ),
 			'match_example_tags'        => self::choice( __( 'Example tags matching', 'easyq' ), self::match_choices() ) + array( 'short' => __( 'how closely the questions must match', 'easyq' ) ),
 			'page_size_ask_tags'        => self::int( __( 'Number of suggested tags', 'easyq' ), 3, 50 ),
+			'show_custom_ask'           => self::bool( __( 'Show a text above the ask form', 'easyq' ) ),
+			'custom_ask'                => array(
+				'type'  => 'html',
+				'label' => __( 'Text above the ask form, HTML allowed', 'easyq' ),
+			),
+			'show_custom_answer'        => self::bool( __( 'Show a text above the answer form', 'easyq' ) ),
+			'custom_answer'             => array(
+				'type'  => 'html',
+				'label' => __( 'Text above the answer form, HTML allowed', 'easyq' ),
+			),
+			'show_custom_comment'       => self::bool( __( 'Show a text above the comment form', 'easyq' ) ),
+			'custom_comment'            => array(
+				'type'  => 'html',
+				'label' => __( 'Text above the comment form, HTML allowed', 'easyq' ),
+			),
 		);
 	}
 
@@ -796,6 +818,7 @@ final class Fields {
 			'links_in_new_window'   => self::bool( __( 'Open links in posts in a new window', 'easyq' ) ),
 			'show_full_date_days'   => self::int( __( 'Show the full date after this many days', 'easyq' ) ),
 			'show_user_points'      => self::bool( __( 'Show the points of authors', 'easyq' ) ),
+			'show_user_titles'      => self::bool( __( 'Show the titles of authors', 'easyq' ), __( 'The titles are set with the points.', 'easyq' ) ),
 			'show_post_update_meta' => self::bool( __( 'Show when and by whom a post was changed', 'easyq' ) ),
 			'show_compact_numbers'  => self::bool( __( 'Show large numbers in short form, e.g. 1.2k', 'easyq' ) ),
 			'sort_answers_by'       => self::choice(
@@ -807,8 +830,18 @@ final class Fields {
 			) + array( 'short' => __( 'decides the order of answers', 'easyq' ) ),
 			'show_selected_first'   => self::bool( __( 'Show the selected answer first', 'easyq' ) ),
 			'page_size_q_as'        => self::int( __( 'Answers per page', 'easyq' ), 1, 50 ),
+			'show_a_form_immediate' => self::choice(
+				__( 'Show the answer form', 'easyq' ),
+				array(
+					'always'   => __( 'Always', 'easyq' ),
+					'if_no_as' => __( 'While the question has no answers', 'easyq' ),
+					'never'    => __( 'Only after clicking Answer', 'easyq' ),
+				),
+				__( 'Otherwise an Answer button opens it. The author of the question gets the button unless the form is always shown.', 'easyq' )
+			) + array( 'short' => __( 'shows the answer form', 'easyq' ) ),
 			'show_fewer_cs_from'    => self::int( __( 'Shorten comment lists from this many comments', 'easyq' ), 1 ),
 			'show_fewer_cs_count'   => self::int( __( 'Comments shown in a shortened list', 'easyq' ), 1 ),
+			'match_related_qs'      => self::choice( __( 'Related questions matching', 'easyq' ), self::match_choices() ) + array( 'short' => __( 'how closely they must match', 'easyq' ) ),
 			'sitemap_users'         => self::bool( __( 'List user profiles in the sitemaps', 'easyq' ) ),
 		);
 	}
@@ -826,6 +859,10 @@ final class Fields {
 		$fields = array(
 			'page_size_home'     => self::int( __( 'Items on the start page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Start page', 'easyq' ) ),
 			'page_size_qs'       => self::int( __( 'Questions per page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Questions', 'easyq' ) ),
+			'page_size_hot_qs'   => self::int( __( 'Hot questions per page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Hot questions', 'easyq' ) ),
+			'page_size_una_qs'   => self::int( __( 'Unanswered questions per page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Unanswered', 'easyq' ) ),
+			'page_size_tag_qs'   => self::int( __( 'Questions per page of a tag', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Tag pages', 'easyq' ) ),
+			'page_size_search'   => self::int( __( 'Search results per page', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Search', 'easyq' ) ),
 			'page_size_activity' => self::int( __( 'Items per page of the activity list', 'easyq' ), 1, 50 ) + array( 'short' => __( 'Activity', 'easyq' ) ),
 			'page_size_tags'     => self::int( __( 'Tags per page', 'easyq' ), 1, 200 ) + array( 'short' => __( 'Tags', 'easyq' ) ),
 			'page_size_users'    => self::int( __( 'Users per page', 'easyq' ), 1, 200 ) + array( 'short' => __( 'Users', 'easyq' ) ),

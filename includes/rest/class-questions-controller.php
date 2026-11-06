@@ -11,6 +11,7 @@ namespace EasyQ\REST;
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Question_Query;
+use EasyQ\Search\Search;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use WP_Error;
@@ -389,7 +390,7 @@ final class Questions_Controller extends Controller {
 				}
 				arsort( $weights, SORT_NUMERIC );
 
-				$min_weight = exp( self::min_score( Options::get_int( 'posting', 'match_example_tags' ) ) );
+				$min_weight = exp( Search::min_score( Options::get_int( 'posting', 'match_example_tags' ) ) );
 				foreach ( $weights as $tag => $weight ) {
 					if ( $weight < $min_weight || count( $tags ) >= Options::get_int( 'posting', 'page_size_ask_tags' ) ) {
 						break;
@@ -399,7 +400,7 @@ final class Questions_Controller extends Controller {
 			}
 
 			if ( $check ) {
-				$min_score = self::min_score( Options::get_int( 'posting', 'match_ask_check_qs' ) );
+				$min_score = Search::min_score( Options::get_int( 'posting', 'match_ask_check_qs' ) );
 				$similar   = array();
 
 				foreach ( array_slice( $results, 0, Options::get_int( 'posting', 'page_size_ask_check_qs' ) ) as $result ) {
@@ -529,17 +530,5 @@ final class Questions_Controller extends Controller {
 		}
 
 		return $this->created_post( $post, $actor, $queued, $this->rest_base . '/' . $id, $request );
-	}
-
-	/**
-	 * Converts the "match" setting (1–5) into the minimum search score, as in Question2Answer.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int $setting Setting value.
-	 * @return float
-	 */
-	private static function min_score( int $setting ): float {
-		return 10 - 2 * $setting;
 	}
 }

@@ -72,10 +72,15 @@ final class Query_Resolver {
 		$source   = is_string( $args['source'] ?? null ) ? $args['source'] : 'recent';
 		$page_var = ! empty( $query['inherit'] ) ? Lists::MAIN_PAGE_VAR : 'easyq_page_' . $list_id;
 		$page     = Lists::requested_page( $page_var );
-		$default  = match ( true ) {
-			'recent_qa' === $source             => Options::get_int( 'lists', 'page_size_home' ),
-			isset( self::ACTIVITY[ $source ] ) => Options::get_int( 'lists', 'page_size_activity' ),
-			default                            => Options::get_int( 'lists', 'page_size_qs' ),
+		// The page size of the list, as Question2Answer has one for each of its question pages.
+		$default = match ( true ) {
+			isset( $args['search'] )                    => Options::get_int( 'lists', 'page_size_search' ),
+			'recent_qa' === $source                     => Options::get_int( 'lists', 'page_size_home' ),
+			isset( self::ACTIVITY[ $source ] )          => Options::get_int( 'lists', 'page_size_activity' ),
+			'hot' === $source                           => Options::get_int( 'lists', 'page_size_hot_qs' ),
+			in_array( $source, self::UNANSWERED, true ) => Options::get_int( 'lists', 'page_size_una_qs' ),
+			isset( $args['tag'] )                       => Options::get_int( 'lists', 'page_size_tag_qs' ),
+			default                                     => Options::get_int( 'lists', 'page_size_qs' ),
 		};
 		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : $default;
 		$per_page = max( 1, min( Question_Query::MAX_PER_PAGE, $per_page ) );

@@ -276,7 +276,7 @@ final class Post_Fields {
 	}
 
 	/**
-	 * Renders the author with avatar and points.
+	 * Renders the author with avatar, title and points.
 	 *
 	 * @since 0.1.0
 	 *
@@ -301,6 +301,12 @@ final class Post_Fields {
 		}
 
 		$html .= false === $user ? sprintf( '<span>%s</span>', $name ) : sprintf( '<a href="%s">%s</a>', esc_url( URLs::user( $user ) ), $name );
+
+		// The title of the user's level or points, as Question2Answer shows it after the name.
+		if ( false !== $user && ( $attributes['showTitle'] ?? true ) && Options::get_bool( 'viewing', 'show_user_titles' ) ) {
+			$title = Services::user_titles()->title( $user->ID );
+			$html .= '' === $title ? '' : sprintf( '<span>%s</span>', esc_html( $title ) );
+		}
 
 		if ( false !== $user && ( $attributes['showPoints'] ?? true ) && Options::get_bool( 'viewing', 'show_user_points' ) ) {
 			$points = Services::points()->get( $user->ID );

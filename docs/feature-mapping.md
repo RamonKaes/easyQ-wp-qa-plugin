@@ -408,17 +408,22 @@ All options are dropped; the block theme and the Site Editor handle layout.
 | --- | --- |
 | `q_urls_title_length` | **P** |
 | `q_urls_remove_accents` | **WP** `sanitize_title()` always removes accents |
-| `do_count_q_views`, `show_view_counts`, `show_view_count_q_page`, `recalc_hotness_q_view` | **P** (view counting without storing IPs, section 11) |
-| `voting_on_qs`, `voting_on_q_page_only`, `voting_on_as`, `voting_on_cs`, `votes_separated` | **P** |
+| `do_count_q_views`, `recalc_hotness_q_view` | **P** (view counting without storing IPs, section 11) |
+| `show_view_counts`, `show_view_count_q_page` | **WP** placing the View Count block in the list or question template |
+| `voting_on_qs`, `voting_on_as`, `voting_on_cs`, `votes_separated` | **P** |
+| `voting_on_q_page_only` | **WP** placing the Votes block only in the question template |
 | `show_url_links`, `links_in_new_window` | **P** |
-| `show_when_created`, `show_full_date_days` | **P** (date format from WP) |
-| `show_user_titles`, `show_user_points` | **P** |
+| `show_full_date_days` | **P** (date format from WP) |
+| `show_when_created` | **WP** placing the Post Date block |
+| `show_user_titles`, `show_user_points` | **P**; the Post Author block can turn each off |
 | `show_post_update_meta`, `show_compact_numbers` | **P** |
 | `use_microdata` | **P** as JSON-LD `QAPage` |
 | `minify_html` | **–** (job of caching/optimization plugins) |
-| `sort_answers_by`, `show_selected_first`, `page_size_q_as`, `show_a_form_immediate` | **P** as block defaults |
+| `sort_answers_by`, `show_selected_first`, `page_size_q_as` | **P** as block defaults |
+| `show_a_form_immediate` | **P**; otherwise an Answer button opens the form, in place with JavaScript, as a link without |
 | `show_fewer_cs_from`, `show_fewer_cs_count`, `show_c_reply_buttons` | **P** |
-| `match_related_qs`, `page_size_related_qs` | **P** as defaults of `easyq/related-questions` |
+| `match_related_qs` | **P** for `easyq/related-questions` |
+| `page_size_related_qs` | **P** as the `count` of `easyq/related-questions` |
 | `pages_prev_next` | **P** |
 | `sitemap_users` (new, off by default) | **N** user profiles in the sitemaps (section 3) |
 
@@ -426,7 +431,7 @@ All options are dropped; the block theme and the Site Editor handle layout.
 
 | Option | Target |
 | --- | --- |
-| `page_size_home`, `page_size_activity`, `page_size_qs`, `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search` | **P** as block defaults |
+| `page_size_home`, `page_size_activity`, `page_size_qs`, `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search` | **P** as defaults of the question lists by source (hot, the three unanswered lists, tag pages, search) |
 | `page_size_tags`, `columns_tags`, `page_size_users`, `columns_users` | **P** as block defaults |
 | `search_module` | **P** as a search provider interface; the choice appears once a provider is registered |
 | `hot_weight_q_age`, `hot_weight_a_age`, `hot_weight_answers`, `hot_weight_votes`, `hot_weight_views` | **P** |
@@ -453,13 +458,15 @@ All options are dropped; the block theme and the Site Editor handle layout.
 ### 5.9 Settings → Permissions (`admin/permissions`)
 
 All **P**, each with a minimum level and, where applicable, minimum points (`*_points`):
-`permit_view_q_page` (+ `allow_view_q_bots`), `permit_post_q`, `permit_post_a`,
+`permit_view_q_page`, `permit_post_q`, `permit_post_a`,
 `permit_post_c`, `permit_vote_q`, `permit_vote_a`, `permit_vote_c`, `permit_vote_down`,
 `permit_retag_cat`, `permit_edit_q`, `permit_edit_a`, `permit_edit_c`,
 `permit_edit_silent`, `permit_close_q`, `permit_select_a`, `permit_anon_view_ips`,
 `permit_view_voters_flaggers`, `permit_flag`, `permit_moderate`, `permit_hide_show`,
 `permit_delete_hidden`, `permit_view_new_users_page`, `permit_view_special_users_page`,
 `permit_post_wall`.
+`allow_view_q_bots` is **–**: easyQ does not tell search engines from visitors, so they see
+what visitors see; `noindex` and the sitemaps decide what is indexed.
 
 ### 5.10 Settings → Feeds (`admin/feeds`)
 
@@ -698,7 +705,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 3 Users and permissions | Levels, role mapping, `map_meta_cap`, profile integration, approval/blocking, avatars, profile fields | Permission matrix fully tested | Done |
 | 4 REST API | Endpoints from section 6 | Integration test per endpoint including permission and validation errors | Done (favorites, notices, wall and messages follow in phase 7) |
 | 5 Frontend | Routing, block templates, all blocks, bindings, Interactivity API, feeds, SEO | All Q2A pages rebuilt; E2E tests for the main flows; axe clean; theme compatibility checks pass | Done: all Q2A pages of this phase, feeds, sitemaps, navigation links, block patterns, in-place answering and comments, `noindex` for empty lists, classic theme fallback; E2E tests with axe in Twenty Twenty-Five, -Four, -Three, -Two (block themes) and Twenty Twenty-One, Twenty Twenty (classic). Favorites, updates, messages, wall, feedback and unsubscribe follow with their features in phase 7. Addendum 2026-11: block supports, keywords and variations aligned with the core blocks; heading level in the toolbar; number settings bounded by `minimum` and `maximum` in `block.json` (decision 67) |
-| 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | Done: profile and users screens in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API); 6e done (dashboard, dashboard widget and tools, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `allow_view_q_bots`, `do_complete_tags`, `voting_on_q_page_only`, `show_when_created`, `show_view_counts`, `show_view_count_q_page`, `page_size_search` |
+| 6 Admin | Section 5 without the email parts, in blocks: 6a menu and settings tabs (5.2, 5.4, 5.6–5.11); 6b categories; 6c moderation list and IP screen; 6d points, user titles, user fields (5.13); 6e dashboard and tools | Every Q2A option mapped and tested; E2E tests for admin flows | Done: profile and users screens in phase 3; 6a done (settings screen, also through `/wp/v2/settings`); 6b done (categories screen, also through the REST API); 6c done (moderation list and IP addresses, also through the REST API); 6d done (points, user titles and user fields, also through the REST API); 6e done (dashboard, dashboard widget and tools, also through the REST API). A setting gets a field once its feature works; still without effect and therefore not on the screen: `do_complete_tags`. Addendum 2026-11: page sizes of hot, unanswered, tag and search lists, the answer form shown right away or behind an Answer button, texts above the ask, answer and comment forms, user titles with authors and the matching of related questions; settings replaced by block placement or without a feature removed; submitted values without a field are dropped (decision 68). Still open from Q2A: the extra question field (`extra_field_*`), `pages_prev_next`, avatar sizes as site defaults, `show_c_reply_buttons` |
 | 7 Communication | Emails and templates, email settings (5.3), notifications, private messages, wall, favorites, updates, notices, newsletter (5.12), in blocks: 7a mail foundation, notifications, email settings tab, welcome text; 7b template editor; 7c favorites, updates with the tool to refill events, notices; 7d private messages and wall; 7e feedback, newsletter, unsubscribe. Each block brings the REST endpoints, docs, and the privacy exporter and eraser of its data | Mails captured and asserted in tests; export and erasure tested per block; each block follows its core model in all parts (decision 52) | 7a to 7e done |
 | 8 Privacy and tooling | Section 11: privacy policy text, exporters and erasers of posts, votes, flags and profile data (those of phase 7 data come with phase 7), IP retention; registration text, terms with stored consent and blocked user names (5.4); WP-CLI, Site Health | Export/erasure tested; retention cron tested | Open |
 | 9 Translation and release | `.pot`, `de_DE`, `de_DE_formal`, `readme.txt`, screenshots, developer docs | Plugin Check without findings; reproducible release ZIP | Open |
@@ -777,3 +784,4 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 65 | The feedback form follows Q2A and `wp_notify_moderator()`: a plain mail to the site owner with `Reply-To` set to the sender. The browser of the sender is left out of the mail, as nobody needs it to answer; the IP address stays for abuse. A rate limit of its own protects the form until the captcha of phase 10 (decision 56). Nothing of the feedback is stored but the counts of the limit | 2026-11-06 |
 | 66 | The newsletter goes only to users who subscribed on their account page and confirmed by email, unlike Q2A, which mails everyone who did not opt out. The confirmation does not use `wp_send_user_request()` as decision 52 planned: core only allows its own two request types (`_wp_privacy_action_request_types()`, without a filter). It follows core's confirmation of a new email address instead: a random key, stored only as a hash, with the expiry of core's request keys; it is confirmed with a button, as mail scanners open links. The time of the consent is kept. Sending runs in batches of `mailing_per_minute` by `wp_schedule_single_event()` | 2026-11-06 |
 | 67 | Every block declares the block supports of its core counterpart (`post-title`, `post-terms`, `post-template`, `comments`, `group`, `avatar` and others): anchor, gradients, the full typography set, border, text alignment on text blocks, block gap on flex rows, alignment on containers; `get_block_wrapper_attributes()` renders them, so nothing changes in the render code. Keywords on every block, variations for the question and user lists, the heading level in the toolbar as on core headings | 2026-11-06 |
+| 68 | Phase 6 addendum: the Q2A settings `page_size_hot_qs`, `page_size_una_qs`, `page_size_tag_qs`, `page_size_search`, `show_a_form_immediate`, `show_custom_ask`/`_answer`/`_comment` with their texts, `show_user_titles` and `match_related_qs` get fields and readers, with the Q2A defaults. `voting_on_q_page_only`, `show_when_created`, `show_view_counts` and `show_view_count_q_page` are removed, as placing the blocks does their job, and `allow_view_q_bots`, as there is no bot detection; stored values vanish with the next save. The answer button opens the form in place with JavaScript and through `?easyq_answer={id}` without, which is not indexed, like the edit and close states. Settings without a field change only through `Options::update()`; submitted values for them are dropped | 2026-11-06 |

@@ -4,7 +4,7 @@
 	"name": "easyq/post-author",
 	"title": "Post Author",
 	"category": "easyq",
-	"description": "Who wrote a post, with avatar and points.",
+	"description": "Who wrote a post, with avatar, title and points.",
 	"keywords": [
 		"author",
 		"user",
@@ -22,6 +22,10 @@
 			"default": 24,
 			"minimum": 16,
 			"maximum": 200
+		},
+		"showTitle": {
+			"type": "boolean",
+			"default": true
 		},
 		"showPoints": {
 			"type": "boolean",

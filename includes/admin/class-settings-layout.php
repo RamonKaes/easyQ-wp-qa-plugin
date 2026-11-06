@@ -193,6 +193,17 @@ final class Settings_Layout {
 						self::row( __( 'Tag suggestions', 'easyq' ), array( 'do_example_tags', 'match_example_tags', 'page_size_ask_tags' ) ),
 					)
 				),
+				self::section(
+					__( 'Texts above the forms', 'easyq' ),
+					array(
+						self::row( __( 'Ask form', 'easyq' ), array( 'show_custom_ask' ) ),
+						'custom_ask',
+						self::row( __( 'Answer form', 'easyq' ), array( 'show_custom_answer' ) ),
+						'custom_answer',
+						self::row( __( 'Comment form', 'easyq' ), array( 'show_custom_comment' ) ),
+						'custom_comment',
+					)
+				),
 			),
 			'viewing'     => array(
 				self::section(
@@ -200,22 +211,23 @@ final class Settings_Layout {
 					array(
 						self::row( __( 'Addresses', 'easyq' ), array( 'q_urls_title_length' ) ),
 						self::row( __( 'Links', 'easyq' ), array( 'show_url_links', 'links_in_new_window' ) ),
-						self::row( __( 'Shown with posts', 'easyq' ), array( 'show_user_points', 'show_post_update_meta', 'show_compact_numbers', 'show_full_date_days' ) ),
+						self::row( __( 'Shown with posts', 'easyq' ), array( 'show_user_points', 'show_user_titles', 'show_post_update_meta', 'show_compact_numbers', 'show_full_date_days' ) ),
 						self::row( __( 'Views', 'easyq' ), array( 'do_count_q_views', 'recalc_hotness_q_view' ) ),
+						self::row( __( 'Related questions', 'easyq' ), array( 'match_related_qs' ) ),
 					)
 				),
 				self::section( __( 'Voting', 'easyq' ), array( self::row( __( 'Votes', 'easyq' ), array( 'voting_on_qs', 'voting_on_as', 'voting_on_cs', 'votes_separated' ) ) ) ),
 				self::section(
 					__( 'Answers and comments', 'easyq' ),
 					array(
-						self::row( __( 'Answers', 'easyq' ), array( 'sort_answers_by', 'show_selected_first', 'page_size_q_as' ) ),
+						self::row( __( 'Answers', 'easyq' ), array( 'sort_answers_by', 'show_selected_first', 'page_size_q_as', 'show_a_form_immediate' ) ),
 						self::row( __( 'Comments', 'easyq' ), array( 'show_fewer_cs_from', 'show_fewer_cs_count' ) ),
 					)
 				),
 				self::section( __( 'Search engines', 'easyq' ), array( self::row( __( 'Sitemaps', 'easyq' ), array( 'sitemap_users' ) ) ) ),
 			),
 			'lists'       => array(
-				self::section( '', array( self::row( __( 'Items per page', 'easyq' ), array( 'page_size_home', 'page_size_qs', 'page_size_activity', 'page_size_tags', 'page_size_users' ) ), 'search_provider' ) ),
+				self::section( '', array( self::row( __( 'Items per page', 'easyq' ), array( 'page_size_home', 'page_size_qs', 'page_size_hot_qs', 'page_size_una_qs', 'page_size_tag_qs', 'page_size_search', 'page_size_activity', 'page_size_tags', 'page_size_users' ) ), 'search_provider' ) ),
 				self::section(
 					__( 'Hot questions', 'easyq' ),
 					array( self::row( __( 'Weights', 'easyq' ), array( 'hot_weight_q_age', 'hot_weight_a_age', 'hot_weight_answers', 'hot_weight_votes', 'hot_weight_views' ) ) ),

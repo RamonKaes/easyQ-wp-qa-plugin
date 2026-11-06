@@ -29,6 +29,7 @@ const LABELS = {
 	showModified: __( 'Show when the post was edited', 'easyq' ),
 	showAvatar: __( 'Show avatar', 'easyq' ),
 	avatarSize: __( 'Avatar size', 'easyq' ),
+	showTitle: __( 'Show title', 'easyq' ),
 	showPoints: __( 'Show points', 'easyq' ),
 	separator: __( 'Separator', 'easyq' ),
 	prefix: __( 'Prefix', 'easyq' ),

@@ -200,6 +200,81 @@ final class Settings_Test extends Test_Case {
 		$this->assertTrue( Options::get_bool( 'spam', 'flagging_of_posts' ) );
 	}
 
+	public function test_drops_submitted_values_without_a_field(): void {
+		update_option(
+			Options::option_name( 'spam' ),
+			array(
+				'ip_retention_days' => 1,
+				'no_such_setting'   => 'x',
+				'moderate_users'    => true,
+			)
+		);
+		$stored = get_option( Options::option_name( 'spam' ) );
+
+		$this->assertIsArray( $stored );
+		$this->assertSame( 30, $stored['ip_retention_days'] );
+		$this->assertArrayNotHasKey( 'no_such_setting', $stored );
+		$this->assertTrue( $stored['moderate_users'] );
+
+		// The plugin itself still sets them, with the type of their default.
+		Options::update( 'spam', array( 'ip_retention_days' => 7 ) );
+		Options::update( 'spam', array( 'ip_retention_days' => 'seven' ) );
+		$this->assertSame( 7, Options::get( 'spam', 'ip_retention_days' ) );
+	}
+
+	public function test_removed_settings_disappear_with_the_next_save(): void {
+		update_option( Options::option_name( 'viewing' ), array( 'show_view_counts' => true ) + Options::get_section( 'viewing' ) );
+		$this->assertNull( Options::get( 'viewing', 'show_view_counts' ) );
+
+		Options::update( 'viewing', array( 'page_size_q_as' => 12 ) );
+		$stored = get_option( Options::option_name( 'viewing' ) );
+		$this->assertIsArray( $stored );
+		$this->assertArrayNotHasKey( 'show_view_counts', $stored );
+
+		foreach ( array( 'allow_view_q_bots', 'voting_on_q_page_only', 'show_when_created', 'show_view_counts', 'show_view_count_q_page' ) as $removed ) {
+			foreach ( Options::defaults() as $section => $values ) {
+				$this->assertArrayNotHasKey( $removed, $values, $section );
+			}
+		}
+	}
+
+	public function test_new_question2answer_settings_have_their_defaults_and_fields(): void {
+		$expected = array(
+			'lists'   => array(
+				'page_size_hot_qs' => 20,
+				'page_size_una_qs' => 20,
+				'page_size_tag_qs' => 20,
+				'page_size_search' => 10,
+			),
+			'viewing' => array(
+				'show_a_form_immediate' => 'if_no_as',
+				'show_user_titles'      => true,
+				'match_related_qs'      => 3,
+			),
+			'posting' => array(
+				'show_custom_ask'     => false,
+				'custom_ask'          => '',
+				'show_custom_answer'  => false,
+				'custom_answer'       => '',
+				'show_custom_comment' => false,
+				'custom_comment'      => '',
+			),
+		);
+
+		foreach ( $expected as $section => $values ) {
+			foreach ( $values as $key => $value ) {
+				$this->assertSame( $value, Options::defaults()[ $section ][ $key ], $key );
+				$this->assertArrayHasKey( $key, Fields::section( $section ), $key );
+				$this->assertArrayHasKey( $key, Fields::schema( $section )['properties'], $key );
+			}
+		}
+
+		$this->assertSame( array( 'always', 'if_no_as', 'never' ), Fields::schema( 'viewing' )['properties']['show_a_form_immediate']['enum'] );
+		$this->assertSame( 50, Fields::schema( 'lists' )['properties']['page_size_search']['maximum'] );
+		Options::update( 'posting', array( 'custom_answer' => '<p>Hi</p><script>x</script>' ) );
+		$this->assertSame( '<p>Hi</p>x', Options::get( 'posting', 'custom_answer' ) );
+	}
+
 	public function test_search_provider_choice_appears_with_a_second_provider(): void {
 		$this->assertArrayNotHasKey( 'search_provider', Fields::section( 'lists' ) );
 

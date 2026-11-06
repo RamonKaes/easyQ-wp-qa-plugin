@@ -39,6 +39,19 @@ final class Search {
 	private ?array $providers = null;
 
 	/**
+	 * Converts a "match" setting (1–5, wider to narrower is 5 to 1) into the minimum
+	 * search score, as `qa_match_to_min_score()` in Question2Answer does.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $setting Setting value.
+	 * @return float
+	 */
+	public static function min_score( int $setting ): float {
+		return 10 - 2 * $setting;
+	}
+
+	/**
 	 * Returns all registered search providers.
 	 *
 	 * @since 0.1.0

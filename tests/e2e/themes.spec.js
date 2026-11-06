@@ -177,6 +177,13 @@ test.describe( 'Themes', () => {
 								'And without any plugin CSS at all.'
 							)
 						).toBeVisible();
+						// The admin asked the question, so the Answer button opens the form.
+						await page
+							.getByRole( 'link', {
+								name: 'Answer',
+								exact: true,
+							} )
+							.click();
 						await expect(
 							page.getByLabel( 'Your answer' )
 						).toBeVisible();

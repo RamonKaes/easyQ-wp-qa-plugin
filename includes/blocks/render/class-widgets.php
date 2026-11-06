@@ -17,6 +17,7 @@ use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Tags;
+use EasyQ\Search\Search;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
@@ -342,9 +343,13 @@ final class Widgets {
 			return '';
 		}
 
-		$count   = is_numeric( $attributes['count'] ?? null ) ? max( 1, (int) $attributes['count'] ) : 5;
-		$results = Services::search()->search( (string) $question->title . ' ' . implode( ' ', $question->tag_list() ), 0, $count + 1 );
-		$ids     = array_slice( array_values( array_diff( array_map( static fn ( $result ): int => $result->question_id, $results ), array( $question->id ) ) ), 0, $count );
+		$count     = is_numeric( $attributes['count'] ?? null ) ? max( 1, (int) $attributes['count'] ) : 5;
+		$min_score = Search::min_score( Options::get_int( 'viewing', 'match_related_qs' ) );
+		$results   = array_filter(
+			Services::search()->search( (string) $question->title . ' ' . implode( ' ', $question->tag_list() ), 0, $count + 1 ),
+			static fn ( $result ): bool => $result->score >= $min_score
+		);
+		$ids       = array_slice( array_values( array_diff( array_map( static fn ( $result ): int => $result->question_id, $results ), array( $question->id ) ) ), 0, $count );
 		if ( array() === $ids ) {
 			return '';
 		}
