@@ -11,6 +11,7 @@ import {
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
+	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import {
 	PanelBody,
@@ -19,7 +20,8 @@ import {
 	TextControl,
 	ToggleControl,
 } from '@wordpress/components';
-import { useInstanceId } from '@wordpress/compose';
+import { useDisabled } from '@wordpress/compose';
+import { useSelect } from '@wordpress/data';
 import { dateI18n, getSettings as getDateSettings } from '@wordpress/date';
 import { RawHTML, useEffect } from '@wordpress/element';
 import ServerSideRender from '@wordpress/server-side-render';
@@ -409,24 +411,74 @@ function PostContextBlocks( { postId, template, tagName = 'div' } ) {
 }
 
 /**
- * Container that gives its block a unique query ID.
+ * Block types whose lists page on their own and need an ID, unique on the page.
+ *
+ * @since 0.1.0
+ */
+const LIST_TYPES = [
+	'easyq/question-query',
+	'easyq/answer-list',
+	'easyq/user-query',
+];
+
+/**
+ * Container that gives its block a query ID, unique on the page.
+ *
+ * Like the core Query Loop, a new list gets an ID in the editor; unlike it, the ID skips those
+ * of the other lists, so a list inserted twice from a pattern, or next to one from an earlier
+ * session, still pages on its own. Lists inserted together take the free IDs in their order.
+ * IDs start at 100, above those of the templates.
  *
  * @since 0.1.0
  *
  * @param {Object}                       props               Properties.
+ * @param {string}                       props.clientId      Client ID of the block.
  * @param {Object}                       props.attributes    Attributes.
  * @param {(attributes: Object) => void} props.setAttributes Updates attributes.
  * @param {Array}                        props.template      Default inner blocks.
  * @return {Element} Container.
  */
-function ListContainer( { attributes, setAttributes, template } ) {
-	const instanceId = useInstanceId( ListContainer );
+function ListContainer( { clientId, attributes, setAttributes, template } ) {
+	// One string, so the selector returns an equal value while the lists stay the same:
+	// the IDs in use, and the lists still without one.
+	const lists = useSelect( ( select ) => {
+		const {
+			getClientIdsWithDescendants,
+			getBlockName,
+			getBlockAttributes,
+		} = select( blockEditorStore );
+		const ids = getClientIdsWithDescendants().filter( ( id ) =>
+			LIST_TYPES.includes( getBlockName( id ) )
+		);
+		const queryId = ( id ) => getBlockAttributes( id )?.queryId;
+		return [
+			ids.map( queryId ).filter( Number.isFinite ).join( ',' ),
+			ids
+				.filter( ( id ) => ! Number.isFinite( queryId( id ) ) )
+				.join( ',' ),
+		].join( '|' );
+	}, [] );
 
 	useEffect( () => {
-		if ( ! attributes.queryId ) {
-			setAttributes( { queryId: instanceId + 100 } );
+		if ( Number.isFinite( attributes.queryId ) ) {
+			return;
 		}
-	}, [ attributes.queryId, instanceId, setAttributes ] );
+		const [ usedIds, waiting ] = lists.split( '|' );
+		const used = new Set( usedIds.split( ',' ).map( Number ) );
+		const position = Math.max(
+			0,
+			waiting.split( ',' ).indexOf( clientId )
+		);
+		// The free ID at the position of this list among those without one.
+		let queryId = 99;
+		for ( let free = -1; free < position; ) {
+			queryId++;
+			if ( ! used.has( queryId ) ) {
+				free++;
+			}
+		}
+		setAttributes( { queryId } );
+	}, [ attributes.queryId, clientId, lists, setAttributes ] );
 
 	return <div { ...useInnerBlocksProps( useBlockProps(), { template } ) } />;
 }
@@ -857,6 +909,10 @@ function CommentListEdit() {
 /**
  * Preview rendered by the server, for blocks that do not depend on a post.
  *
+ * As in the core Archives block, the wrapper of the editor carries the block supports and the
+ * server renders without them, so colors, spacing and typography apply once; the preview is
+ * disabled, so its links and forms do not leave the editor.
+ *
  * @since 0.1.0
  *
  * @param {Object} props            Properties.
@@ -865,9 +921,15 @@ function CommentListEdit() {
  * @return {Element} Preview.
  */
 function ServerRendered( { name, attributes } ) {
+	const blockProps = useBlockProps( { ref: useDisabled() } );
+
 	return (
-		<div { ...useBlockProps() }>
-			<ServerSideRender block={ name } attributes={ attributes } />
+		<div { ...blockProps }>
+			<ServerSideRender
+				block={ name }
+				attributes={ attributes }
+				skipBlockSupportAttributes
+			/>
 		</div>
 	);
 }

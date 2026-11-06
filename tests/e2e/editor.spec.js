@@ -205,6 +205,33 @@ test.describe( 'Block editor', () => {
 			.toEqual( [ 'questions', 'answers', 'comments' ] );
 	} );
 
+	test( 'applies block supports once to a server-rendered preview', async ( {
+		admin,
+		editor,
+		page,
+	} ) => {
+		await admin.createNewPost();
+		await page.evaluate( () =>
+			window.wp.data.dispatch( 'core/block-editor' ).insertBlocks(
+				window.wp.blocks.createBlock( 'easyq/activity-count', {
+					backgroundColor: 'accent-1',
+					style: { spacing: { padding: { top: '2rem' } } },
+				} )
+			)
+		);
+
+		// As in the core Archives block: the editor wrapper carries the supports, the server
+		// output inside it renders without them.
+		const block = editor.canvas.locator(
+			'[data-type="easyq/activity-count"]'
+		);
+		await expect( block ).toHaveClass( /has-background/ );
+		const preview = block.locator( '.wp-block-easyq-activity-count' );
+		await expect( preview ).toBeVisible();
+		await expect( preview ).not.toHaveClass( /has-background/ );
+		await expect( preview ).not.toHaveAttribute( 'style', /padding/ );
+	} );
+
 	test( 'previews the date in the chosen format', async ( {
 		admin,
 		editor,

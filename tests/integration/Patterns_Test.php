@@ -70,4 +70,12 @@ final class Patterns_Test extends Test_Case {
 		$this->assertStringContainsString( 'Top users', $users );
 		$this->assertStringContainsString( (string) get_userdata( (int) $author->user_id )?->display_name, $users );
 	}
+
+	public function test_sidebar_lists_get_their_id_from_the_editor(): void {
+		// A fixed ID would be shared by every copy of the pattern, so the lists would page together.
+		foreach ( array( 'recent-questions', 'top-users' ) as $name ) {
+			$content = ( new Patterns() )->definitions()[ $name ]['content'];
+			$this->assertStringNotContainsString( '"queryId"', $content, $name );
+		}
+	}
 }

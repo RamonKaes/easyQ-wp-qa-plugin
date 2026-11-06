@@ -99,8 +99,7 @@ final class Patterns {
 						'source'  => 'recent',
 						'perPage' => 5,
 						'inherit' => false,
-					),
-					101
+					)
 				),
 			),
 			'top-users'        => array(
@@ -113,8 +112,7 @@ final class Patterns {
 						'sort'    => 'points',
 						'perPage' => 5,
 						'inherit' => false,
-					),
-					102
+					)
 				),
 			),
 		);

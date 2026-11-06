@@ -84,19 +84,15 @@ final class Layouts {
 	/**
 	 * Returns the markup of a compact question list: title, answers and last activity in one line.
 	 *
+	 * The list has no ID: the editor gives each inserted list one of its own.
+	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $query    Query of the list, see the easyq/question-query block.
-	 * @param int                  $query_id ID of the list, unique on the page.
+	 * @param array<string, mixed> $query Query of the list, see the easyq/question-query block.
 	 * @return string
 	 */
-	public static function compact_question_list( array $query, int $query_id ): string {
-		return '<!-- wp:easyq/question-query ' . self::json(
-			array(
-				'queryId' => $query_id,
-				'query'   => $query,
-			)
-		) . ' -->
+	public static function compact_question_list( array $query ): string {
+		return '<!-- wp:easyq/question-query ' . self::json( array( 'query' => $query ) ) . ' -->
 <!-- wp:easyq/question-template -->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-title {"level":3,"isLink":true,"fontSize":"medium"} /-->
@@ -204,19 +200,15 @@ final class Layouts {
 	/**
 	 * Returns the markup of a compact user list: avatar, name and points, one user per line.
 	 *
+	 * The list has no ID: the editor gives each inserted list one of its own.
+	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $query    Query of the list, see the easyq/user-query block.
-	 * @param int                  $query_id ID of the list, unique on the page.
+	 * @param array<string, mixed> $query Query of the list, see the easyq/user-query block.
 	 * @return string
 	 */
-	public static function compact_user_list( array $query, int $query_id ): string {
-		return '<!-- wp:easyq/user-query ' . self::json(
-			array(
-				'queryId' => $query_id,
-				'query'   => $query,
-			)
-		) . ' -->
+	public static function compact_user_list( array $query ): string {
+		return '<!-- wp:easyq/user-query ' . self::json( array( 'query' => $query ) ) . ' -->
 <!-- wp:easyq/user-template -->
 <!-- wp:columns {"isStackedOnMobile":false} -->
 <div class="wp-block-columns is-not-stacked-on-mobile"><!-- wp:column {"width":"32px"} -->

@@ -48,4 +48,52 @@ test.describe( 'Block patterns', () => {
 			expect( result.invalid, result.name ).toEqual( [] );
 		}
 	} );
+
+	test( 'gives every inserted list an ID of its own', async ( {
+		admin,
+		page,
+	} ) => {
+		await admin.createNewPost();
+
+		// Both sidebar patterns twice, at once: four lists that must page on their own.
+		await page.evaluate( async () => {
+			const patterns = await window.wp.apiFetch( {
+				path: '/wp/v2/block-patterns/patterns',
+			} );
+			const content = [ 'easyq/recent-questions', 'easyq/top-users' ]
+				.map(
+					( name ) =>
+						patterns.find( ( pattern ) => pattern.name === name )
+							.content
+				)
+				.join( '\n' );
+			window.wp.data
+				.dispatch( 'core/block-editor' )
+				.insertBlocks( [
+					...window.wp.blocks.parse( content ),
+					...window.wp.blocks.parse( content ),
+				] );
+		} );
+
+		const ids = () =>
+			page.evaluate( () => {
+				const { getClientIdsWithDescendants, getBlock } =
+					window.wp.data.select( 'core/block-editor' );
+				return getClientIdsWithDescendants()
+					.map( getBlock )
+					.filter( ( block ) =>
+						[ 'easyq/question-query', 'easyq/user-query' ].includes(
+							block.name
+						)
+					)
+					.map( ( block ) => block.attributes.queryId );
+			} );
+
+		await expect
+			.poll( async () => ( await ids() ).every( Number.isFinite ) )
+			.toBe( true );
+		const assigned = await ids();
+		expect( assigned ).toHaveLength( 4 );
+		expect( new Set( assigned ).size ).toBe( 4 );
+	} );
 } );
