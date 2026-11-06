@@ -64,6 +64,22 @@ final class Feedback {
 	}
 
 	/**
+	 * Returns the error for a reason why the actor may not send feedback, see error().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $reason Reason.
+	 * @return WP_Error
+	 */
+	public static function refused( string $reason ): WP_Error {
+		return new WP_Error(
+			'easyq_' . $reason,
+			'off' === $reason ? __( 'The feedback form is turned off.', 'easyq' ) : __( 'Sorry, you cannot send feedback at the moment.', 'easyq' ),
+			array( 'status' => 'limit' === $reason ? 429 : ( 'off' === $reason ? 404 : 403 ) )
+		);
+	}
+
+	/**
 	 * Sends feedback.
 	 *
 	 * @since 0.1.0
@@ -78,11 +94,7 @@ final class Feedback {
 	public function send( Actor $actor, string $message, string $name = '', string $email = '', string $previous = '' ): bool|WP_Error {
 		$reason = $this->error( $actor );
 		if ( null !== $reason ) {
-			return new WP_Error(
-				'easyq_' . $reason,
-				'off' === $reason ? __( 'The feedback form is turned off.', 'easyq' ) : __( 'Sorry, you cannot send feedback at the moment.', 'easyq' ),
-				array( 'status' => 'limit' === $reason ? 429 : ( 'off' === $reason ? 404 : 403 ) )
-			);
+			return self::refused( $reason );
 		}
 
 		$fields = array();

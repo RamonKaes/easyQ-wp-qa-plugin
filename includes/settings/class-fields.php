@@ -238,6 +238,20 @@ final class Fields {
 					);
 					$property['additionalProperties'] = false;
 					break;
+				case 'email':
+					// An empty address means the site's; otherwise the address must be valid, as core's settings check.
+					$property['type']  = 'string';
+					$property['oneOf'] = array(
+						array(
+							'type'   => 'string',
+							'format' => 'email',
+						),
+						array(
+							'type'      => 'string',
+							'maxLength' => 0,
+						),
+					);
+					break;
 				default:
 					$property['type'] = 'string';
 			}

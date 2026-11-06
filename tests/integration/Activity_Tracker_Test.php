@@ -10,6 +10,7 @@ namespace EasyQ\Tests\Integration;
 use EasyQ\Actor;
 use EasyQ\Events\Activity_Tracker;
 use EasyQ\Events\Events;
+use EasyQ\Users\Site_Meta;
 
 /**
  * @covers \EasyQ\Events\Activity_Tracker
@@ -21,7 +22,7 @@ final class Activity_Tracker_Test extends Test_Case {
 
 		Events::dispatch( 'a_vote_up', array(), $actor );
 
-		$this->assertEqualsWithDelta( time(), (int) get_user_meta( (int) $actor->user_id, Activity_Tracker::LAST_WRITE_META, true ), 5 );
+		$this->assertEqualsWithDelta( time(), (int) Site_Meta::get( (int) $actor->user_id, Activity_Tracker::LAST_WRITE_META ), 5 );
 	}
 
 	public function test_ignores_events_that_are_not_writes(): void {
@@ -29,7 +30,7 @@ final class Activity_Tracker_Test extends Test_Case {
 
 		Events::dispatch( 'search', array(), $actor );
 
-		$this->assertSame( '', get_user_meta( (int) $actor->user_id, Activity_Tracker::LAST_WRITE_META, true ) );
+		$this->assertSame( '', Site_Meta::get( (int) $actor->user_id, Activity_Tracker::LAST_WRITE_META ) );
 	}
 
 	public function test_records_the_last_write_of_anonymous_visitors(): void {

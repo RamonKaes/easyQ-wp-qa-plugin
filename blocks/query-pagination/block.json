@@ -4,6 +4,11 @@
 	"name": "easyq/query-pagination",
 	"title": "Q&A Pagination",
 	"category": "easyq",
+	"ancestor": [
+		"easyq/question-query",
+		"easyq/answer-list",
+		"easyq/user-query"
+	],
 	"description": "Links to the other pages of a question or answer list.",
 	"keywords": [
 		"pagination",

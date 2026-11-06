@@ -253,6 +253,8 @@ final class Templates {
 
 		add_filter( 'the_content', array( self::class, 'classic_content' ), PHP_INT_MAX );
 		add_filter( 'comments_template', array( self::class, 'classic_comments' ) );
+		add_filter( 'comments_template_query_args', array( self::class, 'classic_comment_query' ) );
+		add_filter( 'comments_pre_query', array( self::class, 'no_classic_comments' ), 10, 2 );
 		add_filter( 'get_edit_post_link', array( self::class, 'classic_edit_link' ), 10, 2 );
 	}
 
@@ -300,6 +302,42 @@ final class Templates {
 	 */
 	public static function classic_comments( string $template ): string {
 		return self::is_classic_page( get_post() ) ? \EasyQ\PLUGIN_DIR . '/includes/frontend/views/no-comments.php' : $template;
+	}
+
+	/**
+	 * Marks the comment query of `comments_template()` for the page that stands for a Q&A page.
+	 *
+	 * The query runs before the template is chosen, see classic_comments(), and for post ID 0 it
+	 * would load the approved comments of the whole site.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $args Comment query arguments.
+	 * @return array<string, mixed>
+	 */
+	public static function classic_comment_query( array $args ): array {
+		if ( self::is_classic_page( get_post() ) ) {
+			$args['easyq_classic_page'] = true;
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Answers the marked comment query without asking the database, see classic_comment_query().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<int, mixed>|int|null $comments Comments so far; null to run the query.
+	 * @param \WP_Comment_Query          $query    Query.
+	 * @return array<int, mixed>|int|null
+	 */
+	public static function no_classic_comments( array|int|null $comments, \WP_Comment_Query $query ): array|int|null {
+		if ( empty( $query->query_vars['easyq_classic_page'] ) ) {
+			return $comments;
+		}
+
+		return empty( $query->query_vars['count'] ) ? array() : 0;
 	}
 
 	/**
@@ -499,11 +537,39 @@ final class Templates {
 	 * @return string
 	 */
 	private function wrap( string $content ): string {
-		return '<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
+		$part = static fn ( string $area ): string => '<!-- wp:template-part ' . wp_json_encode(
+			array(
+				'slug'    => self::template_part( $area ),
+				'tagName' => $area,
+			)
+		) . ' /-->';
+
+		return $part( 'header' ) . '
 <!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} -->
 <main class="wp-block-group"><!-- wp:easyq/notices /-->
 ' . $content . '</main>
 <!-- /wp:group -->
-<!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->';
+' . $part( 'footer' );
+	}
+
+	/**
+	 * Returns the slug of the theme's template part for an area.
+	 *
+	 * Themes name their parts as they like, e.g. `site-header`; `theme.json` says which part
+	 * belongs to the header or footer area. Without one the slug is the area, as in the default themes.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $area `header` or `footer`.
+	 * @return string
+	 */
+	public static function template_part( string $area ): string {
+		foreach ( \WP_Theme_JSON_Resolver::get_theme_data( array(), array( 'with_supports' => false ) )->get_template_parts() as $slug => $part ) {
+			if ( is_array( $part ) && ( $part['area'] ?? null ) === $area ) {
+				return (string) $slug;
+			}
+		}
+
+		return $area;
 	}
 }

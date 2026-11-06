@@ -335,6 +335,17 @@ final class Settings_Test extends Test_Case {
 		$this->assertSame( 403, $this->settings_request( 'GET' )->get_status() );
 	}
 
+	public function test_rest_endpoint_checks_email_addresses(): void {
+		wp_set_current_user( $this->administrator() );
+
+		$this->assertSame( 400, $this->settings_request( 'POST', array( 'easyq_settings_emails' => array( 'from_email' => 'not an address' ) ) )->get_status() );
+		$this->assertSame( 200, $this->settings_request( 'POST', array( 'easyq_settings_emails' => array( 'from_email' => 'qa@example.org' ) ) )->get_status() );
+		$this->assertSame( 'qa@example.org', Options::get( 'emails', 'from_email' ) );
+		// Empty means the address of the site.
+		$this->assertSame( 200, $this->settings_request( 'POST', array( 'easyq_settings_emails' => array( 'from_email' => '' ) ) )->get_status() );
+		$this->assertSame( 'email', Fields::schema( 'emails' )['properties']['from_email']['oneOf'][0]['format'] ?? null );
+	}
+
 	public function test_users_who_manage_easyq_may_save_its_settings(): void {
 		$this->assertSame( Capabilities::MANAGE, apply_filters( 'option_page_capability_easyq_posting', 'manage_options' ) );
 		$this->assertSame( 'manage_options', apply_filters( 'option_page_capability_general', 'manage_options' ) );

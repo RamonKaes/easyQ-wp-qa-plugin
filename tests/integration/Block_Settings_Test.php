@@ -423,4 +423,36 @@ final class Block_Settings_Test extends Test_Case {
 		Options::update( 'viewing', array( 'match_related_qs' => 1 ) );
 		$this->assertStringNotContainsString( 'related question', $related() );
 	}
+
+	public function test_buttons_take_the_font_size_of_their_block(): void {
+		$question = $this->ask( $this->user() );
+		wp_set_current_user( (int) $this->user()->user_id );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$votes = static fn ( string $attributes ): string => do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-votes ' . $attributes . ' /--><!-- /wp:easyq/question -->' );
+
+		$this->assertMatchesRegularExpression( '/<button type="submit" class="wp-block-button__link wp-element-button has-small-font-size"/', $votes( '{"fontSize":"small"}' ) );
+		$this->assertMatchesRegularExpression( '/<button type="submit" class="wp-block-button__link wp-element-button" style="font-size:1\.1rem;"/', $votes( '{"style":{"typography":{"fontSize":"1.1rem"}}}' ) );
+		// Without a size the theme's size for buttons applies.
+		$html = $votes( '{}' );
+		$this->assertStringContainsString( '<button type="submit" class="wp-block-button__link wp-element-button" aria-label', $html );
+		$this->assertStringNotContainsString( 'font-size', $html );
+	}
+
+	public function test_forms_use_the_markup_of_the_core_comment_form(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		Options::update( 'permissions', array( 'permit_post_a' => \EasyQ\Users\Permits::ALL ) );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$_GET[ Forms::ANSWER_VAR ] = (string) $question->id;
+
+		$html = do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->' );
+
+		$this->assertStringContainsString( '<p class="comment-form-comment"><label for="easyq-answer-content">', $html );
+		$this->assertStringContainsString( '<p class="comment-form-email"><label for="easyq-answer-email">', $html );
+		$this->assertStringContainsString( '<p class="comment-form-author"><label for="easyq-answer-name">', $html );
+		$this->assertStringContainsString( '<p class="comment-form-cookies-consent"><label><input type="checkbox" name="notify"', $html );
+		$this->assertStringContainsString( '<p class="comment-notes"><small>', $html );
+		$this->assertStringContainsString( '<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">Answer</button></p>', $html );
+		$this->assertMatchesRegularExpression( '/<details class="wp-block-details wp-block-easyq-comment-form[^"]*" id="easyq-comment-form-' . $answer->id . '">/', $html );
+	}
 }

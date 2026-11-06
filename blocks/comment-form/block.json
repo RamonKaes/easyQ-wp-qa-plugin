@@ -60,5 +60,8 @@
 		}
 	},
 	"editorScript": "easyq-editor",
-	"style": "wp-block-post-comments-form"
+	"style": [
+		"wp-block-post-comments-form",
+		"wp-block-details"
+	]
 }

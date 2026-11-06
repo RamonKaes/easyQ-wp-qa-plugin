@@ -8,6 +8,7 @@
 
 namespace EasyQ\REST;
 
+use EasyQ\Feedback\Feedback;
 use EasyQ\Services;
 use WP_Error;
 use WP_REST_Request;
@@ -49,8 +50,8 @@ final class Feedback_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
-					// Visitors may send feedback; see Feedback::error() for blocks and limits.
-					'permission_callback' => '__return_true',
+					// Visitors may send feedback, unless the form is off, they are blocked or reached the limit.
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => array(
 						'message'  => array(
 							'description' => __( 'The feedback.', 'easyq' ),
@@ -80,7 +81,22 @@ final class Feedback_Controller extends Controller {
 	}
 
 	/**
-	 * Sends feedback.
+	 * Checks whether the actor may send feedback.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function create_item_permissions_check( $request ): bool|WP_Error {
+		$reason = Services::feedback()->error( $this->actor() );
+
+		return null === $reason ? true : Feedback::refused( $reason );
+	}
+
+	/**
+	 * Sends feedback to the site owner.
 	 *
 	 * @since 0.1.0
 	 *

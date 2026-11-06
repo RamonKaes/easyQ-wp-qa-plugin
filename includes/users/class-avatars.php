@@ -155,13 +155,17 @@ final class Avatars {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-		$uploaded = wp_handle_sideload(
-			$file,
-			array(
-				'test_form' => false,
-				'mimes'     => self::MIME_TYPES,
-			)
+		$overrides = array(
+			'test_form' => false,
+			'mimes'     => self::MIME_TYPES,
 		);
+		// Bypasses is_uploaded_file() when running unit tests, as the core attachments endpoint does.
+		if ( defined( 'DIR_TESTDATA' ) && DIR_TESTDATA ) {
+			$overrides['action'] = 'wp_handle_mock_upload';
+		}
+
+		// The file comes from `$_FILES`, so core checks that it was uploaded with this request.
+		$uploaded = wp_handle_upload( $file, $overrides );
 		if ( isset( $uploaded['error'] ) || ! isset( $uploaded['file'], $uploaded['type'] ) ) {
 			return new WP_Error( 'easyq_avatar_type', __( 'Please upload a JPEG, PNG, GIF or WebP image.', 'easyq' ) );
 		}

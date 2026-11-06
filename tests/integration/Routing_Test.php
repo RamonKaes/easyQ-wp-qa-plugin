@@ -177,6 +177,59 @@ final class Routing_Test extends Test_Case {
 		$this->assertStringEndsWith( '/includes/frontend/views/no-comments.php', (string) apply_filters( 'comments_template', 'comments.php' ) );
 	}
 
+	public function test_the_comments_template_of_classic_themes_loads_no_comments(): void {
+		$post_id = self::factory()->post->create();
+		self::factory()->comment->create( array( 'comment_post_ID' => $post_id ) );
+		$question = $this->ask( $this->user() );
+		$this->open_in_classic_theme( Routes::url( 'question', $question->id ) );
+		the_post();
+		$queries = 0;
+		add_filter(
+			'comments_clauses',
+			static function ( array $clauses ) use ( &$queries ): array {
+				++$queries;
+				return $clauses;
+			}
+		);
+
+		// Core queries the comments of post ID 0, which are those of the whole site, before it picks the template.
+		$args = (array) apply_filters( 'comments_template_query_args', array( 'post_id' => 0 ) );
+		$this->assertSame( array(), ( new \WP_Comment_Query( $args ) )->comments );
+		$this->assertSame( 0, ( new \WP_Comment_Query( $args + array( 'count' => true ) ) )->get_comments() );
+		$this->assertSame( 0, $queries );
+		// Other comment queries on the page, e.g. of a widget, still run.
+		$this->assertCount( 1, ( new \WP_Comment_Query( array( 'post_id' => $post_id ) ) )->comments );
+	}
+
+	public function test_block_templates_use_the_template_parts_of_the_theme_areas(): void {
+		$this->assertSame( 'header', Templates::template_part( 'header' ) );
+
+		add_filter(
+			'wp_theme_json_data_theme',
+			static fn (): \WP_Theme_JSON_Data => new \WP_Theme_JSON_Data(
+				array(
+					'version'       => 3,
+					'templateParts' => array(
+						array(
+							'name' => 'site-footer',
+							'area' => 'footer',
+						),
+						array(
+							'name' => 'site-header',
+							'area' => 'header',
+						),
+					),
+				),
+				'theme'
+			)
+		);
+		\WP_Theme_JSON_Resolver::clean_cached_data();
+
+		$this->assertSame( 'site-header', Templates::template_part( 'header' ) );
+		$this->assertSame( 'site-footer', Templates::template_part( 'footer' ) );
+		\WP_Theme_JSON_Resolver::clean_cached_data();
+	}
+
 	public function test_classic_page_titles_are_escaped_and_censored(): void {
 		Options::update( 'posting', array( 'block_bad_words' => 'darn' ) );
 		$question = $this->ask( $this->user(), 'Darn widgets & <b>bold</b> plans?' );

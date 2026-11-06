@@ -26,7 +26,10 @@ function* navigateTo( url ) {
 
 	const hash = new URL( url, window.location.href ).hash.slice( 1 );
 	const target =
-		document.querySelector( '[aria-invalid="true"]' ) ||
+		// Only fields of the Q&A regions, not of the theme's header, for example.
+		document.querySelector(
+			'[data-wp-router-region^="easyq/"] [aria-invalid="true"]'
+		) ||
 		( hash && document.getElementById( decodeURIComponent( hash ) ) );
 	if ( target ) {
 		if ( ! target.matches( 'input, textarea, select, button, a[href]' ) ) {

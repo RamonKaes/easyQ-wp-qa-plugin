@@ -57,8 +57,10 @@
 				"width": true,
 				"style": true
 			}
-		}
+		},
+		"interactivity": true
 	},
 	"editorScript": "easyq-editor",
+	"viewScriptModule": "easyq-view",
 	"style": "wp-block-post-comments-form"
 }

@@ -358,7 +358,7 @@ final class Widgets {
 		$items = '';
 		foreach ( $ids as $id ) {
 			if ( isset( $posts[ $id ] ) ) {
-				$items .= sprintf( '<li><a href="%s">%s</a></li>', esc_url( URLs::question( $posts[ $id ] ) ), esc_html( Services::content_renderer()->text( (string) $posts[ $id ]->title ) ) );
+				$items .= sprintf( '<li><a class="wp-block-latest-posts__post-title" href="%s">%s</a></li>', esc_url( URLs::question( $posts[ $id ] ) ), esc_html( Services::content_renderer()->text( (string) $posts[ $id ]->title ) ) );
 			}
 		}
 
@@ -449,7 +449,7 @@ final class Widgets {
 		foreach ( Services::notices()->for_actor( Block_Context::viewer() ) as $notice ) {
 			Render::rest_state();
 			$items .= sprintf(
-				'<div data-wp-bind--hidden="context.dismissed" %s><div>%s</div><div class="wp-block-buttons">%s</div></div>',
+				'<div data-wp-bind--hidden="context.dismissed" %s><div>%s</div>%s</div>',
 				wp_interactivity_data_wp_context(
 					array(
 						'noticeId'  => $notice['id'],
@@ -457,7 +457,7 @@ final class Widgets {
 					)
 				),
 				$notice['content'],
-				Render::action_button( 'notice', 0, __( 'Dismiss this notice', 'easyq' ), array( 'easyq_notice' => $notice['id'] ), array(), 'data-wp-on--submit="actions.dismissNotice"' )
+				Render::buttons( Render::action_button( 'notice', 0, __( 'Dismiss this notice', 'easyq' ), array( 'easyq_notice' => $notice['id'] ), array(), 'data-wp-on--submit="actions.dismissNotice"' ) )
 			);
 		}
 

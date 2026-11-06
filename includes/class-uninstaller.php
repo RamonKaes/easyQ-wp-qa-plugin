@@ -17,6 +17,7 @@ use EasyQ\Newsletter\Newsletter;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Updates\Updates;
+use EasyQ\Users\Avatars;
 use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
@@ -111,6 +112,8 @@ final class Uninstaller {
 		Newsletter::cancel();
 		self::delete_transients();
 		self::delete_site_user_meta();
+		// The mark of uploaded avatars; the images stay in the Media Library, like other uploads.
+		delete_post_meta_by_key( Avatars::ATTACHMENT_META );
 	}
 
 	/**

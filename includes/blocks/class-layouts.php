@@ -62,7 +62,7 @@ final class Layouts {
 <!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"8rem"} -->
 <div class="wp-block-column" style="flex-basis:8rem"><!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","verticalAlignment":"top"},"fontSize":"small"} -->
-<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /-->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"},"fontSize":"small"} /-->
 <!-- wp:easyq/post-answer-count /--></div>
 <!-- /wp:group --></div>
 <!-- /wp:column -->
@@ -120,12 +120,12 @@ final class Layouts {
 	public static function question_page(): string {
 		$post_body = '<!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"6rem"} -->
-<div class="wp-block-column" style="flex-basis:6rem"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"}} /--></div>
+<div class="wp-block-column" style="flex-basis:6rem"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"},"fontSize":"small"} /--></div>
 <!-- /wp:column -->
 <!-- wp:column -->
 <div class="wp-block-column"><!-- wp:easyq/post-content /-->
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
-<div class="wp-block-group"><!-- wp:easyq/post-actions /-->
+<div class="wp-block-group"><!-- wp:easyq/post-actions {"fontSize":"small"} /-->
 <!-- wp:easyq/post-author {"fontSize":"small"} /--></div>
 <!-- /wp:group -->
 <!-- wp:easyq/comment-list -->
@@ -134,7 +134,7 @@ final class Layouts {
 <!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
 <div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-author {"showAvatar":false} /-->
 <!-- wp:easyq/post-date /-->
-<!-- wp:easyq/post-actions /--></div>
+<!-- wp:easyq/post-actions {"fontSize":"small"} /--></div>
 <!-- /wp:group -->
 <!-- /wp:easyq/comment-template -->
 <!-- wp:easyq/comment-form {"fontSize":"small"} /-->

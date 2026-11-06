@@ -525,7 +525,7 @@ final class Post_Fields {
 		$buttons  = array();
 
 		if ( $rules['editable'] ) {
-			$buttons[] = self::link_button(
+			$buttons[] = Render::link_button(
 				add_query_arg( Forms::EDIT_VAR, $post->id, URLs::post( $post ) ) . '#easyq-post-' . $post->id,
 				__( 'Edit', 'easyq' ),
 				nofollow: true
@@ -548,7 +548,7 @@ final class Post_Fields {
 		}
 
 		if ( $rules['followable'] ) {
-			$buttons[] = self::link_button( Routes::url( 'ask', null, null, array( 'follow' => $post->id ) ), __( 'Ask a related question', 'easyq' ) );
+			$buttons[] = Render::link_button( Routes::url( 'ask', null, null, array( 'follow' => $post->id ) ), __( 'Ask a related question', 'easyq' ) );
 		}
 
 		$simple = array(
@@ -571,7 +571,7 @@ final class Post_Fields {
 		}
 
 		if ( $rules['closeable'] ) {
-			$buttons[] = self::link_button( add_query_arg( Forms::CLOSE_VAR, $post->id, URLs::post( $post ) ) . '#easyq-close-' . $post->id, __( 'Close', 'easyq' ), nofollow: true );
+			$buttons[] = Render::link_button( add_query_arg( Forms::CLOSE_VAR, $post->id, URLs::post( $post ) ) . '#easyq-close-' . $post->id, __( 'Close', 'easyq' ), nofollow: true );
 		}
 
 		if ( array() === $buttons ) {
@@ -605,27 +605,6 @@ final class Post_Fields {
 				'data-wp-bind--aria-pressed' => 'state.isPressed',
 			),
 			'data-wp-on--submit="actions.vote" ' . wp_interactivity_data_wp_context( array( 'direction' => $direction ) )
-		);
-	}
-
-	/**
-	 * Returns a link styled as button.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $url      Address.
-	 * @param string $label    Text.
-	 * @param bool   $nofollow Whether the link opens a form in place, which core links with `rel="nofollow"`, as the reply links of comments.
-	 * @return string
-	 */
-	private static function link_button( string $url, string $label, bool $nofollow = false ): string {
-		return Render::outline_button(
-			sprintf(
-				'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button has-small-font-size"%s href="%s">%s</a></div>',
-				$nofollow ? ' rel="nofollow"' : '',
-				esc_url( $url ),
-				esc_html( $label )
-			)
 		);
 	}
 

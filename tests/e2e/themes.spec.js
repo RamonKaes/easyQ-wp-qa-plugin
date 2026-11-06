@@ -325,6 +325,12 @@ test.describe( 'Themes', () => {
 					'.wp-block-easyq-comment-template .wp-block-easyq-post-content'
 				)
 			).toBeLessThan( text );
+			// The buttons take the size the layout gives their block, not the size of the theme's buttons.
+			expect(
+				await size(
+					'.wp-block-easyq-post-actions .wp-block-button__link'
+				)
+			).toBeLessThan( text );
 		} );
 
 		// WCAG 1.4.10 Reflow: 320 CSS pixels wide without scrolling sideways.

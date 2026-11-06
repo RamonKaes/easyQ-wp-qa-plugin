@@ -192,7 +192,8 @@ final class Blocks_Test extends Test_Case {
 	}
 
 	/**
-	 * Counts the buttons that are not inside a buttons block.
+	 * Counts the buttons that are not inside a buttons block. The submit field of a form is left
+	 * out, as the core comment form block renders it as `p.form-submit.wp-block-button` on its own.
 	 *
 	 * @param string $html Rendered HTML.
 	 * @return int
@@ -202,7 +203,7 @@ final class Blocks_Test extends Test_Case {
 		$document->loadHTML( '<!DOCTYPE html><meta charset="utf-8">' . $html, LIBXML_NOERROR );
 		$has = static fn ( string $name ): string => "contains(concat(' ', normalize-space(@class), ' '), ' $name ')";
 
-		return (int) ( new \DOMXPath( $document ) )->evaluate( 'count(//*[' . $has( 'wp-block-button' ) . '][not(ancestor::*[' . $has( 'wp-block-buttons' ) . '])])' );
+		return (int) ( new \DOMXPath( $document ) )->evaluate( 'count(//*[' . $has( 'wp-block-button' ) . '][not(' . $has( 'form-submit' ) . ')][not(ancestor::*[' . $has( 'wp-block-buttons' ) . '])])' );
 	}
 
 	public function test_buttons_sit_in_a_buttons_block_as_in_core(): void {

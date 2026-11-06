@@ -8,6 +8,7 @@
 
 namespace EasyQ\REST;
 
+use EasyQ\Notices\Notices;
 use EasyQ\Services;
 use WP_Error;
 use WP_REST_Request;
@@ -64,8 +65,8 @@ final class Notices_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
-					// The notice decides: only your own can be dismissed; see delete_item().
-					'permission_callback' => '__return_true',
+					// Only your own notices can be dismissed; delete_item() finds them by user.
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -83,6 +84,20 @@ final class Notices_Controller extends Controller {
 	 */
 	public function get_items( $request ): WP_REST_Response {
 		return new WP_REST_Response( $this->collection( Services::notices()->for_actor( $this->actor() ), $request ) );
+	}
+
+	/**
+	 * Checks whether the actor may dismiss a notice.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ): bool|WP_Error {
+		// Visitors dismiss the notice for first-time visitors; the notices of users need their account.
+		return Notices::VISITOR === (string) self::string_param( $request, 'id' ) || null !== $this->actor()->user_id ? true : REST_Errors::not_found();
 	}
 
 	/**

@@ -7,9 +7,12 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Actor;
+use EasyQ\Events\Activity_Tracker;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Permits;
+use EasyQ\Users\Site_Meta;
 use EasyQ\Users\User_Field;
 use EasyQ\Users\User_Fields;
 use WP_Error;
@@ -105,6 +108,29 @@ final class User_Fields_Test extends Test_Case {
 		$this->assertNull( $this->fields->find( $field->id ) );
 		$this->assertSame( '', get_user_meta( $user, $field->meta_key(), true ) );
 		$this->assertSame( 1, $this->fields->all()[0]->position );
+	}
+
+	/**
+	 * The fields are defined per site, and so are their values, as the other user meta of easyQ.
+	 *
+	 * @group ms-required
+	 */
+	public function test_values_and_the_last_write_belong_to_one_site(): void {
+		$user  = self::factory()->user->create();
+		$field = $this->field( (int) $this->fields->create( 'shoesize', '', 0, null ) );
+		$this->fields->set_value( $user, $field, 'Berlin' );
+		$this->ask( new Actor( $user, null, '192.0.2.1' ) );
+		$other = self::factory()->blog->create();
+
+		switch_to_blog( $other );
+		$value = $this->fields->value( $user, $field );
+		$write = Site_Meta::get( $user, Activity_Tracker::LAST_WRITE_META );
+		restore_current_blog();
+
+		$this->assertSame( '', $value );
+		$this->assertSame( '', $write );
+		$this->assertSame( 'Berlin', $this->fields->value( $user, $field ) );
+		$this->assertNotSame( '', Site_Meta::get( $user, Activity_Tracker::LAST_WRITE_META ) );
 	}
 
 	public function test_derives_a_free_name_from_the_label(): void {

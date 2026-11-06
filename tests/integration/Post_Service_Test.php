@@ -14,6 +14,7 @@ use EasyQ\Posts\Post_Service;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
+use EasyQ\Users\Site_Meta;
 use WP_Error;
 
 /**
@@ -46,7 +47,7 @@ final class Post_Service_Test extends Test_Case {
 		$params = $this->event_params( 'q_post' );
 		$this->assertSame( $question->id, $params['post_id'] );
 		$this->assertSame( 'widgets,settings', $params['tags'] );
-		$this->assertNotEmpty( get_user_meta( (int) $author->user_id, Activity_Tracker::LAST_WRITE_META, true ) );
+		$this->assertNotEmpty( Site_Meta::get( (int) $author->user_id, Activity_Tracker::LAST_WRITE_META ) );
 	}
 
 	public function test_queued_question_is_not_public(): void {

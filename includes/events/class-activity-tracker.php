@@ -11,6 +11,7 @@ namespace EasyQ\Events;
 use EasyQ\Actor;
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
+use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -99,7 +100,7 @@ final class Activity_Tracker {
 		}
 
 		if ( null !== $actor->user_id ) {
-			update_user_meta( $actor->user_id, self::LAST_WRITE_META, time() );
+			Site_Meta::update( $actor->user_id, self::LAST_WRITE_META, time() );
 			return;
 		}
 

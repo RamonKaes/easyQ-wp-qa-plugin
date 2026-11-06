@@ -9,6 +9,7 @@
 namespace EasyQ\Blocks\Render;
 
 use EasyQ\Blocks\Block_Context;
+use EasyQ\Blocks\Lists;
 use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Routes;
@@ -36,6 +37,15 @@ final class Messages_Render {
 	 * @var string
 	 */
 	public const PAGE_VAR = 'easyq_page';
+
+	/**
+	 * List ID of the messages and wall posts for the pagination block; a page shows one of them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private const LIST_ID = 'easyq-messages';
 
 	/**
 	 * Renders the wall of a user.
@@ -88,7 +98,7 @@ final class Messages_Render {
 			esc_html( sprintf( __( 'Wall of %s', 'easyq' ), $owner->display_name ) ),
 			$form,
 			'' === $items ? sprintf( '<p>%s</p>', esc_html__( 'Nothing posted yet.', 'easyq' ) ) : '<ol class="wp-block-comment-template">' . $items . '</ol>',
-			self::pagination( $page, $found['total'], $per_page )
+			self::pagination( $found['messages'], $page, $found['total'], $per_page )
 		);
 	}
 
@@ -187,17 +197,13 @@ final class Messages_Render {
 		foreach ( $found['messages'] as $message ) {
 			$other    = 'sent' === $box ? $message->to_user_id : $message->from_user_id;
 			$person   = null === $other ? false : get_userdata( $other );
-			$buttons  = false === $person ? '' : sprintf(
-				'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button has-small-font-size" href="%s">%s</a></div>',
-				esc_url( Routes::url( 'message', $person->user_nicename ) ),
-				esc_html__( 'Reply', 'easyq' )
-			);
+			$buttons  = false === $person ? '' : Render::link_button( Routes::url( 'message', $person->user_nicename ), __( 'Reply', 'easyq' ) );
 			$buttons .= Render::action_button( 'message_delete', 0, __( 'Delete', 'easyq' ), array( 'easyq_message' => $message->id ) );
 			$items   .= self::item( $message, $other, $buttons, 'sent' === $box );
 		}
 
 		$nav = sprintf(
-			'<nav aria-label="%s" class="has-small-font-size"><a href="%s"%s>%s</a> <a href="%s"%s>%s</a></nav>',
+			'<nav aria-label="%s"><a href="%s"%s>%s</a> <a href="%s"%s>%s</a></nav>',
 			esc_attr__( 'Message boxes', 'easyq' ),
 			esc_url( Routes::url( 'messages' ) ),
 			'sent' === $box ? '' : ' aria-current="page"',
@@ -212,7 +218,7 @@ final class Messages_Render {
 			get_block_wrapper_attributes(),
 			$nav,
 			'' === $items ? sprintf( '<p>%s</p>', esc_html__( 'No messages.', 'easyq' ) ) : '<ol class="wp-block-comment-template">' . $items . '</ol>',
-			self::pagination( $page, $found['total'], $per_page )
+			self::pagination( $found['messages'], $page, $found['total'], $per_page )
 		);
 	}
 
@@ -268,7 +274,7 @@ final class Messages_Render {
 			esc_attr( mysql_to_rfc3339( $message->created ) ),
 			esc_html( Render::date( $message->created ) ),
 			$message->html(),
-			'' === $buttons ? '' : '<div class="wp-block-buttons">' . $buttons . '</div>'
+			'' === $buttons ? '' : Render::buttons( $buttons )
 		);
 	}
 
@@ -299,24 +305,34 @@ final class Messages_Render {
 	}
 
 	/**
-	 * Renders links to the previous and next page, with the markup of the core pagination block.
+	 * Renders the pagination block for the messages shown, as the lists of questions do.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $page     Current page.
-	 * @param int $total    Number of items.
-	 * @param int $per_page Items per page.
+	 * @param Message[] $messages Messages on the current page.
+	 * @param int       $page     Current page.
+	 * @param int       $total    Number of items.
+	 * @param int       $per_page Items per page.
 	 * @return string
 	 */
-	private static function pagination( int $page, int $total, int $per_page ): string {
-		$links = '';
-		if ( $page > 1 ) {
-			$links .= sprintf( '<a class="wp-block-query-pagination-previous" href="%s">%s</a>', esc_url( add_query_arg( self::PAGE_VAR, $page - 1 ) ), esc_html__( 'Newer', 'easyq' ) );
-		}
-		if ( $page * $per_page < $total ) {
-			$links .= sprintf( '<a class="wp-block-query-pagination-next" href="%s">%s</a>', esc_url( add_query_arg( self::PAGE_VAR, $page + 1 ) ), esc_html__( 'Older', 'easyq' ) );
+	private static function pagination( array $messages, int $page, int $total, int $per_page ): string {
+		if ( $total <= $per_page ) {
+			return '';
 		}
 
-		return '' === $links ? '' : sprintf( '<nav class="wp-block-query-pagination" aria-label="%s">%s</nav>', esc_attr__( 'Pages', 'easyq' ), $links );
+		Lists::store( self::LIST_ID, array_map( static fn ( Message $message ): int => $message->id, $messages ), $total, $page, $per_page, self::PAGE_VAR );
+
+		$block = new WP_Block(
+			array(
+				'blockName'    => 'easyq/query-pagination',
+				'attrs'        => array(),
+				'innerBlocks'  => array(),
+				'innerHTML'    => '',
+				'innerContent' => array(),
+			),
+			array( 'easyq/listId' => self::LIST_ID )
+		);
+
+		return $block->render();
 	}
 }

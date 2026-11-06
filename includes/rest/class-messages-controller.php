@@ -71,7 +71,7 @@ final class Messages_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'post_on_wall' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'post_on_wall_permissions_check' ),
 					'args'                => $content,
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
@@ -85,7 +85,7 @@ final class Messages_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_wall_post' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'delete_wall_post_permissions_check' ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -184,11 +184,6 @@ final class Messages_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function post_on_wall( $request ): WP_REST_Response|WP_Error {
-		$writable = $this->check_writable( $this->actor() );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
 		$owner = $this->owner( $request );
 		if ( $owner instanceof WP_Error ) {
 			return $owner;
@@ -203,6 +198,52 @@ final class Messages_Controller extends Controller {
 		$response->set_status( 201 );
 
 		return $response;
+	}
+
+	/**
+	 * Checks whether the actor may post on the wall: the site is writable, the wall exists and
+	 * accepts posts from them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function post_on_wall_permissions_check( $request ): bool|WP_Error {
+		$writable = $this->check_writable( $this->actor() );
+		if ( true !== $writable ) {
+			return $writable;
+		}
+
+		$owner = $this->owner( $request );
+		if ( $owner instanceof WP_Error ) {
+			return $owner;
+		}
+
+		$reason = Services::messages()->wall_error( $this->actor(), $owner );
+
+		return null === $reason ? true : Messages::refused( $reason );
+	}
+
+	/**
+	 * Checks whether the actor may delete a wall post: the post is on this wall and theirs to delete.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function delete_wall_post_permissions_check( $request ): bool|WP_Error {
+		$post = Services::messages()->find( (int) self::int_param( $request, 'message' ) );
+		if ( null === $post || Messages::WALL !== $post->type || (int) self::int_param( $request, 'id' ) !== $post->to_user_id ) {
+			return REST_Errors::not_found();
+		}
+
+		return Services::messages()->can_delete_wall_post( $this->actor(), $post )
+			? true
+			: new WP_Error( 'easyq_permission', __( 'You cannot delete this post.', 'easyq' ), array( 'status' => 403 ) );
 	}
 
 	/**

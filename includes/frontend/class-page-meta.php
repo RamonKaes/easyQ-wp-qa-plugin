@@ -67,13 +67,27 @@ final class Page_Meta {
 	}
 
 	/**
-	 * Prints the canonical address of questions and profiles and the structured data of questions.
+	 * Prints the canonical address of questions and profiles and the structured data of questions,
+	 * unless an SEO plugin does, see the filter `easyq_print_seo_meta`.
 	 *
 	 * @since 0.1.0
 	 */
 	public function head(): void {
 		$route = $this->router->current();
 		if ( null === $route || 'not_found' === $route->name ) {
+			return;
+		}
+
+		/**
+		 * Filters whether easyQ prints the canonical address and the structured data of Q&A pages.
+		 *
+		 * SEO plugins print their own; by default easyQ leaves them out when Yoast SEO or Rank Math is active.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool $print Whether to print them.
+		 */
+		if ( ! apply_filters( 'easyq_print_seo_meta', ! defined( 'WPSEO_VERSION' ) && ! defined( 'RANK_MATH_VERSION' ) ) ) {
 			return;
 		}
 

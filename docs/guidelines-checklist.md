@@ -81,7 +81,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| User meta prefixed and site specific on multisite | Met | `Users\Site_Meta` |
+| User meta prefixed and site specific on multisite | Met | `Users\Site_Meta`, also for profile field values and the time of the last post |
 | Custom post types and taxonomies | Kept | Custom tables instead (decided 2026-10-13). The handbook explains post types but neither requires them nor rules out tables; `dbDelta()` is the core way to create them. The Q&A data needs indexed columns for its lists (hot, unanswered, votes, per category), per-user votes and flags, points, rate limits and a word index; as post meta these would be unindexed joins. In exchange, core screens, export, revisions and plugins that only know posts do not cover the Q&A content; easyQ provides its own screens, sitemaps, feeds and a search provider interface, and the privacy tools follow in phase 8. See the [feature mapping](feature-mapping.md), section 1 |
 
 ## Users
@@ -119,7 +119,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Schedule on activation, clear on deactivation | Not used yet | Newsletter batches in phase 7e as single events, IP address retention in phase 8 |
+| Schedule on activation, clear on deactivation | Met | Newsletter batches as single events (`wp_schedule_single_event()`), cleared on deactivation and uninstall, on every site of a network; IP address retention follows in phase 8 |
 
 ## Internationalization
 
@@ -140,7 +140,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Namespace `vendor/v1`, routes on `rest_api_init` | Met | `easyq/v1`, `REST\REST_API` |
-| `permission_callback` on every route | Met | All controllers |
+| `permission_callback` on every route | Met | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see, and on the unsubscribe and newsletter confirmation routes, where the signed token in the request is the permission |
 | Arguments with types and validation; `WP_Error` with a status | Met | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
 | Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()`; a test checks real responses of all routes against them, both types and undocumented properties |
@@ -151,11 +151,11 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 47 blocks |
+| `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 51 blocks |
 | Component props `__next40pxDefaultSize` and `__nextHasNoMarginBottom` | Kept | Without effect since WordPress 7.1, but needed from 6.7 to 7.0; remove once the minimum is 7.1 |
 | Editor canvas is always an iframe (7.1) | Met | The editor script uses no global `document` or `window` |
 | Frontend markup styled by the theme, no plugin stylesheet | Met | Core block classes and style handles; forms take on the comment form block, so text fields, buttons and checkboxes look as in the theme's comment form ([feature mapping](feature-mapping.md), decision 46). Selects keep the browser look, as in core |
-| Buttons in a buttons block, as core places them | Met | Vote buttons and post actions (decision 47) |
+| Buttons in a buttons block, as core places them | Met | Vote buttons, post actions and favorites through the layout support of their blocks; other buttons rendered through the core buttons block; form submit fields as `p.form-submit.wp-block-button`, as the comment form block (decisions 47, 69) |
 | Reflow at 320 pixels (WCAG 1.4.10) | Met | Core columns break long words (decision 58); the E2E run loads every page in 21 themes |
 | Outline buttons as in core | Met | Rendered through the core button block; the E2E run compares them with it in 21 themes (decision 59) |
 | Classic themes | Met | The theme's own page template shows the Q&A pages, with its title, containers and sidebars (decision 48) |

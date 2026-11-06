@@ -99,14 +99,14 @@ final class User_Field {
 	}
 
 	/**
-	 * Returns the user meta key that stores the values.
+	 * Returns the user meta key that stores the values, on the current site as the fields are.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @return string
 	 */
 	public function meta_key(): string {
-		return 'easyq_field_' . $this->name;
+		return Site_Meta::key( 'easyq_field_' . $this->name );
 	}
 
 	/**

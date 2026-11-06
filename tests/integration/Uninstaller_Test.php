@@ -9,11 +9,13 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
+use EasyQ\Events\Activity_Tracker;
 use EasyQ\Frontend\Flash;
 use EasyQ\Mail\Templates;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Uninstaller;
+use EasyQ\Users\Avatars;
 use EasyQ\Users\Site_Meta;
 
 /**
@@ -45,12 +47,42 @@ final class Uninstaller_Test extends Test_Case {
 	public function test_deletes_the_user_meta_of_the_site(): void {
 		$user_id = self::factory()->user->create();
 		Site_Meta::update( $user_id, 'easyq_level', 50 );
-		update_user_meta( $user_id, 'easyq_field_location', 'Berlin' );
+		Site_Meta::update( $user_id, 'easyq_field_location', 'Berlin' );
+		Site_Meta::update( $user_id, Activity_Tracker::LAST_WRITE_META, time() );
+		update_user_meta( $user_id, 'easyq_points', 10 );
 
 		Uninstaller::delete_site_user_meta();
 
 		$this->assertSame( '', Site_Meta::get( $user_id, 'easyq_level' ) );
-		$this->assertSame( 'Berlin', get_user_meta( $user_id, 'easyq_field_location', true ) );
+		$this->assertSame( '', Site_Meta::get( $user_id, 'easyq_field_location' ) );
+		$this->assertSame( '', Site_Meta::get( $user_id, Activity_Tracker::LAST_WRITE_META ) );
+		// Meta without the site prefix belongs to the whole network.
+		$this->assertSame( '10', get_user_meta( $user_id, 'easyq_points', true ) );
+	}
+
+	/**
+	 * Runs on a separate site of a network, as uninstalling drops the tables of the site.
+	 *
+	 * @group ms-required
+	 */
+	public function test_uninstalling_a_site_removes_the_mark_of_avatar_images(): void {
+		$this->activate_network_wide();
+		$site_id = self::factory()->blog->create();
+
+		switch_to_blog( $site_id );
+		$attachment = self::factory()->attachment->create();
+		$other      = self::factory()->attachment->create();
+		update_post_meta( $attachment, Avatars::ATTACHMENT_META, 1 );
+		update_post_meta( $other, '_other_plugin_meta', 'keep' );
+		Uninstaller::uninstall_site();
+		$mark  = get_post_meta( $attachment, Avatars::ATTACHMENT_META, true );
+		$kept  = get_post_meta( $other, '_other_plugin_meta', true );
+		$image = get_post( $attachment );
+		restore_current_blog();
+
+		$this->assertSame( '', $mark );
+		$this->assertSame( 'keep', $kept );
+		$this->assertNotNull( $image );
 	}
 
 	/**

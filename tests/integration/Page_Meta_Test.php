@@ -97,6 +97,12 @@ final class Page_Meta_Test extends Test_Case {
 
 		$this->assertStringContainsString( 'rel="canonical"', $html );
 		$this->assertStringContainsString( 'application/ld+json', $html );
+
+		// SEO plugins print their own; the filter leaves them to them.
+		add_filter( 'easyq_print_seo_meta', '__return_false' );
+		ob_start();
+		( new Page_Meta( Block_Context::router() ) )->head();
+		$this->assertSame( '', (string) ob_get_clean() );
 	}
 
 	public function test_keeps_the_account_page_out_of_search_engines(): void {

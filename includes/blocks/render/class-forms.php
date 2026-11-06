@@ -378,19 +378,19 @@ final class Forms {
 
 		// An Answer button opens the form: without JavaScript as a link to the page with the form, with
 		// JavaScript in place, see src/view. The heading belongs to the form and appears with it.
-		$button = Render::outline_button(
-			sprintf(
-				'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button" href="%s" rel="nofollow" aria-controls="easyq-answer-body" aria-expanded="false" data-wp-on--click="actions.openAnswer" data-wp-bind--aria-expanded="context.answerOpen">%s</a></div>',
-				esc_url( add_query_arg( self::ANSWER_VAR, $question->id, URLs::question( $question ) ) . '#easyq-answer-form' ),
-				esc_html__( 'Answer', 'easyq' )
-			)
+		$button = Render::link_button(
+			add_query_arg( self::ANSWER_VAR, $question->id, URLs::question( $question ) ) . '#easyq-answer-form',
+			__( 'Answer', 'easyq' ),
+			true,
+			'aria-controls="easyq-answer-body" aria-expanded="false" data-wp-on--click="actions.openAnswer" data-wp-bind--aria-expanded="context.answerOpen"'
 		);
 
 		return sprintf(
-			'<section %s id="easyq-answer-form" data-wp-interactive="easyq" %s><div class="wp-block-buttons" data-wp-bind--hidden="context.answerOpen">%s</div><div id="easyq-answer-body" hidden data-wp-bind--hidden="!context.answerOpen" data-wp-watch="callbacks.focusAnswer">%s%s</div></section>',
+			'<section %s id="easyq-answer-form" data-wp-interactive="easyq" %s>%s<div id="easyq-answer-body" hidden data-wp-bind--hidden="!context.answerOpen" data-wp-watch="callbacks.focusAnswer">%s%s</div></section>',
 			get_block_wrapper_attributes(),
 			wp_interactivity_data_wp_context( array( 'answerOpen' => false ) ),
-			$button,
+			// A plain wrapper, as the flex layout of the buttons block would override `hidden`.
+			'<div data-wp-bind--hidden="context.answerOpen">' . Render::buttons( $button ) . '</div>',
 			$heading,
 			$body
 		);
@@ -469,7 +469,7 @@ final class Forms {
 
 		return sprintf(
 			'<details %s id="easyq-comment-form-%d"><summary>%s</summary>%s</details>',
-			get_block_wrapper_attributes(),
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-details' ) ),
 			$post->id,
 			esc_html__( 'Add a comment', 'easyq' ),
 			$body
@@ -645,7 +645,7 @@ final class Forms {
 		$notice  = self::form_notice( $form );
 
 		return sprintf(
-			'<div %s><form method="post" class="comment-form"%s%s>%s%s%s<div class="wp-block-buttons"><div class="wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></div></div>%s</form></div>',
+			'<div %s><form method="post" class="comment-form"%s%s>%s%s%s<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></p>%s</form></div>',
 			$wrapper,
 			'account' === $form ? ' enctype="multipart/form-data"' : '',
 			in_array( $form, self::IN_PLACE, true ) ? ' data-wp-on--submit="actions.submit"' : '',
@@ -697,8 +697,17 @@ final class Forms {
 			? sprintf( '<textarea id="%s" name="%s" cols="45" rows="8"%s>%s</textarea>', esc_attr( $id ), esc_attr( $name ), $attrs, esc_textarea( $value ) )
 			: sprintf( '<input type="%s" id="%s" name="%s" value="%s"%s />', esc_attr( $type ), esc_attr( $id ), esc_attr( $name ), esc_attr( $value ), $attrs );
 
+		// The classes of the fields of the core comment form, which themes style.
+		$class = match ( true ) {
+			'textarea' === $type => 'comment-form-comment',
+			'email' === $type    => 'comment-form-email',
+			'name' === $name     => 'comment-form-author',
+			default              => '',
+		};
+
 		return sprintf(
-			'<p><label for="%s">%s</label> %s%s%s</p>',
+			'<p%s><label for="%s">%s</label> %s%s%s</p>',
+			'' === $class ? '' : ' class="' . $class . '"',
 			esc_attr( $id ),
 			esc_html( $label ),
 			$input,
@@ -758,7 +767,7 @@ final class Forms {
 	private static function author_fields( string $form, string $notify, string $id_prefix = '' ): string {
 		$viewer = Block_Context::viewer();
 		$html   = sprintf(
-			'<p><label><input type="checkbox" name="notify" value="1"%s /> %s</label></p>',
+			'<p class="comment-form-cookies-consent"><label><input type="checkbox" name="notify" value="1"%s /> %s</label></p>',
 			checked( Options::get_bool( 'posting', 'notify_users_default' ), true, false ),
 			esc_html( $notify )
 		);
@@ -772,7 +781,7 @@ final class Forms {
 
 			$privacy = get_privacy_policy_url();
 			$html   .= sprintf(
-				'<p><small>%s</small></p>',
+				'<p class="comment-notes"><small>%s</small></p>',
 				'' === $privacy
 					? esc_html__( 'Posting without an account stores a cookie in your browser, so you can edit your post later.', 'easyq' )
 					: sprintf(

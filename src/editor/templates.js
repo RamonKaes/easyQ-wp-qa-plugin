@@ -43,6 +43,7 @@ export const QUESTION_ITEM = [
 										type: 'flex',
 										orientation: 'vertical',
 									},
+									...small,
 								},
 							],
 							[ 'easyq/post-answer-count' ],
@@ -82,7 +83,10 @@ const POST_BODY = [
 				[
 					[
 						'easyq/post-votes',
-						{ layout: { type: 'flex', orientation: 'vertical' } },
+						{
+							layout: { type: 'flex', orientation: 'vertical' },
+							...small,
+						},
 					],
 				],
 			],
@@ -101,7 +105,7 @@ const POST_BODY = [
 							},
 						},
 						[
-							[ 'easyq/post-actions' ],
+							[ 'easyq/post-actions', small ],
 							[ 'easyq/post-author', small ],
 						],
 					],
@@ -124,7 +128,7 @@ export const COMMENT_LIST = [
 				[
 					[ 'easyq/post-author', { showAvatar: false } ],
 					[ 'easyq/post-date' ],
-					[ 'easyq/post-actions' ],
+					[ 'easyq/post-actions', small ],
 				],
 			],
 		],

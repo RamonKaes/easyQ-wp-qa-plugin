@@ -44,6 +44,10 @@ final class Render {
 
 		cache_users( $ids );
 		Services::points()->prime( $ids );
+		// The titles of the authors depend on their levels, see User_Titles::title().
+		if ( Options::get_bool( 'viewing', 'show_user_titles' ) ) {
+			Services::user_levels()->prime_category_levels( $ids );
+		}
 	}
 
 	/**
@@ -91,11 +95,15 @@ final class Render {
 			$attributes .= sprintf( ' %s="%s"', esc_attr( $name ), esc_attr( $value ) );
 		}
 
+		$font = self::button_font_size();
+
 		return self::outline_button(
 			sprintf(
-				'<form method="post" class="wp-block-button is-style-outline"%s>%s<button type="submit" class="wp-block-button__link wp-element-button has-small-font-size"%s>%s</button></form>',
+				'<form method="post" class="wp-block-button is-style-outline"%s>%s<button type="submit" class="wp-block-button__link wp-element-button%s"%s%s>%s</button></form>',
 				'' === $form_attributes ? '' : ' ' . $form_attributes,
 				$hidden,
+				$font[0],
+				$font[1],
 				$attributes,
 				esc_html( $label )
 			)
@@ -114,6 +122,90 @@ final class Render {
 				'restUrl' => esc_url_raw( rest_url( 'easyq/v1/' ) ),
 				'nonce'   => wp_create_nonce( 'wp_rest' ),
 			)
+		);
+	}
+
+	/**
+	 * Returns a link with the outline style, as a core button block.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $url      Address.
+	 * @param string $label    Text.
+	 * @param bool   $nofollow Whether the link opens a form in place, which core links with `rel="nofollow"`, as the reply links of comments.
+	 * @param string $extra    Further attributes of the link, escaped.
+	 * @return string
+	 */
+	public static function link_button( string $url, string $label, bool $nofollow = false, string $extra = '' ): string {
+		$font = self::button_font_size();
+
+		return self::outline_button(
+			sprintf(
+				'<div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button%s"%s%s href="%s"%s>%s</a></div>',
+				$font[0],
+				$font[1],
+				$nofollow ? ' rel="nofollow"' : '',
+				esc_url( $url ),
+				'' === $extra ? '' : ' ' . $extra,
+				esc_html( $label )
+			)
+		);
+	}
+
+	/**
+	 * Wraps buttons in a core buttons block, so that its layout and the theme's gap apply.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $buttons    Buttons, escaped HTML.
+	 * @param string $classes    Further class names of the wrapper.
+	 * @param string $attributes Further attributes of the wrapper, escaped.
+	 * @return string
+	 */
+	public static function buttons( string $buttons, string $classes = '', string $attributes = '' ): string {
+		$html = sprintf( '<div class="%s"%s>%s</div>', esc_attr( trim( 'wp-block-buttons ' . $classes ) ), '' === $attributes ? '' : ' ' . $attributes, $buttons );
+
+		return render_block(
+			array(
+				'blockName'    => 'core/buttons',
+				'attrs'        => array(),
+				'innerBlocks'  => array(),
+				'innerHTML'    => $html,
+				'innerContent' => array( $html ),
+			)
+		);
+	}
+
+	/**
+	 * Returns the font size of the block being rendered as attributes of its buttons.
+	 *
+	 * Themes give buttons a font size of their own, so the size of the block does not reach its
+	 * buttons by inheritance. The preset becomes its class and a custom size an inline style, as
+	 * the typography support of core does for a button block; without a size the theme's applies.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array{0: string, 1: string} Class names and a style attribute, each escaped and with a leading space, or empty.
+	 */
+	public static function button_font_size(): array {
+		$block      = \WP_Block_Supports::$block_to_render;
+		$attributes = is_array( $block ) && is_array( $block['attrs'] ?? null ) ? $block['attrs'] : array();
+		$style      = is_array( $attributes['style'] ?? null ) && is_array( $attributes['style']['typography'] ?? null ) ? $attributes['style']['typography'] : array();
+		$custom     = $style['fontSize'] ?? null;
+		$preset     = $attributes['fontSize'] ?? null;
+
+		if ( is_string( $preset ) && '' !== $preset ) {
+			$styles = wp_style_engine_get_styles( array( 'typography' => array( 'fontSize' => 'var:preset|font-size|' . $preset ) ) );
+		} elseif ( is_string( $custom ) && '' !== $custom ) {
+			$size   = wp_get_typography_font_size_value( array( 'size' => $custom ) );
+			$styles = wp_style_engine_get_styles( array( 'typography' => array( 'fontSize' => is_string( $size ) ? $size : $custom ) ) );
+		} else {
+			return array( '', '' );
+		}
+
+		return array(
+			is_string( $styles['classnames'] ?? null ) && '' !== $styles['classnames'] ? ' ' . esc_attr( $styles['classnames'] ) : '',
+			is_string( $styles['css'] ?? null ) && '' !== $styles['css'] ? sprintf( ' style="%s"', esc_attr( $styles['css'] ) ) : '',
 		);
 	}
 
