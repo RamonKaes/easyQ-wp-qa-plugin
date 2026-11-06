@@ -34,10 +34,11 @@ defined( 'ABSPATH' ) || exit;
 final class Votes {
 
 	/**
-	 * Votes and flags of users on posts, loaded during the current request, keyed by `post:user`.
+	 * Votes and flags of users on posts, loaded during the current request, keyed by `site:post:user`.
 	 *
 	 * A page asks for them many times, e.g. once per block of a post. Every write
-	 * clears them; see forget().
+	 * clears them; see forget(). The site is part of the key, as post IDs repeat across the
+	 * sites of a network and a request can switch between them.
 	 *
 	 * @since 0.1.0
 	 *
@@ -128,13 +129,13 @@ final class Votes {
 	 * @param int   $user_id  User ID.
 	 */
 	public function prime( array $post_ids, int $user_id ): void {
-		$missing = array_values( array_filter( array_unique( array_map( 'intval', $post_ids ) ), static fn ( int $id ): bool => ! isset( self::$rows[ $id . ':' . $user_id ] ) ) );
+		$missing = array_values( array_filter( array_unique( array_map( 'intval', $post_ids ) ), static fn ( int $id ): bool => ! isset( self::$rows[ self::key( $id, $user_id ) ] ) ) );
 		if ( array() === $missing ) {
 			return;
 		}
 
 		foreach ( $missing as $post_id ) {
-			self::$rows[ $post_id . ':' . $user_id ] = array(
+			self::$rows[ self::key( $post_id, $user_id ) ] = array(
 				'vote' => 0,
 				'flag' => 0,
 			);
@@ -151,11 +152,24 @@ final class Votes {
 			)
 		);
 		foreach ( $rows as $row ) {
-			self::$rows[ Row::int( $row, 'post_id' ) . ':' . $user_id ] = array(
+			self::$rows[ self::key( Row::int( $row, 'post_id' ), $user_id ) ] = array(
 				'vote' => Row::int( $row, 'vote' ),
 				'flag' => Row::int( $row, 'flag' ),
 			);
 		}
+	}
+
+	/**
+	 * Returns the key of a vote in the votes loaded during the current request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $post_id Post ID.
+	 * @param int $user_id User ID.
+	 * @return string
+	 */
+	private static function key( int $post_id, int $user_id ): string {
+		return get_current_blog_id() . ':' . $post_id . ':' . $user_id;
 	}
 
 	/**
@@ -179,7 +193,7 @@ final class Votes {
 	 * @return array{vote: int, flag: int}
 	 */
 	private function row( int $post_id, int $user_id ): array {
-		$key = $post_id . ':' . $user_id;
+		$key = self::key( $post_id, $user_id );
 		if ( ! isset( self::$rows[ $key ] ) ) {
 			$this->prime( array( $post_id ), $user_id );
 		}

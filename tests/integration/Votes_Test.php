@@ -198,4 +198,25 @@ final class Votes_Test extends Test_Case {
 
 		$this->assertSame( 1, Services::votes()->vote_of( $question->id, (int) $voter->user_id ) );
 	}
+
+	/**
+	 * Post IDs repeat across the sites of a network; a vote loaded on one site is not one on another.
+	 *
+	 * @group ms-required
+	 */
+	public function test_votes_loaded_on_one_site_stay_with_that_site(): void {
+		$this->activate_network_wide();
+		$site_id  = self::factory()->blog->create();
+		$question = $this->ask( $this->user() );
+		$voter    = $this->user();
+		$this->assertTrue( Services::votes()->vote( $voter, $question, 1 ) );
+		$this->assertSame( 1, Services::votes()->vote_of( $question->id, (int) $voter->user_id ) );
+
+		switch_to_blog( $site_id );
+		$vote = Services::votes()->vote_of( $question->id, (int) $voter->user_id );
+		restore_current_blog();
+
+		$this->assertSame( 0, $vote );
+		$this->assertSame( 1, Services::votes()->vote_of( $question->id, (int) $voter->user_id ) );
+	}
 }

@@ -42,6 +42,24 @@ final class Posts_Screen {
 	public const PAGE = 'easyq-posts';
 
 	/**
+	 * User option with the number of posts per page, set under Screen Options.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const PER_PAGE_OPTION = 'easyq_posts_per_page';
+
+	/**
+	 * Number of posts per page until a user sets one, as on core's list screens.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const PER_PAGE_DEFAULT = 20;
+
+	/**
 	 * Actions of the IP address panel.
 	 *
 	 * @since 0.1.0
@@ -59,6 +77,8 @@ final class Posts_Screen {
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 10 );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_node' ), 60 );
 		add_filter( 'removable_query_args', array( $this, 'removable_query_args' ) );
+		// Core saves screen options before the admin menu exists, so the filter is added here.
+		add_filter( 'set_screen_option_' . self::PER_PAGE_OPTION, array( $this, 'save_per_page' ), 10, 3 );
 	}
 
 	/**
@@ -169,11 +189,37 @@ final class Posts_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Posts per page under Screen Options, as on core's Posts and Comments screens.
+		add_screen_option(
+			'per_page',
+			array(
+				'default' => self::PER_PAGE_DEFAULT,
+				'option'  => self::PER_PAGE_OPTION,
+			)
+		);
+
 		$redirect = $this->handle();
 		if ( null !== $redirect ) {
 			wp_safe_redirect( $redirect );
 			exit;
 		}
+	}
+
+	/**
+	 * Saves the number of posts per page from Screen Options, within the range core allows
+	 * for its own lists.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed  $screen_option Value to save; false to skip saving.
+	 * @param string $option        Option name.
+	 * @param mixed  $value         Submitted value.
+	 * @return int|false
+	 */
+	public function save_per_page( mixed $screen_option, string $option, mixed $value ): int|false {
+		$per_page = is_numeric( $value ) ? (int) $value : 0;
+
+		return $per_page >= 1 && $per_page <= 999 ? $per_page : false;
 	}
 
 	/**

@@ -67,6 +67,31 @@ final class Posts_Screen_Test extends Test_Case {
 		return (string) ob_get_clean();
 	}
 
+	public function test_screen_options_set_the_number_of_posts_per_page(): void {
+		$author = $this->user();
+		for ( $i = 0; $i < 3; $i++ ) {
+			$this->ask( $author, 'Question listed on the screen ' . $i );
+		}
+		set_current_screen( 'easyq_page_' . Posts_Screen::PAGE );
+		$screen = new Posts_Screen();
+		$screen->register();
+		$screen->load();
+
+		// The screen offers the option, as core's Posts screen does.
+		$this->assertSame( Posts_Screen::PER_PAGE_OPTION, get_current_screen()?->get_option( 'per_page', 'option' ) );
+		$this->assertSame( Posts_Screen::PER_PAGE_DEFAULT, get_current_screen()?->get_option( 'per_page', 'default' ) );
+
+		// Core saves it through the filter of the option, in the range of its own lists.
+		$this->assertSame( 2, apply_filters( 'set_screen_option_' . Posts_Screen::PER_PAGE_OPTION, false, Posts_Screen::PER_PAGE_OPTION, '2' ) );
+		$this->assertFalse( apply_filters( 'set_screen_option_' . Posts_Screen::PER_PAGE_OPTION, false, Posts_Screen::PER_PAGE_OPTION, '0' ) );
+		$this->assertFalse( apply_filters( 'set_screen_option_' . Posts_Screen::PER_PAGE_OPTION, false, Posts_Screen::PER_PAGE_OPTION, '1000' ) );
+
+		update_user_meta( get_current_user_id(), Posts_Screen::PER_PAGE_OPTION, 2 );
+		$this->request( array( 'page' => Posts_Screen::PAGE ) );
+		preg_match_all( '/Question listed on the screen (\d)/', $this->render(), $listed );
+		$this->assertCount( 2, array_unique( $listed[1] ) );
+	}
+
 	public function test_row_actions_go_through_the_rest_api_with_a_nonce(): void {
 		$queued = $this->ask( $this->user(), 'A question awaiting approval', 'x', array(), null, true );
 		$this->request(

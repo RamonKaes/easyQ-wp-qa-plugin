@@ -109,7 +109,7 @@ final class Posts_List_Table extends WP_List_Table {
 	 * @since 0.1.0
 	 */
 	public function prepare_items(): void {
-		$per_page = $this->get_items_per_page( 'easyq_posts_per_page', 20 );
+		$per_page = $this->get_items_per_page( Posts_Screen::PER_PAGE_OPTION, Posts_Screen::PER_PAGE_DEFAULT );
 		$result   = Services::moderation_query()->find(
 			$this->actor,
 			$this->filters + array(
