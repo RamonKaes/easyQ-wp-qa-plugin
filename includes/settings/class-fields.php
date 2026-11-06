@@ -628,20 +628,25 @@ final class Fields {
 	 */
 	private static function users(): array {
 		return array(
-			'avatar_allow_upload' => self::bool( __( 'Allow users to upload an avatar', 'easyq' ) ),
-			'avatar_store_size'   => self::int( __( 'Largest stored avatar size, in pixels', 'easyq' ), 16, 1000 ),
-			'show_custom_welcome' => self::bool( __( 'Add a text to the welcome email', 'easyq' ) ),
-			'custom_welcome'      => array(
+			'avatar_allow_upload'    => self::bool( __( 'Allow users to upload an avatar', 'easyq' ) ),
+			'avatar_store_size'      => self::int( __( 'Largest stored avatar size, in pixels', 'easyq' ), 16, 1000 ),
+			'show_custom_welcome'    => self::bool( __( 'Add a text to the welcome email', 'easyq' ) ),
+			'custom_welcome'         => array(
 				'type'  => 'lines',
 				'label' => __( 'Text in the welcome email', 'easyq' ),
 			),
-			'show_notice_visitor' => self::bool( __( 'Show a notice to first-time visitors', 'easyq' ) ),
-			'notice_visitor'      => array(
+			'allow_user_walls'       => self::bool( __( 'Allow posts on user walls', 'easyq' ) ),
+			'page_size_wall'         => self::int( __( 'Wall posts per page', 'easyq' ), 1, 100 ),
+			'allow_private_messages' => self::bool( __( 'Allow private messages between users', 'easyq' ) ),
+			'show_message_history'   => self::bool( __( 'Keep private messages and show the inbox', 'easyq' ) ),
+			'page_size_pms'          => self::int( __( 'Private messages per page', 'easyq' ), 1, 100 ),
+			'show_notice_visitor'    => self::bool( __( 'Show a notice to first-time visitors', 'easyq' ) ),
+			'notice_visitor'         => array(
 				'type'  => 'html',
 				'label' => __( 'Notice for first-time visitors, HTML allowed', 'easyq' ),
 			),
-			'show_notice_welcome' => self::bool( __( 'Show a notice to new users', 'easyq' ) ),
-			'notice_welcome'      => array(
+			'show_notice_welcome'    => self::bool( __( 'Show a notice to new users', 'easyq' ) ),
+			'notice_welcome'         => array(
 				'type'  => 'html',
 				'label' => __( 'Notice for new users, HTML allowed', 'easyq' ),
 			),

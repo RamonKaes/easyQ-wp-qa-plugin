@@ -14,6 +14,7 @@ use EasyQ\Frontend\Flash;
 use EasyQ\Frontend\Form_Handler;
 use EasyQ\Frontend\Routes;
 use EasyQ\Mail\Notifications;
+use EasyQ\Messages\Messages;
 use EasyQ\Mail\Unsubscribe;
 use EasyQ\Posts\Post;
 use EasyQ\REST\Post_Input;
@@ -42,7 +43,7 @@ final class Forms {
 	 *
 	 * @var string[]
 	 */
-	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account' );
+	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account', 'wall', 'message' );
 
 	/**
 	 * Forms on the question page that are sent in the background and update the page in place.
@@ -157,6 +158,21 @@ final class Forms {
 			checked( Notifications::enabled( $viewer->user_id ), true, false ),
 			esc_html__( 'Send me the emails I asked for about my posts', 'easyq' )
 		);
+
+		if ( Options::get_bool( 'users', 'allow_private_messages' ) ) {
+			$fields .= sprintf(
+				'<input type="hidden" name="messages" value="0" /><p><label><input type="checkbox" name="messages" value="1"%s /> %s</label></p>',
+				checked( Messages::accepts_messages( $viewer->user_id ), true, false ),
+				esc_html__( 'Allow other users to send me private messages', 'easyq' )
+			);
+		}
+		if ( Options::get_bool( 'users', 'allow_user_walls' ) ) {
+			$fields .= sprintf(
+				'<input type="hidden" name="wall" value="0" /><p><label><input type="checkbox" name="wall" value="1"%s /> %s</label></p>',
+				checked( Messages::accepts_wall_posts( $viewer->user_id ), true, false ),
+				esc_html__( 'Allow other users to post on my wall', 'easyq' )
+			);
+		}
 
 		$fields .= sprintf(
 			'<p><a href="%s">%s</a></p>',
@@ -463,7 +479,7 @@ final class Forms {
 	 * @param string               $after   HTML after the button, e.g. a cancel link.
 	 * @return string
 	 */
-	private static function form( string $form, int $post_id, string $fields, string $label, array $hidden, string $after = '' ): string {
+	public static function form( string $form, int $post_id, string $fields, string $label, array $hidden, string $after = '' ): string {
 		$hidden_html = Form_Handler::hidden_fields( $form );
 		if ( $post_id > 0 ) {
 			$hidden_html .= sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
@@ -504,7 +520,7 @@ final class Forms {
 	 * @param string                $id_prefix  Prefix of the field ID, to keep IDs unique when a form appears several times.
 	 * @return string
 	 */
-	private static function field( string $form, string $name, string $label, string $type, string $value, array $attributes = array(), string $hint = '', string $id_prefix = '' ): string {
+	public static function field( string $form, string $name, string $label, string $type, string $value, array $attributes = array(), string $hint = '', string $id_prefix = '' ): string {
 		$id    = ( '' === $id_prefix ? 'easyq-' . $form : $id_prefix ) . '-' . $name;
 		$error = Flash::error( $form, $name );
 		$attrs = '';

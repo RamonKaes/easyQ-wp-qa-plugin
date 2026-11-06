@@ -12,6 +12,7 @@ use EasyQ\Actor;
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Frontend\URLs;
+use EasyQ\Messages\Messages;
 use EasyQ\Notices\Notices;
 use EasyQ\Services;
 use EasyQ\Users\Site_Meta;
@@ -61,6 +62,11 @@ final class Privacy {
 			'callback'               => array( self::class, 'export_notices' ),
 		);
 
+		$exporters['easyq-messages'] = array(
+			'exporter_friendly_name' => __( 'Q&A messages and wall posts', 'easyq' ),
+			'callback'               => array( self::class, 'export_messages' ),
+		);
+
 		return $exporters;
 	}
 
@@ -88,7 +94,78 @@ final class Privacy {
 			'callback'             => array( self::class, 'erase_notices' ),
 		);
 
+		$erasers['easyq-messages'] = array(
+			'eraser_friendly_name' => __( 'Q&A messages and wall posts', 'easyq' ),
+			'callback'             => array( self::class, 'erase_messages' ),
+		);
+
 		return $erasers;
+	}
+
+	/**
+	 * Exports the private messages and wall posts a user wrote or received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{data: list<array<string, mixed>>, done: bool}
+	 */
+	public static function export_messages( string $email ): array {
+		$user = get_user_by( 'email', $email );
+		$data = array();
+		if ( false !== $user ) {
+			foreach ( Services::messages()->all_of( $user->ID ) as $message ) {
+				$other  = get_userdata( (int) ( $message->from_user_id === $user->ID ? $message->to_user_id : $message->from_user_id ) );
+				$data[] = array(
+					'group_id'          => 'easyq-messages',
+					'group_label'       => __( 'Q&A messages and wall posts', 'easyq' ),
+					'group_description' => __( 'Private messages and wall posts you wrote or received.', 'easyq' ),
+					'item_id'           => 'easyq-message-' . $message->id,
+					'data'              => array(
+						array(
+							'name'  => __( 'Kind', 'easyq' ),
+							'value' => Messages::WALL === $message->type ? __( 'Wall post', 'easyq' ) : __( 'Private message', 'easyq' ),
+						),
+						array(
+							'name'  => $message->from_user_id === $user->ID ? __( 'To', 'easyq' ) : __( 'From', 'easyq' ),
+							'value' => false === $other ? __( 'Deleted user', 'easyq' ) : $other->display_name,
+						),
+						array(
+							'name'  => __( 'Text', 'easyq' ),
+							'value' => $message->content,
+						),
+						array(
+							'name'  => __( 'Date', 'easyq' ),
+							'value' => $message->created,
+						),
+					),
+				);
+			}
+		}
+
+		return array(
+			'data' => $data,
+			'done' => true,
+		);
+	}
+
+	/**
+	 * Erases the private messages and wall posts a user wrote or received, and the posts on their wall.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{items_removed: bool, items_retained: bool, messages: string[], done: bool}
+	 */
+	public static function erase_messages( string $email ): array {
+		$user = get_user_by( 'email', $email );
+
+		return array(
+			'items_removed'  => false !== $user && Messages::delete_all_of( $user->ID ) > 0,
+			'items_retained' => false,
+			'messages'       => array(),
+			'done'           => true,
+		);
 	}
 
 	/**

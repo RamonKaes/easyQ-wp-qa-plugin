@@ -30,7 +30,7 @@ final class Templates {
 	 *
 	 * @var string[]
 	 */
-	private const LOGIN_REQUIRED = array( 'favorites', 'updates' );
+	private const LOGIN_REQUIRED = array( 'favorites', 'updates', 'messages' );
 
 	/**
 	 * Rendered Q&A page for classic themes.
@@ -130,8 +130,11 @@ final class Templates {
 	 */
 	public function require_login(): void {
 		$route = $this->router->current();
-		if ( null !== $route && in_array( $route->name, self::LOGIN_REQUIRED, true ) && ! is_user_logged_in() ) {
-			wp_safe_redirect( wp_login_url( Routes::url( $route->name ) ) );
+		if ( null !== $route && ( in_array( $route->name, self::LOGIN_REQUIRED, true ) || 'message' === $route->name ) && ! is_user_logged_in() ) {
+			// As auth_redirect(): back to the requested page after logging in.
+			$host = isset( $_SERVER['HTTP_HOST'] ) && is_string( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+			$path = isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
+			wp_safe_redirect( wp_login_url( set_url_scheme( 'http://' . $host . $path ) ) );
 			exit;
 		}
 	}
@@ -441,6 +444,21 @@ final class Templates {
 				'title'       => __( 'Q&A: Activity of a user', 'easyq' ),
 				'description' => __( 'What a user did recently.', 'easyq' ),
 				'content'     => Layouts::user_page( $list ),
+			),
+			'easyq-user-wall'      => array(
+				'title'       => __( 'Q&A: Wall of a user', 'easyq' ),
+				'description' => __( 'Posts on the wall of a user.', 'easyq' ),
+				'content'     => Layouts::user_page( '<!-- wp:easyq/user-wall /-->' ),
+			),
+			'easyq-messages'       => array(
+				'title'       => __( 'Q&A: Private messages', 'easyq' ),
+				'description' => __( 'The received or sent private messages of a user.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/messages /-->',
+			),
+			'easyq-message'        => array(
+				'title'       => __( 'Q&A: Private message', 'easyq' ),
+				'description' => __( 'The form to write to a user, with the latest messages between both.', 'easyq' ),
+				'content'     => '<!-- wp:easyq/page-title /-->' . "\n" . '<!-- wp:easyq/messages /-->',
 			),
 			'easyq-favorites'      => array(
 				'title'       => __( 'Q&A: Favorites', 'easyq' ),

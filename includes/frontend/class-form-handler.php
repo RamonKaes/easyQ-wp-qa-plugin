@@ -43,16 +43,20 @@ final class Form_Handler {
 	 * @var array<string, string[]>
 	 */
 	private const FIELDS = array(
-		'ask'         => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
-		'answer'      => array( 'content', 'notify', 'email', 'name' ),
-		'comment'     => array( 'content', 'notify', 'email', 'name' ),
-		'edit'        => array( 'title', 'content', 'tags', 'category', 'silent' ),
-		'vote'        => array( 'vote' ),
-		'action'      => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
-		'account'     => array( 'remove_avatar', 'notifications' ),
-		'unsubscribe' => array( 'post', 'token' ),
-		'favorite'    => array( 'type', 'id', 'favorite' ),
-		'notice'      => array(),
+		'ask'            => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
+		'answer'         => array( 'content', 'notify', 'email', 'name' ),
+		'comment'        => array( 'content', 'notify', 'email', 'name' ),
+		'edit'           => array( 'title', 'content', 'tags', 'category', 'silent' ),
+		'vote'           => array( 'vote' ),
+		'action'         => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
+		'account'        => array( 'remove_avatar', 'notifications', 'messages', 'wall' ),
+		'unsubscribe'    => array( 'post', 'token' ),
+		'favorite'       => array( 'type', 'id', 'favorite' ),
+		'notice'         => array(),
+		'wall'           => array( 'content' ),
+		'wall_delete'    => array(),
+		'message'        => array( 'content', 'to' ),
+		'message_delete' => array(),
 	);
 
 	/**
@@ -146,6 +150,10 @@ final class Form_Handler {
 			'vote'    => array( 'POST', '/posts/' . $target . '/vote' ),
 			'account' => array( 'POST', '/users/me' ),
 			'unsubscribe' => array( 'POST', '/unsubscribe' ),
+			'wall'     => array( 'POST', '/users/' . $target . '/wall' ),
+			'wall_delete' => array( 'DELETE', '/users/' . $target . '/wall/' . $this->message_id() ),
+			'message'  => array( 'POST', '/messages' ),
+			'message_delete' => array( 'DELETE', '/messages/' . $this->message_id() ),
 			'notice'   => array( 'DELETE', '/notices/' . ( isset( $_POST['easyq_notice'] ) && is_string( $_POST['easyq_notice'] ) ? sanitize_key( wp_unslash( $_POST['easyq_notice'] ) ) : '' ) ),
 			'favorite' => array( '1' === ( $values['favorite'] ?? '' ) ? 'POST' : 'DELETE', '/favorites' ),
 			default   => array( 'POST', '/posts/' . $target . '/actions/' . $action ),
@@ -186,6 +194,18 @@ final class Form_Handler {
 		$message = $this->success_message( $form, $queued );
 
 		return $this->with_flash( $this->success_url( $form, $id, $back ), Flash::store( 'success', $message, $form ) );
+	}
+
+	/**
+	 * Returns the message a delete button was for.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	private function message_id(): int {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Called after the nonce of the form was verified.
+		return isset( $_POST['easyq_message'] ) && is_numeric( $_POST['easyq_message'] ) ? absint( $_POST['easyq_message'] ) : 0;
 	}
 
 	/**
@@ -293,7 +313,7 @@ final class Form_Handler {
 			return Routes::url( 'home' );
 		}
 
-		if ( 'favorite' === $form || 'notice' === $form ) {
+		if ( in_array( $form, array( 'favorite', 'notice', 'wall', 'wall_delete', 'message', 'message_delete' ), true ) ) {
 			return $back;
 		}
 
@@ -335,6 +355,9 @@ final class Form_Handler {
 			'unsubscribe' => __( 'You will no longer get emails about this post.', 'easyq' ),
 			'favorite' => __( 'Your favorites have been saved.', 'easyq' ),
 			'notice'   => __( 'The notice was dismissed.', 'easyq' ),
+			'wall'     => __( 'Your post is on the wall.', 'easyq' ),
+			'wall_delete', 'message_delete' => __( 'Deleted.', 'easyq' ),
+			'message'  => __( 'Your message has been sent.', 'easyq' ),
 			default   => __( 'Done.', 'easyq' ),
 		};
 	}

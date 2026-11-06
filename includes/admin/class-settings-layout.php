@@ -145,6 +145,13 @@ final class Settings_Layout {
 				self::section( '', array( self::row( __( 'Avatars', 'easyq' ), array( 'avatar_allow_upload', 'avatar_store_size' ) ) ) ),
 				self::section( __( 'Welcome email', 'easyq' ), array( self::row( __( 'Own text', 'easyq' ), array( 'show_custom_welcome' ) ), 'custom_welcome' ) ),
 				self::section(
+					__( 'Walls and private messages', 'easyq' ),
+					array(
+						self::row( __( 'User walls', 'easyq' ), array( 'allow_user_walls', 'page_size_wall' ) ),
+						self::row( __( 'Private messages', 'easyq' ), array( 'allow_private_messages', 'show_message_history', 'page_size_pms' ) ),
+					)
+				),
+				self::section(
 					__( 'Notices', 'easyq' ),
 					array(
 						self::row( __( 'First-time visitors', 'easyq' ), array( 'show_notice_visitor' ) ),

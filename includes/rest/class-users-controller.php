@@ -12,6 +12,7 @@ use EasyQ\Events\Events;
 use EasyQ\Frontend\URLs;
 use EasyQ\Limits\Limits;
 use EasyQ\Mail\Notifications;
+use EasyQ\Messages\Messages;
 use EasyQ\Points\Points;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -98,6 +99,14 @@ final class Users_Controller extends Controller {
 						),
 						'notifications' => array(
 							'description' => __( 'Whether the user gets emails about their posts.', 'easyq' ),
+							'type'        => 'boolean',
+						),
+						'messages'      => array(
+							'description' => __( 'Whether others may send the user private messages.', 'easyq' ),
+							'type'        => 'boolean',
+						),
+						'wall'          => array(
+							'description' => __( 'Whether others may post on the wall of the user.', 'easyq' ),
 							'type'        => 'boolean',
 						),
 					),
@@ -287,6 +296,11 @@ final class Users_Controller extends Controller {
 			}
 		}
 
+		Messages::set_preferences(
+			$user_id,
+			$request->has_param( 'messages' ) ? self::bool_param( $request, 'messages' ) : null,
+			$request->has_param( 'wall' ) ? self::bool_param( $request, 'wall' ) : null
+		);
 		if ( $request->has_param( 'notifications' ) ) {
 			Notifications::set_enabled( $user_id, self::bool_param( $request, 'notifications' ) );
 		}
@@ -352,7 +366,11 @@ final class Users_Controller extends Controller {
 				'downvotes_received' => $stats[ Points::DOWNVOTES_RECEIVED ],
 			),
 			'fields'      => $fields,
-		) + ( $all_fields ? array( 'notifications' => Notifications::enabled( $user->ID ) ) : array() );
+		) + ( $all_fields ? array(
+			'notifications' => Notifications::enabled( $user->ID ),
+			'messages'      => Messages::accepts_messages( $user->ID ),
+			'wall'          => Messages::accepts_wall_posts( $user->ID ),
+		) : array() );
 	}
 
 	/**

@@ -166,6 +166,34 @@ final class Query_Growth_Test extends Test_Case {
 		$this->assert_no_growth( $short, $this->queries( 'easyq-updates', new Route( 'updates' ) ), 'updates' );
 	}
 
+	public function test_walls_and_message_boxes_query_the_same_with_more_messages(): void {
+		$owner = $this->user();
+		$user  = get_userdata( (int) $owner->user_id );
+		wp_set_current_user( (int) $owner->user_id );
+		Options::update(
+			'users',
+			array(
+				'page_size_wall' => 50,
+				'page_size_pms'  => 50,
+			)
+		);
+		$fill = function ( int $count ) use ( $owner ): void {
+			for ( $i = 0; $i < $count; $i++ ) {
+				$author = $this->user();
+				Services::messages()->post_on_wall( $author, get_userdata( (int) $owner->user_id ), "Wall post $i" );
+				Services::messages()->send( $author, get_userdata( (int) $owner->user_id ), "Message $i" );
+			}
+		};
+
+		$fill( 3 );
+		$wall  = $this->queries( 'easyq-user-wall', new Route( 'user', $user, 'wall' ) );
+		$inbox = $this->queries( 'easyq-messages', new Route( 'messages' ) );
+
+		$fill( 10 );
+		$this->assert_no_growth( $wall, $this->queries( 'easyq-user-wall', new Route( 'user', $user, 'wall' ) ), 'wall' );
+		$this->assert_no_growth( $inbox, $this->queries( 'easyq-messages', new Route( 'messages' ) ), 'inbox' );
+	}
+
 	public function test_primed_values_are_those_of_single_lookups(): void {
 		$author   = $this->user();
 		$stranger = (int) $this->user()->user_id;

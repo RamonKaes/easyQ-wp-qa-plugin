@@ -31,7 +31,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite` and `easyq-notice`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice` and `easyq-message`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -154,6 +154,17 @@ category) and to the `move` action; a question may always keep the category it h
 | `GET /favorites` | The favorites of the logged in user: `type` (`question`, `user`, `tag`, `category`), `page`, `per_page`. Each item has `type`, `id`, `title` and `link` |
 | `POST /favorites` | Add a favorite: `type`, and `id` with the ID, for tags the name. Adding it twice changes nothing. Your own user answers `400`, what does not exist `404` |
 | `DELETE /favorites` | Remove a favorite: `type` and `id`; responds with `deleted` and `previous` |
+
+### Walls and private messages
+
+| Method and route | Description |
+| --- | --- |
+| `GET /users/{id}/wall` | Posts on the wall of a user, newest first, with `page` and `per_page`; `404` while walls are off |
+| `POST /users/{id}/wall` | Post on a wall: `content`. Needs the permission of the settings; users can turn off posts by others on their wall |
+| `DELETE /users/{id}/wall/{message}` | Delete a wall post: the owner of the wall, the author until someone else posted after it, and moderators who may hide and delete posts |
+| `GET /messages` | Private messages of the logged in user: `box` (`inbox`, `sent`), `page`, `per_page`; or `with` a user for the latest 20 between both, oldest first. `404` without the message history |
+| `POST /messages` | Send a private message: `to`, `content`. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
+| `DELETE /messages/{id}` | Delete a message from your box; it is gone once both sides deleted it |
 
 ### Notices
 

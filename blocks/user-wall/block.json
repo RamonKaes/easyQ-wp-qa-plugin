@@ -1,0 +1,34 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "easyq/user-wall",
+	"title": "User Wall",
+	"category": "easyq",
+	"description": "Posts on the wall of a user, with the form to post there.",
+	"textdomain": "easyq",
+	"usesContext": [
+		"easyq/userId"
+	],
+	"supports": {
+		"html": false,
+		"color": {
+			"text": true,
+			"background": true,
+			"link": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"editorScript": "easyq-editor",
+	"style": [
+		"wp-block-post-comments-form",
+		"wp-block-buttons",
+		"wp-block-button"
+	]
+}

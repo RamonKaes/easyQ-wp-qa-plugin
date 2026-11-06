@@ -152,6 +152,8 @@ final class Schemas {
 					),
 				),
 				'notifications' => self::property( __( 'Whether the user gets emails about their posts; only for the current user.', 'easyq' ), 'boolean' ),
+				'messages'      => self::property( __( 'Whether others may send the user private messages; only for the current user.', 'easyq' ), 'boolean' ),
+				'wall'          => self::property( __( 'Whether others may post on the wall of the user; only for the current user.', 'easyq' ), 'boolean' ),
 				'fields'        => self::property( __( 'Profile fields the viewer may see; the current user gets all of them.', 'easyq' ), 'array' ) + array(
 					'items' => array(
 						'type'       => 'object',
@@ -249,6 +251,47 @@ final class Schemas {
 			array(
 				'post'   => self::property( __( 'The post.', 'easyq' ), 'integer' ),
 				'emails' => self::property( __( 'Whether emails about the post are sent; always false after this request.', 'easyq' ), 'boolean' ),
+			)
+		);
+	}
+
+	/**
+	 * Returns the schema of a wall post or private message.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function message(): array {
+		$user = array(
+			'type'       => array( 'object', 'null' ),
+			'properties' => array(
+				'id'   => array( 'type' => 'integer' ),
+				'name' => array( 'type' => 'string' ),
+				'link' => array( 'type' => 'string' ),
+			),
+		);
+
+		return self::schema(
+			'easyq-message',
+			array(
+				'id'       => self::property( __( 'ID of the message.', 'easyq' ), 'integer' ),
+				'type'     => self::property( __( '`wall` or `private`.', 'easyq' ), 'string' ),
+				'from'     => array(
+					'description' => __( 'Author; null if the user was deleted.', 'easyq' ),
+					'context'     => array( 'view', 'embed' ),
+				) + $user,
+				'to'       => array(
+					'description' => __( 'Recipient or owner of the wall.', 'easyq' ),
+					'context'     => array( 'view', 'embed' ),
+				) + $user,
+				'content'  => self::property( __( 'Text of the message.', 'easyq' ), 'object' ) + array( 'properties' => array( 'rendered' => array( 'type' => 'string' ) ) ),
+				'date_gmt' => self::property( __( 'Time of sending, in UTC.', 'easyq' ), 'string' ),
+				'can'      => self::property( __( 'What the current user may do with it.', 'easyq' ), 'object' ) + array( 'properties' => array( 'delete' => array( 'type' => 'boolean' ) ) ),
+				'deleted'  => self::property( __( 'Whether it was deleted, in delete responses.', 'easyq' ), 'boolean' ),
+				'previous' => self::property( __( 'The deleted message, in delete responses.', 'easyq' ), 'object' ),
+				'sent'     => self::property( __( 'Whether the message was sent, when messages are not kept.', 'easyq' ), 'boolean' ),
+				'stored'   => self::property( __( 'Whether the message was kept.', 'easyq' ), 'boolean' ),
 			)
 		);
 	}

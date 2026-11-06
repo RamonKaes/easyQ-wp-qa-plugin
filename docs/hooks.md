@@ -106,7 +106,13 @@ logs carry over.
 | `tag_favorite`, `tag_unfavorite` | A user added or removed a tag | `word_id`, `tag` |
 | `cat_favorite`, `cat_unfavorite` | A user added or removed a category | `category_id` |
 
-Message and wall events follow with the corresponding features.
+### Walls and private messages
+
+| Event | When | Parameters |
+| --- | --- | --- |
+| `u_wall_post` | A user posted on a wall | `user_id` (owner of the wall), `message_id`, `content`, `format`, `text` |
+| `u_wall_delete` | A wall post was deleted | `message_id`, `old` (`EasyQ\Messages\Message`) |
+| `u_message` | A private message was sent | `user_id` (recipient), `message_id` (null without the message history), `message` |
 
 ### IP addresses
 

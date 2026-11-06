@@ -10,7 +10,9 @@ namespace EasyQ\Mail;
 
 use EasyQ\Actor;
 use EasyQ\Admin\Posts_Screen;
+use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\URLs;
+use EasyQ\Messages\Messages;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -59,6 +61,8 @@ final class Notifications {
 		add_action( 'easyq_c_post', array( $this, 'comment_posted' ), 10, 2 );
 		add_action( 'easyq_a_select', array( $this, 'answer_selected' ), 10, 2 );
 		add_action( 'easyq_u_level', array( $this, 'level_changed' ) );
+		add_action( 'easyq_u_message', array( $this, 'message_sent' ), 10, 2 );
+		add_action( 'easyq_u_wall_post', array( $this, 'wall_posted' ), 10, 2 );
 
 		foreach ( array( 'q', 'a', 'c' ) as $type ) {
 			add_action( "easyq_{$type}_queue", array( $this, 'post_queued' ), 10, 2 );
@@ -444,6 +448,59 @@ final class Notifications {
 				'###POST###'      => $this->post_text( $post ),
 				'###URL###'       => URLs::post( $post ),
 				'###ADMIN_URL###' => self::posts_screen_url( 'pending' ),
+			)
+		);
+	}
+
+	/**
+	 * Delivers a private message by email, with a link to reply if the sender takes messages,
+	 * as `pages/message.php`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $params Event parameters.
+	 * @param Actor                $actor  Sender.
+	 */
+	public function message_sent( array $params, Actor $actor ): void {
+		$to   = get_userdata( is_numeric( $params['user_id'] ?? null ) ? (int) $params['user_id'] : 0 );
+		$from = null === $actor->user_id ? false : get_userdata( $actor->user_id );
+		if ( false === $to || false === $from ) {
+			return;
+		}
+
+		$url = Messages::accepts_messages( $from->ID ) ? Routes::url( 'message', $from->user_nicename ) : URLs::user( $from );
+		$this->mailer->send(
+			'private_message',
+			array( new Recipient( $to->user_email, $to->ID, $to->display_name ) ),
+			fn (): array => array(
+				'###AUTHOR###'  => $from->display_name,
+				'###MESSAGE###' => $this->censored( is_string( $params['message'] ?? null ) ? $params['message'] : '' ),
+				'###URL###'     => $url,
+			)
+		);
+	}
+
+	/**
+	 * Tells the owner of a wall about a post by someone else, as the Q2A event module does.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $params Event parameters.
+	 * @param Actor                $actor  Author of the post.
+	 */
+	public function wall_posted( array $params, Actor $actor ): void {
+		$owner = get_userdata( is_numeric( $params['user_id'] ?? null ) ? (int) $params['user_id'] : 0 );
+		if ( false === $owner || $owner->ID === $actor->user_id || ! self::enabled( $owner->ID ) ) {
+			return;
+		}
+
+		$this->mailer->send(
+			'wall_post',
+			array( new Recipient( $owner->user_email, $owner->ID, $owner->display_name ) ),
+			fn (): array => array(
+				'###AUTHOR###'  => $this->name_of( $actor ),
+				'###MESSAGE###' => $this->censored( is_string( $params['text'] ?? null ) ? $params['text'] : '' ),
+				'###URL###'     => URLs::user( $owner, 'wall' ),
 			)
 		);
 	}

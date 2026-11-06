@@ -694,6 +694,8 @@ export default function editFor( metadata ) {
 				);
 			case 'easyq/account':
 			case 'easyq/favorite-button':
+			case 'easyq/messages':
+			case 'easyq/user-wall':
 			case 'easyq/unsubscribe':
 			case 'easyq/tags':
 			case 'easyq/categories':

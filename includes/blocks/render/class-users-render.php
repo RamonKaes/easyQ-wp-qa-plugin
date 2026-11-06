@@ -11,6 +11,7 @@ namespace EasyQ\Blocks\Render;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
 use EasyQ\Blocks\Render;
+use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\URLs;
 use EasyQ\Points\Points;
 use EasyQ\Services;
@@ -348,6 +349,9 @@ final class Users_Render {
 			'answers'   => sprintf( __( 'Answers (%s)', 'easyq' ), Render::number( $stats[ Points::ANSWERS ] ?? 0 ) ),
 			'activity'  => __( 'Recent activity', 'easyq' ),
 		);
+		if ( Options::get_bool( 'users', 'allow_user_walls' ) ) {
+			$links['wall'] = __( 'Wall', 'easyq' );
+		}
 
 		$items = '';
 		foreach ( $links as $section => $label ) {
@@ -357,6 +361,11 @@ final class Users_Render {
 				$current === $section ? ' aria-current="page"' : '',
 				esc_html( $label )
 			);
+		}
+
+		$viewer = Block_Context::viewer();
+		if ( null !== $viewer->user_id && null === Services::messages()->message_error( $viewer, $user ) ) {
+			$items .= sprintf( '<a href="%s">%s</a>', esc_url( Routes::url( 'message', $user->user_nicename ) ), esc_html__( 'Send a private message', 'easyq' ) );
 		}
 
 		return sprintf(

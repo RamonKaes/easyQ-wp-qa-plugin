@@ -64,7 +64,7 @@ final class Blocks_Test extends Test_Case {
 	public function test_registers_all_blocks(): void {
 		$names = array_filter( array_keys( \WP_Block_Type_Registry::get_instance()->get_all_registered() ), static fn ( string $name ): bool => str_starts_with( $name, 'easyq/' ) );
 
-		$this->assertCount( 48, $names );
+		$this->assertCount( 50, $names );
 		$this->assertNotNull( get_block_bindings_source( 'easyq/post' ) );
 	}
 

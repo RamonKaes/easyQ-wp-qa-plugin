@@ -40,6 +40,7 @@ final class Plugin {
 		Services::favorites()->register();
 		Services::updates()->register();
 		Services::notices()->register();
+		Services::messages()->register();
 		( new Privacy\Privacy() )->register();
 		( new REST\REST_API() )->register();
 

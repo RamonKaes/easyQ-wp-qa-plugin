@@ -58,7 +58,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Open, phase 8 | Section 11 of the [feature mapping](feature-mapping.md) |
-| Personal data exporter and eraser | Open, phases 7 and 8 | `EasyQ\Privacy\Privacy` after `wp_comments_personal_data_exporter()`: favorites, updates and notices so far; the other data of phase 7 comes with its block (decision 54) |
+| Personal data exporter and eraser | Open, phases 7 and 8 | `EasyQ\Privacy\Privacy` after `wp_comments_personal_data_exporter()`: favorites, updates, notices, messages and wall posts so far; the other data of phase 7 comes with its block (decision 54) |
 | No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened, retention in phase 8 |
 
 ## Administration menus

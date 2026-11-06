@@ -91,6 +91,8 @@ final class Widgets {
 			'user'       => self::user_title( $route ),
 			'account'    => __( 'My account', 'easyq' ),
 			'favorites'  => __( 'My favorites', 'easyq' ),
+			'messages'   => 'sent' === Messages_Render::box_name() ? __( 'Sent messages', 'easyq' ) : __( 'Private messages', 'easyq' ),
+			'message'    => __( 'Send a private message', 'easyq' ),
 			'updates'    => self::update_labels()[ $show ] ?? __( 'Recent updates for me', 'easyq' ),
 			'unsubscribe' => __( 'Stop emails', 'easyq' ),
 			'not_found'  => __( 'Page not found', 'easyq' ),

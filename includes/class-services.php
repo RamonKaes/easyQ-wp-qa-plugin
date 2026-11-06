@@ -11,6 +11,7 @@ namespace EasyQ;
 use EasyQ\Categories\Categories;
 use EasyQ\Favorites\Favorites;
 use EasyQ\Limits\Limits;
+use EasyQ\Messages\Messages;
 use EasyQ\Notices\Notices;
 use EasyQ\Points\Points;
 use EasyQ\Posts\Activity_Query;
@@ -161,6 +162,17 @@ final class Services {
 	 */
 	public static function favorites(): Favorites {
 		return self::shared( Favorites::class, static fn (): Favorites => new Favorites( self::posts(), self::categories() ) );
+	}
+
+	/**
+	 * Returns the messages service.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Messages
+	 */
+	public static function messages(): Messages {
+		return self::shared( Messages::class, static fn (): Messages => new Messages() );
 	}
 
 	/**

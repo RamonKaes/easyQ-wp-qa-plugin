@@ -51,20 +51,22 @@ final class Templates {
 	 * @var array<string, string[]>
 	 */
 	private const PLACEHOLDERS = array(
-		'a_commented'  => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
-		'a_followed'   => array( '###AUTHOR###', '###QUESTION_TITLE###', '###ANSWER###', '###URL###' ),
-		'a_selected'   => array( '###AUTHOR###', '###ANSWER###', '###QUESTION_TITLE###', '###URL###' ),
-		'c_commented'  => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
-		'flagged'      => array( '###AUTHOR###', '###FLAGS###', '###POST###', '###URL###', '###ADMIN_URL###' ),
-		'moderate'     => array( '###AUTHOR###', '###POST###', '###URL###', '###ADMIN_URL###' ),
-		'q_answered'   => array( '###AUTHOR###', '###ANSWER###', '###QUESTION_TITLE###', '###URL###' ),
-		'q_commented'  => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
-		'q_posted'     => array( '###AUTHOR###', '###QUESTION_TITLE###', '###QUESTION###', '###URL###' ),
-		'remoderate'   => array( '###AUTHOR###', '###POST###', '###URL###', '###ADMIN_URL###' ),
-		'u_approved'   => array( '###URL###' ),
-		'u_registered' => array( '###USER###', '###URL###' ),
-		'u_to_approve' => array( '###USER###', '###URL###', '###ADMIN_URL###' ),
-		'welcome'      => array( '###CUSTOM###', '###LOGIN_LINK###' ),
+		'a_commented'     => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
+		'a_followed'      => array( '###AUTHOR###', '###QUESTION_TITLE###', '###ANSWER###', '###URL###' ),
+		'a_selected'      => array( '###AUTHOR###', '###ANSWER###', '###QUESTION_TITLE###', '###URL###' ),
+		'c_commented'     => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
+		'flagged'         => array( '###AUTHOR###', '###FLAGS###', '###POST###', '###URL###', '###ADMIN_URL###' ),
+		'moderate'        => array( '###AUTHOR###', '###POST###', '###URL###', '###ADMIN_URL###' ),
+		'private_message' => array( '###AUTHOR###', '###MESSAGE###', '###URL###' ),
+		'q_answered'      => array( '###AUTHOR###', '###ANSWER###', '###QUESTION_TITLE###', '###URL###' ),
+		'q_commented'     => array( '###AUTHOR###', '###COMMENT###', '###CONTEXT###', '###URL###' ),
+		'q_posted'        => array( '###AUTHOR###', '###QUESTION_TITLE###', '###QUESTION###', '###URL###' ),
+		'remoderate'      => array( '###AUTHOR###', '###POST###', '###URL###', '###ADMIN_URL###' ),
+		'u_approved'      => array( '###URL###' ),
+		'u_registered'    => array( '###USER###', '###URL###' ),
+		'u_to_approve'    => array( '###USER###', '###URL###', '###ADMIN_URL###' ),
+		'wall_post'       => array( '###AUTHOR###', '###MESSAGE###', '###URL###' ),
+		'welcome'         => array( '###CUSTOM###', '###LOGIN_LINK###' ),
 	);
 
 	/**
@@ -250,59 +252,67 @@ final class Templates {
 		$user   = __( 'The user', 'easyq' );
 
 		return array(
-			'q_answered'   => array(
+			'q_answered'      => array(
 				'label'    => __( 'Question answered', 'easyq' ),
 				'audience' => $author,
 			),
-			'q_commented'  => array(
+			'q_commented'     => array(
 				'label'    => __( 'Comment on a question', 'easyq' ),
 				'audience' => $author,
 			),
-			'a_commented'  => array(
+			'a_commented'     => array(
 				'label'    => __( 'Comment on an answer', 'easyq' ),
 				'audience' => $author,
 			),
-			'c_commented'  => array(
+			'c_commented'     => array(
 				'label'    => __( 'Comment after a comment', 'easyq' ),
 				'audience' => $author,
 			),
-			'a_selected'   => array(
+			'a_selected'      => array(
 				'label'    => __( 'Answer selected as the best', 'easyq' ),
 				'audience' => $author,
 			),
-			'a_followed'   => array(
+			'a_followed'      => array(
 				'label'    => __( 'Related question to an answer', 'easyq' ),
 				'audience' => $author,
 			),
-			'q_posted'     => array(
+			'q_posted'        => array(
 				'label'    => __( 'New question', 'easyq' ),
 				'audience' => $owner,
 			),
-			'moderate'     => array(
+			'moderate'        => array(
 				'label'    => __( 'Post waits for approval', 'easyq' ),
 				'audience' => $owner,
 			),
-			'remoderate'   => array(
+			'remoderate'      => array(
 				'label'    => __( 'Edited post waits for approval', 'easyq' ),
 				'audience' => $owner,
 			),
-			'flagged'      => array(
+			'flagged'         => array(
 				'label'    => __( 'Flagged post', 'easyq' ),
 				'audience' => $owner,
 			),
-			'u_registered' => array(
+			'u_registered'    => array(
 				'label'    => __( 'New user', 'easyq' ),
 				'audience' => $owner,
 			),
-			'u_to_approve' => array(
+			'u_to_approve'    => array(
 				'label'    => __( 'New user waits for approval', 'easyq' ),
 				'audience' => $owner,
 			),
-			'welcome'      => array(
+			'private_message' => array(
+				'label'    => __( 'Private message', 'easyq' ),
+				'audience' => $user,
+			),
+			'wall_post'       => array(
+				'label'    => __( 'Post on the wall', 'easyq' ),
+				'audience' => $user,
+			),
+			'welcome'         => array(
 				'label'    => __( 'Welcome', 'easyq' ),
 				'audience' => $user,
 			),
-			'u_approved'   => array(
+			'u_approved'      => array(
 				'label'    => __( 'User approved', 'easyq' ),
 				'audience' => $user,
 			),
@@ -345,6 +355,7 @@ final class Templates {
 			'###USER###'           => __( 'Name of the new user', 'easyq' ),
 			'###URL###'            => __( 'Address of the post or the profile', 'easyq' ),
 			'###ADMIN_URL###'      => __( 'Address of the screen to review it', 'easyq' ),
+			'###MESSAGE###'        => __( 'Text of the message or wall post', 'easyq' ),
 			'###CUSTOM###'         => __( 'Own text from the settings', 'easyq' ),
 			'###LOGIN_LINK###'     => __( 'Link to set the password; added at the end if left out', 'easyq' ),
 		);
@@ -366,6 +377,7 @@ final class Templates {
 			'###COMMENT###'        => __( 'Thanks, that helps a lot.', 'easyq' ),
 			'###CONTEXT###'        => __( 'Start with the theme.json file and a templates folder.', 'easyq' ),
 			'###POST###'           => __( 'How do I build a block theme?', 'easyq' ),
+			'###MESSAGE###'        => __( 'Hello! Could you help me with my block theme?', 'easyq' ),
 			/* translators: %s: number of flags. */
 			'###FLAGS###'          => sprintf( _n( '%s flag', '%s flags', 2, 'easyq' ), number_format_i18n( 2 ) ),
 			'###USER###'           => __( 'Alex Example', 'easyq' ),
@@ -463,59 +475,67 @@ final class Templates {
 	 */
 	public static function defaults(): array {
 		return array(
-			'a_commented'  => array(
+			'a_commented'     => array(
 				'subject' => __( 'Your ###SITENAME### answer has a new comment', 'easyq' ),
 				'body'    => __( "Your answer on ###SITENAME### has a new comment by ###AUTHOR###:\n\n###COMMENT###\n\nYour answer was:\n\n###CONTEXT###\n\nYou may respond by adding your own comment:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'a_followed'   => array(
+			'a_followed'      => array(
 				'subject' => __( 'Your ###SITENAME### answer has a related question', 'easyq' ),
 				'body'    => __( "Your answer on ###SITENAME### has a new related question by ###AUTHOR###:\n\n###QUESTION_TITLE###\n\nYour answer was:\n\n###ANSWER###\n\nClick below to answer the new question:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'a_selected'   => array(
+			'a_selected'      => array(
 				'subject' => __( 'Your ###SITENAME### answer has been selected!', 'easyq' ),
 				'body'    => __( "Congratulations! Your answer on ###SITENAME### has been selected as the best by ###AUTHOR###:\n\n###ANSWER###\n\nThe question was:\n\n###QUESTION_TITLE###\n\nClick below to see your answer:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'c_commented'  => array(
+			'c_commented'     => array(
 				'subject' => __( 'Your ###SITENAME### comment has been added to', 'easyq' ),
 				'body'    => __( "A new comment by ###AUTHOR### has been added after your comment on ###SITENAME###:\n\n###COMMENT###\n\nThe discussion is following:\n\n###CONTEXT###\n\nYou may respond by adding another comment:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'flagged'      => array(
+			'flagged'         => array(
 				'subject' => __( '###SITENAME### has a flagged post', 'easyq' ),
 				'body'    => __( "A post by ###AUTHOR### has received ###FLAGS###:\n\n###POST###\n\nClick below to see the post:\n\n###URL###\n\nClick below to review all flagged posts:\n\n###ADMIN_URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'moderate'     => array(
+			'moderate'        => array(
 				'subject' => __( '###SITENAME### moderation', 'easyq' ),
 				'body'    => __( "A post by ###AUTHOR### requires your approval:\n\n###POST###\n\nClick below to approve or reject the post:\n\n###URL###\n\nClick below to review all queued posts:\n\n###ADMIN_URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'q_answered'   => array(
+			'private_message' => array(
+				'subject' => __( 'Message from ###AUTHOR### on ###SITENAME###', 'easyq' ),
+				'body'    => __( "You have been sent a private message by ###AUTHOR### on ###SITENAME###:\n\n###MESSAGE###\n\nClick below to reply or to see the profile of ###AUTHOR###:\n\n###URL###\n\nThank you,\n\n###SITENAME###\n\n\nTo block private messages, visit your account page.", 'easyq' ),
+			),
+			'q_answered'      => array(
 				'subject' => __( 'Your ###SITENAME### question was answered', 'easyq' ),
 				'body'    => __( "Your question on ###SITENAME### has been answered by ###AUTHOR###:\n\n###ANSWER###\n\nYour question was:\n\n###QUESTION_TITLE###\n\nIf you like this answer, you may select it as the best:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'q_commented'  => array(
+			'q_commented'     => array(
 				'subject' => __( 'Your ###SITENAME### question has a new comment', 'easyq' ),
 				'body'    => __( "Your question on ###SITENAME### has a new comment by ###AUTHOR###:\n\n###COMMENT###\n\nYour question was:\n\n###CONTEXT###\n\nYou may respond by adding your own comment:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'q_posted'     => array(
+			'q_posted'        => array(
 				'subject' => __( '###SITENAME### has a new question', 'easyq' ),
 				'body'    => __( "A new question has been asked by ###AUTHOR###:\n\n###QUESTION_TITLE###\n\n###QUESTION###\n\nClick below to see the question:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'remoderate'   => array(
+			'remoderate'      => array(
 				'subject' => __( '###SITENAME### moderation', 'easyq' ),
 				'body'    => __( "An edited post by ###AUTHOR### requires your reapproval:\n\n###POST###\n\nClick below to approve or hide the edited post:\n\n###URL###\n\nClick below to review all queued posts:\n\n###ADMIN_URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'u_approved'   => array(
+			'u_approved'      => array(
 				'subject' => __( 'Your ###SITENAME### user has been approved', 'easyq' ),
 				'body'    => __( "You can see your new user profile here:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'u_registered' => array(
+			'u_registered'    => array(
 				'subject' => __( '###SITENAME### has a new registered user', 'easyq' ),
 				'body'    => __( "A new user has registered as ###USER###.\n\nClick below to view the user profile:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'u_to_approve' => array(
+			'u_to_approve'    => array(
 				'subject' => __( '###SITENAME### has a new registered user', 'easyq' ),
 				'body'    => __( "A new user has registered as ###USER###.\n\nClick below to approve the user:\n\n###URL###\n\nClick below to review all users waiting for approval:\n\n###ADMIN_URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
 			),
-			'welcome'      => array(
+			'wall_post'       => array(
+				'subject' => __( 'Post on your ###SITENAME### wall', 'easyq' ),
+				'body'    => __( "###AUTHOR### has posted on your user wall at ###SITENAME###:\n\n###MESSAGE###\n\nYou may respond to the post here:\n\n###URL###\n\nThank you,\n\n###SITENAME###", 'easyq' ),
+			),
+			'welcome'         => array(
 				'subject' => __( 'Welcome to ###SITENAME###!', 'easyq' ),
 				'body'    => __( "Thank you for registering for ###SITENAME###.\n\n###CUSTOM######LOGIN_LINK###\n\nYour login details are as follows:\n\nUsername: ###USERNAME###\nEmail: ###EMAIL###\n\nPlease keep this information safe for future reference.\n\nThank you,\n\n###SITENAME###\n###SITEURL###", 'easyq' ),
 			),
