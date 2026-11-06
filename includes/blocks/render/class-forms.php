@@ -19,6 +19,7 @@ use EasyQ\Mail\Unsubscribe;
 use EasyQ\Messages\Messages;
 use EasyQ\Newsletter\Newsletter;
 use EasyQ\Posts\Post;
+use EasyQ\Posts\Post_Service;
 use EasyQ\REST\Post_Input;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -115,6 +116,10 @@ final class Forms {
 		$fields = self::custom_text( 'ask' )
 			. self::field( 'ask', 'title', __( 'Your question in one sentence', 'easyq' ), 'text', $title, array( 'required' => 'required' ) )
 			. self::field( 'ask', 'content', __( 'More information for the question', 'easyq' ), 'textarea', Flash::value( 'ask', 'content' ) );
+
+		if ( Post_Input::uses_extra_field() ) {
+			$fields .= self::field( 'ask', 'extra', self::extra_label(), 'text', Flash::value( 'ask', 'extra' ) );
+		}
 
 		if ( Post_Input::uses_categories() && array() !== Services::categories()->all() ) {
 			$fields .= self::category_field( Flash::value( 'ask', 'category' ) );
@@ -523,6 +528,10 @@ final class Forms {
 
 		$fields .= self::field( 'edit', 'content', __( 'Content', 'easyq' ), 'textarea', (string) $post->content );
 
+		if ( Post::QUESTION === $post->base_type() && Post_Input::uses_extra_field() ) {
+			$fields .= self::field( 'edit', 'extra', self::extra_label(), 'text', Post_Service::extra( $post ) );
+		}
+
 		if ( Post::QUESTION === $post->base_type() && Post_Input::uses_tags() ) {
 			$fields .= self::field( 'edit', 'tags', __( 'Tags', 'easyq' ), 'text', implode( Options::get_bool( 'posting', 'tag_separator_comma' ) ? ', ' : ' ', $post->tag_list() ) );
 		}
@@ -539,6 +548,22 @@ final class Forms {
 		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( self::EDIT_VAR ) . '#easyq-post-' . $post->id ), esc_html__( 'Cancel', 'easyq' ) );
 
 		return self::form( 'edit', $post->id, $fields, __( 'Save changes', 'easyq' ), array(), $cancel );
+	}
+
+	/**
+	 * Returns the label of the extra question field.
+	 *
+	 * Question2Answer shows the prompt of the setting as it is; a field needs a label, so an
+	 * empty prompt falls back to a general one.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	private static function extra_label(): string {
+		$prompt = trim( Options::get_string( 'posting', 'extra_field_prompt' ) );
+
+		return '' === $prompt ? __( 'Extra information', 'easyq' ) : $prompt;
 	}
 
 	/**

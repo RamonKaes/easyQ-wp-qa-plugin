@@ -185,6 +185,10 @@ final class Options {
 				'custom_answer'             => '',
 				'show_custom_comment'       => false,
 				'custom_comment'            => '',
+				'extra_field_active'        => false,
+				'extra_field_prompt'        => '',
+				'extra_field_display'       => false,
+				'extra_field_label'         => '',
 			),
 			'viewing'     => array(
 				'voting_on_qs'          => true,

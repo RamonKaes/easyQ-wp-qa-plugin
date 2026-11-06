@@ -149,6 +149,14 @@ function FieldPreview( { name, attributes, context, title } ) {
 					) }
 				</div>
 			);
+		case 'easyq/post-extra':
+			// Empty while the field is off or the question has no value: the block title shows
+			// where the value would appear.
+			return (
+				<div { ...blockProps }>
+					{ post.extra?.rendered || <p>{ title }</p> }
+				</div>
+			);
 		case 'easyq/post-view-count':
 			return (
 				<div { ...blockProps }>

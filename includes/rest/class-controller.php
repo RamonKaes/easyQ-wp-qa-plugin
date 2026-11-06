@@ -172,6 +172,12 @@ abstract class Controller extends WP_REST_Controller {
 	 * @return list<mixed>
 	 */
 	protected function collection( array $items, WP_REST_Request $request ): array {
+		// Load the extra fields of the questions at once, as WP_Query primes the post meta of a list.
+		$questions = array_filter( $items, static fn ( $item ): bool => $item instanceof Post && Post::QUESTION === $item->base_type() );
+		if ( array() !== $questions && Post_Input::uses_extra_field() ) {
+			update_meta_cache( 'easyq_post', array_map( static fn ( Post $question ): int => $question->id, $questions ) );
+		}
+
 		$data = array();
 		foreach ( $items as $item ) {
 			$response = $this->prepare_item_for_response( $item, $request );

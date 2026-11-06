@@ -1,5 +1,10 @@
 /**
- * Default inner blocks of the container blocks, matching the server templates.
+ * Default inner blocks of the container blocks, matching the server layouts in
+ * `includes/blocks/class-layouts.php`.
+ *
+ * Two differences are deliberate: lists get their ID from the editor instead of the
+ * fixed IDs of the templates, and a user block shows the user's name where the profile
+ * template shows the page title, as it may stand on any page.
  *
  * @since 0.1.0
  */
@@ -72,7 +77,15 @@ export const QUESTION_LIST = [
 	[ 'easyq/query-no-results' ],
 ];
 
-const POST_BODY = [
+/**
+ * Returns a question or answer on the question page, as `Layouts::post_body()` does.
+ *
+ * @since 0.1.0
+ *
+ * @param {boolean} isQuestion Whether the blocks are for the question.
+ * @return {Array} Blocks.
+ */
+const postBody = ( isQuestion ) => [
 	[
 		'core/columns',
 		{},
@@ -95,6 +108,7 @@ const POST_BODY = [
 				{},
 				[
 					[ 'easyq/post-content' ],
+					...( isQuestion ? [ [ 'easyq/post-extra', small ] ] : [] ),
 					[
 						'core/group',
 						{
@@ -106,7 +120,12 @@ const POST_BODY = [
 						},
 						[
 							[ 'easyq/post-actions', small ],
-							[ 'easyq/post-author', small ],
+							[
+								'easyq/post-author',
+								isQuestion
+									? small
+									: { avatarSize: 40, ...small },
+							],
 						],
 					],
 					[ 'easyq/comment-list' ],
@@ -137,7 +156,7 @@ export const COMMENT_LIST = [
 ];
 
 export const ANSWER_LIST = [
-	[ 'easyq/answer-template', {}, POST_BODY ],
+	[ 'easyq/answer-template', {}, postBody( false ) ],
 	[ 'easyq/query-pagination' ],
 ];
 
@@ -170,7 +189,7 @@ export const QUESTION_PAGE = [
 			],
 		],
 	],
-	...POST_BODY,
+	...postBody( true ),
 	[ 'easyq/answer-list' ],
 	[ 'easyq/answer-form' ],
 	[

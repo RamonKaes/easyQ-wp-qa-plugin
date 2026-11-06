@@ -171,6 +171,20 @@ final class Post_Schema {
 					'type'        => array( 'integer', 'null' ),
 					'readonly'    => true,
 				),
+				'extra'           => array(
+					'description' => __( 'Extra field of the question; only while the field is on. Rendered only if question pages show it.', 'easyq' ),
+					'type'        => 'object',
+					'properties'  => array(
+						'rendered' => array(
+							'type'     => 'string',
+							'readonly' => true,
+						),
+						'raw'      => array(
+							'type'    => 'string',
+							'context' => array( 'edit' ),
+						),
+					),
+				),
 			);
 		}
 

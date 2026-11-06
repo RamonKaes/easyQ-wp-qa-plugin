@@ -173,7 +173,8 @@ REST API and the blocks, not by capabilities.
 
 The binding source `easyq/post` lets core blocks show data of the current post
 (from the context `easyq/postId`, or the question of the page). Supported keys:
-`title`, `content`, `excerpt`, `url`, `author` and `date`.
+`title`, `content`, `excerpt`, `url`, `author`, `date` and `extra` (the extra field of a
+question; empty unless question pages show it).
 
 ```html
 <!-- wp:heading {"metadata":{"bindings":{"content":{"source":"easyq/post","args":{"key":"title"}}}}} -->

@@ -88,6 +88,20 @@ final class Post_Service {
 	}
 
 	/**
+	 * Returns the value of the extra field of a question, as Question2Answer keeps it in `qa_q_extra`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $question Question.
+	 * @return string Value; empty if there is none.
+	 */
+	public static function extra( Post $question ): string {
+		$value = get_metadata( 'easyq_post', $question->id, self::EXTRA_META, true );
+
+		return is_string( $value ) ? $value : '';
+	}
+
+	/**
 	 * Checks whether a question counts as closed.
 	 *
 	 * A question is closed by a duplicate or a note, or, if the site closes

@@ -151,7 +151,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 51 blocks |
+| `block.json` with the current `apiVersion`, namespace and text domain | Met | `apiVersion` 3 for all 52 blocks |
 | Component props `__next40pxDefaultSize` and `__nextHasNoMarginBottom` | Kept | Without effect since WordPress 7.1, but needed from 6.7 to 7.0; remove once the minimum is 7.1 |
 | Editor canvas is always an iframe (7.1) | Met | The editor script uses no global `document` or `window` |
 | Frontend markup styled by the theme, no plugin stylesheet | Met | Core block classes and style handles; forms take on the comment form block, so text fields, buttons and checkboxes look as in the theme's comment form ([feature mapping](feature-mapping.md), decision 46). Selects keep the browser look, as in core |

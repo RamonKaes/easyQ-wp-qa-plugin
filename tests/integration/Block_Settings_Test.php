@@ -106,7 +106,7 @@ final class Block_Settings_Test extends Test_Case {
 		Block_Context::router()->set_current( new Route( 'question', $question ) );
 
 		$html = do_blocks(
-			'<!-- wp:easyq/question {"questionId":' . $answer->id . '} --><!-- wp:easyq/comment-list {"showFewerFrom":2,"showFewerCount":1} --><!-- wp:easyq/comment-template --><!-- wp:easyq/post-content /--><!-- /wp:easyq/comment-template --><!-- /wp:easyq/comment-list --><!-- /wp:easyq/question -->'
+			'<!-- wp:easyq/question {"questionId":' . $question->id . '} --><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/comment-list {"showFewerFrom":2,"showFewerCount":1} --><!-- wp:easyq/comment-template --><!-- wp:easyq/post-content /--><!-- /wp:easyq/comment-template --><!-- /wp:easyq/comment-list --><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->'
 		);
 
 		$this->assertStringContainsString( 'Show 2 previous comments', $html );
@@ -350,6 +350,29 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringNotContainsString( '<script>', $html );
 		$this->assertMatchesRegularExpression( '/<div><p>Answer kindly\.<\/p><\/div>.*id="easyq-answer-content"/s', $html );
 		$this->assertMatchesRegularExpression( '/<div><p>Comment briefly\.<\/p><\/div>.*id="easyq-comment-' . $answer->id . '-content"/s', $html );
+	}
+
+	public function test_the_question_block_shows_only_questions(): void {
+		$question = $this->ask( $this->user(), 'The question of the question block' );
+		$answer   = $this->answer( $this->user(), $question );
+		$block    = static fn ( int $id ): string => do_blocks( '<!-- wp:easyq/question {"questionId":' . $id . '} --><!-- wp:easyq/post-title /--><!-- /wp:easyq/question -->' );
+
+		$this->assertStringContainsString( 'The question of the question block', $block( $question->id ) );
+		$this->assertSame( '', trim( $block( $answer->id ) ) );
+	}
+
+	public function test_avatars_take_the_sizes_of_the_core_blocks(): void {
+		$question = $this->ask( $this->user() );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+
+		// 48 pixels by default, as core's Post Author block.
+		$this->assertStringContainsString( "height='48' width='48'", do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-author /--><!-- /wp:easyq/question -->' ) );
+
+		// On the question page the question keeps that, answers show 40 as core's comment template.
+		$page = \EasyQ\Blocks\Layouts::question_page();
+		$this->assertSame( 1, substr_count( $page, '<!-- wp:easyq/post-author {"fontSize":"small"} /-->' ) );
+		$this->assertSame( 1, substr_count( $page, '<!-- wp:easyq/post-author {"avatarSize":40,"fontSize":"small"} /-->' ) );
+		$this->assertSame( 1, substr_count( $page, '<!-- wp:easyq/post-extra {"fontSize":"small"} /-->' ) );
 	}
 
 	public function test_the_author_shows_their_title_unless_turned_off(): void {

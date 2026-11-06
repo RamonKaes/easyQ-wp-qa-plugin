@@ -81,10 +81,10 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | Method and route | Description |
 | --- | --- |
 | `GET /questions` | List questions. Parameters: `source` (`recent`, `hot`, `votes`, `answers`, `views`, `unanswered`, `unselected`, `unupvoted`, or `favorites` for the favorites of the current user), `category` (includes subcategories), `tag`, `author`, `page`, `per_page`. Totals in the `X-WP-Total` and `X-WP-TotalPages` headers |
-| `POST /questions` | Ask a question: `title`, `content`, `format` (empty for plain text or `html`), `tags` (array, or text as entered by users), `category`, `notify`, `email` and `name` (anonymous authors), `extra` |
+| `POST /questions` | Ask a question: `title`, `content`, `format` (empty for plain text or `html`), `tags` (array, or text as entered by users), `category`, `notify`, `email` and `name` (anonymous authors), `extra` (only while the extra field is on) |
 | `GET /questions/similar` | Similar questions and suggested tags for a `title`, as configured for the ask form |
-| `GET /questions/{id}` | A question; `context=edit` adds the raw content for users who may edit |
-| `PUT /questions/{id}` | Edit title, content, tags or category; `silent` hides the edit for users allowed to edit silently |
+| `GET /questions/{id}` | A question; `context=edit` adds the raw content for users who may edit. While the extra field is on, `extra` holds its value as `rendered` (empty unless question pages show it) and, in the edit context, `raw` |
+| `PUT /questions/{id}` | Edit title, content, tags, category or, while the extra field is on, `extra`; `silent` hides the edit for users allowed to edit silently |
 
 ### Answers
 

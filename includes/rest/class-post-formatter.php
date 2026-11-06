@@ -14,6 +14,7 @@ use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Services;
+use EasyQ\Settings\Options;
 use EasyQ\Util\IP;
 use EasyQ\Util\Text;
 
@@ -136,12 +137,20 @@ final class Post_Formatter {
 			$data['selected_answer'] = $post->selected_child_id;
 			$data['closed']          = Post_Service::is_closed( $post );
 			$data['closed_by']       = $post->closed_by_id;
+
+			// The extra field, as Question2Answer shows it on question pages: only if that is set.
+			if ( Post_Input::uses_extra_field() ) {
+				$data['extra'] = array( 'rendered' => Options::get_bool( 'posting', 'extra_field_display' ) ? $this->renderer->text( Post_Service::extra( $post ) ) : '' );
+			}
 		}
 
 		if ( 'edit' === $context && $rules['editable'] ) {
 			$data['content']['raw'] = (string) $post->content;
 			if ( Post::QUESTION === $base_type ) {
 				$data['title']['raw'] = (string) $post->title;
+				if ( Post_Input::uses_extra_field() ) {
+					$data['extra']['raw'] = Post_Service::extra( $post );
+				}
 			}
 		}
 

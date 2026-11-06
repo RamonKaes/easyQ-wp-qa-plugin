@@ -204,6 +204,15 @@ final class Settings_Layout {
 						'custom_comment',
 					)
 				),
+				self::section(
+					__( 'Extra field', 'easyq' ),
+					array(
+						self::row( __( 'Ask form', 'easyq' ), array( 'extra_field_active' ) ),
+						'extra_field_prompt',
+						self::row( __( 'Question pages', 'easyq' ), array( 'extra_field_display' ) ),
+						'extra_field_label',
+					)
+				),
 			),
 			'viewing'     => array(
 				self::section(

@@ -807,6 +807,16 @@ final class Fields {
 				'type'  => 'html',
 				'label' => __( 'Text above the comment form, HTML allowed', 'easyq' ),
 			),
+			'extra_field_active'        => self::bool( __( 'Ask for extra information with a field of its own', 'easyq' ) ),
+			'extra_field_prompt'        => array(
+				'type'  => 'text',
+				'label' => __( 'Label of the field on the ask form', 'easyq' ),
+			),
+			'extra_field_display'       => self::bool( __( 'Show the extra information on question pages', 'easyq' ) ),
+			'extra_field_label'         => array(
+				'type'  => 'text',
+				'label' => __( 'Label of the extra information on question pages', 'easyq' ),
+			),
 		);
 	}
 

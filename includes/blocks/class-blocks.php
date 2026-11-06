@@ -9,7 +9,10 @@
 namespace EasyQ\Blocks;
 
 use EasyQ\Posts\Post;
+use EasyQ\Posts\Post_Service;
+use EasyQ\REST\Post_Input;
 use EasyQ\Services;
+use EasyQ\Settings\Options;
 use EasyQ\Util\Assets;
 use WP_Block;
 
@@ -102,7 +105,8 @@ final class Blocks {
 	/**
 	 * Returns a value of the current post for a bound block attribute.
 	 *
-	 * Supported keys: title, content, excerpt, url, author, date.
+	 * Supported keys: title, content, excerpt, url, author, date, extra. The extra field of a
+	 * question is empty unless question pages show it, as the Extra Field block.
 	 *
 	 * @since 0.1.0
 	 *
@@ -125,6 +129,9 @@ final class Blocks {
 			'url'     => esc_url( \EasyQ\Frontend\URLs::post( $post ) ),
 			'author'  => esc_html( Render::author_name( $post ) ),
 			'date'    => esc_html( Render::date( $post->created ) ),
+			'extra'   => Post::QUESTION === $post->base_type() && Post_Input::uses_extra_field() && Options::get_bool( 'posting', 'extra_field_display' )
+				? esc_html( $renderer->text( Post_Service::extra( $post ) ) )
+				: '',
 			default   => null,
 		};
 	}

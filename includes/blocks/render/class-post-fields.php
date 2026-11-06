@@ -15,6 +15,7 @@ use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Activity_Item;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
+use EasyQ\REST\Post_Input;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
@@ -236,6 +237,39 @@ final class Post_Fields {
 	}
 
 	/**
+	 * Renders the extra information of a question, with the label of the setting before it.
+	 *
+	 * As in Question2Answer, only while the extra field is on and question pages show it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @param string               $content    Inner blocks.
+	 * @param WP_Block             $block      Block.
+	 * @return string
+	 */
+	public static function post_extra( array $attributes, string $content, WP_Block $block ): string {
+		$post = Block_Context::post( $block );
+		if ( null === $post || Post::QUESTION !== $post->base_type() || ! Post_Input::uses_extra_field() || ! Options::get_bool( 'posting', 'extra_field_display' ) ) {
+			return '';
+		}
+
+		$value = trim( Post_Service::extra( $post ) );
+		if ( '' === $value ) {
+			return '';
+		}
+
+		$label = trim( Options::get_string( 'posting', 'extra_field_label' ) );
+
+		return sprintf(
+			'<div %s>%s%s</div>',
+			get_block_wrapper_attributes(),
+			'' === $label ? '' : sprintf( '<span>%s</span> ', esc_html( $label ) ),
+			esc_html( Services::content_renderer()->text( $value ) )
+		);
+	}
+
+	/**
 	 * Renders when a post was written, and when and by whom it was last changed.
 	 *
 	 * @since 0.1.0
@@ -297,7 +331,8 @@ final class Post_Fields {
 		$html = '';
 
 		if ( $attributes['showAvatar'] ?? true ) {
-			$size  = is_numeric( $attributes['avatarSize'] ?? null ) ? max( 16, (int) $attributes['avatarSize'] ) : 24;
+			// 48 pixels by default, as core's Post Author block.
+			$size  = is_numeric( $attributes['avatarSize'] ?? null ) ? max( 16, (int) $attributes['avatarSize'] ) : 48;
 			$html .= sprintf( '<div class="wp-block-avatar">%s</div>', Render::avatar( false === $user ? 0 : $user->ID, $size, '' ) );
 		}
 

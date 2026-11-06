@@ -194,7 +194,8 @@ final class Lists_Render {
 		$id       = is_numeric( $attributes['questionId'] ?? null ) ? (int) $attributes['questionId'] : 0;
 		$question = 0 < $id ? Services::posts()->find( $id ) : Block_Context::router()->current()?->question();
 
-		if ( null === $question || ! Services::permissions()->post_rules( $question, Block_Context::viewer() )['viewable'] ) {
+		// The block shows a question; another post ID, e.g. of an answer, shows nothing.
+		if ( null === $question || Post::QUESTION !== $question->base_type() || ! Services::permissions()->post_rules( $question, Block_Context::viewer() )['viewable'] ) {
 			return '';
 		}
 

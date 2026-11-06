@@ -114,15 +114,59 @@ final class Layouts {
 	 * @return string
 	 */
 	public static function question_page(): string {
-		$post_body = '<!-- wp:columns -->
+		return '<!-- wp:easyq/question -->
+<!-- wp:easyq/breadcrumbs {"fontSize":"small"} /-->
+<!-- wp:easyq/post-title {"level":1} /-->
+' . self::breaking_words(
+			'<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
+<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-status /-->
+<!-- wp:easyq/post-tags /-->
+<!-- wp:easyq/post-category /-->
+<!-- wp:easyq/post-view-count /-->
+<!-- wp:easyq/favorite-button {"fontSize":"small"} /--></div>
+<!-- /wp:group -->'
+		) . '
+' . self::post_body( is_question: true ) . '
+<!-- wp:easyq/answer-list {"queryId":2} -->
+<!-- wp:easyq/answer-template -->
+' . self::post_body( is_question: false ) . '
+<!-- /wp:easyq/answer-template -->
+<!-- wp:easyq/query-pagination /-->
+<!-- /wp:easyq/answer-list -->
+<!-- wp:easyq/answer-form /-->
+' . self::breaking_words( '<!-- wp:easyq/related-questions {"fontSize":"small"} /-->' ) . '
+<!-- /wp:easyq/question -->';
+	}
+
+	/**
+	 * Returns the markup of a question or answer on the question page: votes, content, actions,
+	 * author and comments.
+	 *
+	 * The extra field belongs to the question. Answers show their author as core's comment
+	 * template does, with a 40 pixel avatar; the question as core's Post Author block, with 48.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param bool $is_question Whether the markup is for the question.
+	 * @return string
+	 */
+	private static function post_body( bool $is_question ): string {
+		$extra  = $is_question ? '<!-- wp:easyq/post-extra {"fontSize":"small"} /-->' . "\n" : '';
+		$author = array( 'fontSize' => 'small' );
+		if ( ! $is_question ) {
+			$author = array( 'avatarSize' => 40 ) + $author;
+		}
+		$author = self::json( $author );
+
+		return '<!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"6rem"} -->
 <div class="wp-block-column" style="flex-basis:6rem"><!-- wp:easyq/post-votes {"layout":{"type":"flex","orientation":"vertical"},"fontSize":"small"} /--></div>
 <!-- /wp:column -->
 <!-- wp:column -->
 <div class="wp-block-column"><!-- wp:easyq/post-content /-->
-<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
+' . $extra . '<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap","justifyContent":"space-between"}} -->
 <div class="wp-block-group"><!-- wp:easyq/post-actions {"fontSize":"small"} /-->
-<!-- wp:easyq/post-author {"fontSize":"small"} /--></div>
+<!-- wp:easyq/post-author ' . $author . ' /--></div>
 <!-- /wp:group -->
 <!-- wp:easyq/comment-list -->
 <!-- wp:easyq/comment-template -->
@@ -137,29 +181,6 @@ final class Layouts {
 <!-- /wp:easyq/comment-list --></div>
 <!-- /wp:column --></div>
 <!-- /wp:columns -->';
-
-		return '<!-- wp:easyq/question -->
-<!-- wp:easyq/breadcrumbs {"fontSize":"small"} /-->
-<!-- wp:easyq/post-title {"level":1} /-->
-' . self::breaking_words(
-			'<!-- wp:group {"layout":{"type":"flex","flexWrap":"wrap"},"fontSize":"small"} -->
-<div class="wp-block-group has-small-font-size"><!-- wp:easyq/post-status /-->
-<!-- wp:easyq/post-tags /-->
-<!-- wp:easyq/post-category /-->
-<!-- wp:easyq/post-view-count /-->
-<!-- wp:easyq/favorite-button {"fontSize":"small"} /--></div>
-<!-- /wp:group -->'
-		) . '
-' . $post_body . '
-<!-- wp:easyq/answer-list {"queryId":2} -->
-<!-- wp:easyq/answer-template -->
-' . $post_body . '
-<!-- /wp:easyq/answer-template -->
-<!-- wp:easyq/query-pagination /-->
-<!-- /wp:easyq/answer-list -->
-<!-- wp:easyq/answer-form /-->
-' . self::breaking_words( '<!-- wp:easyq/related-questions {"fontSize":"small"} /-->' ) . '
-<!-- /wp:easyq/question -->';
 	}
 
 	/**

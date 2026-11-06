@@ -46,7 +46,7 @@ final class Form_Handler {
 		'ask'                => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
 		'answer'             => array( 'content', 'notify', 'email', 'name' ),
 		'comment'            => array( 'content', 'notify', 'email', 'name' ),
-		'edit'               => array( 'title', 'content', 'tags', 'category', 'silent' ),
+		'edit'               => array( 'title', 'content', 'tags', 'category', 'extra', 'silent' ),
 		'vote'               => array( 'vote' ),
 		'action'             => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
 		'account'            => array( 'remove_avatar', 'notifications', 'messages', 'wall', 'newsletter' ),

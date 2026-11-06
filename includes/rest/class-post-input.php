@@ -98,6 +98,38 @@ final class Post_Input {
 	}
 
 	/**
+	 * Returns the value of the extra question field of a request.
+	 *
+	 * As in Question2Answer, the value is only read while the field is active; otherwise it is
+	 * left alone, and an edited question keeps the value it has.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return string|null Value, or null if the field is off or the request has none.
+	 */
+	public static function extra( WP_REST_Request $request ): ?string {
+		$value = $request->get_param( 'extra' );
+		if ( ! self::uses_extra_field() || ! is_string( $value ) ) {
+			return null;
+		}
+
+		return sanitize_text_field( $value );
+	}
+
+	/**
+	 * Checks whether questions have the extra field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return bool
+	 */
+	public static function uses_extra_field(): bool {
+		return Options::get_bool( 'posting', 'extra_field_active' );
+	}
+
+	/**
 	 * Checks whether the site uses tags.
 	 *
 	 * @since 0.1.0

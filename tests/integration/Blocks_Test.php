@@ -64,7 +64,7 @@ final class Blocks_Test extends Test_Case {
 	public function test_registers_all_blocks(): void {
 		$names = array_filter( array_keys( \WP_Block_Type_Registry::get_instance()->get_all_registered() ), static fn ( string $name ): bool => str_starts_with( $name, 'easyq/' ) );
 
-		$this->assertCount( 51, $names );
+		$this->assertCount( 52, $names );
 		$this->assertNotNull( get_block_bindings_source( 'easyq/post' ) );
 	}
 
@@ -503,6 +503,22 @@ final class Blocks_Test extends Test_Case {
 		);
 
 		$this->assertMatchesRegularExpression( '#<p[^>]*>Bound question title</p>#', $html );
+
+		// The extra field only where question pages show it, as the Extra Field block.
+		update_metadata( 'easyq_post', $question->id, \EasyQ\Posts\Post_Service::EXTRA_META, 'Debian 13' );
+		$extra = fn (): string => $this->render(
+			'<!-- wp:easyq/question --><!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"easyq/post","args":{"key":"extra"}}}}} --><p>Placeholder</p><!-- /wp:paragraph --><!-- /wp:easyq/question -->',
+			new Route( 'question', $question )
+		);
+		$this->assertMatchesRegularExpression( '#<p[^>]*></p>#', $extra() );
+		Options::update(
+			'posting',
+			array(
+				'extra_field_active'  => true,
+				'extra_field_display' => true,
+			)
+		);
+		$this->assertMatchesRegularExpression( '#<p[^>]*>Debian 13</p>#', $extra() );
 	}
 
 	public function test_related_questions(): void {

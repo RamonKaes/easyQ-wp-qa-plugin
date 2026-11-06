@@ -19,7 +19,7 @@
 		},
 		"avatarSize": {
 			"type": "number",
-			"default": 24,
+			"default": 48,
 			"minimum": 16,
 			"maximum": 200
 		},
