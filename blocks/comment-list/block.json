@@ -5,6 +5,11 @@
 	"title": "Comment List",
 	"category": "easyq",
 	"description": "The comments on a question or answer.",
+	"keywords": [
+		"comments",
+		"replies",
+		"list"
+	],
 	"textdomain": "easyq",
 	"usesContext": [
 		"easyq/postId"
@@ -12,11 +17,15 @@
 	"attributes": {
 		"showFewerFrom": {
 			"type": "number",
-			"default": 0
+			"default": 0,
+			"minimum": 0,
+			"maximum": 100
 		},
 		"showFewerCount": {
 			"type": "number",
-			"default": 0
+			"default": 0,
+			"minimum": 0,
+			"maximum": 100
 		}
 	},
 	"providesContext": {
@@ -24,11 +33,22 @@
 		"easyq/commentsFewerCount": "showFewerCount"
 	},
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"spacing": {
 			"margin": true,
@@ -36,7 +56,29 @@
 			"blockGap": true
 		},
 		"typography": {
-			"fontSize": true
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"layout": true
 	},

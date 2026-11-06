@@ -5,6 +5,11 @@
 	"title": "Question Category",
 	"category": "easyq",
 	"description": "Category of a question, linked to its page.",
+	"keywords": [
+		"category",
+		"topic",
+		"taxonomy"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"prefix": {
@@ -20,15 +25,44 @@
 		"easyq/postId"
 	],
 	"supports": {
+		"anchor": true,
 		"html": false,
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"typography": {
 			"fontSize": true,
-			"lineHeight": true
+			"lineHeight": true,
+			"textAlign": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"spacing": {
 			"margin": true,

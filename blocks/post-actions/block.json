@@ -5,24 +5,59 @@
 	"title": "Post Actions",
 	"category": "easyq",
 	"description": "Buttons for the actions the visitor can perform: select, flag, hide, close and more.",
+	"keywords": [
+		"actions",
+		"buttons",
+		"moderation",
+		"flag"
+	],
 	"textdomain": "easyq",
 	"usesContext": [
 		"easyq/postId"
 	],
 	"supports": {
+		"anchor": true,
 		"html": false,
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"typography": {
 			"fontSize": true,
-			"lineHeight": true
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"spacing": {
 			"margin": true,
-			"padding": true
+			"padding": true,
+			"blockGap": true
 		},
 		"layout": {
 			"default": {

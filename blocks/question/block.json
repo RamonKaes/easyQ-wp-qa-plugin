@@ -5,6 +5,11 @@
 	"title": "Question",
 	"category": "easyq",
 	"description": "Shows the question of the current page; the blocks inside show its parts.",
+	"keywords": [
+		"question",
+		"single",
+		"thread"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"questionId": {
@@ -13,11 +18,22 @@
 		}
 	},
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"spacing": {
 			"margin": true,
@@ -25,7 +41,29 @@
 			"blockGap": true
 		},
 		"typography": {
-			"fontSize": true
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"layout": true,
 		"interactivity": true

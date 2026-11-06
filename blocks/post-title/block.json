@@ -5,11 +5,18 @@
 	"title": "Question Title",
 	"category": "easyq",
 	"description": "The title of a question.",
+	"keywords": [
+		"title",
+		"heading",
+		"question"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"level": {
 			"type": "number",
-			"default": 2
+			"default": 2,
+			"minimum": 1,
+			"maximum": 6
 		},
 		"isLink": {
 			"type": "boolean",
@@ -20,15 +27,48 @@
 		"easyq/postId"
 	],
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"typography": {
 			"fontSize": true,
-			"lineHeight": true
+			"lineHeight": true,
+			"textAlign": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"spacing": {
 			"margin": true,

@@ -5,6 +5,12 @@
 	"title": "Q&A Pagination",
 	"category": "easyq",
 	"description": "Links to the other pages of a question or answer list.",
+	"keywords": [
+		"pagination",
+		"pages",
+		"next",
+		"previous"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"showNumbers": {
@@ -29,15 +35,44 @@
 		"easyq/listId"
 	],
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": true,
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"typography": {
 			"fontSize": true,
-			"lineHeight": true
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"spacing": {
 			"margin": true,

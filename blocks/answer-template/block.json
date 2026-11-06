@@ -5,6 +5,11 @@
 	"title": "Answer Template",
 	"category": "easyq",
 	"description": "The layout of each answer.",
+	"keywords": [
+		"answer",
+		"layout",
+		"loop"
+	],
 	"textdomain": "easyq",
 	"parent": [
 		"easyq/answer-list"
@@ -17,11 +22,22 @@
 		"easyq/answersPerPage"
 	],
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"spacing": {
 			"margin": true,
@@ -29,7 +45,29 @@
 			"blockGap": true
 		},
 		"typography": {
-			"fontSize": true
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"layout": true
 	},

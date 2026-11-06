@@ -5,6 +5,7 @@
  */
 import { registerBlockType } from '@wordpress/blocks';
 import { InnerBlocks } from '@wordpress/block-editor';
+import { addFilter } from '@wordpress/hooks';
 import {
 	breadcrumbs,
 	buttons,
@@ -43,6 +44,7 @@ import {
 	inbox,
 	comment,
 	send,
+	shield,
 	tag,
 	termDescription,
 	title,
@@ -124,6 +126,48 @@ const ICONS = {
 	'easyq/user-template': layout,
 	'easyq/user-title': termDescription,
 };
+
+/**
+ * Icons of the block variations, keyed by block name and variation name.
+ *
+ * @since 0.1.0
+ *
+ * @type {Object<string, Object<string, Element>>}
+ */
+const VARIATION_ICONS = {
+	'easyq/question-query': {
+		recent: postDate,
+		hot: trendingUp,
+		unanswered: help,
+		activity: scheduled,
+		favorites: starFilled,
+	},
+	'easyq/user-query': {
+		points: chartBar,
+		newest: postDate,
+		special: shield,
+		favorites: starFilled,
+	},
+};
+
+// The variations come translated from block.json; only their icons are added here. A filter, as
+// the block types are processed again whenever a filter is added later.
+addFilter(
+	'blocks.registerBlockType',
+	'easyq/variation-icons',
+	( settings, name ) =>
+		VARIATION_ICONS[ name ] && settings.variations
+			? {
+					...settings,
+					variations: settings.variations.map( ( variation ) => ( {
+						...variation,
+						icon:
+							VARIATION_ICONS[ name ][ variation.name ] ??
+							settings.icon,
+					} ) ),
+				}
+			: settings
+);
 
 const metadataFiles = require.context( '../../blocks', true, /block\.json$/ );
 

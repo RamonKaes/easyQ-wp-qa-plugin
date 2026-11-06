@@ -5,6 +5,12 @@
 	"title": "Post Activity",
 	"category": "easyq",
 	"description": "What happened to a question, when and by whom, e.g. “answered 5 minutes ago by Alex”.",
+	"keywords": [
+		"activity",
+		"meta",
+		"answered",
+		"edited"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"showAuthor": {
@@ -21,15 +27,44 @@
 		"easyq/activity"
 	],
 	"supports": {
+		"anchor": true,
 		"html": false,
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"typography": {
 			"fontSize": true,
-			"lineHeight": true
+			"lineHeight": true,
+			"textAlign": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"spacing": {
 			"margin": true,

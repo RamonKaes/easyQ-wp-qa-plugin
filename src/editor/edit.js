@@ -6,6 +6,8 @@
 import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	BlockContextProvider,
+	BlockControls,
+	HeadingLevelDropdown,
 	useBlockProps,
 	useInnerBlocksProps,
 	InspectorControls,
@@ -48,6 +50,27 @@ function Placeholder( { label } ) {
 		<div { ...useBlockProps() }>
 			<p>{ label }</p>
 		</div>
+	);
+}
+
+/**
+ * Heading level dropdown in the block toolbar, as in the core heading blocks.
+ *
+ * @since 0.1.0
+ *
+ * @param {Object}                       props               Properties.
+ * @param {Object}                       props.attributes    Attributes.
+ * @param {(attributes: Object) => void} props.setAttributes Updates attributes.
+ * @return {Element} Toolbar control.
+ */
+function HeadingLevel( { attributes, setAttributes } ) {
+	return (
+		<BlockControls group="block">
+			<HeadingLevelDropdown
+				value={ attributes.level }
+				onChange={ ( level ) => setAttributes( { level } ) }
+			/>
+		</BlockControls>
 	);
 }
 
@@ -643,11 +666,19 @@ export default function editFor( metadata ) {
 	return function Edit( props ) {
 		const { attributes, setAttributes, context } = props;
 		const inspector = (
-			<Inspector
-				metadata={ metadata }
-				attributes={ attributes }
-				setAttributes={ setAttributes }
-			/>
+			<>
+				{ metadata.attributes?.level && (
+					<HeadingLevel
+						attributes={ attributes }
+						setAttributes={ setAttributes }
+					/>
+				) }
+				<Inspector
+					metadata={ metadata }
+					attributes={ attributes }
+					setAttributes={ setAttributes }
+				/>
+			</>
 		);
 
 		switch ( name ) {

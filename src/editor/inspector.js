@@ -24,7 +24,6 @@ import { useEasyQ } from './data';
  * @type {Object<string, string>}
  */
 const LABELS = {
-	level: __( 'Heading level', 'easyq' ),
 	isLink: __( 'Link to the question', 'easyq' ),
 	length: __( 'Maximum length', 'easyq' ),
 	showModified: __( 'Show when the post was edited', 'easyq' ),
@@ -294,7 +293,26 @@ function AttributeControl( {
 	}
 
 	if ( definition.type === 'number' ) {
-		const range = name === 'level' ? [ 1, 6 ] : [ 0, 200 ];
+		const min = definition.minimum ?? 0;
+		// Without a maximum in block.json a slider would cap the value, so a number field is shown.
+		if ( definition.maximum === undefined ) {
+			return (
+				<TextControl
+					__nextHasNoMarginBottom
+					__next40pxDefaultSize
+					type="number"
+					label={ label }
+					help={ help }
+					value={ value ?? '' }
+					min={ min }
+					onChange={ ( next ) =>
+						// The render raises values below the minimum; an empty field restores the default.
+						onChange( next === '' ? undefined : Number( next ) )
+					}
+				/>
+			);
+		}
+
 		return (
 			<RangeControl
 				__nextHasNoMarginBottom
@@ -302,8 +320,8 @@ function AttributeControl( {
 				label={ label }
 				help={ help }
 				value={ value }
-				min={ range[ 0 ] }
-				max={ range[ 1 ] }
+				min={ min }
+				max={ definition.maximum }
 				onChange={ onChange }
 			/>
 		);

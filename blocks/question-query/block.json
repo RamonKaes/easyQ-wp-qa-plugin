@@ -5,6 +5,12 @@
 	"title": "Question List",
 	"category": "easyq",
 	"description": "A list of questions with its own layout. Shows the questions of the current page or a fixed selection.",
+	"keywords": [
+		"questions",
+		"list",
+		"loop",
+		"query"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"queryId": {
@@ -26,11 +32,18 @@
 		"easyq/query": "query"
 	},
 	"supports": {
+		"anchor": true,
 		"html": false,
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"spacing": {
 			"margin": true,
@@ -38,7 +51,29 @@
 			"blockGap": true
 		},
 		"typography": {
-			"fontSize": true
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"align": [
 			"wide",
@@ -55,5 +90,138 @@
 			}
 		}
 	},
+	"variations": [
+		{
+			"name": "recent",
+			"title": "Recent Questions",
+			"description": "The newest questions, or the questions of the current page.",
+			"isDefault": true,
+			"attributes": {
+				"query": {
+					"source": "recent",
+					"category": 0,
+					"tag": "",
+					"perPage": 0,
+					"inherit": true
+				}
+			},
+			"keywords": [
+				"recent",
+				"new",
+				"latest"
+			],
+			"isActive": [
+				"query.source"
+			],
+			"scope": [
+				"inserter",
+				"transform"
+			]
+		},
+		{
+			"name": "hot",
+			"title": "Hot Questions",
+			"description": "Questions with the most recent votes, answers and views.",
+			"attributes": {
+				"query": {
+					"source": "hot",
+					"category": 0,
+					"tag": "",
+					"perPage": 0,
+					"inherit": false
+				}
+			},
+			"keywords": [
+				"hot",
+				"popular",
+				"trending"
+			],
+			"isActive": [
+				"query.source"
+			],
+			"scope": [
+				"inserter",
+				"transform"
+			]
+		},
+		{
+			"name": "unanswered",
+			"title": "Unanswered Questions",
+			"description": "Questions without answers.",
+			"attributes": {
+				"query": {
+					"source": "unanswered",
+					"category": 0,
+					"tag": "",
+					"perPage": 0,
+					"inherit": false
+				}
+			},
+			"keywords": [
+				"unanswered",
+				"open",
+				"help"
+			],
+			"isActive": [
+				"query.source"
+			],
+			"scope": [
+				"inserter",
+				"transform"
+			]
+		},
+		{
+			"name": "activity",
+			"title": "Recent Activity",
+			"description": "Questions with the latest answers, comments and edits.",
+			"attributes": {
+				"query": {
+					"source": "activity",
+					"category": 0,
+					"tag": "",
+					"perPage": 0,
+					"inherit": false
+				}
+			},
+			"keywords": [
+				"activity",
+				"updates",
+				"latest"
+			],
+			"isActive": [
+				"query.source"
+			],
+			"scope": [
+				"inserter",
+				"transform"
+			]
+		},
+		{
+			"name": "favorites",
+			"title": "Favorite Questions",
+			"description": "The questions the visitor added to their favorites.",
+			"attributes": {
+				"query": {
+					"source": "favorites",
+					"category": 0,
+					"tag": "",
+					"perPage": 0,
+					"inherit": false
+				}
+			},
+			"keywords": [
+				"favorites",
+				"bookmarks",
+				"saved"
+			],
+			"isActive": [
+				"query.source"
+			],
+			"scope": [
+				"inserter",
+				"transform"
+			]
+		}
+	],
 	"editorScript": "easyq-editor"
 }

@@ -5,11 +5,18 @@
 	"title": "Q&A Tags",
 	"category": "easyq",
 	"description": "Popular tags, linked to their questions.",
+	"keywords": [
+		"tags",
+		"tag cloud",
+		"popular"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"perPage": {
 			"type": "number",
-			"default": 0
+			"default": 0,
+			"minimum": 0,
+			"maximum": 100
 		},
 		"showCounts": {
 			"type": "boolean",
@@ -21,19 +28,49 @@
 		}
 	},
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": true,
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"typography": {
 			"fontSize": true,
-			"lineHeight": true
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"spacing": {
 			"margin": true,
-			"padding": true
+			"padding": true,
+			"blockGap": true
 		},
 		"layout": {
 			"default": {

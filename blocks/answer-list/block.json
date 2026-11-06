@@ -5,6 +5,11 @@
 	"title": "Answer List",
 	"category": "easyq",
 	"description": "The answers of a question.",
+	"keywords": [
+		"answers",
+		"replies",
+		"list"
+	],
 	"textdomain": "easyq",
 	"attributes": {
 		"queryId": {
@@ -30,7 +35,9 @@
 		},
 		"perPage": {
 			"type": "number",
-			"default": 0
+			"default": 0,
+			"minimum": 0,
+			"maximum": 100
 		}
 	},
 	"usesContext": [
@@ -43,11 +50,22 @@
 		"easyq/answersPerPage": "perPage"
 	},
 	"supports": {
+		"anchor": true,
 		"html": false,
+		"align": [
+			"wide",
+			"full"
+		],
 		"color": {
 			"text": true,
 			"background": true,
-			"link": true
+			"link": true,
+			"gradients": true,
+			"__experimentalDefaultControls": {
+				"background": true,
+				"text": true,
+				"link": true
+			}
 		},
 		"spacing": {
 			"margin": true,
@@ -55,7 +73,29 @@
 			"blockGap": true
 		},
 		"typography": {
-			"fontSize": true
+			"fontSize": true,
+			"lineHeight": true,
+			"__experimentalFontFamily": true,
+			"__experimentalFontWeight": true,
+			"__experimentalFontStyle": true,
+			"__experimentalTextTransform": true,
+			"__experimentalTextDecoration": true,
+			"__experimentalLetterSpacing": true,
+			"__experimentalDefaultControls": {
+				"fontSize": true
+			}
+		},
+		"__experimentalBorder": {
+			"radius": true,
+			"color": true,
+			"width": true,
+			"style": true,
+			"__experimentalDefaultControls": {
+				"radius": true,
+				"color": true,
+				"width": true,
+				"style": true
+			}
 		},
 		"layout": true
 	},
