@@ -154,6 +154,7 @@ final class Schemas {
 				'notifications' => self::property( __( 'Whether the user gets emails about their posts; only for the current user.', 'easyq' ), 'boolean' ),
 				'messages'      => self::property( __( 'Whether others may send the user private messages; only for the current user.', 'easyq' ), 'boolean' ),
 				'wall'          => self::property( __( 'Whether others may post on the wall of the user; only for the current user.', 'easyq' ), 'boolean' ),
+				'newsletter'    => self::property( __( 'State of the newsletter: `confirmed`, `pending` or empty; only for the current user.', 'easyq' ), 'string' ),
 				'fields'        => self::property( __( 'Profile fields the viewer may see; the current user gets all of them.', 'easyq' ), 'array' ) + array(
 					'items' => array(
 						'type'       => 'object',
@@ -249,8 +250,29 @@ final class Schemas {
 		return self::schema(
 			'easyq-unsubscribe',
 			array(
-				'post'   => self::property( __( 'The post.', 'easyq' ), 'integer' ),
-				'emails' => self::property( __( 'Whether emails about the post are sent; always false after this request.', 'easyq' ), 'boolean' ),
+				'post'       => self::property( __( 'The post.', 'easyq' ), 'integer' ),
+				'emails'     => self::property( __( 'Whether emails about the post are sent; always false after this request.', 'easyq' ), 'boolean' ),
+				'user'       => self::property( __( 'The user who stops the newsletter.', 'easyq' ), 'integer' ),
+				'newsletter' => self::property( __( 'Whether the user gets the newsletter; always false after this request.', 'easyq' ), 'boolean' ),
+			)
+		);
+	}
+
+	/**
+	 * Returns the schema of the newsletter responses.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public static function newsletter(): array {
+		return self::schema(
+			'easyq-newsletter',
+			array(
+				'running'    => self::property( __( 'Whether the newsletter is being sent.', 'easyq' ), 'boolean' ),
+				'done'       => self::property( __( 'Users handled so far.', 'easyq' ), 'integer' ),
+				'total'      => self::property( __( 'Users who get it.', 'easyq' ), 'integer' ),
+				'subscribed' => self::property( __( 'Whether the subscription is confirmed.', 'easyq' ), 'boolean' ),
 			)
 		);
 	}

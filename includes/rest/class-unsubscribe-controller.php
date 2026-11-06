@@ -9,6 +9,7 @@
 namespace EasyQ\REST;
 
 use EasyQ\Mail\Unsubscribe;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Services;
 use WP_Error;
 use WP_REST_Request;
@@ -23,7 +24,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Routes:
  *
- * - `POST /easyq/v1/unsubscribe` with `post` and `token`
+ * - `POST /easyq/v1/unsubscribe` with `post` and `token`, or `user` and `token` for the newsletter
  *
  * @since 0.1.0
  */
@@ -57,7 +58,10 @@ final class Unsubscribe_Controller extends Controller {
 						'post'  => array(
 							'description' => __( 'Post to stop the emails about.', 'easyq' ),
 							'type'        => 'integer',
-							'required'    => true,
+						),
+						'user'  => array(
+							'description' => __( 'User who stops the newsletter, instead of a post.', 'easyq' ),
+							'type'        => 'integer',
 						),
 						'token' => array(
 							'description' => __( 'Token from the email.', 'easyq' ),
@@ -81,6 +85,23 @@ final class Unsubscribe_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ): WP_REST_Response|WP_Error {
+		$user = self::int_param( $request, 'user' );
+		if ( null !== $user ) {
+			if ( ! Newsletter::verify( $user, (string) self::string_param( $request, 'token' ) ) ) {
+				return new WP_Error( 'easyq_invalid_token', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
+			}
+
+			Newsletter::unsubscribe( $user );
+
+			return $this->respond_with(
+				array(
+					'user'       => $user,
+					'newsletter' => false,
+				),
+				$request
+			);
+		}
+
 		$id   = (int) self::int_param( $request, 'post' );
 		$post = Unsubscribe::verify( $id, (string) self::string_param( $request, 'token' ) ) ? Services::posts()->find( $id ) : null;
 		if ( null === $post ) {

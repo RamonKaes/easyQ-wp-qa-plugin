@@ -41,6 +41,7 @@ final class Plugin {
 		Services::updates()->register();
 		Services::notices()->register();
 		Services::messages()->register();
+		Services::newsletter()->register();
 		( new Privacy\Privacy() )->register();
 		( new REST\REST_API() )->register();
 

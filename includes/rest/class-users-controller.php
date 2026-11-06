@@ -13,6 +13,7 @@ use EasyQ\Frontend\URLs;
 use EasyQ\Limits\Limits;
 use EasyQ\Mail\Notifications;
 use EasyQ\Messages\Messages;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Points\Points;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -107,6 +108,10 @@ final class Users_Controller extends Controller {
 						),
 						'wall'          => array(
 							'description' => __( 'Whether others may post on the wall of the user.', 'easyq' ),
+							'type'        => 'boolean',
+						),
+						'newsletter'    => array(
+							'description' => __( 'Whether the user wants the newsletter; turning it on sends an email to confirm.', 'easyq' ),
 							'type'        => 'boolean',
 						),
 					),
@@ -296,11 +301,23 @@ final class Users_Controller extends Controller {
 			}
 		}
 
-		Messages::set_preferences(
-			$user_id,
-			$request->has_param( 'messages' ) ? self::bool_param( $request, 'messages' ) : null,
-			$request->has_param( 'wall' ) ? self::bool_param( $request, 'wall' ) : null
-		);
+		if ( $request->has_param( 'newsletter' ) ) {
+			$wants      = self::bool_param( $request, 'newsletter' );
+			$subscriber = get_userdata( $user_id );
+			if ( ! $wants ) {
+				Newsletter::unsubscribe( $user_id );
+			} elseif ( false !== $subscriber && '' === Newsletter::state( $user_id ) ) {
+				$subscribed = Services::newsletter()->subscribe( $subscriber );
+				if ( $subscribed instanceof WP_Error ) {
+					return $subscribed;
+				}
+			}
+		}
+				Messages::set_preferences(
+					$user_id,
+					$request->has_param( 'messages' ) ? self::bool_param( $request, 'messages' ) : null,
+					$request->has_param( 'wall' ) ? self::bool_param( $request, 'wall' ) : null
+				);
 		if ( $request->has_param( 'notifications' ) ) {
 			Notifications::set_enabled( $user_id, self::bool_param( $request, 'notifications' ) );
 		}
@@ -370,6 +387,7 @@ final class Users_Controller extends Controller {
 			'notifications' => Notifications::enabled( $user->ID ),
 			'messages'      => Messages::accepts_messages( $user->ID ),
 			'wall'          => Messages::accepts_wall_posts( $user->ID ),
+			'newsletter'    => Newsletter::state( $user->ID ),
 		) : array() );
 	}
 

@@ -90,6 +90,7 @@ final class Fields {
 			'lists'       => __( 'Lists', 'easyq' ),
 			'feeds'       => __( 'Feeds', 'easyq' ),
 			'spam'        => __( 'Spam', 'easyq' ),
+			'newsletter'  => __( 'Newsletter', 'easyq' ),
 		);
 	}
 
@@ -121,6 +122,7 @@ final class Fields {
 			'permissions' => self::permissions(),
 			'emails'      => self::emails(),
 			'users'       => self::users(),
+			'newsletter'  => self::newsletter(),
 			'posting'     => self::posting(),
 			'viewing'     => self::viewing(),
 			'lists'       => self::lists(),
@@ -650,6 +652,40 @@ final class Fields {
 				'type'  => 'html',
 				'label' => __( 'Notice for new users, HTML allowed', 'easyq' ),
 			),
+		);
+	}
+
+	/**
+	 * Returns the fields of the newsletter settings.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, array>
+	 *
+	 * @phpstan-return array<string, Field>
+	 */
+	private static function newsletter(): array {
+		return array(
+			'mailing_enabled'    => self::bool( __( 'Offer a newsletter that users can subscribe to on their account page', 'easyq' ) ),
+			'mailing_from_name'  => array(
+				'type'  => 'text',
+				'label' => __( 'Sender name', 'easyq' ),
+			),
+			'mailing_from_email' => array(
+				'type'        => 'email',
+				'label'       => __( 'Sender address', 'easyq' ),
+				'description' => __( 'Leave empty for the default of WordPress.', 'easyq' ),
+			),
+			'mailing_subject'    => array(
+				'type'  => 'text',
+				'label' => __( 'Subject', 'easyq' ),
+			),
+			'mailing_body'       => array(
+				'type'        => 'lines',
+				'label'       => __( 'Text', 'easyq' ),
+				'description' => __( 'Plain text. A link to stop the newsletter is added below.', 'easyq' ),
+			),
+			'mailing_per_minute' => self::int( __( 'Emails per minute', 'easyq' ), 1, 1000 ),
 		);
 	}
 

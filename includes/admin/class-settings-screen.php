@@ -9,6 +9,7 @@
 namespace EasyQ\Admin;
 
 use EasyQ\Capabilities;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Settings\Fields;
 use EasyQ\Settings\Options;
 use EasyQ\Settings\Registry;
@@ -45,6 +46,7 @@ final class Settings_Screen {
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 14 );
 		add_action( 'admin_init', array( $this, 'add_fields' ) );
+		add_action( 'admin_post_easyq_newsletter', array( $this, 'newsletter_action' ) );
 	}
 
 	/**
@@ -212,7 +214,77 @@ final class Settings_Screen {
 		settings_fields( Registry::group( $tab ) );
 		do_settings_sections( self::page( $tab ) );
 		submit_button();
-		echo '</form></div>';
+		echo '</form>';
+		if ( 'newsletter' === $tab ) {
+			$this->render_newsletter_actions();
+		}
+		echo '</div>';
+	}
+
+	/**
+	 * Renders the progress of the newsletter and the buttons to send it, as Q2A's mailing page.
+	 *
+	 * @since 0.1.0
+	 */
+	private function render_newsletter_actions(): void {
+		$progress = Newsletter::progress();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only shows the result of an action.
+		$message = isset( $_GET['easyq_newsletter'] ) && is_string( $_GET['easyq_newsletter'] ) ? sanitize_text_field( wp_unslash( $_GET['easyq_newsletter'] ) ) : '';
+
+		echo '<h2>' . esc_html__( 'Send the newsletter', 'easyq' ) . '</h2>';
+		if ( '' !== $message ) {
+			wp_admin_notice( $message, array( 'type' => 'info' ) );
+		}
+		echo '<p>' . esc_html(
+			$progress['running']
+				/* translators: 1: users handled, 2: all users who get it. */
+				? sprintf( __( 'Sending: %1$s of %2$s users.', 'easyq' ), number_format_i18n( $progress['done'] ), number_format_i18n( $progress['total'] ) )
+				: __( 'The newsletter goes to the users who subscribed on their account page and confirmed it by email.', 'easyq' )
+		) . '</p>';
+
+		$button = static function ( string $action, string $label, bool $primary = false ): void {
+			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin-inline-end:8px">';
+			echo '<input type="hidden" name="action" value="easyq_newsletter" /><input type="hidden" name="do" value="' . esc_attr( $action ) . '" />';
+			wp_nonce_field( 'easyq_newsletter' );
+			submit_button( $label, $primary ? 'primary' : 'secondary', 'submit', false );
+			echo '</form>';
+		};
+		$button( 'test', __( 'Send a test to me', 'easyq' ) );
+		if ( $progress['running'] ) {
+			$button( 'cancel', __( 'Cancel sending', 'easyq' ) );
+		} else {
+			$button( 'start', __( 'Start sending', 'easyq' ), true );
+		}
+	}
+
+	/**
+	 * Handles the buttons of the newsletter through the REST API, and returns to the tab.
+	 *
+	 * @since 0.1.0
+	 */
+	public function newsletter_action(): void {
+		check_admin_referer( 'easyq_newsletter' );
+		$action = isset( $_POST['do'] ) && is_string( $_POST['do'] ) ? sanitize_key( wp_unslash( $_POST['do'] ) ) : '';
+
+		$response = rest_do_request( new \WP_REST_Request( 'POST', '/easyq/v1/newsletter/' . $action ) );
+		$error    = $response->as_error();
+		$message  = null !== $error ? $error->get_error_message() : match ( $action ) {
+			'start'  => __( 'The newsletter is being sent.', 'easyq' ),
+			'cancel' => __( 'Sending was cancelled.', 'easyq' ),
+			default  => __( 'The test email was sent to you.', 'easyq' ),
+		};
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'             => self::PAGE,
+					'tab'              => 'newsletter',
+					'easyq_newsletter' => rawurlencode( $message ),
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
 	}
 
 	/**

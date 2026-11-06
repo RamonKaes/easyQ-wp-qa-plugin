@@ -13,6 +13,7 @@ use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Frontend\URLs;
 use EasyQ\Messages\Messages;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Notices\Notices;
 use EasyQ\Services;
 use EasyQ\Users\Site_Meta;
@@ -67,6 +68,11 @@ final class Privacy {
 			'callback'               => array( self::class, 'export_messages' ),
 		);
 
+		$exporters['easyq-newsletter'] = array(
+			'exporter_friendly_name' => __( 'Q&A newsletter', 'easyq' ),
+			'callback'               => array( self::class, 'export_newsletter' ),
+		);
+
 		return $exporters;
 	}
 
@@ -99,7 +105,74 @@ final class Privacy {
 			'callback'             => array( self::class, 'erase_messages' ),
 		);
 
+		$erasers['easyq-newsletter'] = array(
+			'eraser_friendly_name' => __( 'Q&A newsletter', 'easyq' ),
+			'callback'             => array( self::class, 'erase_newsletter' ),
+		);
+
 		return $erasers;
+	}
+
+	/**
+	 * Exports the subscription to the newsletter and the time of the consent.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{data: list<array<string, mixed>>, done: bool}
+	 */
+	public static function export_newsletter( string $email ): array {
+		$user  = get_user_by( 'email', $email );
+		$state = false === $user ? '' : Newsletter::state( $user->ID );
+		if ( false === $user || '' === $state ) {
+			return array(
+				'data' => array(),
+				'done' => true,
+			);
+		}
+
+		$consent = Site_Meta::get( $user->ID, Newsletter::CONSENT_META );
+
+		return array(
+			'data' => array(
+				array(
+					'group_id'          => 'easyq-newsletter',
+					'group_label'       => __( 'Q&A newsletter', 'easyq' ),
+					'group_description' => __( 'Your subscription to the newsletter.', 'easyq' ),
+					'item_id'           => 'easyq-newsletter',
+					'data'              => array(
+						array(
+							'name'  => __( 'Subscription', 'easyq' ),
+							'value' => 'confirmed' === $state ? __( 'Confirmed', 'easyq' ) : __( 'Waiting for confirmation', 'easyq' ),
+						),
+						array(
+							'name'  => __( 'Consent given', 'easyq' ),
+							'value' => is_numeric( $consent ) ? gmdate( 'Y-m-d H:i:s', (int) $consent ) . ' UTC' : '-',
+						),
+					),
+				),
+			),
+			'done' => true,
+		);
+	}
+
+	/**
+	 * Erases the subscription to the newsletter.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $email Email address.
+	 * @return array{items_removed: bool, items_retained: bool, messages: string[], done: bool}
+	 */
+	public static function erase_newsletter( string $email ): array {
+		$user = get_user_by( 'email', $email );
+
+		return array(
+			'items_removed'  => false !== $user && Newsletter::unsubscribe( $user->ID ),
+			'items_retained' => false,
+			'messages'       => array(),
+			'done'           => true,
+		);
 	}
 
 	/**

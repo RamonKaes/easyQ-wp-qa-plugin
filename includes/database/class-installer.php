@@ -96,6 +96,7 @@ final class Installer {
 		// WordPress rebuilds the rewrite rules without the Q&A routes on the next request.
 		delete_option( 'rewrite_rules' );
 		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
+		wp_clear_scheduled_hook( \EasyQ\Newsletter\Newsletter::CRON_HOOK );
 	}
 
 	/**

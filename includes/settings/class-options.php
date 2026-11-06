@@ -106,6 +106,14 @@ final class Options {
 				'permit_view_special_users_page_points' => 0,
 				'permit_post_wall_points'               => 0,
 			),
+			'newsletter'  => array(
+				'mailing_enabled'    => false,
+				'mailing_from_name'  => '',
+				'mailing_from_email' => '',
+				'mailing_subject'    => '',
+				'mailing_body'       => '',
+				'mailing_per_minute' => 500,
+			),
 			'emails'      => array(
 				'from_email'            => '',
 				'feedback_email'        => '',

@@ -31,7 +31,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice`, `easyq-message` and `easyq-feedback`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice`, `easyq-message`, `easyq-feedback` and `easyq-newsletter`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -171,6 +171,16 @@ category) and to the `move` action; a question may always keep the category it h
 | Method and route | Description |
 | --- | --- |
 | `POST /feedback` | Send feedback to the site owner: `message`, and optionally `name`, `email` (the address replies go to) and `previous` (the page the sender came from). Open to visitors, limited per hour like posting; `404` while the form is off |
+
+### Newsletter
+
+| Method and route | Description |
+| --- | --- |
+| `GET /newsletter` | Progress of the sending: `running`, `done`, `total`. Needs `easyq_manage` |
+| `POST /newsletter/{action}` | `start` or `cancel` the sending in batches by WP-Cron, or send a `test` to yourself. Needs `easyq_manage` |
+| `POST /newsletter/confirm` | Confirm a subscription: `user` and `key` from the confirmation email; the key is used up and expires after a day (`user_request_key_expiration`) |
+| `POST /users/me` with `newsletter` | `true` sends the email to confirm, `false` ends the subscription |
+| `POST /unsubscribe` with `user` and `token` | Stops the newsletter, also as the one-click unsubscribe of mail programs (RFC 8058) |
 
 ### Notices
 

@@ -13,6 +13,7 @@ use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Frontend\Router;
 use EasyQ\Mail\Templates;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Updates\Updates;
@@ -107,6 +108,7 @@ final class Uninstaller {
 		delete_option( Counts::OPTION );
 		delete_option( Router::RULES_OPTION );
 		delete_option( Updates::THRESHOLD_OPTION );
+		Newsletter::cancel();
 		self::delete_transients();
 		self::delete_site_user_meta();
 	}

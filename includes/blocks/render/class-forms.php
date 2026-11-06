@@ -16,6 +16,7 @@ use EasyQ\Frontend\Routes;
 use EasyQ\Mail\Notifications;
 use EasyQ\Mail\Unsubscribe;
 use EasyQ\Messages\Messages;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Posts\Post;
 use EasyQ\REST\Post_Input;
 use EasyQ\Services;
@@ -43,7 +44,7 @@ final class Forms {
 	 *
 	 * @var string[]
 	 */
-	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account', 'wall', 'message', 'feedback' );
+	public const INLINE_NOTICES = array( 'ask', 'answer', 'comment', 'edit', 'account', 'wall', 'message', 'feedback', 'unsubscribe', 'newsletter_confirm' );
 
 	/**
 	 * Forms on the question page that are sent in the background and update the page in place.
@@ -159,6 +160,15 @@ final class Forms {
 			esc_html__( 'Send me the emails I asked for about my posts', 'easyq' )
 		);
 
+		if ( Options::get_bool( 'newsletter', 'mailing_enabled' ) ) {
+			$state   = Newsletter::state( $viewer->user_id );
+			$fields .= sprintf(
+				'<input type="hidden" name="newsletter" value="0" /><p><label><input type="checkbox" name="newsletter" value="1"%s /> %s</label>%s</p>',
+				checked( '' !== $state, true, false ),
+				esc_html__( 'Send me the newsletter', 'easyq' ),
+				'pending' === $state ? ' ' . esc_html__( '(waiting for your confirmation by email)', 'easyq' ) : ''
+			);
+		}
 		if ( Options::get_bool( 'users', 'allow_private_messages' ) ) {
 			$fields .= sprintf(
 				'<input type="hidden" name="messages" value="0" /><p><label><input type="checkbox" name="messages" value="1"%s /> %s</label></p>',
@@ -232,6 +242,42 @@ final class Forms {
 	 * @return string
 	 */
 	public static function unsubscribe(): string {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- The token or key in the address is checked instead.
+		$newsletter = isset( $_GET['newsletter'] ) && is_string( $_GET['newsletter'] ) ? sanitize_key( $_GET['newsletter'] ) : '';
+		$user       = isset( $_GET['user'] ) && is_string( $_GET['user'] ) ? absint( $_GET['user'] ) : 0;
+		$secret     = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : ( isset( $_GET['key'] ) && is_string( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '' );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// Opening the page changes nothing, as mail programs and scanners open links in emails.
+		if ( 'confirm' === $newsletter ) {
+			return self::form(
+				'newsletter_confirm',
+				0,
+				sprintf( '<p>%s</p>', esc_html__( 'Do you want to get the newsletter?', 'easyq' ) ),
+				__( 'Confirm the newsletter', 'easyq' ),
+				array(
+					'user' => $user,
+					'key'  => $secret,
+				)
+			);
+		}
+		if ( 'stop' === $newsletter ) {
+			if ( ! Newsletter::verify( $user, $secret ) ) {
+				return sprintf( '<p %s>%s</p>', get_block_wrapper_attributes(), esc_html__( 'This link is not valid.', 'easyq' ) );
+			}
+
+			return self::form(
+				'unsubscribe',
+				0,
+				sprintf( '<p>%s</p>', esc_html__( 'Do you want to stop the newsletter?', 'easyq' ) ),
+				__( 'Stop the newsletter', 'easyq' ),
+				array(
+					'user'  => $user,
+					'token' => $secret,
+				)
+			);
+		}
+
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- The token in the address is checked instead.
 		$id    = isset( $_GET['post'] ) && is_string( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
 		$token = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
@@ -528,7 +574,7 @@ final class Forms {
 		}
 
 		// The markup of the comment form block, so that the theme styles the fields as it styles that form.
-		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe', 'feedback' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
+		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe', 'feedback', 'newsletter_confirm' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
 		$notice  = self::form_notice( $form );
 
 		return sprintf(

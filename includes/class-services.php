@@ -13,6 +13,7 @@ use EasyQ\Favorites\Favorites;
 use EasyQ\Feedback\Feedback;
 use EasyQ\Limits\Limits;
 use EasyQ\Messages\Messages;
+use EasyQ\Newsletter\Newsletter;
 use EasyQ\Notices\Notices;
 use EasyQ\Points\Points;
 use EasyQ\Posts\Activity_Query;
@@ -185,6 +186,17 @@ final class Services {
 	 */
 	public static function messages(): Messages {
 		return self::shared( Messages::class, static fn (): Messages => new Messages() );
+	}
+
+	/**
+	 * Returns the newsletter service.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Newsletter
+	 */
+	public static function newsletter(): Newsletter {
+		return self::shared( Newsletter::class, static fn (): Newsletter => new Newsletter() );
 	}
 
 	/**

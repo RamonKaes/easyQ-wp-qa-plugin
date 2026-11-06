@@ -130,6 +130,10 @@ final class Settings_Layout {
 				self::section( __( 'Moderation', 'easyq' ), array( 'permit_moderate', 'permit_hide_show', 'permit_delete_hidden', 'permit_anon_view_ips', 'permit_view_voters_flaggers' ) ),
 				self::section( __( 'Users', 'easyq' ), array( 'permit_view_new_users_page', 'permit_view_special_users_page', 'permit_post_wall' ) ),
 			),
+			'newsletter'  => array(
+				self::section( '', array( self::row( __( 'Newsletter', 'easyq' ), array( 'mailing_enabled' ) ) ) ),
+				self::section( __( 'Content', 'easyq' ), array( 'mailing_from_name', 'mailing_from_email', 'mailing_subject', 'mailing_body', 'mailing_per_minute' ) ),
+			),
 			'emails'      => array(
 				self::section( '', array( 'from_email', 'feedback_email' ) ),
 				self::section( __( 'Feedback', 'easyq' ), array( self::row( __( 'Form', 'easyq' ), array( 'feedback_enabled' ) ), 'email_privacy' ) ),

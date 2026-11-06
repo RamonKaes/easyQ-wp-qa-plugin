@@ -43,21 +43,22 @@ final class Form_Handler {
 	 * @var array<string, string[]>
 	 */
 	private const FIELDS = array(
-		'ask'            => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
-		'answer'         => array( 'content', 'notify', 'email', 'name' ),
-		'comment'        => array( 'content', 'notify', 'email', 'name' ),
-		'edit'           => array( 'title', 'content', 'tags', 'category', 'silent' ),
-		'vote'           => array( 'vote' ),
-		'action'         => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
-		'account'        => array( 'remove_avatar', 'notifications', 'messages', 'wall' ),
-		'unsubscribe'    => array( 'post', 'token' ),
-		'favorite'       => array( 'type', 'id', 'favorite' ),
-		'notice'         => array(),
-		'wall'           => array( 'content' ),
-		'wall_delete'    => array(),
-		'message'        => array( 'content', 'to' ),
-		'feedback'       => array( 'message', 'name', 'email', 'previous' ),
-		'message_delete' => array(),
+		'ask'                => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
+		'answer'             => array( 'content', 'notify', 'email', 'name' ),
+		'comment'            => array( 'content', 'notify', 'email', 'name' ),
+		'edit'               => array( 'title', 'content', 'tags', 'category', 'silent' ),
+		'vote'               => array( 'vote' ),
+		'action'             => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
+		'account'            => array( 'remove_avatar', 'notifications', 'messages', 'wall', 'newsletter' ),
+		'unsubscribe'        => array( 'post', 'token', 'user' ),
+		'newsletter_confirm' => array( 'user', 'key' ),
+		'favorite'           => array( 'type', 'id', 'favorite' ),
+		'notice'             => array(),
+		'wall'               => array( 'content' ),
+		'wall_delete'        => array(),
+		'message'            => array( 'content', 'to' ),
+		'feedback'           => array( 'message', 'name', 'email', 'previous' ),
+		'message_delete'     => array(),
 	);
 
 	/**
@@ -151,6 +152,7 @@ final class Form_Handler {
 			'vote'    => array( 'POST', '/posts/' . $target . '/vote' ),
 			'account' => array( 'POST', '/users/me' ),
 			'unsubscribe' => array( 'POST', '/unsubscribe' ),
+			'newsletter_confirm' => array( 'POST', '/newsletter/confirm' ),
 			'wall'     => array( 'POST', '/users/' . $target . '/wall' ),
 			'wall_delete' => array( 'DELETE', '/users/' . $target . '/wall/' . $this->message_id() ),
 			'message'  => array( 'POST', '/messages' ),
@@ -311,7 +313,7 @@ final class Form_Handler {
 			return Routes::url( 'account' );
 		}
 
-		if ( 'unsubscribe' === $form ) {
+		if ( 'unsubscribe' === $form || 'newsletter_confirm' === $form ) {
 			return Routes::url( 'home' );
 		}
 
@@ -355,6 +357,7 @@ final class Form_Handler {
 			'edit'    => __( 'Your changes have been saved.', 'easyq' ),
 			'account' => __( 'Your profile has been saved.', 'easyq' ),
 			'unsubscribe' => __( 'You will no longer get emails about this post.', 'easyq' ),
+			'newsletter_confirm' => __( 'Thank you! You will get the newsletter.', 'easyq' ),
 			'favorite' => __( 'Your favorites have been saved.', 'easyq' ),
 			'notice'   => __( 'The notice was dismissed.', 'easyq' ),
 			'wall'     => __( 'Your post is on the wall.', 'easyq' ),
