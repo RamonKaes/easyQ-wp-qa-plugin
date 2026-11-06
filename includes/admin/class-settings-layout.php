@@ -190,7 +190,7 @@ final class Settings_Layout {
 					__( 'While asking', 'easyq' ),
 					array(
 						self::row( __( 'Similar questions', 'easyq' ), array( 'do_ask_check_qs', 'match_ask_check_qs', 'page_size_ask_check_qs' ) ),
-						self::row( __( 'Tag suggestions', 'easyq' ), array( 'do_example_tags', 'match_example_tags', 'page_size_ask_tags' ) ),
+						self::row( __( 'Tag suggestions', 'easyq' ), array( 'do_example_tags', 'match_example_tags', 'do_complete_tags', 'page_size_ask_tags' ) ),
 					)
 				),
 				self::section(
@@ -230,7 +230,7 @@ final class Settings_Layout {
 					__( 'Answers and comments', 'easyq' ),
 					array(
 						self::row( __( 'Answers', 'easyq' ), array( 'sort_answers_by', 'show_selected_first', 'page_size_q_as', 'show_a_form_immediate' ) ),
-						self::row( __( 'Comments', 'easyq' ), array( 'show_fewer_cs_from', 'show_fewer_cs_count' ) ),
+						self::row( __( 'Comments', 'easyq' ), array( 'show_fewer_cs_from', 'show_fewer_cs_count', 'show_c_reply_buttons' ) ),
 					)
 				),
 				self::section( __( 'Search engines', 'easyq' ), array( self::row( __( 'Sitemaps', 'easyq' ), array( 'sitemap_users' ) ) ) ),

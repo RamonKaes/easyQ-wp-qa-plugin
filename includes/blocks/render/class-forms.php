@@ -97,6 +97,15 @@ final class Forms {
 	public const ANSWER_VAR = 'easyq_answer';
 
 	/**
+	 * Query variable that opens the comment form of a question or answer, for the Reply buttons of comments.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const COMMENT_VAR = 'easyq_comment';
+
+	/**
 	 * Renders the form to ask a question.
 	 *
 	 * @since 0.1.0
@@ -127,7 +136,7 @@ final class Forms {
 
 		if ( Post_Input::uses_tags() ) {
 			$hint    = Options::get_bool( 'posting', 'tag_separator_comma' ) ? __( 'Separate tags with commas.', 'easyq' ) : __( 'Separate tags with spaces; use hyphens to combine words.', 'easyq' );
-			$fields .= self::field( 'ask', 'tags', __( 'Tags', 'easyq' ), 'text', Flash::value( 'ask', 'tags' ), array(), $hint );
+			$fields .= self::tag_field( 'ask', Flash::value( 'ask', 'tags' ), $hint );
 		}
 
 		$fields .= self::author_fields( 'ask', __( 'Email me if my question is answered or commented on', 'easyq' ) );
@@ -472,12 +481,59 @@ final class Forms {
 			)
 			: self::permission_message( $reason );
 
+		// The Reply buttons of the comments open the form through the shared state, see `comment_key()`.
+		$key  = self::comment_key( $post->id );
+		$open = self::requested( self::COMMENT_VAR ) === $post->id;
+		wp_interactivity_state( 'easyq', array( 'commentForms' => array( $key => $open ) ) );
+
 		return sprintf(
-			'<details %s id="easyq-comment-form-%d"><summary>%s</summary>%s</details>',
+			'<details %s id="easyq-comment-form-%d"%s data-wp-bind--open="state.commentForms.%s" data-wp-on--toggle="actions.toggleComment" data-wp-watch="callbacks.focusComment">%s</details>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-details' ) ),
 			$post->id,
-			esc_html__( 'Add a comment', 'easyq' ),
-			$body
+			$open ? ' open' : '',
+			esc_attr( $key ),
+			sprintf( '<summary>%s</summary>%s', esc_html__( 'Add a comment', 'easyq' ), $body )
+		);
+	}
+
+	/**
+	 * Returns the key of a comment form in the interactive state `commentForms`, which says whether it is open.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $post_id Question or answer of the form.
+	 * @return string
+	 */
+	public static function comment_key( int $post_id ): string {
+		return 'c' . $post_id;
+	}
+
+	/**
+	 * Returns the Reply button of a comment, which opens the comment form of its parent as in Question2Answer.
+	 *
+	 * Without JavaScript it is a link to the page with the form open, as the Answer button;
+	 * with JavaScript it opens the form in place.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $parent_post Question or answer the comment belongs to.
+	 * @return string
+	 */
+	public static function reply_button( Post $parent_post ): string {
+		$key = self::comment_key( $parent_post->id );
+
+		return Render::link_button(
+			// The address of the post without its anchor, as the anchor of the form follows.
+			add_query_arg( self::COMMENT_VAR, $parent_post->id, strtok( URLs::post( $parent_post ), '#' ) ) . '#easyq-comment-form-' . $parent_post->id,
+			__( 'Reply', 'easyq' ),
+			true,
+			sprintf(
+				'aria-controls="easyq-comment-form-%1$d" aria-expanded="%2$s" data-wp-bind--aria-expanded="state.commentForms.%3$s" data-wp-on--click="actions.openComment" %4$s',
+				$parent_post->id,
+				self::requested( self::COMMENT_VAR ) === $parent_post->id ? 'true' : 'false',
+				esc_attr( $key ),
+				wp_interactivity_data_wp_context( array( 'commentForm' => $key ) )
+			)
 		);
 	}
 
@@ -533,7 +589,7 @@ final class Forms {
 		}
 
 		if ( Post::QUESTION === $post->base_type() && Post_Input::uses_tags() ) {
-			$fields .= self::field( 'edit', 'tags', __( 'Tags', 'easyq' ), 'text', implode( Options::get_bool( 'posting', 'tag_separator_comma' ) ? ', ' : ' ', $post->tag_list() ) );
+			$fields .= self::tag_field( 'edit', implode( Options::get_bool( 'posting', 'tag_separator_comma' ) ? ', ' : ' ', $post->tag_list() ) );
 		}
 
 		$viewer = Block_Context::viewer();
@@ -625,7 +681,7 @@ final class Forms {
 	 * @return bool
 	 */
 	public static function opens_a_form(): bool {
-		return null !== self::requested( self::CLOSE_VAR ) || null !== self::requested( self::EDIT_VAR ) || null !== self::requested( self::ANSWER_VAR );
+		return null !== self::requested( self::CLOSE_VAR ) || null !== self::requested( self::EDIT_VAR ) || null !== self::requested( self::ANSWER_VAR ) || null !== self::requested( self::COMMENT_VAR );
 	}
 
 	/**
@@ -739,6 +795,55 @@ final class Forms {
 			'' === $hint ? '' : sprintf( '<small id="%s-hint">%s</small>', esc_attr( $id ), esc_html( $hint ) ),
 			'' === $error ? '' : sprintf( '%s<strong id="%s-error" role="alert">%s</strong>', '' === $hint ? '' : '<br />', esc_attr( $id ), esc_html( $error ) )
 		);
+	}
+
+	/**
+	 * Returns the tag field of the ask and edit forms, with suggestions while typing if `do_complete_tags` is on.
+	 *
+	 * As Question2Answer completes the word being typed from the existing tags, the script asks
+	 * `GET /easyq/v1/tags?search=` for it and offers the field's text with each matching tag
+	 * through a `<datalist>`, which browsers show and announce as the suggestions of the field.
+	 * Without JavaScript it is a plain text field.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $form  `ask` or `edit`.
+	 * @param string $value Current tags.
+	 * @param string $hint  Hint below the field.
+	 * @return string
+	 */
+	private static function tag_field( string $form, string $value, string $hint = '' ): string {
+		if ( ! Options::get_bool( 'posting', 'do_complete_tags' ) ) {
+			return self::field( $form, 'tags', __( 'Tags', 'easyq' ), 'text', $value, array(), $hint );
+		}
+
+		Render::rest_state();
+		$list = 'easyq-' . $form . '-tags-list';
+		$html = self::field(
+			$form,
+			'tags',
+			__( 'Tags', 'easyq' ),
+			'text',
+			$value,
+			array(
+				'list'              => $list,
+				'autocomplete'      => 'off',
+				'data-wp-on--input' => 'actions.suggestTags',
+			),
+			$hint
+		);
+
+		$context  = wp_interactivity_data_wp_context(
+			array(
+				'comma'       => Options::get_bool( 'posting', 'tag_separator_comma' ),
+				'count'       => Options::get_int( 'posting', 'page_size_ask_tags' ),
+				'suggestions' => array(),
+			)
+		);
+		$datalist = sprintf( '<datalist id="%s"><template data-wp-each="context.suggestions"><option data-wp-bind--value="context.item"></option></template></datalist>', esc_attr( $list ) );
+
+		// The field's paragraph becomes the interactive region, so that the list next to the field updates.
+		return preg_replace( '~^<p~', '<p data-wp-interactive="easyq" ' . $context, substr( $html, 0, -4 ) . $datalist . '</p>', 1 ) ?? $html;
 	}
 
 	/**

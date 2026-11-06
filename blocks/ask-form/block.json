@@ -58,5 +58,6 @@
 	},
 	"example": {},
 	"editorScript": "easyq-editor",
-	"style": "wp-block-post-comments-form"
+	"style": "wp-block-post-comments-form",
+	"viewScriptModule": "easyq-view"
 }

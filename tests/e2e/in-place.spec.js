@@ -187,4 +187,91 @@ test.describe( 'Question page in place', () => {
 		).toHaveCount( 11 );
 		await context.close();
 	} );
+
+	test( 'opens the comment form with the Reply button of a comment, with and without JavaScript', async ( {
+		browser,
+		page,
+		requestUtils,
+	} ) => {
+		const question = await ask( requestUtils, 'Replied to' );
+		const answer = await requestUtils.rest( {
+			method: 'POST',
+			path: `/easyq/v1/questions/${ question.id }/answers`,
+			data: { content: 'An answer with a comment to reply to.' },
+		} );
+		await requestUtils.rest( {
+			method: 'POST',
+			path: `/easyq/v1/posts/${ answer.id }/comments`,
+			data: { content: 'A comment that gets a reply.' },
+		} );
+
+		await page.goto( questionUrl( question.id ) );
+		await page.evaluate( () => ( window.easyqNoReload = true ) );
+		const form = page.locator( `#easyq-comment-form-${ answer.id }` );
+		const reply = page.getByRole( 'link', { name: 'Reply', exact: true } );
+		await expect( form ).not.toHaveAttribute( 'open' );
+		await expect( reply ).toHaveAttribute( 'aria-expanded', 'false' );
+
+		await reply.click();
+		await expect( form ).toHaveAttribute( 'open' );
+		await expect( form.getByLabel( 'Your comment' ) ).toBeFocused();
+		await expect( reply ).toHaveAttribute( 'aria-expanded', 'true' );
+		expect( await page.evaluate( () => window.easyqNoReload ) ).toBe(
+			true
+		);
+
+		// Closing the form with its summary keeps the button in step.
+		await form.locator( 'summary' ).click();
+		await expect( reply ).toHaveAttribute( 'aria-expanded', 'false' );
+
+		const context = await browser.newContext( {
+			javaScriptEnabled: false,
+			storageState: requestUtils.storageStatePath,
+		} );
+		const plain = await context.newPage();
+		await plain.goto(
+			`${ requestUtils.baseURL }${ questionUrl( question.id ) }`
+		);
+		await plain.getByRole( 'link', { name: 'Reply', exact: true } ).click();
+		await expect( plain ).toHaveURL(
+			new RegExp( `easyq_comment=${ answer.id }` )
+		);
+		await expect(
+			plain
+				.locator( `#easyq-comment-form-${ answer.id }` )
+				.getByLabel( 'Your comment' )
+		).toBeVisible();
+		await context.close();
+	} );
+
+	test( 'suggests existing tags while typing', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		const tag = `walrus${ Date.now() }`;
+		await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/questions',
+			data: {
+				title: `A question with a rare tag ${ Date.now() }`,
+				content: 'Body.',
+				tags: [ tag ],
+			},
+		} );
+
+		await page.goto( '/?easyq_route=ask' );
+		const field = page.getByLabel( 'Tags', { exact: true } );
+		await expect( field ).toHaveAttribute( 'list', 'easyq-ask-tags-list' );
+		await field.pressSequentially( `cooking ${ tag.slice( 0, -2 ) }` );
+
+		// The suggestion completes the word being typed and keeps the tags before it.
+		await expect(
+			page.locator( '#easyq-ask-tags-list option' )
+		).toHaveAttribute( 'value', `cooking ${ tag }` );
+
+		await field.pressSequentially( ' ' );
+		await expect(
+			page.locator( '#easyq-ask-tags-list option' )
+		).toHaveCount( 0 );
+	} );
 } );

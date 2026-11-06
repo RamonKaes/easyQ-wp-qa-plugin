@@ -277,6 +277,12 @@ final class Permissions {
 			&& Options::get_bool( 'posting', Post::QUESTION === $post->type ? 'comment_on_qs' : 'comment_on_as' );
 		$rules['commentable']    = $rules['comment_button'] && null === $post_c;
 
+		// A Reply button on a comment opens the comment form of its parent, as Q2A offers it in `qa_page_q_comment_view()`.
+		$rules['reply_button'] = Post::COMMENT === $post->type && null !== $parent_post && Options::get_bool( 'viewing', 'show_c_reply_buttons' )
+			&& in_array( $parent_post->type, array( Post::QUESTION, Post::ANSWER ), true )
+			&& 'level' !== $this->error( 'permit_post_c', $actor, $parent_post )
+			&& Options::get_bool( 'posting', Post::QUESTION === $parent_post->type ? 'comment_on_qs' : 'comment_on_as' );
+
 		$rules['edit_button'] = ! $hidden && ! $closed && ( $is_by_user || ( ! in_array( $edit, $button_errors, true ) && ! $queued ) );
 		$rules['editable']    = $rules['edit_button'] && ( $is_by_user || null === $edit );
 

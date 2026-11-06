@@ -63,6 +63,24 @@ const { state } = store( 'easyq', {
 			const context = getContext();
 			return context.vote === context.direction;
 		},
+
+		/**
+		 * Which comment forms are open, by the key `c{post ID}`; the server fills it, see Forms::comment_form().
+		 *
+		 * @since 0.1.0
+		 *
+		 * @type {Object<string, boolean>}
+		 */
+		commentForms: {},
+
+		/**
+		 * Key of the comment form that a Reply button opened and whose field gets the focus.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @type {string}
+		 */
+		commentFocus: '',
 	},
 	callbacks: {
 		/**
@@ -74,6 +92,20 @@ const { state } = store( 'easyq', {
 		focusAnswer() {
 			if ( getContext().answerOpen ) {
 				getElement().ref.querySelector( 'textarea' )?.focus();
+			}
+		},
+
+		/**
+		 * Moves the focus into a comment form once a Reply button opened it.
+		 *
+		 * @since 0.1.0
+		 */
+		focusComment() {
+			const { ref } = getElement();
+			const key = `c${ ref.id.replace( 'easyq-comment-form-', '' ) }`;
+			if ( state.commentForms[ key ] && state.commentFocus === key ) {
+				state.commentFocus = '';
+				ref.querySelector( 'textarea' )?.focus();
 			}
 		},
 	},
@@ -120,6 +152,99 @@ const { state } = store( 'easyq', {
 			}
 			event.preventDefault();
 			getContext().answerOpen = true;
+		},
+
+		/**
+		 * Opens the comment form of the question or answer of a comment, from
+		 * its Reply button, as Question2Answer does. Links opened in a new tab
+		 * work as usual.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param {MouseEvent} event Click event of the button.
+		 */
+		openComment( event ) {
+			if (
+				event.button !== 0 ||
+				event.metaKey ||
+				event.ctrlKey ||
+				event.shiftKey ||
+				event.altKey
+			) {
+				return;
+			}
+			event.preventDefault();
+			const key = getContext().commentForm;
+			state.commentForms[ key ] = true;
+			state.commentFocus = key;
+		},
+
+		/**
+		 * Keeps the state of a comment form in step when it is opened or closed by its summary.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param {Event} event Toggle event of the details element.
+		 */
+		toggleComment( event ) {
+			const key = `c${ event.target.id.replace(
+				'easyq-comment-form-',
+				''
+			) }`;
+			state.commentForms[ key ] = event.target.open;
+		},
+
+		/**
+		 * Suggests existing tags for the word being typed in a tag field, as
+		 * Question2Answer completes tags. The suggestions are the field's text
+		 * with the word completed, offered by the field's datalist.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param {InputEvent} event Input event of the field.
+		 */
+		*suggestTags( event ) {
+			const context = getContext();
+			const value = event.target.value;
+			// The word being typed follows the last separator; tags never contain one.
+			const separator = context.comma ? /,\s*/ : /\s+/;
+			const words = value.split( separator );
+			const word = words.pop().trim();
+			const request = ( context.request ?? 0 ) + 1;
+			context.request = request;
+			if ( ! word || /[\s,]$/.test( value ) ) {
+				context.suggestions = [];
+				return;
+			}
+
+			let tags = [];
+			try {
+				// The address may carry the route as `rest_route`, without pretty permalinks.
+				const url = new URL( `${ state.restUrl }tags` );
+				url.searchParams.set( 'search', word );
+				url.searchParams.set(
+					'per_page',
+					context.count + words.length
+				);
+				const response = yield fetch( url, {
+					headers: { 'X-WP-Nonce': state.nonce },
+				} );
+				tags = response.ok ? yield response.json() : [];
+			} catch {
+				tags = [];
+			}
+			// A later input asked again; its answer counts.
+			if ( request !== context.request ) {
+				return;
+			}
+
+			const typed = words.map( ( tag ) => tag.trim().toLowerCase() );
+			const prefix = value.slice( 0, value.length - word.length );
+			context.suggestions = tags
+				.map( ( tag ) => tag.name )
+				.filter( ( name ) => ! typed.includes( name ) )
+				.slice( 0, context.count )
+				.map( ( name ) => prefix + name );
 		},
 
 		/**

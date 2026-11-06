@@ -36,7 +36,7 @@ final class Block_Settings_Test extends Test_Case {
 	}
 
 	public function tear_down(): void {
-		unset( $_GET['q'], $_GET[ Forms::ANSWER_VAR ] );
+		unset( $_GET['q'], $_GET[ Forms::ANSWER_VAR ], $_GET[ Forms::COMMENT_VAR ] );
 		Block_Context::router()->set_current( null );
 		Services::reset();
 		Lists::reset();
@@ -477,7 +477,7 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( '<p class="comment-form-cookies-consent"><label><input type="checkbox" name="notify"', $html );
 		$this->assertStringContainsString( '<p class="comment-notes"><small>', $html );
 		$this->assertStringContainsString( '<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">Answer</button></p>', $html );
-		$this->assertMatchesRegularExpression( '/<details class="wp-block-details wp-block-easyq-comment-form[^"]*" id="easyq-comment-form-' . $answer->id . '">/', $html );
+		$this->assertMatchesRegularExpression( '/<details class="wp-block-details wp-block-easyq-comment-form[^"]*" id="easyq-comment-form-' . $answer->id . '"[ >]/', $html );
 	}
 
 	public function test_the_date_has_a_format_of_its_own(): void {
@@ -619,5 +619,60 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringNotContainsString( 'example.org', $fields );
 		$this->assertStringContainsString( 'example.org', do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-fields /--><!-- /wp:easyq/user -->' ) );
 		$this->assertStringNotContainsString( '<dl', do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-fields {"rows":[]} /--><!-- /wp:easyq/user -->' ) );
+	}
+
+	public function test_comments_have_a_reply_button_that_opens_the_comment_form_of_their_parent(): void {
+		$question = $this->ask( $this->user() );
+		$answerer = $this->user();
+		$answer   = $this->answer( $answerer, $question );
+		$this->comment( $this->user(), $question, $answer );
+		Options::update( 'permissions', array( 'permit_post_c' => \EasyQ\Users\Permits::ALL ) );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		wp_set_current_user( (int) $answerer->user_id );
+		$page = static fn (): string => do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/post-actions /--><!-- wp:easyq/comment-list --><!-- wp:easyq/comment-template --><!-- wp:easyq/post-actions /--><!-- /wp:easyq/comment-template --><!-- /wp:easyq/comment-list --><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->' );
+
+		$html = $page();
+		$this->assertMatchesRegularExpression( '~<a class="wp-block-button__link wp-element-button" rel="nofollow" href="[^"]*easyq_comment=' . $answer->id . '#easyq-comment-form-' . $answer->id . '" aria-controls="easyq-comment-form-' . $answer->id . '" aria-expanded="false"[^>]*>Reply</a>~', $html );
+		$this->assertMatchesRegularExpression( '~<details [^>]*id="easyq-comment-form-' . $answer->id . '"(?![^>]* open)[^>]*>~', $html, 'The form stays closed.' );
+		// The addresses of answers have an anchor of their own, which gives way to the anchor of the form.
+		$this->assertMatchesRegularExpression( '~href="[^"]*easyq_edit=' . $answer->id . '#easyq-post-' . $answer->id . '"~', $html );
+		$this->assertStringNotContainsString( '#easyq-post-' . $answer->id . '#', $html );
+
+		// Without JavaScript the link opens the form, as the Answer button does.
+		$_GET[ Forms::COMMENT_VAR ] = (string) $answer->id;
+		$this->assertMatchesRegularExpression( '~<details [^>]*id="easyq-comment-form-' . $answer->id . '"[^>]* open[ =>]~', $page() );
+		$this->assertTrue( Forms::opens_a_form(), 'The address with the open form is not indexed.' );
+		unset( $_GET[ Forms::COMMENT_VAR ] );
+
+		Options::update( 'viewing', array( 'show_c_reply_buttons' => false ) );
+		$this->assertStringNotContainsString( '>Reply</a>', $page() );
+
+		Options::update( 'viewing', array( 'show_c_reply_buttons' => true ) );
+		Options::update( 'posting', array( 'comment_on_as' => false ) );
+		$this->assertStringNotContainsString( '>Reply</a>', $page(), 'Without comments on answers there is nothing to reply with.' );
+	}
+
+	public function test_the_tag_field_suggests_tags_only_when_the_setting_is_on(): void {
+		wp_set_current_user( (int) $this->user()->user_id );
+		Block_Context::router()->set_current( new Route( 'ask' ) );
+
+		$html = do_blocks( '<!-- wp:easyq/ask-form /-->' );
+		$this->assertMatchesRegularExpression( '~<input type="text" id="easyq-ask-tags" name="tags" value="" list="easyq-ask-tags-list" autocomplete="off" data-wp-on--input="actions.suggestTags"~', $html );
+		$this->assertStringContainsString( '<datalist id="easyq-ask-tags-list">', $html );
+
+		Options::update( 'posting', array( 'do_complete_tags' => false ) );
+		$html = do_blocks( '<!-- wp:easyq/ask-form /-->' );
+		$this->assertStringContainsString( 'name="tags"', $html );
+		$this->assertStringNotContainsString( 'list="', $html );
+		$this->assertStringNotContainsString( '<datalist', $html );
+	}
+
+	public function test_terms_carry_the_class_of_their_taxonomy_as_in_core(): void {
+		$category = (int) Services::categories()->create( null, 'Cooking' );
+		$question = $this->ask( $this->user(), 'Terms question', 'x', array( 'pasta' ), $category );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+
+		$this->assertMatchesRegularExpression( '~class="[^"]*wp-block-post-terms taxonomy-easyq-tag~', do_blocks( '<!-- wp:easyq/post-tags /-->' ) );
+		$this->assertMatchesRegularExpression( '~class="[^"]*wp-block-post-terms taxonomy-easyq-category~', do_blocks( '<!-- wp:easyq/post-category /-->' ) );
 	}
 }

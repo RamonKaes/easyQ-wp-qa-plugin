@@ -791,6 +791,7 @@ final class Fields {
 			'page_size_ask_check_qs'    => self::int( __( 'Number of similar questions', 'easyq' ), 3, 50 ),
 			'do_example_tags'           => self::bool( __( 'Suggest tags from similar questions while asking', 'easyq' ) ),
 			'match_example_tags'        => self::choice( __( 'Example tags matching', 'easyq' ), self::match_choices() ) + array( 'short' => __( 'how closely the questions must match', 'easyq' ) ),
+			'do_complete_tags'          => self::bool( __( 'Suggest existing tags while typing', 'easyq' ) ),
 			'page_size_ask_tags'        => self::int( __( 'Number of suggested tags', 'easyq' ), 3, 50 ),
 			'show_custom_ask'           => self::bool( __( 'Show a text above the ask form', 'easyq' ) ),
 			'custom_ask'                => array(
@@ -865,6 +866,7 @@ final class Fields {
 			) + array( 'short' => __( 'shows the answer form', 'easyq' ) ),
 			'show_fewer_cs_from'    => self::int( __( 'Shorten comment lists from this many comments', 'easyq' ), 1 ),
 			'show_fewer_cs_count'   => self::int( __( 'Comments shown in a shortened list', 'easyq' ), 1 ),
+			'show_c_reply_buttons'  => self::bool( __( 'Show a Reply button on comments', 'easyq' ), __( 'It opens the comment form of the question or answer.', 'easyq' ) ),
 			'match_related_qs'      => self::choice( __( 'Related questions matching', 'easyq' ), self::match_choices() ) + array( 'short' => __( 'how closely they must match', 'easyq' ) ),
 			'sitemap_users'         => self::bool( __( 'List user profiles in the sitemaps', 'easyq' ) ),
 		);

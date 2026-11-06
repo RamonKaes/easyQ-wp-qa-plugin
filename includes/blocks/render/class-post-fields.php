@@ -453,7 +453,7 @@ final class Post_Fields {
 
 		return sprintf(
 			'<div %s>%s</div>',
-			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms' ) ),
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms taxonomy-easyq-tag' ) ),
 			self::affixed( $attributes, implode( sprintf( '<span class="wp-block-post-terms__separator">%s</span>', esc_html( $separator ) ), $links ) )
 		);
 	}
@@ -477,7 +477,7 @@ final class Post_Fields {
 
 		return sprintf(
 			'<div %s>%s</div>',
-			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms' ) ),
+			get_block_wrapper_attributes( array( 'class' => 'wp-block-post-terms taxonomy-easyq-category' ) ),
 			self::affixed( $attributes, sprintf( '<a href="%s">%s</a>', esc_url( URLs::category( $category ) ), esc_html( $category->title ) ) )
 		);
 	}
@@ -562,7 +562,7 @@ final class Post_Fields {
 
 		if ( $rules['editable'] ) {
 			$buttons[] = Render::link_button(
-				add_query_arg( Forms::EDIT_VAR, $post->id, URLs::post( $post ) ) . '#easyq-post-' . $post->id,
+				add_query_arg( Forms::EDIT_VAR, $post->id, strtok( URLs::post( $post ), '#' ) ) . '#easyq-post-' . $post->id,
 				__( 'Edit', 'easyq' ),
 				nofollow: true
 			);
@@ -603,6 +603,13 @@ final class Post_Fields {
 		foreach ( $simple as $action => [ $rule, $label ] ) {
 			if ( $rules[ $rule ] ?? false ) {
 				$buttons[] = Render::action_button( 'action', $post->id, $label, array( 'easyq_action' => $action ) );
+			}
+		}
+
+		if ( $rules['reply_button'] && null !== $post->parent_id ) {
+			$parent = Services::posts()->find( $post->parent_id );
+			if ( null !== $parent ) {
+				$buttons[] = Forms::reply_button( $parent );
 			}
 		}
 

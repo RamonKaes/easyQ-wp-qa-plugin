@@ -211,6 +211,7 @@ final class Options {
 				'show_a_form_immediate' => 'if_no_as',
 				'show_fewer_cs_from'    => 10,
 				'show_fewer_cs_count'   => 5,
+				'show_c_reply_buttons'  => true,
 				'match_related_qs'      => 3,
 				'sitemap_users'         => false,
 			),
