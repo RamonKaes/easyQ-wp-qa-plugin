@@ -129,8 +129,9 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( 'easyq_page_7=2', $html );
 		$this->assertStringContainsString( 'easyq_page_8=2', $html );
 		$this->assertStringNotContainsString( 'easyq_page_=', $html );
-		// The pagination is a flex layout of the theme, not a hard-coded class.
-		$this->assertStringContainsString( 'wp-block-easyq-query-pagination-is-layout-flex', $html );
+		// The pagination is a flex layout of the theme, not a hard-coded class. WordPress 6.7 names the
+		// layout class after the block without its namespace, 7.1 with it.
+		$this->assertMatchesRegularExpression( '~<nav class="[^"]*\bwp-block-(easyq-)?query-pagination-is-layout-flex\b~', $html );
 	}
 
 	public function test_the_date_can_be_relative_or_absolute(): void {
