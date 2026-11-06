@@ -1,4 +1,4 @@
-# easyQ Q&A
+# easyQ Questions and Answers
 
 [![CI](https://github.com/RamonKaes/easyQ-wp-qa-plugin/actions/workflows/ci.yml/badge.svg)](https://github.com/RamonKaes/easyQ-wp-qa-plugin/actions/workflows/ci.yml)
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       easyQ Q&A
+ * Plugin Name:       easyQ Questions and Answers
  * Plugin URI:        https://github.com/RamonKaes/easyQ-wp-qa-plugin
  * Description:       A complete question and answer platform built from blocks, based on Question2Answer.
  * Version:           0.1.0

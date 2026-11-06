@@ -8,7 +8,7 @@
 /**
  * Name of the plugin on the Plugins screen.
  */
-const PLUGIN_NAME = 'easyQ Q&A';
+const PLUGIN_NAME = 'easyQ Questions and Answers';
 
 /**
  * Sets the status of the plugin.

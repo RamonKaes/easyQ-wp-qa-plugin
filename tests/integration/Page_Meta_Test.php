@@ -149,4 +149,18 @@ final class Page_Meta_Test extends Test_Case {
 		$this->assertNotNull( get_block_template( 'easyq//easyq-user' ) );
 		$this->assertNotNull( get_block_template( 'easyq//easyq-account' ) );
 	}
+
+	/**
+	 * The Site Editor names the author of the templates with `get_plugin_data()`, which runs the
+	 * name through `wp_kses()`; an `&` comes back as `&amp;` and the editor escapes it once more.
+	 */
+	public function test_plugin_name_survives_the_sanitizing_of_core(): void {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		$file   = dirname( __DIR__, 2 ) . '/easyq.php';
+		$header = get_file_data( $file, array( 'Name' => 'Plugin Name' ) )['Name'];
+
+		$this->assertSame( 'easyQ Questions and Answers', $header );
+		$this->assertSame( $header, get_plugin_data( $file, false, false )['Name'] );
+		$this->assertSame( $header, get_plugin_data( $file )['Name'] );
+	}
 }
