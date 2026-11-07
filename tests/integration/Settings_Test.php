@@ -220,6 +220,11 @@ final class Settings_Test extends Test_Case {
 		Options::update( 'spam', array( 'ip_retention_days' => 7 ) );
 		Options::update( 'spam', array( 'ip_retention_days' => 'seven' ) );
 		$this->assertSame( 7, Options::get( 'spam', 'ip_retention_days' ) );
+
+		// A value of another type that reached the database does not lock the setting.
+		update_option( Options::option_name( 'spam' ), array( 'ip_retention_days' => '30' ) + Options::get_section( 'spam' ) );
+		Options::update( 'spam', array( 'ip_retention_days' => 14 ) );
+		$this->assertSame( 14, Options::get( 'spam', 'ip_retention_days' ) );
 	}
 
 	public function test_removed_settings_disappear_with_the_next_save(): void {

@@ -136,7 +136,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `PUT`/`PATCH /categories/{id}` | Change name, slug, description, parent or position; parameters that are not passed keep their value. A category that gets another parent goes to the end of its new siblings unless `position` is given. Every change is checked before any is stored. Needs `easyq_manage` |
 | `DELETE /categories/{id}` | Delete a category without subcategories; `reassign` names the category that receives its posts (0 or omitted for none). Needs `easyq_manage` |
 | `POST /categories/{id}/reassign` | Move the posts directly in a category, not those in its subcategories, to the category `to` (0 for none); the ID 0 stands for posts without a category. Returns the number of moved questions. Needs `easyq_manage` |
-| `GET /tags` | Tags by popularity; `search` completes a prefix |
+| `GET /tags` | Tags by popularity; `search` completes a prefix, `page` and `per_page` paginate |
 | `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`), users with special levels (`special`) or the favorites of the current user (`favorites`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages |
 | `GET /users/{id}` | Public Q&A profile: name, avatar, level, title, points, rank, activity counts and the profile fields the viewer may see. On multisite, users of other sites only have a profile once they took part |
 | `GET /users/me` | The profile of the current user, with all profile fields, including those hidden from others |

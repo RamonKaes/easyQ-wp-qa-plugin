@@ -161,8 +161,9 @@ final class Fields {
 
 			if ( isset( $fields[ $key ] ) ) {
 				$values[ $key ] = self::sanitize_value( $fields[ $key ], $input[ $key ], $current );
-			} elseif ( Options::updating() && gettype( $input[ $key ] ) === gettype( $current ) ) {
-				// Settings without a field change only through Options::update(), and keep their type.
+			} elseif ( ( Options::updating() || ( defined( 'WP_CLI' ) && WP_CLI ) ) && gettype( $input[ $key ] ) === gettype( Options::defaults()[ $section ][ $key ] ?? $current ) ) {
+				// Settings without a field change only through Options::update() or WP-CLI, with the type
+				// of their default, so a value that slipped in with another type does not lock the setting.
 				$values[ $key ] = $input[ $key ];
 			}
 		}

@@ -45,6 +45,33 @@ final class Blocks {
 	public function register(): void {
 		add_action( 'init', array( $this, 'register_blocks' ) );
 		add_filter( 'block_categories_all', array( $this, 'add_category' ) );
+		add_filter( 'render_block_data', array( $this, 'give_list_an_id' ) );
+	}
+
+	/**
+	 * Gives a list block without a `queryId` one before it renders, so the context reaches
+	 * its template, pagination and "no results" blocks, and two such lists page on their own.
+	 *
+	 * The editor sets the ID when a list is inserted; a list placed outside the editor, e.g. a
+	 * pattern referenced in a theme file, arrives without one.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $parsed_block Parsed block.
+	 * @return array<string, mixed>
+	 */
+	public function give_list_an_id( array $parsed_block ): array {
+		if ( ! in_array( $parsed_block['blockName'] ?? '', array( 'easyq/question-query', 'easyq/answer-list', 'easyq/user-query' ), true ) ) {
+			return $parsed_block;
+		}
+
+		$attrs = is_array( $parsed_block['attrs'] ?? null ) ? $parsed_block['attrs'] : array();
+		if ( ! is_numeric( $attrs['queryId'] ?? null ) ) {
+			$attrs['queryId']      = Lists::next_id();
+			$parsed_block['attrs'] = $attrs;
+		}
+
+		return $parsed_block;
 	}
 
 	/**

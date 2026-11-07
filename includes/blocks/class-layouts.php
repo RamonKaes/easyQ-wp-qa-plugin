@@ -84,7 +84,8 @@ final class Layouts {
 	/**
 	 * Returns the markup of a compact question list: title, answers and last activity in one line.
 	 *
-	 * The list has no ID: the editor gives each inserted list one of its own.
+	 * The list has no ID: the editor gives each inserted list one of its own, and a list that
+	 * renders without one gets one from Lists::next_id().
 	 *
 	 * @since 0.1.0
 	 *
@@ -221,7 +222,8 @@ final class Layouts {
 	/**
 	 * Returns the markup of a compact user list: avatar, name and points, one user per line.
 	 *
-	 * The list has no ID: the editor gives each inserted list one of its own.
+	 * The list has no ID: the editor gives each inserted list one of its own, and a list that
+	 * renders without one gets one from Lists::next_id().
 	 *
 	 * @since 0.1.0
 	 *

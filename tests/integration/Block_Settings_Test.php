@@ -129,6 +129,13 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( 'easyq_page_7=2', $html );
 		$this->assertStringContainsString( 'easyq_page_8=2', $html );
 		$this->assertStringNotContainsString( 'easyq_page_=', $html );
+		// Lists without an ID, e.g. patterns placed in a theme file, get one each when they render.
+		$plain = static fn ( string $source ): string => '<!-- wp:easyq/question-query {"query":{"source":"' . $source . '","perPage":1,"inherit":false}} --><!-- wp:easyq/question-template --><!-- wp:easyq/post-title /--><!-- /wp:easyq/question-template --><!-- wp:easyq/query-pagination /--><!-- /wp:easyq/question-query -->';
+		$html  = do_blocks( $plain( 'recent' ) . $plain( 'votes' ) );
+		$this->assertStringContainsString( 'easyq_page_1000=2', $html );
+		$this->assertStringContainsString( 'easyq_page_1001=2', $html );
+		$this->assertStringNotContainsString( 'easyq_page_=', $html );
+
 		// The pagination is a flex layout of the theme, not a hard-coded class. WordPress 6.7 names the
 		// layout class after the block without its namespace, 7.1 with it.
 		$this->assertMatchesRegularExpression( '~<nav class="[^"]*\bwp-block-(easyq-)?query-pagination-is-layout-flex\b~', $html );

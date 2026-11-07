@@ -40,6 +40,15 @@ final class Lists {
 	private static array $results = array();
 
 	/**
+	 * Number of IDs given to list blocks without one, see next_id().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	private static int $assigned = 0;
+
+	/**
 	 * Stores the result of a list.
 	 *
 	 * @since 0.1.0
@@ -108,11 +117,27 @@ final class Lists {
 	}
 
 	/**
-	 * Forgets all results. Used by tests.
+	 * Returns an ID for a list block without one, unique within the request.
+	 *
+	 * The editor gives every list an ID from 100 upwards and the templates use 1 to 3; a list
+	 * that reaches the frontend without one, e.g. from a pattern placed in a theme file, gets
+	 * one from 1000 upwards in rendering order, so each list pages on its own.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	public static function next_id(): int {
+		return 1000 + self::$assigned++;
+	}
+
+	/**
+	 * Forgets all results and assigned IDs. Used by tests.
 	 *
 	 * @since 0.1.0
 	 */
 	public static function reset(): void {
-		self::$results = array();
+		self::$results  = array();
+		self::$assigned = 0;
 	}
 }

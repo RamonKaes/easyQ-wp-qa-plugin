@@ -226,9 +226,9 @@ const { state } = store( 'easyq', {
 					'per_page',
 					context.count + words.length
 				);
-				const response = yield fetch( url, {
-					headers: { 'X-WP-Nonce': state.nonce },
-				} );
+				// A public route of the same site: without the nonce, so a cached page with a
+				// stale one still gets suggestions.
+				const response = yield fetch( url );
 				tags = response.ok ? yield response.json() : [];
 			} catch {
 				tags = [];
