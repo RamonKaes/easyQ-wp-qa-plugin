@@ -11,10 +11,11 @@ the WordPress way: every page is a block template, every part of it a block, and
 your theme decides how it looks.
 
 > **Status: early development, not ready for live sites yet.** Asking, answering,
-> voting, moderation, profiles, all Q&A pages, the settings screen, the category
-> management, the moderation list, points, user titles, user fields, the dashboard and
-> the maintenance tools work. Emails and notifications, the privacy tools and
-> translations are still to come, see [what is next](#what-is-next).
+> voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles,
+> user fields, the maintenance tools, emails and notifications, private messages, the
+> user wall, favorites, the updates page and the newsletter work. The rest of the
+> privacy tools, WP-CLI commands and translations are still to come, see
+> [what is next](#what-is-next).
 
 ## Features
 
@@ -37,10 +38,14 @@ your theme decides how it looks.
   address, a list of words that are censored
 - Posting without an account, if you allow it
 - User profiles with custom fields, uploaded avatars and activity lists
+- Private messages, a wall on each profile, favorite questions, users, tags and
+  categories, and a page of updates
+- Email notifications with templates editable in the admin, a newsletter with
+  confirmation by email, and a feedback form
 
 ### Made for WordPress
 
-- Over 40 blocks (question list, voting, answer form, user profile and more) and block
+- Over 50 blocks (question list, voting, answer form, user profile and more) and block
   patterns, arranged and styled in the Site Editor like any other template
 - No stylesheet of its own: the Q&A area takes on the look of your block theme; classic
   themes are supported too
@@ -66,11 +71,10 @@ your theme decides how it looks.
 easyQ is built in phases, see the
 [phase plan](docs/feature-mapping.md#13-phases):
 
-1. **Communication:** emails and notifications, private messages, the user wall,
-   favorites and the updates page
-2. **Privacy and tooling:** personal data export and erasure, IP address retention,
-   WP-CLI commands and Site Health checks
-3. **Release:** translations (German included), screenshots and the wordpress.org
+1. **Privacy and tooling:** privacy policy text, export and erasure of posts, votes and
+   profiles, IP address retention, registration terms, WP-CLI commands and Site Health
+   checks
+2. **Release:** translations (German included), screenshots and the wordpress.org
    release
 
 ## Try it

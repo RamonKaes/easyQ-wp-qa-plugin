@@ -15,7 +15,7 @@ easyQ Questions and Answers adds a question and answer community to your WordPre
 
 easyQ brings the proven feature set of the open source platform [Question2Answer](https://www.question2answer.org/) to WordPress, rebuilt the WordPress way: every Q&A page is a block template, every part of it a block, and your theme decides how it looks.
 
-**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages, the settings screen, the category management, the moderation list, points, user titles, user fields, the dashboard and the maintenance tools work. More admin screens, emails and notifications, the privacy export and erasure tools and translations follow in the next versions.
+**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles, user fields, the maintenance tools, emails and notifications, private messages, the user wall, favorites, the updates page and the newsletter work. The privacy policy text, the export and erasure of posts and profiles, WP-CLI commands and translations follow in the next versions.
 
 = Questions and answers =
 
@@ -32,10 +32,12 @@ easyQ brings the proven feature set of the open source platform [Question2Answer
 * Flags, an approval queue, user approval and blocking, rate limits, censored words
 * Posting without an account, if you allow it
 * User profiles with custom fields, uploaded avatars and activity lists
+* Private messages, a wall on each profile, favorite questions, users, tags and categories, and a page of updates
+* Email notifications with editable templates, a newsletter with confirmation by email, and a feedback form
 
 = Made for WordPress =
 
-* Over 40 blocks and block patterns, arranged and styled in the Site Editor
+* Over 50 blocks and block patterns, arranged and styled in the Site Editor
 * No stylesheet of its own: the Q&A area takes on the look of your block theme; classic themes are supported too
 * Voting, answering and commenting without page reloads, built on the Interactivity API
 * RSS feeds, XML sitemaps, search engine metadata and Q&A links for the Navigation block
@@ -92,6 +94,9 @@ No. Your questions, answers and users stay in the database when you delete the p
 
 = 0.1.0 =
 * Questions, answers, comments, votes, best answers, categories, tags and search.
-* Points, user levels, moderation, flags, rate limits and user profiles.
-* Block templates, over 40 blocks, block patterns, feeds, sitemaps and Navigation block links.
+* Points, user levels, user titles, moderation, flags, rate limits and user profiles with custom fields.
+* Emails and notifications, private messages, user walls, favorites, the updates page, a newsletter and a feedback form.
+* Block templates, over 50 blocks, block patterns, feeds, sitemaps and Navigation block links.
+* Admin screens for settings, posts, categories, points, user titles, user fields, email templates and tools, and a dashboard.
+* Export and erasure of the personal data of messages, favorites, updates, notices and the newsletter.
 * Support for single sites and multisite networks.
