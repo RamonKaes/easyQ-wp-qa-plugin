@@ -78,6 +78,7 @@
 			"padding": true
 		}
 	},
+	"example": {},
 	"editorScript": "easyq-editor",
 	"style": "wp-block-avatar"
 }

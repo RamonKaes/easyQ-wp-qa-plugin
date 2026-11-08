@@ -68,6 +68,24 @@ final class Blocks_Test extends Test_Case {
 		$this->assertNotNull( get_block_bindings_source( 'easyq/post' ) );
 	}
 
+	public function test_blocks_have_keywords_and_an_inserter_preview_as_in_core(): void {
+		$missing = array();
+		foreach ( \WP_Block_Type_Registry::get_instance()->get_all_registered() as $name => $type ) {
+			if ( ! str_starts_with( $name, 'easyq/' ) ) {
+				continue;
+			}
+			if ( array() === $type->keywords ) {
+				$missing[] = "$name: keywords";
+			}
+			// Core leaves the preview out only on blocks that live inside another block, e.g. Post Template.
+			if ( null === $type->example && null === $type->parent && null === $type->ancestor ) {
+				$missing[] = "$name: example";
+			}
+		}
+
+		$this->assertSame( array(), $missing );
+	}
+
 	public function test_renders_the_question_page(): void {
 		$question = $this->ask( $this->user(), 'A question for the page', 'The <b>details</b>.' );
 		$this->answer( $this->user(), $question, 'An answer for the page.' );

@@ -73,6 +73,9 @@
 			"padding": true
 		}
 	},
+	"example": {
+		"viewportWidth": 350
+	},
 	"editorScript": "easyq-editor",
 	"style": "wp-block-post-terms"
 }

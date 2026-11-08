@@ -60,6 +60,7 @@
 		},
 		"interactivity": true
 	},
+	"example": {},
 	"editorScript": "easyq-editor",
 	"viewScriptModule": "easyq-view",
 	"style": [

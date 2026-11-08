@@ -82,5 +82,6 @@
 		},
 		"layout": true
 	},
+	"example": {},
 	"editorScript": "easyq-editor"
 }

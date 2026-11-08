@@ -69,5 +69,6 @@
 			"allowOrientation": true
 		}
 	},
+	"example": {},
 	"editorScript": "easyq-editor"
 }

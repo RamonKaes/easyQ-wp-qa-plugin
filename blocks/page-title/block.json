@@ -68,6 +68,7 @@
 			"full"
 		]
 	},
+	"example": {},
 	"editorScript": "easyq-editor",
 	"style": "wp-block-post-title"
 }
