@@ -52,8 +52,7 @@ final class Unsubscribe_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
-					// The token in the request is the permission; see create_item().
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => array(
 						'post'  => array(
 							'description' => __( 'Post to stop the emails about.', 'easyq' ),
@@ -76,7 +75,26 @@ final class Unsubscribe_Controller extends Controller {
 	}
 
 	/**
-	 * Stops the emails about a post.
+	 * Checks the signed token from the email, which stands in for a login.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function create_item_permissions_check( $request ): bool|WP_Error {
+		$token = (string) self::string_param( $request, 'token' );
+		$user  = self::int_param( $request, 'user' );
+		$valid = null !== $user
+			? Newsletter::verify( $user, $token )
+			: Unsubscribe::verify( (int) self::int_param( $request, 'post' ), $token );
+
+		return $valid ? true : new WP_Error( 'easyq_invalid_token', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
+	}
+
+	/**
+	 * Stops the emails about a post, or the newsletter of a user.
 	 *
 	 * @since 0.1.0
 	 *
@@ -87,10 +105,6 @@ final class Unsubscribe_Controller extends Controller {
 	public function create_item( $request ): WP_REST_Response|WP_Error {
 		$user = self::int_param( $request, 'user' );
 		if ( null !== $user ) {
-			if ( ! Newsletter::verify( $user, (string) self::string_param( $request, 'token' ) ) ) {
-				return new WP_Error( 'easyq_invalid_token', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
-			}
-
 			Newsletter::unsubscribe( $user );
 
 			return $this->respond_with(
@@ -103,7 +117,7 @@ final class Unsubscribe_Controller extends Controller {
 		}
 
 		$id   = (int) self::int_param( $request, 'post' );
-		$post = Unsubscribe::verify( $id, (string) self::string_param( $request, 'token' ) ) ? Services::posts()->find( $id ) : null;
+		$post = Services::posts()->find( $id );
 		if ( null === $post ) {
 			return new WP_Error( 'easyq_invalid_token', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
 		}

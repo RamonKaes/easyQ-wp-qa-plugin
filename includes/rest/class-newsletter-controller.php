@@ -79,8 +79,7 @@ final class Newsletter_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'confirm' ),
-					// The key from the email is the permission; see Newsletter::confirm().
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'confirm_permissions_check' ),
 					'args'                => array(
 						'user' => array(
 							'description' => __( 'The user who subscribes.', 'easyq' ),
@@ -151,6 +150,19 @@ final class Newsletter_Controller extends Controller {
 		}
 
 		return $result instanceof WP_Error ? $result : $this->respond_with( Newsletter::progress(), $request );
+	}
+
+	/**
+	 * Checks the key from the confirmation email, which stands in for a login.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function confirm_permissions_check( $request ): bool|WP_Error {
+		return Newsletter::check_key( (int) self::int_param( $request, 'user' ), (string) self::string_param( $request, 'key' ) );
 	}
 
 	/**

@@ -184,7 +184,8 @@ final class Newsletter {
 	}
 
 	/**
-	 * Confirms a subscription with the key from the email.
+	 * Checks the key from the confirmation email, as `wp_validate_user_request_key()` does for
+	 * the requests of the privacy tools: only the hash is stored, and the key expires.
 	 *
 	 * @since 0.1.0
 	 *
@@ -192,7 +193,7 @@ final class Newsletter {
 	 * @param string $key     Key from the email.
 	 * @return true|WP_Error
 	 */
-	public function confirm( int $user_id, string $key ): bool|WP_Error {
+	public static function check_key( int $user_id, string $key ): bool|WP_Error {
 		$stored = Site_Meta::get( $user_id, self::KEY_META );
 		$hash   = is_array( $stored ) && is_string( $stored['hash'] ?? null ) ? $stored['hash'] : '';
 		$time   = is_array( $stored ) && is_int( $stored['time'] ?? null ) ? $stored['time'] : 0;
@@ -203,6 +204,24 @@ final class Newsletter {
 
 		if ( '' === $hash || '' === $key || ! wp_check_password( $key, $hash ) || time() > $time + $expiry ) {
 			return new WP_Error( 'easyq_invalid_key', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Confirms a subscription with the key from the email.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int    $user_id User ID.
+	 * @param string $key     Key from the email.
+	 * @return true|WP_Error
+	 */
+	public function confirm( int $user_id, string $key ): bool|WP_Error {
+		$checked = self::check_key( $user_id, $key );
+		if ( true !== $checked ) {
+			return $checked;
 		}
 
 		Site_Meta::delete( $user_id, self::KEY_META );

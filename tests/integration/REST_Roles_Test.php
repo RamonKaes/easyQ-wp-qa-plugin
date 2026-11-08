@@ -26,7 +26,6 @@ final class REST_Roles_Test extends REST_Test_Case {
 		'POST /posts/{}/comments'    => 'Depends on the permission settings.',
 		'POST /posts/{}/vote'        => 'Answers with the reason in the check of the permission.',
 		'POST /posts/{}/actions/{}'  => 'Answers with the reason in the check of the permission.',
-		'POST /unsubscribe'          => 'The token from the email is the permission.',
 		'DELETE /notices/{}'         => 'First-time visitors dismiss their notice.',
 		'POST /questions/{}'         => 'Without fields there is nothing to change; see the test with fields.',
 		'PUT /questions/{}'          => 'Without fields there is nothing to change; see the test with fields.',
@@ -111,6 +110,20 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertGreaterThan( 30, $checked );
 		$this->assertSame( array(), $broken );
 		$this->assertSame( array(), $written, 'Visitors can write here.' );
+	}
+
+	public function test_writing_routes_check_in_their_permission_callback(): void {
+		$open = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				// The REST API handbook keeps `__return_true` for public routes that only read.
+				if ( array() !== self::write_methods( array( $handler ) ) && '__return_true' === ( $handler['permission_callback'] ?? null ) ) {
+					$open[] = $route;
+				}
+			}
+		}
+
+		$this->assertSame( array(), $open );
 	}
 
 	public function test_visitors_cannot_change_questions(): void {
