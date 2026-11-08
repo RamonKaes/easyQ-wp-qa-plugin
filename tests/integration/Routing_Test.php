@@ -230,6 +230,40 @@ final class Routing_Test extends Test_Case {
 		\WP_Theme_JSON_Resolver::clean_cached_data();
 	}
 
+	public function test_the_chosen_template_parts_are_those_of_the_index_template_of_each_theme(): void {
+		$original = get_stylesheet();
+		$checked  = array();
+		$parts    = static function ( array $blocks ) use ( &$parts ): array {
+			$slugs = array();
+			foreach ( $blocks as $block ) {
+				if ( 'core/template-part' === $block['blockName'] && is_string( $block['attrs']['slug'] ?? null ) ) {
+					$slugs[] = $block['attrs']['slug'];
+				}
+				$slugs = array_merge( $slugs, $parts( $block['innerBlocks'] ) );
+			}
+
+			return $slugs;
+		};
+
+		foreach ( wp_get_themes() as $stylesheet => $theme ) {
+			$index = $theme->get_stylesheet_directory() . '/templates/index.html';
+			$used  = $theme->is_block_theme() && is_readable( $index ) ? $parts( parse_blocks( (string) file_get_contents( $index ) ) ) : array(); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- A local theme file.
+			if ( array() === $used ) {
+				continue;
+			}
+
+			switch_theme( $stylesheet );
+			\WP_Theme_JSON_Resolver::clean_cached_data();
+			// Some themes list variants of a part too, e.g. `vertical-header`; the main part must win.
+			$checked[ $stylesheet ] = array( Templates::template_part( 'header' ), Templates::template_part( 'footer' ) );
+			$this->assertSame( array( $used[0], $used[ count( $used ) - 1 ] ), $checked[ $stylesheet ], $stylesheet );
+		}
+
+		switch_theme( $original );
+		\WP_Theme_JSON_Resolver::clean_cached_data();
+		$this->assertGreaterThanOrEqual( 4, count( $checked ), (string) wp_json_encode( $checked ) );
+	}
+
 	public function test_classic_page_titles_are_escaped_and_censored(): void {
 		Options::update( 'posting', array( 'block_bad_words' => 'darn' ) );
 		$question = $this->ask( $this->user(), 'Darn widgets & <b>bold</b> plans?' );
