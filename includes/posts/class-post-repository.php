@@ -606,6 +606,49 @@ final class Post_Repository {
 	}
 
 	/**
+	 * Removes the IP addresses stored before a point in time.
+	 *
+	 * The address of the creation goes when the post is older than the cutoff,
+	 * the address of the last change when that change is.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $cutoff Date and time in UTC, as `Y-m-d H:i:s`.
+	 * @return int Number of posts that kept an address until now.
+	 */
+	public function clear_ips_before( string $cutoff ): int {
+		$wpdb  = DB::wpdb();
+		$table = Schema::table( 'posts' );
+		$ids   = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE (created_ip IS NOT NULL AND created < %s) OR (last_ip IS NOT NULL AND COALESCE(updated, created) < %s)', $table, $cutoff, $cutoff ) )
+		);
+		if ( array() === $ids ) {
+			return 0;
+		}
+
+		$sql = $wpdb->prepare( 'UPDATE %i SET created_ip = NULL WHERE created_ip IS NOT NULL AND created < %s', $table, $cutoff );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		$sql = $wpdb->prepare( 'UPDATE %i SET last_ip = NULL WHERE last_ip IS NOT NULL AND COALESCE(updated, created) < %s', $table, $cutoff );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+
+		if ( count( $ids ) > 100 && wp_cache_supports( 'flush_group' ) ) {
+			wp_cache_flush_group( self::CACHE_GROUP );
+			$this->children = array();
+		} else {
+			array_map( array( $this, 'forget' ), $ids );
+		}
+
+		return count( $ids );
+	}
+
+	/**
 	 * Increments the view counter of a question.
 	 *
 	 * @since 0.1.0

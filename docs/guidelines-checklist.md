@@ -59,7 +59,7 @@ code, and known vulnerabilities of the dependencies.
 | --- | --- | --- |
 | Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Open, phase 8 | Section 11 of the [feature mapping](feature-mapping.md) |
 | Personal data exporter and eraser | Open, phases 7 and 8 | `EasyQ\Privacy\Privacy` after `wp_comments_personal_data_exporter()`: favorites, updates, notices, messages, wall posts and the newsletter so far; the other data of phase 7 comes with its block (decision 54) |
-| No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened, retention in phase 8 |
+| No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened and removed after `ip_retention_days` (`IP_Retention_Test`) |
 
 ## Administration menus
 
@@ -119,7 +119,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Schedule on activation, clear on deactivation | Met | Newsletter batches as single events (`wp_schedule_single_event()`), cleared on deactivation and uninstall, on every site of a network; IP address retention follows in phase 8 |
+| Schedule on activation, clear on deactivation | Met | Newsletter batches as single events (`wp_schedule_single_event()`), and the daily removal of IP addresses (`wp_schedule_event()` on `init`, like `wp_schedule_delete_old_privacy_export_files()`), cleared on deactivation and uninstall, on every site of a network; `IP_Retention_Test` finds every `CRON_HOOK` and checks both |
 
 ## Internationalization
 

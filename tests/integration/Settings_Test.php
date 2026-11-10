@@ -192,39 +192,39 @@ final class Settings_Test extends Test_Case {
 	}
 
 	public function test_keeps_settings_that_are_not_passed_or_have_no_field(): void {
-		Options::update( 'spam', array( 'ip_retention_days' => 7 ) );
-		update_option( Options::option_name( 'spam' ), array( 'moderate_users' => true ) );
+		Options::update( 'permissions', array( 'permit_view_new_users_page_points' => 7 ) );
+		update_option( Options::option_name( 'permissions' ), array( 'permit_post_q_points' => 5 ) );
 
-		$this->assertSame( 7, Options::get_int( 'spam', 'ip_retention_days' ) );
-		$this->assertTrue( Options::get_bool( 'spam', 'moderate_users' ) );
-		$this->assertTrue( Options::get_bool( 'spam', 'flagging_of_posts' ) );
+		$this->assertSame( 7, Options::get_int( 'permissions', 'permit_view_new_users_page_points' ) );
+		$this->assertSame( 5, Options::get_int( 'permissions', 'permit_post_q_points' ) );
+		$this->assertSame( Permits::ALL, Options::get_int( 'permissions', 'permit_view_q_page' ) );
 	}
 
 	public function test_drops_submitted_values_without_a_field(): void {
 		update_option(
-			Options::option_name( 'spam' ),
+			Options::option_name( 'permissions' ),
 			array(
-				'ip_retention_days' => 1,
-				'no_such_setting'   => 'x',
-				'moderate_users'    => true,
+				'permit_view_new_users_page_points' => 1,
+				'no_such_setting'                   => 'x',
+				'permit_post_q_points'              => 5,
 			)
 		);
-		$stored = get_option( Options::option_name( 'spam' ) );
+		$stored = get_option( Options::option_name( 'permissions' ) );
 
 		$this->assertIsArray( $stored );
-		$this->assertSame( 30, $stored['ip_retention_days'] );
+		$this->assertSame( 0, $stored['permit_view_new_users_page_points'] );
 		$this->assertArrayNotHasKey( 'no_such_setting', $stored );
-		$this->assertTrue( $stored['moderate_users'] );
+		$this->assertSame( 5, $stored['permit_post_q_points'] );
 
 		// The plugin itself still sets them, with the type of their default.
-		Options::update( 'spam', array( 'ip_retention_days' => 7 ) );
-		Options::update( 'spam', array( 'ip_retention_days' => 'seven' ) );
-		$this->assertSame( 7, Options::get( 'spam', 'ip_retention_days' ) );
+		Options::update( 'permissions', array( 'permit_view_new_users_page_points' => 7 ) );
+		Options::update( 'permissions', array( 'permit_view_new_users_page_points' => 'seven' ) );
+		$this->assertSame( 7, Options::get( 'permissions', 'permit_view_new_users_page_points' ) );
 
 		// A value of another type that reached the database does not lock the setting.
-		update_option( Options::option_name( 'spam' ), array( 'ip_retention_days' => '30' ) + Options::get_section( 'spam' ) );
-		Options::update( 'spam', array( 'ip_retention_days' => 14 ) );
-		$this->assertSame( 14, Options::get( 'spam', 'ip_retention_days' ) );
+		update_option( Options::option_name( 'permissions' ), array( 'permit_view_new_users_page_points' => '30' ) + Options::get_section( 'permissions' ) );
+		Options::update( 'permissions', array( 'permit_view_new_users_page_points' => 14 ) );
+		$this->assertSame( 14, Options::get( 'permissions', 'permit_view_new_users_page_points' ) );
 	}
 
 	public function test_removed_settings_disappear_with_the_next_save(): void {
@@ -325,7 +325,7 @@ final class Settings_Test extends Test_Case {
 		$expected = array_keys( Fields::section( 'viewing' ) );
 		sort( $expected );
 		$this->assertSame( $expected, $keys );
-		$this->assertArrayNotHasKey( 'ip_retention_days', $data['easyq_settings_spam'] );
+		$this->assertArrayNotHasKey( 'permit_view_new_users_page_points', $data['easyq_settings_permissions'] );
 
 		$response = $this->settings_request( 'POST', array( 'easyq_settings_viewing' => array( 'page_size_q_as' => 25 ) ) );
 		$this->assertSame( 200, $response->get_status() );
@@ -333,7 +333,7 @@ final class Settings_Test extends Test_Case {
 		$this->assertTrue( Options::get_bool( 'viewing', 'voting_on_qs' ) );
 
 		$this->assertSame( 400, $this->settings_request( 'POST', array( 'easyq_settings_viewing' => array( 'page_size_q_as' => 500 ) ) )->get_status() );
-		$this->assertSame( 400, $this->settings_request( 'POST', array( 'easyq_settings_spam' => array( 'ip_retention_days' => 1 ) ) )->get_status() );
+		$this->assertSame( 400, $this->settings_request( 'POST', array( 'easyq_settings_permissions' => array( 'permit_view_new_users_page_points' => 1 ) ) )->get_status() );
 		$this->assertSame( 25, Options::get_int( 'viewing', 'page_size_q_as' ) );
 
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );

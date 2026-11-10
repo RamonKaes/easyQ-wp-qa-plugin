@@ -14,6 +14,7 @@ use EasyQ\Database\Schema;
 use EasyQ\Frontend\Router;
 use EasyQ\Mail\Templates;
 use EasyQ\Newsletter\Newsletter;
+use EasyQ\Privacy\IP_Retention;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Updates\Updates;
@@ -54,6 +55,7 @@ final class Uninstaller {
 	 */
 	public static function run(): void {
 		if ( ! is_multisite() ) {
+			self::clear_scheduled_events();
 			if ( self::site_opted_in() ) {
 				self::uninstall_site();
 				self::delete_user_meta();
@@ -71,6 +73,7 @@ final class Uninstaller {
 		$all_opted_in = true;
 		foreach ( $site_ids as $site_id ) {
 			switch_to_blog( (int) $site_id );
+			self::clear_scheduled_events();
 			if ( self::site_opted_in() ) {
 				self::uninstall_site();
 			} else {
@@ -83,6 +86,18 @@ final class Uninstaller {
 		if ( $all_opted_in ) {
 			self::delete_user_meta();
 		}
+	}
+
+	/**
+	 * Removes the scheduled events of the current site, whether or not it keeps its data.
+	 *
+	 * Deactivation removes them too, but skips the sites of a large network.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function clear_scheduled_events(): void {
+		wp_clear_scheduled_hook( Newsletter::CRON_HOOK );
+		wp_clear_scheduled_hook( IP_Retention::CRON_HOOK );
 	}
 
 	/**

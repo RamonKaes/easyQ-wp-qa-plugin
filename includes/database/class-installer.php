@@ -128,6 +128,7 @@ final class Installer {
 		delete_option( 'rewrite_rules' );
 		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
 		wp_clear_scheduled_hook( \EasyQ\Newsletter\Newsletter::CRON_HOOK );
+		wp_clear_scheduled_hook( \EasyQ\Privacy\IP_Retention::CRON_HOOK );
 	}
 
 	/**

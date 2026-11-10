@@ -43,6 +43,7 @@ final class Plugin {
 		Services::messages()->register();
 		Services::newsletter()->register();
 		( new Privacy\Privacy() )->register();
+		( new Privacy\IP_Retention() )->register();
 		( new REST\REST_API() )->register();
 
 		$router = new Frontend\Router();

@@ -514,7 +514,7 @@ WordPress's conditional GET (based on its own posts) is turned off for these fee
 | `max_rate_ip_qs`, `max_rate_user_qs`, `max_rate_ip_as`, `max_rate_user_as`, `max_rate_ip_cs`, `max_rate_user_cs` | **P** |
 | `max_rate_ip_votes`, `max_rate_user_votes`, `max_rate_ip_flags`, `max_rate_user_flags`, `max_rate_ip_uploads`, `max_rate_user_uploads`, `max_rate_ip_messages`, `max_rate_user_messages` | **P** |
 | Akismet | **N** optional check, available only when the Akismet plugin is active and configured; off by default |
-| IP retention and anonymization | **N** (section 11) |
+| IP retention and anonymization | **N** `ip_retention_days` and `ip_anonymize` (section 11) |
 
 ### 5.12 Settings → Caching (`admin/caching`), Newsletter (`admin/mailing`)
 
@@ -683,7 +683,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | External requests | None by default. Third-party services (captcha providers, Akismet) only after the site owner enables them; each adds a notice to the privacy policy guide |
 | Privacy policy guide | Suggested text via `wp_add_privacy_policy_content()`: data stored, purposes, retention, cookies |
 | Data export / erasure | Exporters and erasers for the core privacy tools: posts, votes, flags, favorites, messages, wall posts, profile fields, IP data, consent records. Erasure anonymizes the author of posts by default (like core comments); full deletion is configurable |
-| IP addresses | Stored only for abuse prevention (post creation/edit, rate limits, IP blocks). Configurable retention (default 30 days), then removed by WP-Cron. Optional storage in anonymized form (last octet / last 80 bits removed) |
+| IP addresses | Stored only for abuse prevention (post creation/edit, rate limits, IP blocks). Configurable retention (`ip_retention_days`, at least 1, default 30 days), then removed by a daily WP-Cron event (`EasyQ\Privacy\IP_Retention`): the address of the creation by the date of the post or visitor cookie, that of the last change by the date of that change; counters of the rate limits as soon as their hour is over. Optional storage in anonymized form (last octet / last 80 bits removed) |
 | View counting | No IP storage; duplicate views are filtered through a short-lived salted hash in a transient |
 | Anonymous posting | Disabled by default. When enabled: a functional cookie is set only at the moment of posting, the form shows a privacy notice with link to the privacy policy, name is optional, an email address is asked for only for opt-in notifications |
 | Notifications | `notify_users_default` defaults to off; every mail links to the notification settings; one-click unsubscribe |

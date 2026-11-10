@@ -268,7 +268,7 @@ final class Settings_Layout {
 						self::row( __( 'Flags', 'easyq' ), array( 'flagging_of_posts', 'flagging_hide_after' ) ),
 					)
 				),
-				self::section( __( 'IP addresses', 'easyq' ), array( 'block_ips_write', self::row( __( 'Storage', 'easyq' ), array( 'ip_anonymize' ) ) ) ),
+				self::section( __( 'IP addresses', 'easyq' ), array( 'block_ips_write', self::row( __( 'Storage', 'easyq' ), array( 'ip_anonymize', 'ip_retention_days' ) ) ) ),
 				self::section(
 					__( 'Rate limits', 'easyq' ),
 					array(
