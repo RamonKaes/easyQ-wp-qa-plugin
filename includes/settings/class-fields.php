@@ -479,6 +479,14 @@ final class Fields {
 				'description' => __( 'Users get the level of their role unless their profile sets a higher one.', 'easyq' ),
 				'owner'       => true,
 			),
+			'erase_posts'              => array( 'owner' => true ) + self::choice(
+				__( 'Erasing the personal data of a user', 'easyq' ),
+				array(
+					'anonymize' => __( 'Keep the posts without the name of the author', 'easyq' ),
+					'delete'    => __( 'Delete the posts nobody else has replied to; keep the others without the name of the author', 'easyq' ),
+				),
+				__( 'Applies to the questions, answers and comments of the user when you erase their personal data under Tools → Erase Personal Data.', 'easyq' )
+			),
 			'delete_data_on_uninstall' => array( 'owner' => true ) + self::bool(
 				__( 'Delete all Q&A data when the plugin is deleted', 'easyq' ),
 				__( 'Removes the questions, answers, comments, votes, settings and user data of easyQ.', 'easyq' )

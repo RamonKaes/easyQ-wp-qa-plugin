@@ -48,6 +48,21 @@ final class Privacy {
 	 * @return array<string, mixed>
 	 */
 	public function add_exporters( array $exporters ): array {
+		$exporters['easyq-posts'] = array(
+			'exporter_friendly_name' => __( 'Q&A posts', 'easyq' ),
+			'callback'               => array( Post_Data::class, 'export_posts' ),
+		);
+
+		$exporters['easyq-votes'] = array(
+			'exporter_friendly_name' => __( 'Q&A votes and flags', 'easyq' ),
+			'callback'               => array( Post_Data::class, 'export_votes' ),
+		);
+
+		$exporters['easyq-profile'] = array(
+			'exporter_friendly_name' => __( 'Q&A profile', 'easyq' ),
+			'callback'               => array( Profile_Data::class, 'export' ),
+		);
+
 		$exporters['easyq-favorites'] = array(
 			'exporter_friendly_name' => __( 'Q&A favorites', 'easyq' ),
 			'callback'               => array( self::class, 'export_favorites' ),
@@ -85,6 +100,21 @@ final class Privacy {
 	 * @return array<string, mixed>
 	 */
 	public function add_erasers( array $erasers ): array {
+		$erasers['easyq-posts'] = array(
+			'eraser_friendly_name' => __( 'Q&A posts', 'easyq' ),
+			'callback'             => array( Post_Data::class, 'erase_posts' ),
+		);
+
+		$erasers['easyq-votes'] = array(
+			'eraser_friendly_name' => __( 'Q&A votes and flags', 'easyq' ),
+			'callback'             => array( Post_Data::class, 'erase_votes' ),
+		);
+
+		$erasers['easyq-profile'] = array(
+			'eraser_friendly_name' => __( 'Q&A profile', 'easyq' ),
+			'callback'             => array( Profile_Data::class, 'erase' ),
+		);
+
 		$erasers['easyq-favorites'] = array(
 			'eraser_friendly_name' => __( 'Q&A favorites', 'easyq' ),
 			'callback'             => array( self::class, 'erase_favorites' ),

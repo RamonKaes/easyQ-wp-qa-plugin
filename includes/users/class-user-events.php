@@ -204,11 +204,7 @@ final class User_Events {
 	public function remove_data( int $user_id, ?int $reassign ): void {
 		$wpdb  = DB::wpdb();
 		$posts = Schema::table( 'posts' );
-		$votes = Schema::table( 'uservotes' );
 
-		// Posts the user voted on or flagged need their counts updated afterwards.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		$voted_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) ) );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 		$own_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE user_id = %d', $posts, $user_id ) ) );
 
@@ -231,12 +227,7 @@ final class User_Events {
 			$wpdb->query( $sql );
 		}
 
-		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id );
-		if ( null !== $sql ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-			$wpdb->query( $sql );
-		}
-		Votes::forget();
+		$this->remove_votes( $user_id );
 		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id );
 		if ( null !== $sql ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
@@ -269,12 +260,45 @@ final class User_Events {
 			$wpdb->query( $sql );
 		}
 
-		foreach ( array_unique( array_merge( $voted_ids, $own_ids ) ) as $post_id ) {
+		foreach ( $own_ids as $post_id ) {
 			$this->posts->forget( $post_id );
 		}
 
+		if ( null !== $reassign && $reassign > 0 ) {
+			$this->points->update_all( $reassign );
+		}
+
+		Counts::invalidate( Counts::USERS_WITH_POINTS, Counts::FLAGGED );
+	}
+
+	/**
+	 * Removes the votes and flags of a user and recounts the posts and the points of their authors.
+	 *
+	 * As `qa_delete_user()`, which deletes the votes with the user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return int Number of posts the user had voted on or flagged.
+	 */
+	public function remove_votes( int $user_id ): int {
+		$wpdb  = DB::wpdb();
+		$votes = Schema::table( 'uservotes' );
+
+		// Posts the user voted on or flagged need their counts updated afterwards.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$voted_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) ) );
+
+		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		Votes::forget();
+
 		$authors = array();
 		foreach ( $voted_ids as $post_id ) {
+			$this->posts->forget( $post_id );
 			$this->posts->recount_votes( $post_id );
 			$this->posts->recount_flags( $post_id );
 
@@ -287,11 +311,9 @@ final class User_Events {
 		foreach ( array_keys( $authors ) as $author_id ) {
 			$this->points->update( $author_id, array( Points::QUESTION_VOTE_POINTS, Points::ANSWER_VOTE_POINTS, Points::COMMENT_VOTE_POINTS, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ) );
 		}
+		$this->points->update( $user_id, array( Points::QUESTION_UPVOTES, Points::QUESTION_DOWNVOTES, Points::ANSWER_UPVOTES, Points::ANSWER_DOWNVOTES, Points::COMMENT_UPVOTES, Points::COMMENT_DOWNVOTES ) );
+		Counts::invalidate( Counts::FLAGGED );
 
-		if ( null !== $reassign && $reassign > 0 ) {
-			$this->points->update_all( $reassign );
-		}
-
-		Counts::invalidate( Counts::USERS_WITH_POINTS, Counts::FLAGGED );
+		return count( $voted_ids );
 	}
 }

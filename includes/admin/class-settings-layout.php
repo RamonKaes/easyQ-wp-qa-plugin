@@ -121,7 +121,7 @@ final class Settings_Layout {
 			'general'     => array(
 				self::section( '', array( 'base_slug', 'tags_or_categories', self::row( __( 'Maintenance', 'easyq' ), array( 'read_only' ) ) ) ),
 				self::section( __( 'Q&A level of each role', 'easyq' ), array( 'role_levels' ), __( 'Users get the level of their role unless their profile sets a higher one.', 'easyq' ) ),
-				self::section( __( 'Data', 'easyq' ), array( self::row( __( 'Uninstalling', 'easyq' ), array( 'delete_data_on_uninstall' ) ) ) ),
+				self::section( __( 'Data', 'easyq' ), array( 'erase_posts', self::row( __( 'Uninstalling', 'easyq' ), array( 'delete_data_on_uninstall' ) ) ) ),
 			),
 			'permissions' => array(
 				self::section( __( 'Viewing and posting', 'easyq' ), array( 'permit_view_q_page', 'permit_post_q', 'permit_post_a', 'permit_post_c' ) ),

@@ -44,14 +44,14 @@ final class Policy_Text_Test extends Test_Case {
 		$document = new \DOMDocument();
 		$this->assertTrue( $document->loadXML( '<div>' . $content . '</div>' ), 'Every element is closed.' );
 		$headings = $document->getElementsByTagName( 'h2' )->length + $document->getElementsByTagName( 'h3' )->length;
-		$this->assertSame( 3, $headings );
+		$this->assertSame( 4, $headings );
 		$this->assertSame( $headings, substr_count( $content, 'Suggested text:' ), 'Each topic marks the text to copy, as core does.' );
 	}
 
 	public function test_names_the_cookies_and_the_retention_period_of_the_settings(): void {
 		$this->assertStringContainsString( 'after 30 days', Policy_Text::content() );
 		$this->assertStringContainsString( 'ten years', Policy_Text::content() );
-		$this->assertStringNotContainsString( 'shortened', Policy_Text::content() );
+		$this->assertStringNotContainsString( 'shortened by its last part', Policy_Text::content() );
 
 		Options::update(
 			'spam',
@@ -106,5 +106,13 @@ final class Policy_Text_Test extends Test_Case {
 		$this->assertStringContainsString( 'stored until the sender and the recipient have deleted them', Policy_Text::content() );
 		Options::update( 'users', array( 'show_message_history' => false ) );
 		$this->assertStringContainsString( 'not stored on the site', Policy_Text::content() );
+	}
+
+	public function test_describes_what_erasing_does_with_the_setting_of_the_site(): void {
+		$this->assertStringContainsString( 'your questions, answers and comments stay without your name', Policy_Text::content() );
+		$this->assertStringContainsString( 'votes, flags and your profile', Policy_Text::content() );
+
+		Options::update( 'general', array( 'erase_posts' => 'delete' ) );
+		$this->assertStringContainsString( 'your questions, answers and comments are deleted; those others have replied to stay', Policy_Text::content() );
 	}
 }

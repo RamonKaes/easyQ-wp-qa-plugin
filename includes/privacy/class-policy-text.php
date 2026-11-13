@@ -111,6 +111,12 @@ final class Policy_Text {
 			$days
 		) . '</p>';
 
+		$strings[] = '<h3 class="wp-block-heading">' . __( 'Your data on the question and answer pages', 'easyq' ) . '</h3>';
+		$strings[] = '<p>' . $suggested . __( 'If you request an export of your personal data, it includes your questions, answers, comments, votes, flags and your profile on the question and answer pages.', 'easyq' ) . '</p>';
+		$strings[] = '<p>' . ( 'delete' === Options::get_string( 'general', 'erase_posts' )
+			? __( 'If you request the erasure of your personal data, your questions, answers and comments are deleted; those others have replied to stay without your name and with shortened IP addresses. Your votes, flags, profile fields and uploaded profile picture are deleted.', 'easyq' )
+			: __( 'If you request the erasure of your personal data, your questions, answers and comments stay without your name and with shortened IP addresses. Your votes, flags, profile fields and uploaded profile picture are deleted.', 'easyq' ) ) . '</p>';
+
 		return implode( "\n", $strings );
 	}
 

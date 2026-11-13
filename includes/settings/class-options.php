@@ -60,6 +60,7 @@ final class Options {
 				'tags_or_categories'       => 'tc',
 				'read_only'                => false,
 				'delete_data_on_uninstall' => false,
+				'erase_posts'              => 'anonymize',
 				// Q&A level of each WordPress role; roles not listed get the basic level.
 				'role_levels'              => array(
 					'administrator' => Levels::ADMIN,
