@@ -15,7 +15,7 @@ easyQ Questions and Answers adds a question and answer community to your WordPre
 
 easyQ brings the proven feature set of the open source platform [Question2Answer](https://www.question2answer.org/) to WordPress, rebuilt the WordPress way: every Q&A page is a block template, every part of it a block, and your theme decides how it looks.
 
-**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles, user fields, the maintenance tools, emails and notifications, private messages, the user wall, favorites, the updates page, the newsletter, the suggested privacy policy text, the removal of IP addresses after a set number of days, the export and erasure of personal data, the registration settings and the WP-CLI command for the maintenance tools work. Site Health checks and translations follow in the next versions.
+**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles, user fields, the maintenance tools, emails and notifications, private messages, the user wall, favorites, the updates page, the newsletter, the suggested privacy policy text, the removal of IP addresses after a set number of days, the export and erasure of personal data, the registration settings, the WP-CLI command for the maintenance tools and the Site Health checks work. Translations follow in the next versions.
 
 = Questions and answers =
 
@@ -103,4 +103,5 @@ No. Your questions, answers and users stay in the database when you delete the p
 * Suggested privacy policy text and the removal of stored IP addresses after a set number of days.
 * Registration text, terms with stored consent, newsletter opt-in and blocked usernames on the registration form; limits of registrations and failed logins per IP address.
 * WP-CLI command `wp easyq recalc` that runs the maintenance tools.
+* Site Health tests of the database tables, the permalinks and the read-only mode, and an easyQ section on the Info tab.
 * Support for single sites and multisite networks.

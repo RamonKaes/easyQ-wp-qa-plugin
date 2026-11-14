@@ -47,6 +47,7 @@ final class Plugin {
 		( new Privacy\Privacy() )->register();
 		( new Privacy\IP_Retention() )->register();
 		( new Privacy\Policy_Text() )->register();
+		( new Health\Site_Health() )->register();
 		( new REST\REST_API() )->register();
 
 		$router = new Frontend\Router();
