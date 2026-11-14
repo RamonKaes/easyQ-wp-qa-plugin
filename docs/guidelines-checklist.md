@@ -1,7 +1,10 @@
 # WordPress guidelines checklist
 
 How easyQ meets the WordPress developer documentation, chapter by chapter. Checked
-on 2026-10-29 against WordPress 7.1.4.
+on 2026-10-29 against WordPress 7.1.4. Checked again on 2026-11-14 for the REST API,
+the forms, the admin screens, the settings and the uploads (rows A, B, F, G and I of
+[review.md](review.md)), against the handbooks and against core; the evidence is in
+the last section. A **Met** without evidence there counts as not checked.
 
 Sources:
 
@@ -14,7 +17,9 @@ Sources:
   [dev notes](https://make.wordpress.org/core/tag/dev-notes/) for recent changes
 
 Status: **Met**, **Open** (with the phase it belongs to), **Not used** (easyQ has
-nothing the chapter applies to), **Kept** (a deliberate choice, with the reason).
+nothing the chapter applies to), **Kept** (a deliberate choice, with the reason and
+the word of the site owner). A status with **F-n** names an open finding in
+[findings.md](findings.md).
 
 Automated checks cover part of this on every change: PHPCS with the WordPress Coding
 Standards (escaping, sanitizing, nonces, prepared SQL, i18n), Plugin Check, PHPStan,
@@ -40,10 +45,10 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Capability checks with `current_user_can()` for every action | Met | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
-| Sanitize input, validate before saving | Met | Settings API `sanitize_callback`, REST argument schemas, services validate |
+| Capability checks with `current_user_can()` for every action | Met; F-4, F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
+| Sanitize input, validate before saving | Met; F-5, F-36 | Settings API `sanitize_callback`, REST argument schemas, services validate |
 | Escape late, on output | Met | PHPCS `EscapeOutput` |
-| Nonces on forms and links that change something | Met | Admin forms and row actions, site forms; REST uses the core `wp_rest` nonce |
+| Nonces on forms and links that change something | Met; F-23, F-33 | Admin forms and row actions, site forms; REST uses the core `wp_rest` nonce |
 | SQL only through `$wpdb->prepare()` | Met | PHPCS `PreparedSQL`, fixed SQL with placeholders |
 | Redirects with `wp_safe_redirect()` | Met | No `wp_redirect()` in the code |
 
@@ -60,7 +65,7 @@ code, and known vulnerabilities of the dependencies.
 | Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Met | `EasyQ\Privacy\Policy_Text` on `admin_init`, in the markup of the suggested text of core, following the settings (section 11 of the [feature mapping](feature-mapping.md)); `Policy_Text_Test` |
 | Personal data exporter and eraser | Met | `EasyQ\Privacy\Privacy`, `Post_Data` and `Profile_Data` after `wp_comments_personal_data_exporter()` and `_eraser()`: posts, votes, flags, profile, favorites, updates, notices, messages, wall posts and the newsletter, 500 posts per page; `Personal_Data_Test`, `Privacy_Test` (decisions 54 and 77) |
 | No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened and removed after `ip_retention_days` (`IP_Retention_Test`) |
-| Consent recorded where it is asked | Met | Newsletter (time of the confirmed opt-in) and the registration terms (`Users\Registration`: time and text), both exported; the registration form adds its parts through `register_form` and `registration_errors` (`Registration_Test`) |
+| Consent recorded where it is asked | Met on a single site; F-32 on a multisite | Newsletter (time of the confirmed opt-in) and the registration terms (`Users\Registration`: time and text), both exported; the registration form adds its parts through `register_form` and `registration_errors` (`Registration_Test`) |
 
 ## Administration menus
 
@@ -68,13 +73,13 @@ code, and known vulnerabilities of the dependencies.
 | --- | --- | --- |
 | Top-level menu only if needed | Met | easyQ has nine screens; a single page would belong under Settings |
 | Capability per screen | Met | `easyq_manage`, Posts from `easyq_moderate` |
-| Menu icon | Kept | `dashicons-format-chat`. Dashicons are to be replaced in menus (Developer Blog, October 2026), without a replacement yet; a base64 SVG would need `base64_encode()`, which the coding standards discourage. Switch once core offers the replacement |
+| Menu icon | Kept; reasons to be rewritten, F-38 | `dashicons-format-chat`. Dashicons are to be replaced in menus (Developer Blog, October 2026), without a replacement yet; a base64 SVG would need `base64_encode()`, which the coding standards discourage. Switch once core offers the replacement |
 
 ## Settings
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Settings API: `register_setting()`, sections, fields, `options.php` | Met | `Settings\Registry`, `Admin\Settings_Screen` |
+| Settings API: `register_setting()`, sections, fields, `options.php` | Met; F-37 | `Settings\Registry`, `Admin\Settings_Screen` |
 | Layout of the core settings screens | Met | Sections with headings; related settings in one row with a fieldset (Settings → Discussion); dependent fields disabled, not hidden (Settings → Reading) |
 | Design system of 7.1 (`@wordpress/theme`, `--wpds-*` tokens, `ThemeProvider`) | Not used | It styles React interfaces built from `@wordpress/components`; the classic admin styles (`forms.css`, `common.css`, `list-tables.css`) do not use it. easyQ's screens are Settings API and list table pages with core classes; the editor controls come from `@wordpress/components` and take the tokens from core |
 
@@ -126,15 +131,15 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Text domain `easyq` as a literal, placeholders, translator comments, plurals | Met | PHPCS i18n sniffs |
-| `load_plugin_textdomain()` on `init` for bundled translations | Open, phase 9 | No translations are bundled yet; only `languages/easyq.pot` |
+| Text domain `easyq` as a literal, placeholders, translator comments, plurals | Met for what PHPCS checks; F-31 | PHPCS i18n sniffs |
+| `load_plugin_textdomain()` on `init` for bundled translations | Open, phase 9; F-38 | No translations are bundled yet; only `languages/easyq.pot` |
 
 ## Plugin directory
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Guidelines 1–18 (GPL, readable code, no tracking, no third-party code, no forced credits, no dashboard hijacking, bundled libraries) | Met | — |
-| `readme.txt` with `Contributors` | Open, phase 9 | The wordpress.org user name is still missing |
+| Guidelines 1–18 (GPL, readable code, no tracking, no third-party code, no forced credits, no dashboard hijacking, bundled libraries) | F-25 for guideline 16; the others as in the last section | — |
+| `readme.txt` with `Contributors` | Open, phase 9; F-25 | The wordpress.org user name is still missing |
 
 ## REST API
 
@@ -142,10 +147,10 @@ code, and known vulnerabilities of the dependencies.
 | --- | --- | --- |
 | Namespace `vendor/v1`, routes on `rest_api_init` | Met | `easyq/v1`, `REST\REST_API` |
 | `permission_callback` on every route | Met | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see; the unsubscribe and newsletter confirmation routes check the signed token or key of the email in theirs. `REST_Roles_Test` fails on a writing route with `__return_true` |
-| Arguments with types and validation; `WP_Error` with a status | Met | Argument schemas, `REST\REST_Errors` |
+| Arguments with types and validation; `WP_Error` with a status | Met; F-30 | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
 | Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()`; a test checks real responses of all routes against them, both types and undocumented properties |
-| Controller pattern of `WP_REST_Controller` | Met | One controller per resource; `get_item_schema()` cached with `add_additional_fields_schema()`, `get_public_item_schema()` for the routes, `prepare_item_for_response()` with `register_rest_field()` and `filter_response_by_context()`, `context` on every property and reading route, `deleted` with `previous` (decision 51) |
+| Controller pattern of `WP_REST_Controller` | F-26 to F-30 | One controller per resource; `get_item_schema()` cached with `add_additional_fields_schema()`, `get_public_item_schema()` for the routes, `prepare_item_for_response()` with `register_rest_field()` and `filter_response_by_context()`, `context` on every property and reading route, `deleted` with `previous` (decision 51) |
 | Page states like `replytocom` | Met | Edit and close states: `wp_robots_no_robots()`, `rel="nofollow"`, cancel links back to the post (decision 51) |
 
 ## Blocks
@@ -165,5 +170,64 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Core list table markup, primary column as row header | Met | `WP_List_Table` subclasses |
-| Short row header name (`get_primary_column_aria_label()`, 7.1) | Met | Posts, categories and user fields lists |
+| Core list table markup, primary column as row header | F-35 | `WP_List_Table` subclasses |
+| Short row header name (`get_primary_column_aria_label()`, 7.1) | Met | Posts, categories, user fields and email templates lists |
+
+## Chapters added on 2026-11-14
+
+| Rule | Status | Where |
+| --- | --- | --- |
+| REST: links of a resource (`_links`, `prepare_links()`) and filters of the response (`rest_prepare_{type}`) | F-26 | Core: `prepare_item_for_response()` of the posts, users and comments controllers. Plugin: none in `includes/rest/` |
+| REST: pagination as core (`X-WP-Total`, `X-WP-TotalPages`, `Link`, 400 beyond the last page) | F-27 | Totals on eight collections through `REST\Controller`; no `Link`, no 400, six collections without totals |
+| REST: `DELETE` with `force` where nothing can be trashed | F-28 | Seven routes delete without the argument |
+| REST: `context` on every reading route, `rest_forbidden_context` | F-29 | Five reading routes without the argument (read from the server) |
+| REST: 201 with `Location` on create, 401 for visitors and 403 for users, 404 for what is missing | Met for posts, categories and user fields; F-30 | `REST\Controller`, `REST\REST_Errors` |
+| REST: `_fields` and `register_rest_field()` | Met | `REST\Controller` (`get_fields_for_response()`, `add_additional_fields_to_object()`) |
+| Forms: handled on `template_redirect`, `wp_safe_redirect()` and `exit` | Met | `Frontend\Form_Handler` |
+| Forms: whole sentences for translators | F-31 | `includes/blocks/render/class-forms.php` |
+| Forms: nonce action as specific as possible; required fields marked as the comment form does | F-33 | `Frontend\Form_Handler`, `includes/blocks/render/class-forms.php` |
+| Registration: `register_form`, `registration_errors`, `user_register`; markup of `wp-login.php` | Met on a single site | `Users\Registration` |
+| Registration on a multisite: `signup_extra_fields`, `wpmu_validate_user_signup` | F-32 | `Users\Blocked_Names` and `Limits\Account_Limits` cover the sign-up, `Users\Registration` does not |
+| Uploads: `wp_handle_upload()` with the allowed types, `wp_get_image_editor()`, `wp_delete_file()`, no direct file functions | Met; F-34 | `Users\Avatars` |
+| Uploads: capability `upload_files` | F-34, to decide | Login and the setting instead |
+| Avatars through `pre_get_avatar_data` | Met | `Users\Avatars` |
+| Admin notices through `wp_admin_notice()` | F-36 | Used in two files, written by hand in six |
+| List screens: hidden headings (`set_screen_reader_content()`), columns in Screen Options, clean address after a filter | F-35 | None of the four list tables |
+| Users list of core: columns, views, bulk actions through the hooks of core | Hooks Met; F-23 | `Admin\Users_Screen` |
+| Profile screen: the four hooks with `edit_user` | Met; F-22 | `Admin\Profile_Screen` |
+| Help tabs as the core screens have them | F-36, to decide | None |
+| No inline styles, no duplicate IDs | F-36 | `Admin\Settings_Screen`, `Admin\Categories_Screen`, `Admin\User_Fields_Screen` |
+| Inline documentation: `@since` on classes, methods, properties, constants and hooks | Met; F-36 | One constant in `Uninstaller` without it |
+| Readme: a plugin that is ready, source and build named | F-25 | `readme.txt` |
+| WP-CLI, Site Health, privacy tools | Open: rows M, N and Q of the review have not been read against the handbooks | `CLI\Command`, `Health\Site_Health`, `Privacy\Privacy` |
+
+## Evidence of 2026-11-14
+
+What the rows marked **Met** rest on, for the rows A, B, F, G and I of the review. Core
+is WordPress 7.1.4; a file without a path prefix of the plugin is a file of core.
+
+| Row | Rule set by | Evidence in the plugin | Held by |
+| --- | --- | --- | --- |
+| Header | Plugin Handbook, Header Requirements | `easyq.php`: all fields, description of 84 characters | Plugin Check |
+| Prefix | Plugin Handbook, Best Practices (at least four letters) | Namespace `EasyQ`, `easyq_` everywhere; unprefixed query arguments are F-36 | PHPCS `PrefixAllGlobals` |
+| `ABSPATH` check | Best Practices; Common Issues, "Direct file access" | Every file of `includes/admin/` and `includes/settings/`; `uninstall.php` checks `WP_UNINSTALL_PLUGIN` | Plugin Check |
+| Uninstall | Plugin Handbook, Uninstall Methods | `uninstall.php`, `Uninstaller` | `Uninstaller_Test` |
+| Capability for every action | REST API Handbook, Adding Custom Endpoints; `wp-admin/options.php` (capability of the option page) | A `permission_callback` on each of the 41 routes; the handlers of the screens check `easyq_manage`; `option_page_capability_{group}` in `Settings\Registry` and `Mail\Templates` | Mutations of 2026-11-14 (red for 22 checks, green for 5: F-15, F-24) |
+| Sanitizing | Common Issues, "Sanitize" | Named keys with a sanitizer each in `Frontend\Form_Handler`; `sanitize_callback` of every setting | PHPCS `ValidatedSanitizedInput` |
+| Escaping | PHP Coding Standards | Every `phpcs:ignore` for output in rows B, F and G was read: the value is escaped where it is built | PHPCS `EscapeOutput` |
+| Nonces | Common APIs, Nonces | `check_admin_referer()` in every `load-` handler; site forms verify before they read a field | Mutations (red for posts, users, profile, forms, registration; green for the newsletter buttons) |
+| Redirects | `wp-comments-post.php` | `wp_safe_redirect()` and `exit`; `wp_validate_redirect()` for the return address | `Form_Handler_Test::test_does_not_return_to_other_sites` (mutation red) |
+| Settings API | Plugin Handbook, Settings API; `wp-admin/options.php` | `settings_fields()`, `do_settings_sections()`, `submit_button()`, `settings_errors()`; registered on `init` because `show_in_rest` needs the setting outside the admin | `Settings_Test` |
+| Layout of the settings | `wp-admin/options-discussion.php`, `options-general.php` | Fieldset with a hidden legend, `aria-describedby` on descriptions, tabs with `aria-current` | `Settings_Test` (mutation red), axe |
+| Capabilities, not roles | Plugin Handbook, Users | No role name in the five rows | PHPCS `WordPress.WP.Capabilities` |
+| REST namespace and hook | REST API Handbook, Adding Custom Endpoints | Namespace of the plugin with `v1`, routes on `rest_api_init` in `REST\REST_API` | `REST_Roles_Test` reads the routes |
+| REST schema | REST API Handbook, Schema | `$schema` and `title` in `REST\Schemas` and `REST\Post_Schema` | `REST_Schemas_Test` (mutation red; the list of responses is by hand) |
+| Scripts on the screens | Common Issues, "Use wp_enqueue commands" | Enqueued from the `load-` hook of the settings and tools screens, no inline script | — (read) |
+| Dashboard widget | Common APIs, Dashboard Widgets; guideline 11 | `wp_add_dashboard_widget()` on `wp_dashboard_setup`, capability checked | `Dashboard_Tools_Screens_Test` (mutation red) |
+| Guidelines 1, 5, 7, 8, 11, 12, 13, 15, 17 | Detailed Plugin Guidelines | GPL in header, readme and `LICENSE`; no locked features; no request and no remote script in the five rows; one widget that can be hidden; five tags; `wp-api-fetch` and `wp-i18n` from core; one version in header and readme; "Question2Answer" in descriptions only | Plugin Check for part; the rest read |
+| Guidelines 4 and 16 | Detailed Plugin Guidelines | `src/` ships next to `build/`; the readme names neither the repository nor the build; the readme says the plugin is not ready | F-25 |
+
+Not checked against a source in this round: the row on the design system of 7.1, the
+Kept rows on custom tables and on `Reply-To`, and every section the five rows do not
+touch (blocks, cron, email, hooks, JavaScript of the blocks).
+
