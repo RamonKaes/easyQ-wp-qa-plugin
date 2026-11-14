@@ -20,7 +20,8 @@ defined( 'ABSPATH' ) || exit;
  * the registration and login of WordPress.
  *
  * Question2Answer checks these on its own register and login pages (`pages/register.php`,
- * `pages/login.php`); easyQ uses the core hooks of `register_new_user()` and `wp_authenticate()`.
+ * `pages/login.php`); easyQ uses the core hooks of `register_new_user()`, of the network
+ * sign-up `wpmu_validate_user_signup()` and of `wp_authenticate()`.
  *
  * @since 0.1.0
  */
@@ -43,6 +44,9 @@ final class Account_Limits {
 	public function register(): void {
 		add_filter( 'registration_errors', array( $this, 'check_registration' ) );
 		add_action( 'register_new_user', array( $this, 'count_registration' ) );
+		add_filter( 'wpmu_validate_user_signup', array( $this, 'check_signup' ) );
+		add_action( 'after_signup_user', array( $this, 'count_registration' ) );
+		add_action( 'after_signup_site', array( $this, 'count_registration' ) );
 		// After the core authentication filters (20 and 30), so their result cannot replace the refusal.
 		add_filter( 'authenticate', array( $this, 'check_login' ), 99, 3 );
 		add_action( 'wp_login_failed', array( $this, 'count_failed_login' ), 10, 2 );
@@ -70,7 +74,32 @@ final class Account_Limits {
 	}
 
 	/**
-	 * Counts a completed registration.
+	 * Refuses a network sign-up of multisite from a blocked IP address or beyond the hourly
+	 * limit. Administrators who add users pass the same validation and are not limited.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $result Result of `wpmu_validate_user_signup()`.
+	 * @return mixed
+	 */
+	public function check_signup( mixed $result ): mixed {
+		if ( ! is_array( $result ) || ! ( $result['errors'] ?? null ) instanceof WP_Error || current_user_can( 'create_users' ) ) {
+			return $result;
+		}
+
+		$actor = self::actor();
+		// Plain text, as the other messages of the sign-up form.
+		if ( Services::limits()->is_ip_blocked( $actor ) ) {
+			$result['errors']->add( 'user_name', __( 'Registration is not possible from your IP address.', 'easyq' ) );
+		} elseif ( Services::limits()->remaining( Limits::REGISTRATIONS, $actor ) <= 0 ) {
+			$result['errors']->add( 'user_name', __( 'Too many registrations. Please try again in an hour.', 'easyq' ) );
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Counts a completed registration, or a recorded sign-up on multisite.
 	 *
 	 * @since 0.1.0
 	 */

@@ -70,6 +70,32 @@ final class Account_Limits_Test extends Test_Case {
 		$this->assertSame( array( 'easyq_ip_blocked' ), $result->get_error_codes() );
 	}
 
+	public function test_limits_the_network_sign_up_of_multisite(): void {
+		$limits = $this->registered_instance();
+		$this->assertSame( 10, has_filter( 'wpmu_validate_user_signup', array( $limits, 'check_signup' ) ) );
+		$this->assertSame( 10, has_action( 'after_signup_user', array( $limits, 'count_registration' ) ) );
+		$this->assertSame( 10, has_action( 'after_signup_site', array( $limits, 'count_registration' ) ) );
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'The network sign-up exists on multisite only.' );
+		}
+
+		wp_set_current_user( 0 );
+		Options::update( 'spam', array( 'max_rate_ip_registers' => 1 ) );
+		$this->assertSame( array(), wpmu_validate_user_signup( 'adalovelace', 'ada@example.org' )['errors']->get_error_messages() );
+
+		wpmu_signup_user( 'adalovelace', 'ada@example.org' );
+		$this->assertSame( array( 'Too many registrations. Please try again in an hour.' ), wpmu_validate_user_signup( 'bobbyriggs', 'bob@example.org' )['errors']->get_error_messages( 'user_name' ) );
+
+		$this->ip = '203.0.113.10';
+		$this->assertSame( array(), wpmu_validate_user_signup( 'bobbyriggs', 'bob@example.org' )['errors']->get_error_messages() );
+
+		Options::update( 'spam', array( 'block_ips_write' => '203.0.113.*' ) );
+		$this->assertSame( array( 'Registration is not possible from your IP address.' ), wpmu_validate_user_signup( 'bobbyriggs', 'bob@example.org' )['errors']->get_error_messages( 'user_name' ) );
+
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( array(), wpmu_validate_user_signup( 'bobbyriggs', 'bob@example.org' )['errors']->get_error_messages(), 'Administrators adding users are not limited.' );
+	}
+
 	public function test_limits_failed_logins_per_ip_address_even_with_the_right_password(): void {
 		Options::update( 'spam', array( 'max_rate_ip_logins' => 2 ) );
 		$user = self::factory()->user->create_and_get(

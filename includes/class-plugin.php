@@ -37,6 +37,7 @@ final class Plugin {
 		( new Users\User_Events( Services::posts(), Services::points() ) )->register();
 		( new Users\Avatars() )->register();
 		( new Users\Registration() )->register();
+		( new Users\Blocked_Names() )->register();
 		( new Mail\Notifications() )->register();
 		Services::favorites()->register();
 		Services::updates()->register();

@@ -84,25 +84,6 @@ final class Registration_Test extends Test_Case {
 		$this->assertStringNotContainsString( 'checked', $html );
 	}
 
-	public function test_refuses_blocked_usernames_as_question2answer_does(): void {
-		$this->assertSame( 'anonymous', Options::get_string( 'users', 'block_bad_usernames' ) );
-
-		$this->assertTrue( Registration::is_blocked_username( 'Anonymous' ), 'Case does not matter; multisite refuses capitals before this check.' );
-
-		foreach ( array( 'anonymous', 'anonymous.bob' ) as $login ) {
-			$result = register_new_user( $login, 'new-' . md5( $login ) . '@example.org' );
-			$this->assertWPError( $result, $login );
-			$this->assertContains( 'easyq_blocked_username', $result->get_error_codes(), $login );
-		}
-
-		$this->assertIsInt( register_new_user( 'anonymousbob', 'bob@example.org' ), 'Only whole words count, as in Question2Answer.' );
-
-		Options::update( 'users', array( 'block_bad_usernames' => 'admin*, root' ) );
-		$this->assertContains( 'easyq_blocked_username', $this->errors_of( 'administrator' ) );
-		$this->assertContains( 'easyq_blocked_username', $this->errors_of( 'root' ) );
-		$this->assertIsInt( register_new_user( 'anonymous', 'anon@example.org' ) );
-	}
-
 	public function test_requires_the_terms_and_stores_the_consent(): void {
 		Options::update( 'users', array( 'show_register_terms' => true ) );
 

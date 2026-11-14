@@ -10,7 +10,6 @@ namespace EasyQ\Users;
 
 use EasyQ\Services;
 use EasyQ\Settings\Options;
-use EasyQ\Util\Text;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -18,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Adds the registration settings of Question2Answer (`pages/register.php`) to the WordPress
  * registration form: a text above the form, the profile fields marked for registration,
- * the terms to accept, the newsletter and the blocked usernames.
+ * the terms to accept and the newsletter. Blocked usernames are checked by Blocked_Names.
  *
  * @since 0.1.0
  */
@@ -50,7 +49,7 @@ final class Registration {
 	public function register(): void {
 		add_action( 'login_form_register', array( $this, 'add_message' ) );
 		add_action( 'register_form', array( $this, 'render' ) );
-		add_filter( 'registration_errors', array( $this, 'validate' ), 10, 2 );
+		add_filter( 'registration_errors', array( $this, 'validate' ) );
 		add_action( 'user_register', array( $this, 'save' ) );
 	}
 
@@ -137,19 +136,14 @@ final class Registration {
 	}
 
 	/**
-	 * Refuses blocked usernames and registrations without accepted terms.
+	 * Refuses registrations without accepted terms.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_Error $errors Errors of the registration.
-	 * @param mixed    $login  Sanitized username.
 	 * @return WP_Error
 	 */
-	public function validate( WP_Error $errors, mixed $login ): WP_Error {
-		if ( is_string( $login ) && self::is_blocked_username( $login ) ) {
-			$errors->add( 'easyq_blocked_username', __( '<strong>Error:</strong> Sorry, that username is not allowed. Please choose another one.', 'easyq' ) );
-		}
-
+	public function validate( WP_Error $errors ): WP_Error {
 		if ( self::asks_for_terms() && ! $this->ticked( 'easyq_terms' ) ) {
 			$errors->add( 'easyq_terms', __( '<strong>Error:</strong> Please accept the terms.', 'easyq' ) );
 		}
@@ -251,20 +245,6 @@ final class Registration {
 			'time' => $consent['time'],
 			'text' => is_string( $consent['text'] ?? null ) ? $consent['text'] : '',
 		);
-	}
-
-	/**
-	 * Whether a username contains a blocked word, as `filter_handle()` of Question2Answer checks it.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $login Username.
-	 * @return bool
-	 */
-	public static function is_blocked_username( string $login ): bool {
-		$regex = Text::block_words_to_regex( Options::get_string( 'users', 'block_bad_usernames' ) );
-
-		return array() !== Text::block_words_match_all( $login, $regex );
 	}
 
 	/**
