@@ -61,6 +61,10 @@ final class Plugin {
 		( new Blocks\Blocks() )->register();
 		( new Blocks\Patterns() )->register();
 
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			CLI\Command::register();
+		}
+
 		if ( is_admin() ) {
 			( new Admin\Profile_Screen() )->register();
 			( new Admin\Users_Screen() )->register();

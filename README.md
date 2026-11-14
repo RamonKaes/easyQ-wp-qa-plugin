@@ -14,9 +14,9 @@ your theme decides how it looks.
 > voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles,
 > user fields, the maintenance tools, emails and notifications, private messages, the
 > user wall, favorites, the updates page, the newsletter, the suggested privacy policy
-> text, the removal of IP addresses, the export and erasure of personal data and the
-> registration settings work. WP-CLI commands, Site Health checks and translations are
-> still to come, see
+> text, the removal of IP addresses, the export and erasure of personal data, the
+> registration settings and the WP-CLI command for the maintenance tools work. Site
+> Health checks and translations are still to come, see
 > [what is next](#what-is-next).
 
 ## Features
@@ -66,7 +66,8 @@ your theme decides how it looks.
   Comments screen, with the posts awaiting approval counted in the menu and the admin
   bar, and blocking of IP addresses
 - A dashboard with the figures of the Q&A area, and maintenance tools that recount
-  posts, rebuild the search index and recalculate points and categories
+  posts, rebuild the search index and recalculate points and categories, also on the
+  command line with `wp easyq recalc`
 - A REST API for every action and documented hooks for extensions
 - Privacy by design: no external requests, no tracking, suggested privacy policy text
   that follows the settings, IP addresses removed after a set number of days, and
@@ -78,7 +79,7 @@ your theme decides how it looks.
 easyQ is built in phases, see the
 [phase plan](docs/feature-mapping.md#13-phases):
 
-1. **Tooling:** WP-CLI commands and Site Health checks
+1. **Tooling:** Site Health checks
 2. **Release:** translations (German included), screenshots and the wordpress.org
    release
 
