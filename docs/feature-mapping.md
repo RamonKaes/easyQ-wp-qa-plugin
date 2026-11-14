@@ -398,7 +398,7 @@ navigation), `admin/layoutwidgets` (→ blocks), `admin/plugins` (→ WP plugins
 | `allow_change_usernames` | **–** (section 2) |
 | `register_notify_admin` | **P** via `wp_send_new_user_notification_to_admin`, on the Email tab, on by default as in core |
 | `suspend_register_users` | **WP** "Anyone can register" |
-| `block_bad_usernames` | **P** (`EasyQ\Users\Blocked_Names`), matched as Q2A's `filter_handle()` matches block words; default `anonymous` as in Q2A. Q2A shows the handle, WordPress the display name, so the words are checked in the username on registration (`registration_errors`, `wpmu_validate_user_signup`) and in the display name and nickname when users change them (`user_profile_update_errors`, `rest_request_before_callbacks` on `/wp/v2/users`); an unchanged older name can still be saved. Users who may edit or create users are not checked |
+| `block_bad_usernames` | **P** (`EasyQ\Users\Blocked_Names`), matched as Q2A's `filter_handle()` matches block words; default `anonymous` as in Q2A. Q2A shows the handle, WordPress the display name, so the words are checked in the username on registration (`registration_errors`, `wpmu_validate_user_signup`) and in the display name and nickname when users change them (`user_profile_update_errors`, `rest_request_before_callbacks` for the handlers of `WP_REST_Users_Controller` that create or update users, as the REST server matches routes regardless of case); an unchanged older name can still be saved. Users who may edit or create users are not checked |
 | `allow_private_messages`, `show_message_history`, `page_size_pms` | **P** |
 | `allow_user_walls`, `page_size_wall` | **P** |
 | `avatar_allow_gravatar`, `avatar_default_show` | **WP** Settings → Discussion (avatars) |

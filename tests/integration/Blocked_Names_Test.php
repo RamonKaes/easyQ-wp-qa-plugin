@@ -89,7 +89,8 @@ final class Blocked_Names_Test extends Test_Case {
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user_id );
 
-		foreach ( array( '/wp/v2/users/me', '/wp/v2/users/' . $user_id ) as $route ) {
+		// The REST server matches routes regardless of case.
+		foreach ( array( '/wp/v2/users/me', '/wp/v2/users/' . $user_id, '/wp/v2/USERS/ME', '/WP/V2/Users/' . $user_id ) as $route ) {
 			foreach ( array( 'name', 'nickname' ) as $param ) {
 				$response = $this->rest( 'POST', $route, array( $param => 'Anonymous' ) );
 				$this->assertSame( 400, $response->get_status(), $route . ' ' . $param );
@@ -104,6 +105,20 @@ final class Blocked_Names_Test extends Test_Case {
 
 		wp_set_current_user( $this->administrator() );
 		$this->assertSame( 200, $this->rest( 'POST', '/wp/v2/users/' . $user_id, array( 'name' => 'Anonymous' ) )->get_status() );
+	}
+
+	public function test_checks_new_users_of_the_rest_api_and_no_other_endpoints(): void {
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'subscriber' ) ) );
+		$names   = new Blocked_Names();
+		$request = new WP_REST_Request( 'POST', '/wp/v2/users' );
+		$request->set_param( 'name', 'Anonymous' );
+
+		$refused = $names->check_rest( null, array( 'callback' => array( new \WP_REST_Users_Controller(), 'create_item' ) ), $request );
+		$this->assertWPError( $refused );
+		$this->assertSame( 400, $refused->get_error_data()['status'] );
+
+		$this->assertNull( $names->check_rest( null, array( 'callback' => array( new \WP_REST_Terms_Controller( 'category' ), 'update_item' ) ), $request ), 'A category may be called anything.' );
+		$this->assertNull( $names->check_rest( null, array( 'callback' => array( new \WP_REST_Users_Controller(), 'get_item' ) ), $request ) );
 	}
 
 	public function test_refuses_blocked_usernames_on_the_network_sign_up(): void {

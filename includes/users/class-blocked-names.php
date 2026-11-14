@@ -12,6 +12,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
 use WP_Error;
 use WP_REST_Request;
+use WP_REST_Users_Controller;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -139,19 +140,25 @@ final class Blocked_Names {
 	 * @return mixed
 	 */
 	public function check_rest( mixed $response, mixed $handler, WP_REST_Request $request ): mixed {
-		if ( null !== $response || in_array( $request->get_method(), array( 'GET', 'HEAD', 'DELETE' ), true ) || current_user_can( 'edit_users' ) ) {
+		if ( null !== $response || current_user_can( 'edit_users' ) ) {
 			return $response;
 		}
 
-		if ( 1 !== preg_match( '#^/wp/v2/users(?:/(\d+|me))?$#', $request->get_route(), $match ) ) {
+		// By the handler, not the route: the REST server matches routes regardless of case.
+		$callback = is_array( $handler ) ? ( $handler['callback'] ?? null ) : null;
+		if ( ! is_array( $callback ) || ! ( $callback[0] ?? null ) instanceof WP_REST_Users_Controller || ! is_string( $callback[1] ?? null ) ) {
 			return $response;
 		}
 
-		$user_id = match ( $match[1] ?? '' ) {
-			''      => 0,
-			'me'    => get_current_user_id(),
-			default => (int) $match[1],
+		$user_id = match ( $callback[1] ) {
+			'create_item'         => 0,
+			'update_item'         => is_numeric( $request['id'] ) ? (int) $request['id'] : 0,
+			'update_current_item' => get_current_user_id(),
+			default               => null,
 		};
+		if ( null === $user_id ) {
+			return $response;
+		}
 
 		foreach ( self::NAME_FIELDS as $field => $param ) {
 			$name = $request->get_param( $param );
