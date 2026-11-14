@@ -667,6 +667,22 @@ final class Fields {
 				'type'  => 'lines',
 				'label' => __( 'Text in the welcome email', 'easyq' ),
 			),
+			'show_custom_register'   => self::bool( __( 'Show a text above the registration form', 'easyq' ) ),
+			'custom_register'        => array(
+				'type'  => 'html',
+				'label' => __( 'Text above the registration form, HTML allowed', 'easyq' ),
+			),
+			'show_register_terms'    => self::bool( __( 'Ask new users to accept the terms', 'easyq' ), __( 'The time and the text of the consent are stored with the user.', 'easyq' ) ),
+			'register_terms'         => array(
+				'type'        => 'html',
+				'label'       => __( 'Text beside the checkbox, HTML allowed', 'easyq' ),
+				'description' => __( 'If empty: “I accept the terms and the privacy policy of this site.”, linked to the privacy policy page.', 'easyq' ),
+			),
+			'block_bad_usernames'    => array(
+				'type'        => 'lines',
+				'label'       => __( 'Blocked usernames', 'easyq' ),
+				'description' => __( 'New users cannot register usernames with these words. Separate words with spaces or commas. Use * as a wildcard, e.g. admin*.', 'easyq' ),
+			),
 			'allow_user_walls'       => self::bool( __( 'Allow posts on user walls', 'easyq' ) ),
 			'page_size_wall'         => self::int( __( 'Wall posts per page', 'easyq' ), 1, 100 ),
 			'allow_private_messages' => self::bool( __( 'Allow private messages between users', 'easyq' ) ),

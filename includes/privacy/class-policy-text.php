@@ -10,6 +10,7 @@ namespace EasyQ\Privacy;
 
 use EasyQ\Settings\Options;
 use EasyQ\Users\Permits;
+use EasyQ\Users\Registration;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -73,6 +74,10 @@ final class Policy_Text {
 			$profile .= ' ' . __( 'A profile picture you upload is stored in the media library of the site.', 'easyq' );
 		}
 		$strings[] = '<p>' . $profile . '</p>';
+
+		if ( Registration::asks_for_terms() ) {
+			$strings[] = '<p>' . __( 'When you register, we store the time at which you accepted our terms and the text you accepted, as proof of your consent. This record stays with your user account as long as it exists.', 'easyq' ) . '</p>';
+		}
 
 		if ( Options::get_bool( 'users', 'allow_private_messages' ) ) {
 			$strings[] = '<p>' . ( Options::get_bool( 'users', 'show_message_history' )

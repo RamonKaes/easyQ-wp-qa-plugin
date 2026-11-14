@@ -148,6 +148,16 @@ final class Settings_Layout {
 			),
 			'users'       => array(
 				self::section( '', array( self::row( __( 'Avatars', 'easyq' ), array( 'avatar_allow_upload', 'avatar_store_size' ) ) ) ),
+				self::section(
+					__( 'Registration', 'easyq' ),
+					array(
+						self::row( __( 'Text above the form', 'easyq' ), array( 'show_custom_register' ) ),
+						'custom_register',
+						self::row( __( 'Terms', 'easyq' ), array( 'show_register_terms' ) ),
+						'register_terms',
+						'block_bad_usernames',
+					)
+				),
 				self::section( __( 'Welcome email', 'easyq' ), array( self::row( __( 'Own text', 'easyq' ), array( 'show_custom_welcome' ) ), 'custom_welcome' ) ),
 				self::section(
 					__( 'Walls and private messages', 'easyq' ),

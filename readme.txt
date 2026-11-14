@@ -15,7 +15,7 @@ easyQ Questions and Answers adds a question and answer community to your WordPre
 
 easyQ brings the proven feature set of the open source platform [Question2Answer](https://www.question2answer.org/) to WordPress, rebuilt the WordPress way: every Q&A page is a block template, every part of it a block, and your theme decides how it looks.
 
-**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles, user fields, the maintenance tools, emails and notifications, private messages, the user wall, favorites, the updates page, the newsletter, the suggested privacy policy text, the removal of IP addresses after a set number of days and the export and erasure of personal data work. The registration terms, WP-CLI commands and translations follow in the next versions.
+**easyQ is in early development and not ready for live sites yet.** Asking, answering, voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles, user fields, the maintenance tools, emails and notifications, private messages, the user wall, favorites, the updates page, the newsletter, the suggested privacy policy text, the removal of IP addresses after a set number of days, the export and erasure of personal data and the registration settings work. WP-CLI commands, Site Health checks and translations follow in the next versions.
 
 = Questions and answers =
 
@@ -30,6 +30,7 @@ easyQ brings the proven feature set of the open source platform [Question2Answer
 * Points for questions, answers, votes and best answers, with user ranks and titles
 * User levels mapped to WordPress roles and capabilities
 * Flags, an approval queue, user approval and blocking, rate limits, censored words
+* A text, terms to accept and a newsletter opt-in on the registration form; blocked usernames and limits of registrations and failed logins per IP address
 * Posting without an account, if you allow it
 * User profiles with custom fields, uploaded avatars and activity lists
 * Private messages, a wall on each profile, favorite questions, users, tags and categories, and a page of updates
@@ -51,7 +52,7 @@ easyQ is developed with the help of Claude, an AI assistant by Anthropic. Claude
 
 = Privacy =
 
-easyQ makes no requests to external services and does not track visitors. It suggests text for your privacy policy that follows your settings, under Settings → Privacy. IP addresses are stored only to prevent abuse, optionally shortened, and removed after 30 days by default. Posting without an account stores a cookie, so the author can edit the post later; the forms point to your privacy policy. Tools → Export Personal Data and Erase Personal Data include the posts, votes, flags and profiles of easyQ; erased posts stay without their author, or are deleted if nobody else replied, as you choose.
+easyQ makes no requests to external services and does not track visitors. It suggests text for your privacy policy that follows your settings, under Settings → Privacy. IP addresses are stored only to prevent abuse, optionally shortened, and removed after 30 days by default. Posting without an account stores a cookie, so the author can edit the post later; the forms point to your privacy policy. Tools → Export Personal Data and Erase Personal Data include the posts, votes, flags and profiles of easyQ; erased posts stay without their author, or are deleted if nobody else replied, as you choose. If new users accept your terms on registration, the time and the text are stored as proof.
 
 == Installation ==
 
@@ -100,4 +101,5 @@ No. Your questions, answers and users stay in the database when you delete the p
 * Admin screens for settings, posts, categories, points, user titles, user fields, email templates and tools, and a dashboard.
 * Export and erasure of the personal data of posts, votes, flags, profiles, messages, favorites, updates, notices and the newsletter, with the choice to keep posts without their author or delete them.
 * Suggested privacy policy text and the removal of stored IP addresses after a set number of days.
+* Registration text, terms with stored consent, newsletter opt-in and blocked usernames on the registration form; limits of registrations and failed logins per IP address.
 * Support for single sites and multisite networks.

@@ -16,6 +16,7 @@ use EasyQ\Messages\Messages;
 use EasyQ\Services;
 use EasyQ\Users\Avatars;
 use EasyQ\Users\Levels;
+use EasyQ\Users\Registration;
 use EasyQ\Users\Site_Meta;
 use EasyQ\Users\User_Status;
 
@@ -111,6 +112,15 @@ final class Profile_Data {
 			);
 		}
 
+		$terms = Registration::accepted_terms( $user->ID );
+		if ( null !== $terms ) {
+			$fields[] = array(
+				'name'  => __( 'Terms accepted on registration', 'easyq' ),
+				/* translators: 1: date and time in UTC, 2: text of the terms checkbox. */
+				'value' => sprintf( __( '%1$s UTC: %2$s', 'easyq' ), gmdate( 'Y-m-d H:i:s', $terms['time'] ), $terms['text'] ),
+			);
+		}
+
 		$last_write = Site_Meta::get( $user->ID, Activity_Tracker::LAST_WRITE_META );
 		if ( is_string( $last_write ) && '' !== $last_write ) {
 			$fields[] = array(
@@ -180,7 +190,7 @@ final class Profile_Data {
 		return array(
 			'items_removed'  => $removed,
 			'items_retained' => true,
-			'messages'       => array( __( 'The Q&A points, level, approval or block and email settings stay with the user account.', 'easyq' ) ),
+			'messages'       => array( __( 'The Q&A points, level, approval or block, email settings and the record of the accepted terms stay with the user account.', 'easyq' ) ),
 			'done'           => true,
 		);
 	}

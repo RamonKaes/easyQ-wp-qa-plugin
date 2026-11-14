@@ -17,6 +17,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Fields;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
+use EasyQ\Users\Registration;
 use EasyQ\Users\Site_Meta;
 use EasyQ\Util\IP;
 
@@ -188,8 +189,17 @@ final class Personal_Data_Test extends Test_Case {
 		update_post_meta( $attachment_id, Avatars::ATTACHMENT_META, $user_id );
 		$this->ask( $person );
 		$this->assertNotSame( '', Site_Meta::get( $user_id, Activity_Tracker::LAST_WRITE_META ) );
+		Site_Meta::update(
+			$user_id,
+			Registration::TERMS_META,
+			array(
+				'time' => 1700000000,
+				'text' => 'I accept the terms of this site.',
+			)
+		);
 
 		$fields = array_column( Profile_Data::export( $email )['data'][0]['data'], 'value', 'name' );
+		$this->assertSame( '2023-11-14 22:13:20 UTC: I accept the terms of this site.', $fields['Terms accepted on registration'] );
 		$this->assertSame( 'Berlin', $fields[ $field->display_label() ] );
 		$this->assertStringContainsString( 'canola', $fields['Uploaded avatar'] );
 		$this->assertArrayHasKey( 'Points', $fields );
@@ -204,6 +214,8 @@ final class Personal_Data_Test extends Test_Case {
 		$this->assertNull( get_post( $attachment_id ), 'The uploaded image is deleted.' );
 		$this->assertSame( '', Site_Meta::get( $user_id, Activity_Tracker::LAST_WRITE_META ) );
 		$this->assertGreaterThan( 0, Services::points()->get( $user_id ), 'Points stay with the account.' );
+		$this->assertNotNull( Registration::accepted_terms( $user_id ), 'The proof of consent stays with the account.' );
+		$this->assertStringContainsString( 'accepted terms', $result['messages'][0] );
 		$this->assertFalse( Profile_Data::erase( $email )['items_removed'] );
 		$this->assertSame( array(), Profile_Data::export( 'nobody@example.org' )['data'] );
 	}

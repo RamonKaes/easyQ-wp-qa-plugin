@@ -14,8 +14,9 @@ your theme decides how it looks.
 > voting, moderation, profiles, all Q&A pages, the admin screens, points, user titles,
 > user fields, the maintenance tools, emails and notifications, private messages, the
 > user wall, favorites, the updates page, the newsletter, the suggested privacy policy
-> text, the removal of IP addresses and the export and erasure of personal data work.
-> The registration terms, WP-CLI commands and translations are still to come, see
+> text, the removal of IP addresses, the export and erasure of personal data and the
+> registration settings work. WP-CLI commands, Site Health checks and translations are
+> still to come, see
 > [what is next](#what-is-next).
 
 ## Features
@@ -37,6 +38,8 @@ your theme decides how it looks.
   and capabilities
 - Flags, an approval queue, user approval and blocking, rate limits per user and IP
   address, a list of words that are censored
+- A text, terms to accept and a newsletter opt-in on the WordPress registration form,
+  blocked usernames, and limits of registrations and failed logins per IP address
 - Posting without an account, if you allow it
 - User profiles with custom fields, uploaded avatars and activity lists
 - Private messages, a wall on each profile, favorite questions, users, tags and
@@ -67,15 +70,15 @@ your theme decides how it looks.
 - A REST API for every action and documented hooks for extensions
 - Privacy by design: no external requests, no tracking, suggested privacy policy text
   that follows the settings, IP addresses removed after a set number of days, and
-  export and erasure of all Q&A data through the privacy tools of WordPress
+  export and erasure of all Q&A data through the privacy tools of WordPress; consent to
+  the registration terms stored as proof
 
 ## What is next
 
 easyQ is built in phases, see the
 [phase plan](docs/feature-mapping.md#13-phases):
 
-1. **Privacy and tooling:** registration terms, WP-CLI commands and Site Health
-   checks
+1. **Tooling:** WP-CLI commands and Site Health checks
 2. **Release:** translations (German included), screenshots and the wordpress.org
    release
 

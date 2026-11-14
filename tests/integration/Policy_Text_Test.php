@@ -100,6 +100,10 @@ final class Policy_Text_Test extends Test_Case {
 			$this->assertStringNotContainsString( $phrase, Policy_Text::content(), $key );
 		}
 
+		$this->assertStringNotContainsString( 'accepted our terms', Policy_Text::content() );
+		Options::update( 'users', array( 'show_register_terms' => true ) );
+		$this->assertStringContainsString( 'we store the time at which you accepted our terms and the text you accepted', Policy_Text::content() );
+
 		Options::update( 'users', array( 'allow_private_messages' => false ) );
 		$this->assertStringNotContainsString( 'Private messages', Policy_Text::content() );
 		Options::update( 'users', array( 'allow_private_messages' => true ) );

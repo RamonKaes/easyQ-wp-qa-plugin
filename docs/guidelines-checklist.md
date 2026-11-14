@@ -60,6 +60,7 @@ code, and known vulnerabilities of the dependencies.
 | Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Met | `EasyQ\Privacy\Policy_Text` on `admin_init`, in the markup of the suggested text of core, following the settings (section 11 of the [feature mapping](feature-mapping.md)); `Policy_Text_Test` |
 | Personal data exporter and eraser | Met | `EasyQ\Privacy\Privacy`, `Post_Data` and `Profile_Data` after `wp_comments_personal_data_exporter()` and `_eraser()`: posts, votes, flags, profile, favorites, updates, notices, messages, wall posts and the newsletter, 500 posts per page; `Personal_Data_Test`, `Privacy_Test` (decisions 54 and 77) |
 | No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened and removed after `ip_retention_days` (`IP_Retention_Test`) |
+| Consent recorded where it is asked | Met | Newsletter (time of the confirmed opt-in) and the registration terms (`Users\Registration`: time and text), both exported; the registration form adds its parts through `register_form` and `registration_errors` (`Registration_Test`) |
 
 ## Administration menus
 

@@ -141,6 +141,12 @@ final class Options {
 				'avatar_store_size'      => 400,
 				'show_custom_welcome'    => false,
 				'custom_welcome'         => '',
+				'show_custom_register'   => false,
+				'custom_register'        => '',
+				'show_register_terms'    => false,
+				'register_terms'         => '',
+				// As in Question2Answer, so no one registers as the name shown for anonymous posts.
+				'block_bad_usernames'    => __( 'anonymous', 'easyq' ),
 				'allow_user_walls'       => true,
 				'page_size_wall'         => 10,
 				'allow_private_messages' => true,
