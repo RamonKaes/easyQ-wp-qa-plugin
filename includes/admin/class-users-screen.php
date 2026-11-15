@@ -57,6 +57,19 @@ final class Users_Screen {
 		add_filter( 'bulk_actions-users', array( $this, 'bulk_actions' ) );
 		add_action( 'load-users.php', array( $this, 'handle_bulk_request' ) );
 		add_action( 'admin_notices', array( $this, 'notice' ) );
+		add_filter( 'removable_query_args', array( $this, 'removable_query_args' ) );
+	}
+
+	/**
+	 * Removes the result of a bulk action from the address once it is shown, as core does.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string[] $args Query arguments to remove.
+	 * @return string[]
+	 */
+	public function removable_query_args( array $args ): array {
+		return array_merge( $args, array( 'easyq_done', 'easyq_count' ) );
 	}
 
 	/**

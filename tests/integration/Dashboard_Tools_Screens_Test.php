@@ -124,8 +124,8 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 		$this->assertSame(
 			add_query_arg(
 				array(
-					'page' => Tools_Screen::PAGE,
-					'done' => 'reindex',
+					'page'       => Tools_Screen::PAGE,
+					'easyq_done' => 'reindex',
 				),
 				admin_url( 'admin.php' )
 			),

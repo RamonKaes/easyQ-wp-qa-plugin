@@ -43,6 +43,8 @@ final class Categories_Screen_Test extends Test_Case {
 			$_GET[ $key ] = (string) $value;
 		}
 
+		// The screen of the page, as `wp-admin/admin.php` sets it; core keeps the columns per screen.
+		set_current_screen( 'easyq_page_' . Categories_Screen::PAGE );
 		ob_start();
 		$screen->render();
 
@@ -263,8 +265,9 @@ final class Categories_Screen_Test extends Test_Case {
 		$direct = $this->ask( $this->user(), 'Question only in the parent', 'x', array(), $parent );
 		$screen = new Categories_Screen();
 
+		// `wp_admin_notice()` passes the message through `wp_kses_post()`, which writes `&` as `&amp;`.
 		$this->assertStringContainsString(
-			'1 question has no category. <a href="' . esc_url(
+			'1 question has no category. <a href="' . esc_html(
 				Categories_Screen::url(
 					array(
 						'action'   => 'reassign',

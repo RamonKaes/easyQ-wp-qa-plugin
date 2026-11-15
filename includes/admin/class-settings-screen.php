@@ -76,6 +76,14 @@ final class Settings_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Help as core's screens give it.
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'The settings of the Q&A area, grouped in tabs. Permissions say who may ask, answer, vote and moderate; the other tabs set how the pages look and how easyQ treats spam and data.', 'easyq' ) . '</p>',
+			)
+		);
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 	}
 
@@ -260,12 +268,13 @@ final class Settings_Screen {
 				: __( 'The newsletter goes to the users who subscribed on their account page and confirmed it by email.', 'easyq' )
 		) . '</p>';
 
+		// One form whose buttons say what to do, as the buttons of core's forms do, so it needs no
+		// style of its own and no field repeats its ID.
+		echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '"><p class="submit">';
+		echo '<input type="hidden" name="action" value="easyq_newsletter" />';
+		wp_nonce_field( 'easyq_newsletter' );
 		$button = static function ( string $action, string $label, bool $primary = false ): void {
-			echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '" style="display:inline-block;margin-inline-end:8px">';
-			echo '<input type="hidden" name="action" value="easyq_newsletter" /><input type="hidden" name="do" value="' . esc_attr( $action ) . '" />';
-			wp_nonce_field( 'easyq_newsletter' );
-			submit_button( $label, $primary ? 'primary' : 'secondary', 'submit', false );
-			echo '</form>';
+			printf( '<button type="submit" name="do" value="%1$s" class="button%2$s">%3$s</button> ', esc_attr( $action ), $primary ? ' button-primary' : '', esc_html( $label ) );
 		};
 		$button( 'test', __( 'Send a test to me', 'easyq' ) );
 		if ( $progress['running'] ) {
@@ -273,6 +282,7 @@ final class Settings_Screen {
 		} else {
 			$button( 'start', __( 'Start sending', 'easyq' ), true );
 		}
+		echo '</p></form>';
 	}
 
 	/**

@@ -76,7 +76,8 @@ final class Posts_List_Table extends WP_List_Table {
 			array(
 				'plural'   => 'easyq-posts',
 				'singular' => 'easyq-post',
-				'screen'   => Posts_Screen::PAGE,
+				// The screen of the page, whose columns Screen Options lists, as core's tables take it.
+				'screen'   => (string) get_current_screen()?->id,
 			)
 		);
 
@@ -118,8 +119,7 @@ final class Posts_List_Table extends WP_List_Table {
 			)
 		);
 
-		$this->items           = $result['posts'];
-		$this->_column_headers = array( $this->get_columns(), array(), array(), 'content' );
+		$this->items = $result['posts'];
 		$this->set_pagination_args(
 			array(
 				'total_items' => $result['total'],
@@ -177,7 +177,7 @@ final class Posts_List_Table extends WP_List_Table {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return array<string, string>
+	 * @return array<string> View links keyed by view, from `get_views_links()`.
 	 */
 	protected function get_views(): array {
 		$counts = Services::moderation_query()->counts( $this->actor );
@@ -194,18 +194,17 @@ final class Posts_List_Table extends WP_List_Table {
 			'closed'  => _nx_noop( 'Closed <span class="count">(%s)</span>', 'Closed <span class="count">(%s)</span>', 'questions', 'easyq' ),
 		);
 
-		$views = array();
+		// The links as core builds them for its lists (`get_views_links()`).
+		$links = array();
 		foreach ( $labels as $view => $label ) {
-			$current        = $view === $this->filters['view'];
-			$views[ $view ] = sprintf(
-				'<a href="%1$s"%2$s>%3$s</a>',
-				esc_url( Posts_Screen::url( 'all' === $view ? array() : array( 'view' => $view ) ) ),
-				$current ? ' class="current" aria-current="page"' : '',
-				sprintf( translate_nooped_plural( $label, $counts[ $view ], 'easyq' ), number_format_i18n( $counts[ $view ] ) )
+			$links[ $view ] = array(
+				'url'     => Posts_Screen::url( 'all' === $view ? array() : array( 'view' => $view ) ),
+				'label'   => sprintf( translate_nooped_plural( $label, $counts[ $view ], 'easyq' ), number_format_i18n( $counts[ $view ] ) ),
+				'current' => $view === $this->filters['view'],
 			);
 		}
 
-		return $views;
+		return $this->get_views_links( $links );
 	}
 
 	/**
@@ -513,5 +512,17 @@ final class Posts_List_Table extends WP_List_Table {
 		}
 
 		return $this->row_actions( $actions );
+	}
+
+	/**
+	 * Returns the column with the row actions, which core's column info takes when the screen
+	 * computes the headers, so Screen Options can hide the other columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	protected function get_default_primary_column_name(): string {
+		return 'content';
 	}
 }

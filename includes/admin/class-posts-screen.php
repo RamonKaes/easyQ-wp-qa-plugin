@@ -33,6 +33,16 @@ defined( 'ABSPATH' ) || exit;
 final class Posts_Screen {
 
 	/**
+	 * The list table, built when the screen loads, as `wp-admin/edit.php` builds its own, so
+	 * that Screen Options can offer its columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var Posts_List_Table|null
+	 */
+	private ?Posts_List_Table $table = null;
+
+	/**
 	 * Page slug of the screen.
 	 *
 	 * @since 0.1.0
@@ -90,7 +100,7 @@ final class Posts_Screen {
 	 * @return string[]
 	 */
 	public function removable_query_args( array $args ): array {
-		return array_merge( $args, array( 'did', 'done', 'failed' ) );
+		return array_merge( $args, array( 'easyq_did', 'easyq_done', 'easyq_failed' ) );
 	}
 
 	/**
@@ -189,6 +199,23 @@ final class Posts_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Help as core's screens give it.
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'Moderate the questions, answers and comments of the Q&A area: approve or reject what waits, look at flagged posts, hide, show again or delete. The views filter by status, the search finds words in titles and texts.', 'easyq' ) . '</p>',
+			)
+		);
+		$this->table = new Posts_List_Table( self::filters() );
+		get_current_screen()?->set_screen_reader_content(
+			array(
+				'heading_views'      => __( 'Filter posts list', 'easyq' ),
+				'heading_pagination' => __( 'Posts list navigation', 'easyq' ),
+				'heading_list'       => __( 'Posts list', 'easyq' ),
+			)
+		);
+
 		// Posts per page under Screen Options, as on core's Posts and Comments screens.
 		add_screen_option(
 			'per_page',
@@ -203,6 +230,33 @@ final class Posts_Screen {
 			wp_safe_redirect( $redirect );
 			exit;
 		}
+
+		// A filter or search sends the nonce field of the list along; as `wp-admin/edit.php`, the
+		// address of the list then goes on without it.
+		$redirect = $this->without_form_fields();
+		if ( null !== $redirect ) {
+			wp_safe_redirect( $redirect );
+			exit;
+		}
+	}
+
+	/**
+	 * Returns the address of the list without `_wpnonce` and `_wp_http_referer` after a filter or
+	 * search, as `wp-admin/edit.php` redirects, or null if there is nothing to remove.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string|null
+	 */
+	public function without_form_fields(): ?string {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only the address is cleaned; nothing changes.
+		if ( empty( $_GET['_wp_http_referer'] ) ) {
+			return null;
+		}
+
+		$uri = isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? sanitize_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+
+		return remove_query_arg( array( '_wp_http_referer', '_wpnonce' ), '' === $uri ? self::url( array() ) : $uri );
 	}
 
 	/**
@@ -250,8 +304,8 @@ final class Posts_Screen {
 
 			return add_query_arg(
 				array(
-					'did'  => $response->is_error() ? 'failed' : $ip_action,
-					'done' => $hidden,
+					'easyq_did'  => $response->is_error() ? 'failed' : $ip_action,
+					'easyq_done' => $hidden,
 				),
 				$back
 			);
@@ -281,9 +335,9 @@ final class Posts_Screen {
 
 		return add_query_arg(
 			array(
-				'did'    => $action,
-				'done'   => $done,
-				'failed' => $failed,
+				'easyq_did'    => $action,
+				'easyq_done'   => $done,
+				'easyq_failed' => $failed,
 			),
 			$back
 		);
@@ -296,7 +350,7 @@ final class Posts_Screen {
 	 */
 	public function render(): void {
 		$filters = self::filters();
-		$table   = new Posts_List_Table( $filters );
+		$table   = $this->table ?? new Posts_List_Table( $filters );
 		$table->prepare_items();
 
 		echo '<div class="wrap">';
@@ -332,9 +386,9 @@ final class Posts_Screen {
 	 */
 	private function render_notice(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Only shows the result of an action that was checked before.
-		$did    = isset( $_GET['did'] ) && is_string( $_GET['did'] ) ? sanitize_key( $_GET['did'] ) : '';
-		$done   = isset( $_GET['done'] ) && is_numeric( $_GET['done'] ) ? (int) $_GET['done'] : 0;
-		$failed = isset( $_GET['failed'] ) && is_numeric( $_GET['failed'] ) ? (int) $_GET['failed'] : 0;
+		$did    = isset( $_GET['easyq_did'] ) && is_string( $_GET['easyq_did'] ) ? sanitize_key( $_GET['easyq_did'] ) : '';
+		$done   = isset( $_GET['easyq_done'] ) && is_numeric( $_GET['easyq_done'] ) ? (int) $_GET['easyq_done'] : 0;
+		$failed = isset( $_GET['easyq_failed'] ) && is_numeric( $_GET['easyq_failed'] ) ? (int) $_GET['easyq_failed'] : 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$text = match ( $did ) {
@@ -364,14 +418,26 @@ final class Posts_Screen {
 		}
 
 		if ( ( $done > 0 || in_array( $did, array( 'block', 'unblock', 'hide-all' ), true ) ) && 'failed' !== $did ) {
-			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( sprintf( $text, number_format_i18n( $done ) ) ) );
+			wp_admin_notice(
+				esc_html( sprintf( $text, number_format_i18n( $done ) ) ),
+				array(
+					'type'        => 'success',
+					'dismissible' => true,
+				)
+			);
 		}
 		if ( $failed > 0 || 'failed' === $did ) {
 			$message = 'failed' === $did
 				? $text
 				/* translators: %s: number of posts. */
 				: sprintf( _n( '%s post could not be changed, for example because it changed in the meantime or you may not do this there.', '%s posts could not be changed, for example because they changed in the meantime or you may not do this there.', $failed, 'easyq' ), number_format_i18n( $failed ) );
-			printf( '<div class="notice notice-error is-dismissible"><p>%s</p></div>', esc_html( $message ) );
+			wp_admin_notice(
+				esc_html( $message ),
+				array(
+					'type'        => 'error',
+					'dismissible' => true,
+				)
+			);
 		}
 	}
 

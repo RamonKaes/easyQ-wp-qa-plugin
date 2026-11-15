@@ -78,6 +78,19 @@ final class Tools_Screen {
 	 */
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 15 );
+		add_filter( 'removable_query_args', array( $this, 'removable_query_args' ) );
+	}
+
+	/**
+	 * Removes the result of a tool from the address once it is shown, as core does.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string[] $args Query arguments to remove.
+	 * @return string[]
+	 */
+	public function removable_query_args( array $args ): array {
+		return array_merge( $args, array( 'easyq_done' ) );
 	}
 
 	/**
@@ -98,6 +111,14 @@ final class Tools_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Help as core's screens give it.
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'Recalculate counts, points and the search index after an import or a change of settings. Each tool runs in batches until it is done.', 'easyq' ) . '</p>',
+			)
+		);
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 
 		if ( ! isset( $_POST['easyq_tool'] ) ) {
@@ -157,8 +178,8 @@ final class Tools_Screen {
 		if ( null !== $state && $state['complete'] ) {
 			return add_query_arg(
 				array(
-					'page' => self::PAGE,
-					'done' => $tool,
+					'page'       => self::PAGE,
+					'easyq_done' => $tool,
 				),
 				admin_url( 'admin.php' )
 			);
@@ -176,13 +197,19 @@ final class Tools_Screen {
 	 */
 	public function render(): void {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only shows which tool finished.
-		$done   = isset( $_GET['done'] ) && is_string( $_GET['done'] ) ? sanitize_key( $_GET['done'] ) : '';
+		$done   = isset( $_GET['easyq_done'] ) && is_string( $_GET['easyq_done'] ) ? sanitize_key( $_GET['easyq_done'] ) : '';
 		$labels = Tools::labels();
 
 		echo '<div class="wrap"><h1>' . esc_html( get_admin_page_title() ) . '</h1>';
 		if ( isset( $labels[ $done ] ) ) {
-			/* translators: %s: name of a tool. */
-			printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', esc_html( sprintf( __( 'Finished: %s.', 'easyq' ), $labels[ $done ][0] ) ) );
+			wp_admin_notice(
+				/* translators: %s: name of a tool. */
+				esc_html( sprintf( __( 'Finished: %s.', 'easyq' ), $labels[ $done ][0] ) ),
+				array(
+					'type'        => 'success',
+					'dismissible' => true,
+				)
+			);
 		}
 		printf( '<p>%s</p>', esc_html__( 'These tools recalculate stored values and clean up the database. They can take a while on large sites; keep this page open until they are done.', 'easyq' ) );
 

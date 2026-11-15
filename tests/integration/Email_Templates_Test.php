@@ -50,6 +50,8 @@ final class Email_Templates_Test extends REST_Test_Case {
 	 */
 	private function render_screen( array $query = array() ): string {
 		$_GET = $query;
+		// The screen of the page, as `wp-admin/admin.php` sets it; core keeps the columns per screen.
+		set_current_screen( 'easyq_page_' . Email_Templates_Screen::PAGE );
 		ob_start();
 		( new Email_Templates_Screen() )->render();
 		$html = (string) ob_get_clean();

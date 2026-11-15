@@ -34,7 +34,8 @@ final class Email_Templates_List_Table extends WP_List_Table {
 			array(
 				'plural'   => 'easyq-email-templates',
 				'singular' => 'easyq-email-template',
-				'screen'   => Email_Templates_Screen::PAGE,
+				// The screen of the page, whose columns Screen Options lists, as core's tables take it.
+				'screen'   => (string) get_current_screen()?->id,
 			)
 		);
 	}
@@ -50,8 +51,7 @@ final class Email_Templates_List_Table extends WP_List_Table {
 			$items[] = array( 'name' => $name ) + $info;
 		}
 
-		$this->items           = $items;
-		$this->_column_headers = array( $this->get_columns(), array(), array(), 'label' );
+		$this->items = $items;
 	}
 
 	/**
@@ -151,5 +151,17 @@ final class Email_Templates_List_Table extends WP_List_Table {
 	 */
 	public function column_status( array $item ): string {
 		return esc_html( Templates::is_edited( $item['name'] ) ? __( 'Edited', 'easyq' ) : __( 'Default', 'easyq' ) );
+	}
+
+	/**
+	 * Returns the column with the row actions, which core's column info takes when the screen
+	 * computes the headers, so Screen Options can hide the other columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	protected function get_default_primary_column_name(): string {
+		return 'label';
 	}
 }

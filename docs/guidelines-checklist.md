@@ -46,7 +46,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Capability checks with `current_user_can()` for every action | Met; F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
-| Sanitize input, validate before saving | Met; F-36 | Settings API through `sanitize_option_{option}` with a named callback, REST argument schemas, services validate; the forms hand on what was typed and the REST API sanitizes (F-5) |
+| Sanitize input, validate before saving | Met | Settings API through `sanitize_option_{option}` with a named callback, REST argument schemas, services validate; the forms hand on what was typed and the REST API sanitizes (F-5) |
 | Escape late, on output | Met | PHPCS `EscapeOutput` |
 | Nonces on forms and links that change something | Met | Admin forms and row actions, site forms, each per action and post as core's `delete-comment_{id}` (`Form_Handler::nonce_action()`, `easyq-post-{action}_{id}`); REST uses the core `wp_rest` nonce. Evidence: `Form_Handler_Test`, `Posts_Screen_Test`, `Users_Screen_Test` |
 | SQL only through `$wpdb->prepare()` | Met | PHPCS `PreparedSQL`, fixed SQL with placeholders |
@@ -171,7 +171,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Core list table markup, primary column as row header | F-35 | `WP_List_Table` subclasses |
+| Core list table markup, primary column as row header | Met | `WP_List_Table` subclasses with the screen of the page, the column headers computed by core (`get_default_primary_column_name()`), views from `get_views_links()`. Evidence: `Admin_Capabilities_Test`, `Posts_Screen_Test` |
 | Short row header name (`get_primary_column_aria_label()`, 7.1) | Met | Posts, categories, user fields and email templates lists |
 
 ## Chapters added on 2026-11-14
@@ -193,13 +193,13 @@ code, and known vulnerabilities of the dependencies.
 | Avatar uploads without `upload_files` | Kept, decided by the site owner of the project on 2026-11-15 | Question2Answer lets every user upload an avatar, and so do common avatar plugins; the image is the user's own and goes with them (F-20). The setting is off by default (decision 84), so a site owner allows it on purpose |
 | Uploads: capability `upload_files` | F-34, to decide | Login and the setting instead |
 | Avatars through `pre_get_avatar_data` | Met | `Users\Avatars` |
-| Admin notices through `wp_admin_notice()` | F-36 | Used in two files, written by hand in six |
-| List screens: hidden headings (`set_screen_reader_content()`), columns in Screen Options, clean address after a filter | F-35 | None of the four list tables |
+| Admin notices through `wp_admin_notice()` | Met | Every notice of the screens; field errors stay next to their fields |
+| List screens: hidden headings (`set_screen_reader_content()`), columns in Screen Options, clean address after a filter | Met | The four list tables are built when their screen loads, as in `wp-admin/edit.php`; the posts screen drops `_wpnonce` and `_wp_http_referer` after a filter. Evidence: `Admin_Capabilities_Test` |
 | Users list of core: columns, views, bulk actions through the hooks of core | Hooks Met; F-23 | `Admin\Users_Screen` |
 | Profile screen: the four hooks with `edit_user` | Met; F-22 | `Admin\Profile_Screen` |
-| Help tabs as the core screens have them | F-36, to decide | None |
-| No inline styles, no duplicate IDs | F-36 | `Admin\Settings_Screen`, `Admin\Categories_Screen`, `Admin\User_Fields_Screen` |
-| Inline documentation: `@since` on classes, methods, properties, constants and hooks | Met; F-36 | One constant in `Uninstaller` without it |
+| Help tabs as the core screens have them | Met | An overview on each screen with a `load()` handler. Evidence: `Admin_Capabilities_Test` |
+| No inline styles, no duplicate IDs | Met | The newsletter buttons are one form; delete and move buttons have names of their own. Evidence: `Admin_Capabilities_Test` (no `style` attribute under `includes/admin/`) |
+| Inline documentation: `@since` on classes, methods, properties, constants and hooks | Met | Checked on 2026-11-15 for every constant |
 | Readme: a plugin that is ready, source and build named | F-25 | `readme.txt` |
 | WP-CLI, Site Health, privacy tools | Open: rows M, N and Q of the review have not been read against the handbooks | `CLI\Command`, `Health\Site_Health`, `Privacy\Privacy` |
 
@@ -211,7 +211,7 @@ is WordPress 7.1.4; a file without a path prefix of the plugin is a file of core
 | Row | Rule set by | Evidence in the plugin | Held by |
 | --- | --- | --- | --- |
 | Header | Plugin Handbook, Header Requirements | `easyq.php`: all fields, description of 84 characters | Plugin Check |
-| Prefix | Plugin Handbook, Best Practices (at least four letters) | Namespace `EasyQ`, `easyq_` everywhere; unprefixed query arguments are F-36 | PHPCS `PrefixAllGlobals` |
+| Prefix | Plugin Handbook, Best Practices (at least four letters) | Namespace `EasyQ`, `easyq_` everywhere, the result arguments of the screens included, which `removable_query_args` removes | PHPCS `PrefixAllGlobals` |
 | `ABSPATH` check | Best Practices; Common Issues, "Direct file access" | Every file of `includes/admin/` and `includes/settings/`; `uninstall.php` checks `WP_UNINSTALL_PLUGIN` | Plugin Check |
 | Uninstall | Plugin Handbook, Uninstall Methods | `uninstall.php`, `Uninstaller` | `Uninstaller_Test` |
 | Capability for every action | REST API Handbook, Adding Custom Endpoints; `wp-admin/options.php` (capability of the option page) | A `permission_callback` on each of the 41 routes; the handlers of the screens check `easyq_manage`; `option_page_capability_{group}` in `Settings\Registry` and `Mail\Templates` | Mutations of 2026-11-14 (red for 22 checks, green for 5: F-15, F-24) |

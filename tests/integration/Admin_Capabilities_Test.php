@@ -30,6 +30,7 @@ final class Admin_Capabilities_Test extends Test_Case {
 	}
 
 	public function tear_down(): void {
+		set_current_screen( 'front' );
 		foreach ( $this->saved as $name => $value ) {
 			$GLOBALS[ $name ] = $value; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restores the admin menu of the test before.
 		}
@@ -128,5 +129,95 @@ final class Admin_Capabilities_Test extends Test_Case {
 		}
 
 		$this->assertGreaterThanOrEqual( 4, count( $checked ) );
+	}
+
+	public function test_every_list_table_lets_screen_options_choose_its_columns(): void {
+		wp_set_current_user( $this->administrator() );
+		$checked = array();
+		foreach ( self::screens() as $page => $class ) {
+			if ( ! ( new ReflectionClass( $class ) )->hasProperty( 'table' ) ) {
+				continue;
+			}
+			set_current_screen( 'easyq_page_' . $page );
+			$screen = get_current_screen();
+			( new $class() )->load();
+
+			// The columns Screen Options lists, from the filter core's list table adds for the screen.
+			$columns = get_column_headers( $screen );
+			$this->assertGreaterThan( 1, count( $columns ), $class );
+			// Texts of its own, not the defaults of core ("Items list").
+			foreach ( array(
+				'heading_views'      => 'Filter items list',
+				'heading_pagination' => 'Items list navigation',
+				'heading_list'       => 'Items list',
+			) as $key => $default ) {
+				$this->assertNotSame( $default, (string) $screen?->get_screen_reader_text( $key ), "$class: $key" );
+			}
+			$checked[] = $class;
+		}
+
+		$this->assertCount( 4, $checked );
+	}
+
+	public function test_a_hidden_column_stays_hidden_and_the_list_address_loses_the_form_fields(): void {
+		$admin = $this->administrator();
+		wp_set_current_user( $admin );
+		set_current_screen( 'easyq_page_' . \EasyQ\Admin\Posts_Screen::PAGE );
+		update_user_option( $admin, 'manage' . get_current_screen()?->id . 'columnshidden', array( 'author' ) );
+		$table = new \EasyQ\Admin\Posts_List_Table( \EasyQ\Admin\Posts_Screen::filters() );
+		$table->prepare_items();
+
+		$this->assertContains( 'author', $table->get_column_info()[1] );
+
+		$_GET                   = array(
+			'page'             => \EasyQ\Admin\Posts_Screen::PAGE,
+			's'                => 'widget',
+			'_wpnonce'         => 'abc',
+			'_wp_http_referer' => '/wp-admin/admin.php?page=easyq-posts',
+		);
+		$uri                    = $_SERVER['REQUEST_URI'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Restored after the test, never used.
+		$_SERVER['REQUEST_URI'] = '/wp-admin/admin.php?' . http_build_query( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Builds the request of the test.
+		$address                = ( new \EasyQ\Admin\Posts_Screen() )->without_form_fields();
+		$_GET                   = array();
+		$_SERVER['REQUEST_URI'] = $uri;
+
+		$this->assertSame( '/wp-admin/admin.php?page=easyq-posts&s=widget', $address );
+		$this->assertNull( ( new \EasyQ\Admin\Posts_Screen() )->without_form_fields() );
+	}
+
+	public function test_every_screen_has_help_and_cleans_its_results_from_the_address_as_core_does(): void {
+		wp_set_current_user( $this->administrator() );
+		$helped = array();
+		foreach ( self::screens() as $page => $class ) {
+			if ( ! method_exists( $class, 'load' ) ) {
+				continue;
+			}
+			set_current_screen( 'easyq_page_' . $page );
+			$screen = new $class();
+			$screen->register();
+			$screen->load();
+			$this->assertNotNull( get_current_screen()?->get_help_tab( 'easyq-overview' ), $class );
+			$helped[] = $class;
+		}
+		$this->assertGreaterThanOrEqual( 6, count( $helped ) );
+
+		// The users list of core, to which easyQ adds its bulk actions.
+		( new \EasyQ\Admin\Users_Screen() )->register();
+		$removed = apply_filters( 'removable_query_args', array() );
+		foreach ( array( 'easyq_did', 'easyq_done', 'easyq_failed', 'easyq_count' ) as $arg ) {
+			$this->assertContains( $arg, $removed );
+		}
+	}
+
+	public function test_the_admin_markup_brings_no_style_of_its_own(): void {
+		$styled = array();
+		foreach ( (array) glob( dirname( __DIR__, 2 ) . '/includes/admin/*.php' ) as $file ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file in a test.
+			if ( 1 === preg_match( '/\sstyle=[\'"\\\\]/', (string) file_get_contents( (string) $file ) ) ) {
+				$styled[] = basename( (string) $file );
+			}
+		}
+
+		$this->assertSame( array(), $styled );
 	}
 }

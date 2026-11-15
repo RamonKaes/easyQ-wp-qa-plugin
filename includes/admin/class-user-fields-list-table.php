@@ -37,7 +37,8 @@ final class User_Fields_List_Table extends WP_List_Table {
 			array(
 				'plural'   => 'easyq-user-fields',
 				'singular' => 'easyq-user-field',
-				'screen'   => User_Fields_Screen::PAGE,
+				// The screen of the page, whose columns Screen Options lists, as core's tables take it.
+				'screen'   => (string) get_current_screen()?->id,
 			)
 		);
 	}
@@ -63,8 +64,7 @@ final class User_Fields_List_Table extends WP_List_Table {
 	 * @since 0.1.0
 	 */
 	public function prepare_items(): void {
-		$this->items           = array_values( Services::user_fields()->all() );
-		$this->_column_headers = array( $this->get_columns(), array(), array(), 'label' );
+		$this->items = array_values( Services::user_fields()->all() );
 	}
 
 	/**
@@ -186,5 +186,17 @@ final class User_Fields_List_Table extends WP_List_Table {
 	 */
 	public function column_register( User_Field $item ): string {
 		return esc_html( $item->on_register() ? __( 'Yes', 'easyq' ) : __( 'No', 'easyq' ) );
+	}
+
+	/**
+	 * Returns the column with the row actions, which core's column info takes when the screen
+	 * computes the headers, so Screen Options can hide the other columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	protected function get_default_primary_column_name(): string {
+		return 'label';
 	}
 }

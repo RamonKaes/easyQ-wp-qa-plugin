@@ -47,7 +47,8 @@ final class Categories_List_Table extends WP_List_Table {
 			array(
 				'plural'   => 'easyq-categories',
 				'singular' => 'easyq-category',
-				'screen'   => Categories_Screen::PAGE,
+				// The screen of the page, whose columns Screen Options lists, as core's tables take it.
+				'screen'   => (string) get_current_screen()?->id,
 			)
 		);
 	}
@@ -58,9 +59,8 @@ final class Categories_List_Table extends WP_List_Table {
 	 * @since 0.1.0
 	 */
 	public function prepare_items(): void {
-		$this->tree            = $this->categories->tree();
-		$this->items           = $this->tree;
-		$this->_column_headers = array( $this->get_columns(), array(), array(), 'name' );
+		$this->tree  = $this->categories->tree();
+		$this->items = $this->tree;
 	}
 
 	/**
@@ -219,5 +219,17 @@ final class Categories_List_Table extends WP_List_Table {
 		);
 
 		return $this->row_actions( $actions );
+	}
+
+	/**
+	 * Returns the column with the row actions, which core's column info takes when the screen
+	 * computes the headers, so Screen Options can hide the other columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string
+	 */
+	protected function get_default_primary_column_name(): string {
+		return 'name';
 	}
 }

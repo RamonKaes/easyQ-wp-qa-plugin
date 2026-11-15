@@ -109,10 +109,14 @@ final class Profile_Screen {
 			</tr>
 
 			<tr>
-				<th scope="row"><?php esc_html_e( 'Level', 'easyq' ); ?></th>
+				<?php // As the rows of core's profile screen: the heading of the row is the label of its field. ?>
+				<?php if ( $this->can_set_levels( $editor, $user->ID ) ) : ?>
+					<th scope="row"><label for="easyq-level"><?php esc_html_e( 'Level', 'easyq' ); ?></label></th>
+				<?php else : ?>
+					<th scope="row"><?php esc_html_e( 'Level', 'easyq' ); ?></th>
+				<?php endif; ?>
 				<td>
 					<?php if ( $this->can_set_levels( $editor, $user->ID ) ) : ?>
-						<label for="easyq-level" class="screen-reader-text"><?php esc_html_e( 'Level', 'easyq' ); ?></label>
 						<select id="easyq-level" name="easyq_level">
 							<option value=""><?php esc_html_e( '— Based on the user’s role —', 'easyq' ); ?></option>
 							<?php foreach ( $this->assignable_levels( $editor ) as $level => $label ) : ?>

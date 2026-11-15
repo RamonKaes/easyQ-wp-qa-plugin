@@ -31,6 +31,16 @@ defined( 'ABSPATH' ) || exit;
 final class Categories_Screen {
 
 	/**
+	 * The list table, built when the screen loads, as `wp-admin/edit.php` builds its own, so
+	 * that Screen Options can offer its columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var Categories_List_Table|null
+	 */
+	private ?Categories_List_Table $table = null;
+
+	/**
 	 * Page slug of the screen.
 	 *
 	 * @since 0.1.0
@@ -127,6 +137,23 @@ final class Categories_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Help as core's screens give it.
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'Categories sort the questions. Each has a slug for its address and may have subcategories; deleting a category moves its questions to the category you choose.', 'easyq' ) . '</p>',
+			)
+		);
+		$this->table = new Categories_List_Table( Services::categories() );
+		get_current_screen()?->set_screen_reader_content(
+			array(
+				'heading_views'      => __( 'Filter categories list', 'easyq' ),
+				'heading_pagination' => __( 'Categories list navigation', 'easyq' ),
+				'heading_list'       => __( 'Categories list', 'easyq' ),
+			)
+		);
+
 		if ( ! isset( $_POST['easyq_action'] ) ) {
 			return;
 		}
@@ -314,7 +341,7 @@ final class Categories_Screen {
 		echo '</form></div></div></div>';
 
 		echo '<div id="col-right"><div class="col-wrap">';
-		$table = new Categories_List_Table( $categories );
+		$table = $this->table ?? new Categories_List_Table( $categories );
 		$table->prepare_items();
 		$table->display();
 		echo '</div></div></div>';
@@ -443,7 +470,8 @@ final class Categories_Screen {
 		$this->render_category_select( 'reassign', $others, $category->parent_id, __( 'No category', 'easyq' ) );
 		$this->render_error( 'reassign' );
 		echo '</p>';
-		submit_button( __( 'Delete Category', 'easyq' ), 'delete', 'submit', false );
+		// A name of its own: the edit form above has the button `submit`, and an ID must not repeat.
+		submit_button( __( 'Delete Category', 'easyq' ), 'delete', 'easyq-delete', false );
 		echo '</form>';
 	}
 
@@ -494,7 +522,7 @@ final class Categories_Screen {
 		$this->render_category_select( 'reassign', $targets, null, null );
 		$this->render_error( 'reassign' );
 		echo '</p><p class="submit">';
-		submit_button( __( 'Move Questions', 'easyq' ), 'primary', 'submit', false );
+		submit_button( __( 'Move Questions', 'easyq' ), 'primary', 'easyq-move', false );
 		printf( ' <a class="button" href="%s">%s</a>', esc_url( $back ), esc_html__( 'Cancel', 'easyq' ) );
 		echo '</p></form>';
 	}
@@ -516,11 +544,17 @@ final class Categories_Screen {
 			default   => '',
 		};
 		if ( '' !== $text ) {
-			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', 'missing' === $message ? 'error' : 'success', esc_html( $text ) );
+			wp_admin_notice(
+				esc_html( $text ),
+				array(
+					'type'        => 'missing' === $message ? 'error' : 'success',
+					'dismissible' => true,
+				)
+			);
 		}
 
 		if ( null !== $this->errors && $this->errors->has_errors() ) {
-			printf( '<div class="notice notice-error"><p>%s</p></div>', esc_html__( 'The category could not be saved. Please correct the marked fields.', 'easyq' ) );
+			wp_admin_notice( esc_html__( 'The category could not be saved. Please correct the marked fields.', 'easyq' ), array( 'type' => 'error' ) );
 		}
 	}
 
@@ -534,7 +568,7 @@ final class Categories_Screen {
 	 * @param string $link Link text.
 	 */
 	private function render_warning( string $text, string $url, string $link ): void {
-		printf( '<div class="notice notice-warning"><p>%s <a href="%s">%s</a></p></div>', esc_html( $text ), esc_url( $url ), esc_html( $link ) );
+		wp_admin_notice( sprintf( '%s <a href="%s">%s</a>', esc_html( $text ), esc_url( $url ), esc_html( $link ) ), array( 'type' => 'warning' ) );
 	}
 
 	/**

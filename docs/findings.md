@@ -25,8 +25,6 @@ The next free number is F-42.
 | F-25 | blocker | Cross-cutting × Guidelines | `readme.txt` says the plugin is "not ready for live sites yet", and `Contributors` is missing. The plugin team does not accept plugins that are not ready (Plugin Developer FAQ; guideline 16), and the readme has to validate. Not verifiable yet: the slug. It is derived from the name, and text domain, main file and the bug address of the template assume `easyq`. | The checklist had "Guidelines 1–18: Met" as one row without evidence; Plugin Check does not read sentences. |
 | F-30 | should | A × Guidelines | Smaller deviations from the core controllers: 36 path variables without an entry in `args`; `readonly` on properties their routes accept (categories, user fields); `/users/me` takes POST only where core takes POST, PUT and PATCH; `POST /favorites` answers 200, wall posts and messages 201 without `Location`; method names of five controllers differ from `WP_REST_Controller`; validation errors of the services have another shape than `rest_invalid_param`; a few fixed 403 where a visitor gets 401 from core. | Not in the checklist. |
 | F-32 | should | B × Guidelines | On a multisite the registration is `wp-signup.php`, where `register_form` never runs: terms, profile fields, newsletter request and the text above the form do not appear and no consent is recorded. Core offers `signup_extra_fields` there. The checklist row on consent holds for a single site only. | `Registration_Test` calls the hooks of the single-site form in both runs. |
-| F-35 | should | F × Guidelines | The list tables differ from core: no `set_screen_reader_content()`, so the hidden headings are missing; the page slug as `screen` and hand-set column headers, so Screen Options offers no columns; `_wpnonce` and `_wp_http_referer` stay in the address after a filter or search; views and the checkbox column built by hand. | The checklist row checks the base class and the row header only. |
-| F-36 | should | F × Guidelines | Smaller deviations on the screens: notices written by hand in six files although `wp_admin_notice()` is used in two; one inline `style` attribute on the newsletter buttons; `id="submit"` twice on three screens; the whole `$_POST` handed to four handlers; `did`, `done` and `failed` unprefixed in `removable_query_args` while `easyq_done` is never removed; no help tabs; the label of "Level" on the profile; one constant without `@since`. | PHPCS and axe see none of these as errors. |
 | F-38 | should | Cross-cutting × Guidelines | The checklist said more than was checked: the reasons of "Kept: menu icon" do not hold (a data URI needs no `base64_encode()`, and WordPress 7.2 accepts a registered icon name), "three lists" are four, `load_plugin_textdomain()` is not needed for a plugin translated on WordPress.org, and no "Met" named its evidence. | The checklist had no column for evidence; `Docs_Test` checks names. |
 
 ## Deferred
@@ -35,7 +33,9 @@ None.
 
 ## Rejected
 
-None.
+| No. | Finding | Why rejected |
+| --- | --- | --- |
+| F-36, part | The whole `$_POST` is handed to four handlers of the admin screens. | Each handler reads the fields it needs one by one and checks their type, after the nonce and the capability; core's own handlers read `$_POST` directly. Handing over the unslashed copy changes no check; the other parts of F-36 are fixed with F-35. |
 
 ## Refuted suspicions
 

@@ -61,6 +61,8 @@ final class Posts_Screen_Test extends Test_Case {
 	 * @return string
 	 */
 	private function render(): string {
+		// The screen of the page, as `wp-admin/admin.php` sets it; core keeps the columns per screen.
+		set_current_screen( 'easyq_page_' . Posts_Screen::PAGE );
 		ob_start();
 		( new Posts_Screen() )->render();
 
@@ -143,9 +145,9 @@ final class Posts_Screen_Test extends Test_Case {
 		$this->assertSame(
 			add_query_arg(
 				array(
-					'did'    => 'approve',
-					'done'   => 1,
-					'failed' => 0,
+					'easyq_did'    => 'approve',
+					'easyq_done'   => 1,
+					'easyq_failed' => 0,
 				),
 				Posts_Screen::url( array( 'view' => 'pending' ) )
 			),
@@ -187,7 +189,7 @@ final class Posts_Screen_Test extends Test_Case {
 
 		$redirect = (string) ( new Posts_Screen() )->handle();
 
-		$this->assertStringContainsString( 'did=hide&done=1&failed=1', $redirect );
+		$this->assertStringContainsString( 'easyq_did=hide&easyq_done=1&easyq_failed=1', $redirect );
 		$this->assertTrue( $this->post( $visible->id )->is_hidden() );
 
 		// Filters and searches without an action do nothing.

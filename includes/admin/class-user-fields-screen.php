@@ -27,6 +27,16 @@ defined( 'ABSPATH' ) || exit;
 final class User_Fields_Screen {
 
 	/**
+	 * The list table, built when the screen loads, as `wp-admin/edit.php` builds its own, so
+	 * that Screen Options can offer its columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var User_Fields_List_Table|null
+	 */
+	private ?User_Fields_List_Table $table = null;
+
+	/**
 	 * Page slug of the screen.
 	 *
 	 * @since 0.1.0
@@ -118,6 +128,23 @@ final class User_Fields_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Help as core's screens give it.
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'Fields that users fill in on their profile, and optionally when they register. Who sees a field is set for each field.', 'easyq' ) . '</p>',
+			)
+		);
+		$this->table = new User_Fields_List_Table();
+		get_current_screen()?->set_screen_reader_content(
+			array(
+				'heading_views'      => __( 'Filter user fields list', 'easyq' ),
+				'heading_pagination' => __( 'User fields list navigation', 'easyq' ),
+				'heading_list'       => __( 'User fields list', 'easyq' ),
+			)
+		);
+
 		if ( ! isset( $_POST['easyq_action'] ) ) {
 			return;
 		}
@@ -255,7 +282,7 @@ final class User_Fields_Screen {
 		echo '</form></div></div></div>';
 
 		echo '<div id="col-right"><div class="col-wrap">';
-		$table = new User_Fields_List_Table();
+		$table = $this->table ?? new User_Fields_List_Table();
 		$table->prepare_items();
 		$table->display();
 		echo '</div></div></div>';
@@ -314,7 +341,8 @@ final class User_Fields_Screen {
 		wp_nonce_field( self::NONCE );
 		echo '<input type="hidden" name="easyq_action" value="delete">';
 		printf( '<input type="hidden" name="field" value="%d">', (int) $field->id );
-		submit_button( __( 'Delete User Field', 'easyq' ), 'delete', 'submit', false );
+		// A name of its own: the edit form above has the button `submit`, and an ID must not repeat.
+		submit_button( __( 'Delete User Field', 'easyq' ), 'delete', 'easyq-delete', false );
 		echo '</form>';
 	}
 
@@ -353,11 +381,17 @@ final class User_Fields_Screen {
 			default   => '',
 		};
 		if ( '' !== $text ) {
-			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', 'missing' === $message ? 'error' : 'success', esc_html( $text ) );
+			wp_admin_notice(
+				esc_html( $text ),
+				array(
+					'type'        => 'missing' === $message ? 'error' : 'success',
+					'dismissible' => true,
+				)
+			);
 		}
 
 		if ( null !== $this->errors && $this->errors->has_errors() ) {
-			printf( '<div class="notice notice-error"><p>%s</p></div>', esc_html__( 'The field could not be saved. Please correct the marked fields.', 'easyq' ) );
+			wp_admin_notice( esc_html__( 'The field could not be saved. Please correct the marked fields.', 'easyq' ), array( 'type' => 'error' ) );
 		}
 	}
 

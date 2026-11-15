@@ -24,6 +24,16 @@ defined( 'ABSPATH' ) || exit;
 final class Email_Templates_Screen {
 
 	/**
+	 * The list table, built when the screen loads, as `wp-admin/edit.php` builds its own, so
+	 * that Screen Options can offer its columns.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var Email_Templates_List_Table|null
+	 */
+	private ?Email_Templates_List_Table $table = null;
+
+	/**
 	 * Page slug of the screen.
 	 *
 	 * @since 0.1.0
@@ -92,6 +102,23 @@ final class Email_Templates_Screen {
 	 * @since 0.1.0
 	 */
 	public function load(): void {
+		// Help as core's screens give it.
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'The texts of the emails easyQ sends. Placeholders such as ###TITLE### take the details of each email; a test sends the text to you.', 'easyq' ) . '</p>',
+			)
+		);
+		$this->table = new Email_Templates_List_Table();
+		get_current_screen()?->set_screen_reader_content(
+			array(
+				'heading_views'      => __( 'Filter email templates list', 'easyq' ),
+				'heading_pagination' => __( 'Email templates list navigation', 'easyq' ),
+				'heading_list'       => __( 'Email templates list', 'easyq' ),
+			)
+		);
+
 		if ( ! isset( $_POST['easyq_action'] ) ) {
 			return;
 		}
@@ -177,7 +204,7 @@ final class Email_Templates_Screen {
 		printf( '<h1>%s</h1>', esc_html__( 'Email Templates', 'easyq' ) );
 		printf( '<p>%s</p>', esc_html__( 'The texts of the emails easyQ sends. Edited texts are used in every language, unless a translation plugin provides others.', 'easyq' ) );
 
-		$table = new Email_Templates_List_Table();
+		$table = $this->table ?? new Email_Templates_List_Table();
 		$table->prepare_items();
 		$table->display();
 	}
@@ -305,7 +332,13 @@ final class Email_Templates_Screen {
 			default  => '',
 		};
 		if ( '' !== $text ) {
-			printf( '<div class="notice notice-%s is-dismissible"><p>%s</p></div>', 'failed' === $message ? 'error' : 'success', esc_html( $text ) );
+			wp_admin_notice(
+				esc_html( $text ),
+				array(
+					'type'        => 'failed' === $message ? 'error' : 'success',
+					'dismissible' => true,
+				)
+			);
 		}
 	}
 }

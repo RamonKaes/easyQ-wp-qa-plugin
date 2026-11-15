@@ -44,6 +44,8 @@ final class Uninstaller {
 	/**
 	 * Prefix of the names of all transients.
 	 *
+	 * @since 0.1.0
+	 *
 	 * @var string
 	 */
 	private const TRANSIENT_PREFIX = 'easyq_';

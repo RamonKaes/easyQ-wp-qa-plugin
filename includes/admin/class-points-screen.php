@@ -186,7 +186,7 @@ final class Points_Screen {
 		echo '<div class="wrap"><h1>' . esc_html( get_admin_page_title() ) . '</h1>';
 		settings_errors();
 		if ( $defaults ) {
-			printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html__( 'The default values are shown. Save the changes to use them.', 'easyq' ) );
+			wp_admin_notice( esc_html__( 'The default values are shown. Save the changes to use them.', 'easyq' ), array( 'type' => 'info' ) );
 		}
 		printf( '<p>%s</p>', esc_html__( 'Users get these points for their activity. Saving recalculates the points of all users.', 'easyq' ) );
 
