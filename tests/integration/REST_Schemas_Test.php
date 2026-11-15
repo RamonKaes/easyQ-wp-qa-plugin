@@ -51,6 +51,11 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$problems = array();
 		if ( is_array( $value ) && isset( $schema['properties'] ) && is_array( $schema['properties'] ) && ! array_is_list( $value ) ) {
 			foreach ( $value as $key => $item ) {
+				// The links and embedded items wrap an item, also one listed inside another response, as
+				// in core, whose schemas do not describe them.
+				if ( in_array( $key, array( '_links', '_embedded' ), true ) ) {
+					continue;
+				}
 				$property = $schema['properties'][ $key ] ?? null;
 				if ( ! is_array( $property ) ) {
 					$problems[] = "$path.$key is not in the schema";
@@ -158,6 +163,93 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$similar = $this->request( 'GET', '/questions/similar', array( 'title' => 'Question for the schemas' ) );
 		$this->assertNotSame( array(), $this->data( $similar )['questions'] );
 		$this->assert_matches( $similar, '/questions/similar' );
+	}
+
+	/**
+	 * Returns the object type of the schema of the route that answers a path.
+	 *
+	 * @param string $path Path below easyq/v1.
+	 * @return string
+	 */
+	private static function object_type( string $path ): string {
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			$callback = $handlers[0]['callback'] ?? null;
+			if ( 1 === preg_match( '@^' . $route . '$@', '/easyq/v1' . $path ) && is_array( $callback ) && is_object( $callback[0] ) && method_exists( $callback[0], 'get_item_schema' ) ) {
+				return (string) ( $callback[0]->get_item_schema()['title'] ?? '' );
+			}
+		}
+
+		return '';
+	}
+
+	public function test_every_item_links_itself_and_can_be_changed_by_its_filter_as_in_core(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		$answer   = $this->answer( $this->user(), $question );
+		$category = Services::categories()->create( null, 'Linked' );
+		$field    = Services::user_fields()->create( 'linked', 'Linked', 0, null );
+		$this->take_part( (int) $author->user_id );
+		wp_set_current_user( $this->administrator() );
+		// Every route that reads one item; the test of the routes checks that this list is complete.
+		$items   = array(
+			'/questions/' . $question->id,
+			'/answers/' . $answer->id,
+			'/comments/' . $this->comment( $author, $question, $answer )->id,
+			'/posts/' . $answer->id,
+			'/categories/' . $category,
+			'/user-fields/' . (int) $field,
+			'/users/' . $author->user_id,
+			'/email-templates/flagged',
+			'/ips/192.0.2.1',
+		);
+		$wrong   = array();
+		$touched = array();
+		$mark    = static function ( \WP_REST_Response $response ) use ( &$touched ): \WP_REST_Response {
+			$touched[] = current_filter();
+			$response->header( 'X-Filtered', '1' );
+			return $response;
+		};
+
+		foreach ( $items as $path ) {
+			$response = $this->request( 'GET', $path );
+			if ( 200 !== $response->get_status() ) {
+				$wrong[] = "$path: " . $response->get_status();
+				continue;
+			}
+			// The canonical address: a post read through `/posts/{id}` links to the route of its type.
+			$canonical = str_starts_with( $path, '/posts/' ) ? '/answers/' . $answer->id : $path;
+			if ( rest_url( 'easyq/v1' . $canonical ) !== ( $response->get_links()['self'][0]['href'] ?? null ) ) {
+				$wrong[] = "$path: no link to itself";
+			}
+			$filter = 'easyq_rest_prepare_' . substr( self::object_type( $path ), strlen( 'easyq-' ) );
+			add_filter( $filter, $mark );
+			$filtered = $this->request( 'GET', $path );
+			remove_filter( $filter, $mark );
+			if ( '1' !== ( $filtered->get_headers()['X-Filtered'] ?? null ) ) {
+				$wrong[] = "$path: `$filter` did not run";
+			}
+		}
+
+		$links = $this->request( 'GET', '/answers/' . $answer->id )->get_links();
+		$this->assertSame( rest_url( 'easyq/v1/users/' . $answer->user_id ), $links['author'][0]['href'] ?? null );
+		$this->assertTrue( $links['author'][0]['attributes']['embeddable'] ?? false );
+		$this->assertSame( rest_url( 'easyq/v1/posts/' . $question->id ), $links['up'][0]['href'] ?? null );
+		$this->assertSame( array(), $wrong );
+		$this->assertCount( count( $items ), $touched );
+	}
+
+	public function test_the_list_of_single_items_names_every_route_that_reads_one(): void {
+		$single = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( ! empty( ( $handler['methods'] ?? array() )['GET'] ) && 1 === preg_match( '/\(\?P<(id|ip|name)>[^)]*\)$/', $route ) ) {
+					$single[] = (string) preg_replace( '/^\/easyq\/v1\/([a-z-]+)\/.*$/', '$1', $route );
+				}
+			}
+		}
+		sort( $single );
+
+		$this->assertSame( array( 'answers', 'categories', 'comments', 'email-templates', 'ips', 'posts', 'questions', 'user-fields', 'users' ), array_values( array_unique( $single ) ) );
 	}
 
 	public function test_the_context_selects_the_fields_as_in_core(): void {

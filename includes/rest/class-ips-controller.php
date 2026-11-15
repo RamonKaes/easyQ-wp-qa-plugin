@@ -43,6 +43,24 @@ final class IPs_Controller extends Controller {
 	protected $rest_base = 'ips';
 
 	/**
+	 * Whether the items can be read one by one, so that responses link to them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var bool
+	 */
+	protected bool $item_route = true;
+
+	/**
+	 * Field of a response that names the item in its route.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected string $item_key = 'ip';
+
+	/**
 	 * Pattern of an IP address in a route.
 	 *
 	 * @since 0.1.0

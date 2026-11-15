@@ -40,6 +40,9 @@ and tools.
   `force=true`, as core asks for terms, and answers `501 rest_trash_not_supported`
   without it; a DELETE that changes a state (a notice, a favorite, a template, a
   message hidden for one side) takes none, as core's application passwords take none.
+- Each item links itself, its collection, its author and the post it belongs to
+  (`_links`, the last two embeddable), as core's controllers do, and plugins change a
+  response with `easyq_rest_prepare_{object}` (`docs/hooks.md`).
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,

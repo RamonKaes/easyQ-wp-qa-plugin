@@ -138,6 +138,7 @@ logs carry over.
 | `easyq_email_recipients` | `EasyQ\Mail\Recipient[] $recipients`, `string $name` | Recipients of an email |
 | `easyq_email_{name}` | `array $email` with `to`, `subject`, `message`, `headers` | An email before it is sent, like core's `wp_new_user_notification_email`; `{name}` is the template, e.g. `q_answered`. Also applies to `welcome`, `u_registered` and `u_to_approve`, which change core's registration emails |
 | `easyq_client_ip` | `string $ip` | IP address of the current request; easyQ trusts only `REMOTE_ADDR` by default. Sites behind a proxy return the client address from a trusted header here |
+| `easyq_rest_prepare_{object}` | `WP_REST_Response $response`, `mixed $item`, `WP_REST_Request $request` | The response of an item of the REST API, as core's `rest_prepare_{$post_type}`; `{object}` is the object type without `easyq-`, e.g. `question` or `user`, and `$item` the item, such as an `EasyQ\Posts\Post`, or its data where it is no object |
 
 ## Capabilities
 

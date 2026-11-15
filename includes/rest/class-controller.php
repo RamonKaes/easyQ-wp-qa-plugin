@@ -40,6 +40,39 @@ abstract class Controller extends WP_REST_Controller {
 	public const NAMESPACE = 'easyq/v1';
 
 	/**
+	 * Route of a post by the `type` of its response.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, string>
+	 */
+	private const POST_ROUTES = array(
+		'question' => 'questions',
+		'answer'   => 'answers',
+		'comment'  => 'comments',
+		'note'     => 'posts',
+	);
+
+	/**
+	 * Whether the items of the controller can be read one by one at `{rest_base}/{id}`, so
+	 * that their responses link to it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var bool
+	 */
+	protected bool $item_route = false;
+
+	/**
+	 * Field of a response that names the item in its route.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected string $item_key = 'id';
+
+	/**
 	 * Sets up the controller.
 	 *
 	 * @since 0.1.0
@@ -92,15 +125,81 @@ abstract class Controller extends WP_REST_Controller {
 	 *
 	 * @param array<string, mixed> $data    Data of the item.
 	 * @param WP_REST_Request      $request Request.
+	 * @param mixed                $item    The item the data describes, for the filter of the response.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response
 	 */
-	protected function respond_with( array $data, WP_REST_Request $request ): WP_REST_Response {
+	protected function respond_with( array $data, WP_REST_Request $request, mixed $item = null ): WP_REST_Response {
+		$links  = $this->item_links( $data );
 		$fields = $this->get_fields_for_response( $request );
 		$data   = array_filter( $data, static fn ( string $field ): bool => rest_is_field_included( $field, $fields ), ARRAY_FILTER_USE_KEY );
 		$data   = $this->add_additional_fields_to_object( $data, $request );
 
-		return new WP_REST_Response( $this->filter_response_by_context( $data, self::context( $request ) ) );
+		$response = new WP_REST_Response( $this->filter_response_by_context( $data, self::context( $request ) ) );
+		$response->add_links( $links );
+
+		$type = $this->get_item_schema()['title'] ?? '';
+		if ( ! is_string( $type ) || ! str_starts_with( $type, 'easyq-' ) ) {
+			return $response;
+		}
+		$object = substr( $type, strlen( 'easyq-' ) );
+
+		/**
+		 * Filters the response of an item of easyQ, as core's `rest_prepare_{$post_type}` does for posts.
+		 *
+		 * The dynamic part is the object type of the schema without `easyq-`, for example `question`
+		 * for `easyq-question`.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param WP_REST_Response $response The response.
+		 * @param mixed            $item     The item, such as an `EasyQ\Posts\Post` or a `WP_User`; its
+		 *                                   data where the item is no object.
+		 * @param WP_REST_Request  $request  The request.
+		 */
+		$filtered = apply_filters( "easyq_rest_prepare_{$object}", $response, $item ?? $data, $request );
+
+		return $filtered instanceof WP_REST_Response ? $filtered : $response;
+	}
+
+	/**
+	 * Returns the links of an item, as core's controllers prepare them (`prepare_links()`): the
+	 * item itself and its collection, its author and the post it belongs to, both embeddable.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $data Data of the item.
+	 * @return array<string, array<int|string, mixed>>
+	 */
+	protected function item_links( array $data ): array {
+		$base  = '/' . self::NAMESPACE . '/';
+		$id    = $data[ $this->item_key ] ?? null;
+		$links = array();
+
+		$type  = is_string( $data['type'] ?? null ) ? $data['type'] : '';
+		$route = self::POST_ROUTES[ $type ] ?? ( $this->item_route ? (string) $this->rest_base : '' );
+		if ( '' !== $route && ( is_int( $id ) || ( is_string( $id ) && '' !== $id ) ) ) {
+			$links['self']       = array( 'href' => rest_url( $base . $route . '/' . rawurlencode( (string) $id ) ) );
+			$links['collection'] = array( 'href' => rest_url( $base . ( isset( self::POST_ROUTES[ $type ] ) ? 'questions' : $route ) ) );
+		}
+
+		$author = is_array( $data['author'] ?? null ) ? ( $data['author']['id'] ?? null ) : null;
+		if ( is_int( $author ) && $author > 0 ) {
+			$links['author'] = array(
+				'href'       => rest_url( $base . 'users/' . $author ),
+				'embeddable' => true,
+			);
+		}
+
+		$parent = $data['parent'] ?? null;
+		if ( isset( self::POST_ROUTES[ $type ] ) && is_int( $parent ) && $parent > 0 ) {
+			$links['up'] = array(
+				'href'       => rest_url( $base . 'posts/' . $parent ),
+				'embeddable' => true,
+			);
+		}
+
+		return $links;
 	}
 
 	/**
@@ -135,7 +234,7 @@ abstract class Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response
 	 */
 	protected function respond_with_post( Post $post, Actor $actor, WP_REST_Request $request, array $children = array(), array $extra = array() ): WP_REST_Response {
-		return $this->respond_with( $this->formatter()->format( $post, $actor, self::context( $request ), $children ) + $extra, $request );
+		return $this->respond_with( $this->formatter()->format( $post, $actor, self::context( $request ), $children ) + $extra, $request, $post );
 	}
 
 	/**

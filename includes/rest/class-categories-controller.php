@@ -44,6 +44,15 @@ final class Categories_Controller extends Controller {
 	protected $rest_base = 'categories';
 
 	/**
+	 * Whether the items can be read one by one, so that responses link to them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var bool
+	 */
+	protected bool $item_route = true;
+
+	/**
 	 * Registers the routes.
 	 *
 	 * @since 0.1.0
@@ -418,7 +427,7 @@ final class Categories_Controller extends Controller {
 			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
-		return $this->respond_with( $this->format_category( $item ), $request );
+		return $this->respond_with( $this->format_category( $item ), $request, $item );
 	}
 
 	/**

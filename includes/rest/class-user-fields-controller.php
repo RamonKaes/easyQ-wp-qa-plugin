@@ -35,6 +35,24 @@ defined( 'ABSPATH' ) || exit;
 final class User_Fields_Controller extends Controller {
 
 	/**
+	 * Route base.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected $rest_base = 'user-fields';
+
+	/**
+	 * Whether the items can be read one by one, so that responses link to them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var bool
+	 */
+	protected bool $item_route = true;
+
+	/**
 	 * Field types with their flags.
 	 *
 	 * @since 0.1.0
@@ -377,7 +395,7 @@ final class User_Fields_Controller extends Controller {
 			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
-		return $this->respond_with( self::format( $item ), $request );
+		return $this->respond_with( self::format( $item ), $request, $item );
 	}
 
 	/**

@@ -42,6 +42,24 @@ final class Email_Templates_Controller extends Controller {
 	protected $rest_base = 'email-templates';
 
 	/**
+	 * Whether the items can be read one by one, so that responses link to them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var bool
+	 */
+	protected bool $item_route = true;
+
+	/**
+	 * Field of a response that names the item in its route.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	protected string $item_key = 'name';
+
+	/**
 	 * Registers the routes.
 	 *
 	 * @since 0.1.0
