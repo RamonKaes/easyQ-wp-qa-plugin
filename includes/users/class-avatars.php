@@ -69,6 +69,22 @@ final class Avatars {
 	 */
 	public function register(): void {
 		add_filter( 'pre_get_avatar_data', array( $this, 'avatar_data' ), 10, 2 );
+		// When a user is deleted, core gives their posts, the image among them, to the user named
+		// to take them over; the avatar is personal and goes with its user. On a network core
+		// switches to the site before it removes the user from it.
+		add_action( 'delete_user', array( $this, 'remove_with_user' ) );
+		add_action( 'remove_user_from_blog', array( $this, 'remove_with_user' ) );
+	}
+
+	/**
+	 * Removes the avatar of a user who is deleted or removed from the site.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 */
+	public function remove_with_user( int $user_id ): void {
+		self::remove( $user_id );
 	}
 
 	/**
@@ -141,15 +157,20 @@ final class Avatars {
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $file    Entry of the uploaded file, see file_entry().
-	 * @phpstan-param array{name: non-empty-string, type: non-empty-string, tmp_name: non-empty-string, size: int<0, max>, error: int<0, 8>} $file
+	 * @phpstan-param array{name: string, type: string, tmp_name: string, size: int<0, max>, error: int<0, 8>} $file
 	 * @return int|WP_Error Attachment ID, or the reason the image was refused.
 	 */
 	public static function upload( int $user_id, array $file ): int|WP_Error {
+		$too_large = in_array( $file['error'], array( UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE ), true ) || $file['size'] > wp_max_upload_size();
+		if ( $too_large ) {
+			/* translators: %s: largest size of an upload, such as "2 MB". */
+			return new WP_Error( 'easyq_avatar_size', sprintf( __( 'The image is too large. Please choose one of at most %s.', 'easyq' ), (string) size_format( wp_max_upload_size() ) ) );
+		}
+		if ( UPLOAD_ERR_PARTIAL === $file['error'] ) {
+			return new WP_Error( 'easyq_avatar_upload', __( 'The image arrived only in part. Please try again.', 'easyq' ) );
+		}
 		if ( UPLOAD_ERR_OK !== $file['error'] || $file['size'] <= 0 ) {
 			return new WP_Error( 'easyq_avatar_upload', __( 'The image could not be uploaded.', 'easyq' ) );
-		}
-		if ( $file['size'] > wp_max_upload_size() ) {
-			return new WP_Error( 'easyq_avatar_size', __( 'The image is too large.', 'easyq' ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -228,11 +249,15 @@ final class Avatars {
 	/**
 	 * Checks the entry of an uploaded file, as in `$_FILES`.
 	 *
+	 * Only a form without a file gives null. A file that did not arrive keeps its error, so that
+	 * `upload()` says why, as Question2Answer reports the size limit: for the errors of PHP the
+	 * name stays but the type and the temporary file are empty.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param mixed $file Entry of an uploaded file.
 	 * @return array|null The entry, or null if no file was sent.
-	 * @phpstan-return array{name: non-empty-string, type: non-empty-string, tmp_name: non-empty-string, size: int<0, max>, error: int<0, 8>}|null
+	 * @phpstan-return array{name: string, type: string, tmp_name: string, size: int<0, max>, error: int<0, 8>}|null
 	 */
 	public static function file_entry( mixed $file ): ?array {
 		if ( ! is_array( $file ) ) {
@@ -245,15 +270,20 @@ final class Avatars {
 		$size     = is_numeric( $file['size'] ?? null ) ? (int) $file['size'] : 0;
 		$error    = is_numeric( $file['error'] ?? null ) ? (int) $file['error'] : UPLOAD_ERR_NO_FILE;
 
-		if ( UPLOAD_ERR_NO_FILE === $error || '' === $name || '' === $type || '' === $tmp_name || $size < 0 || $error < 0 || $error > 8 ) {
+		if ( UPLOAD_ERR_NO_FILE === $error || $error < 0 || $error > 8 ) {
 			return null;
+		}
+
+		// A file without its parts did not arrive, whatever the error says.
+		if ( UPLOAD_ERR_OK === $error && ( '' === $name || '' === $type || '' === $tmp_name ) ) {
+			$error = UPLOAD_ERR_PARTIAL;
 		}
 
 		return array(
 			'name'     => $name,
 			'type'     => $type,
 			'tmp_name' => $tmp_name,
-			'size'     => $size,
+			'size'     => max( 0, $size ),
 			'error'    => $error,
 		);
 	}

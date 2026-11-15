@@ -212,4 +212,26 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
 		$this->assertSame( 429, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
 	}
+
+	public function test_an_upload_that_did_not_arrive_is_refused_with_its_reason(): void {
+		$this->login();
+		$request = new WP_REST_Request( 'POST', '/easyq/v1/users/me' );
+		// As PHP fills the entry when the file is larger than `upload_max_filesize`.
+		$request->set_file_params(
+			array(
+				'avatar' => array(
+					'name'     => 'portrait.png',
+					'type'     => '',
+					'tmp_name' => '',
+					'size'     => 0,
+					'error'    => UPLOAD_ERR_INI_SIZE,
+				),
+			)
+		);
+
+		$response = rest_get_server()->dispatch( $request );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertStringContainsString( 'too large', (string) ( $response->as_error()?->get_error_data()['fields']['avatar'] ?? '' ) );
+	}
 }

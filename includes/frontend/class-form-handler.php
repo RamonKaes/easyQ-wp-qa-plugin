@@ -267,6 +267,7 @@ final class Form_Handler {
 		// The entry is checked here; the REST API validates the file itself (wp_handle_sideload() with image types only).
 		$file = Avatars::file_entry( $_FILES['avatar'] ?? null ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Verified in process(); file_entry() checks every field.
 		if ( null !== $file ) {
+			// @phpstan-ignore argument.type (The stub of core wants the parts non-empty; with an upload error PHP sends the type and the temporary name empty, and `Avatars::upload()` reports the error.)
 			$request->set_file_params( array( 'avatar' => $file ) );
 		}
 

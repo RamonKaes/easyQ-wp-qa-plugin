@@ -412,7 +412,7 @@ final class Users_Controller extends Controller {
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return array|null The file entry, or null if no file was sent.
-	 * @phpstan-return array{name: non-empty-string, type: non-empty-string, tmp_name: non-empty-string, size: int<0, max>, error: int<0, 8>}|null
+	 * @phpstan-return array{name: string, type: string, tmp_name: string, size: int<0, max>, error: int<0, 8>}|null
 	 */
 	private function avatar_file( WP_REST_Request $request ): ?array {
 		return Avatars::file_entry( $request->get_file_params()['avatar'] ?? null );
