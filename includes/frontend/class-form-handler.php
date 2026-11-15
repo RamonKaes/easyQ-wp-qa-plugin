@@ -95,7 +95,7 @@ final class Form_Handler {
 	}
 
 	/**
-	 * Handles a submitted form and redirects.
+	 * Handles a submitted form and redirects after a successful submission.
 	 *
 	 * @since 0.1.0
 	 */
@@ -106,6 +106,7 @@ final class Form_Handler {
 		}
 
 		// Forms sent in the background (src/view) get the address as JSON and update the page in place.
+		// After a failure they get the page itself, which they show in place.
 		if ( isset( $_SERVER['HTTP_X_EASYQ_IN_PLACE'] ) ) {
 			wp_send_json( array( 'url' => wp_validate_redirect( $url, home_url( '/' ) ) ) );
 		}
@@ -117,9 +118,12 @@ final class Form_Handler {
 	/**
 	 * Processes a submitted form.
 	 *
+	 * A failed submission returns null as well: the page of the form shows the message and
+	 * the values `Flash::keep()` holds.
+	 *
 	 * @since 0.1.0
 	 *
-	 * @return string|null The address to redirect to, or null if no easyQ form was submitted.
+	 * @return string|null The address to redirect to after a successful submission, or null.
 	 */
 	public function process(): ?string {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- The nonce is verified below, per form.
@@ -133,15 +137,16 @@ final class Form_Handler {
 			return null;
 		}
 
-		$back  = $this->back_url();
-		$nonce = isset( $_POST['_easyq_nonce'] ) && is_string( $_POST['_easyq_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_easyq_nonce'] ) ) : '';
-
-		if ( ! wp_verify_nonce( $nonce, 'easyq_' . $form ) ) {
-			return $this->with_flash( $back, Flash::store( 'error', __( 'The form has expired. Please try again.', 'easyq' ), $form ) );
-		}
-
+		$nonce  = isset( $_POST['_easyq_nonce'] ) && is_string( $_POST['_easyq_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_easyq_nonce'] ) ) : '';
 		$values = $this->values( $form );
 		$target = $this->target();
+
+		// A failure shows the page of the form again, in this request: nothing is stored, and
+		// what the user typed stays in the form, also when the form has expired.
+		if ( ! wp_verify_nonce( $nonce, 'easyq_' . $form ) ) {
+			Flash::keep( __( 'The form has expired. Please try again.', 'easyq' ), $form, $target, array(), $values );
+			return null;
+		}
 		$action = isset( $_POST['easyq_action'] ) && is_string( $_POST['easyq_action'] ) ? sanitize_key( wp_unslash( $_POST['easyq_action'] ) ) : '';
 
 		[ $method, $route ] = match ( $form ) {
@@ -185,7 +190,8 @@ final class Form_Handler {
 				}
 			}
 
-			return $this->with_flash( $back, Flash::store( 'error', $error->get_error_message(), $form, $fields, $values ) );
+			Flash::keep( $error->get_error_message(), $form, $target, $fields, $values );
+			return null;
 		}
 
 		$id = is_array( $data ) && is_numeric( $data['id'] ?? null ) ? (int) $data['id'] : $target;
@@ -197,7 +203,7 @@ final class Form_Handler {
 		$queued  = is_array( $data ) && true === ( $data['queued'] ?? false );
 		$message = $this->success_message( $form, $queued );
 
-		return $this->with_flash( $this->success_url( $form, $id, $back ), Flash::store( 'success', $message, $form ) );
+		return $this->with_flash( $this->success_url( $form, $id, $this->back_url() ), Flash::store( 'success', $message, $form ) );
 	}
 
 	/**
@@ -226,10 +232,9 @@ final class Form_Handler {
 		foreach ( self::FIELDS[ $form ] as $field ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
 			if ( isset( $_POST[ $field ] ) && is_string( $_POST[ $field ] ) ) {
-				// The REST API validates and sanitizes the values; content keeps its line breaks.
-				$values[ $field ] = 'content' === $field || 'note' === $field
-					? sanitize_textarea_field( wp_unslash( $_POST[ $field ] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
-					: sanitize_text_field( wp_unslash( $_POST[ $field ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
+				// The REST API validates and sanitizes each value, as it does for every other client: the
+				// form hands on what the user typed, so that `x<y` or a percent-encoded address arrive whole.
+				$values[ $field ] = wp_unslash( $_POST[ $field ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Verified in process(); sanitized by the REST API.
 			}
 		}
 
@@ -253,7 +258,7 @@ final class Form_Handler {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
 			if ( isset( $_POST[ $name ] ) && is_string( $_POST[ $name ] ) ) {
 				// The field type decides how the value is sanitized; see User_Fields::set_value().
-				$fields[ $field->name ] = sanitize_textarea_field( wp_unslash( $_POST[ $name ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
+				$fields[ $field->name ] = wp_unslash( $_POST[ $name ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Verified in process(); sanitized by `User_Fields::set_value()`.
 				$inputs[ $name ]        = $fields[ $field->name ];
 			}
 		}

@@ -474,16 +474,17 @@ final class Forms {
 				'comment',
 				$post->id,
 				self::custom_text( 'comment' )
-				. self::field( 'comment', 'content', __( 'Your comment', 'easyq' ), 'textarea', '', array( 'required' => 'required' ), '', 'easyq-comment-' . $post->id )
-				. self::author_fields( 'comment', __( 'Email me if a comment is added after mine', 'easyq' ), 'easyq-comment-' . $post->id ),
+				. self::field( 'comment', 'content', __( 'Your comment', 'easyq' ), 'textarea', Flash::value( 'comment', 'content', $post->id ), array( 'required' => 'required' ), '', 'easyq-comment-' . $post->id, $post->id )
+				. self::author_fields( 'comment', __( 'Email me if a comment is added after mine', 'easyq' ), 'easyq-comment-' . $post->id, $post->id ),
 				__( 'Add comment', 'easyq' ),
 				array()
 			)
 			: self::permission_message( $reason );
 
 		// The Reply buttons of the comments open the form through the shared state, see `comment_key()`.
-		$key  = self::comment_key( $post->id );
-		$open = self::requested( self::COMMENT_VAR ) === $post->id;
+		$key = self::comment_key( $post->id );
+		// Open after a failed comment on this post, whose page this request shows again.
+		$open = self::requested( self::COMMENT_VAR ) === $post->id || null !== Flash::of( 'comment', $post->id );
 		wp_interactivity_state( 'easyq', array( 'commentForms' => array( $key => $open ) ) );
 
 		return sprintf(
@@ -577,25 +578,28 @@ final class Forms {
 	 */
 	public static function edit_form( Post $post ): string {
 		$fields = '';
+		// After a failed save the form shows what the user typed, also a field they emptied.
+		$value = static fn ( string $field, string $saved ): string => Flash::kept( 'edit', $field, $post->id ) ?? $saved;
 
 		if ( Post::QUESTION === $post->base_type() ) {
-			$fields .= self::field( 'edit', 'title', __( 'Title', 'easyq' ), 'text', (string) $post->title, array( 'required' => 'required' ) );
+			$fields .= self::field( 'edit', 'title', __( 'Title', 'easyq' ), 'text', $value( 'title', (string) $post->title ), array( 'required' => 'required' ), '', '', $post->id );
 		}
 
-		$fields .= self::field( 'edit', 'content', __( 'Content', 'easyq' ), 'textarea', (string) $post->content );
+		$fields .= self::field( 'edit', 'content', __( 'Content', 'easyq' ), 'textarea', $value( 'content', (string) $post->content ), array(), '', '', $post->id );
 
 		if ( Post::QUESTION === $post->base_type() && Post_Input::uses_extra_field() ) {
-			$fields .= self::field( 'edit', 'extra', self::extra_label(), 'text', Post_Service::extra( $post ) );
+			$fields .= self::field( 'edit', 'extra', self::extra_label(), 'text', $value( 'extra', Post_Service::extra( $post ) ), array(), '', '', $post->id );
 		}
 
 		if ( Post::QUESTION === $post->base_type() && Post_Input::uses_tags() ) {
-			$fields .= self::tag_field( 'edit', implode( Options::get_bool( 'posting', 'tag_separator_comma' ) ? ', ' : ' ', $post->tag_list() ) );
+			$fields .= self::tag_field( 'edit', $value( 'tags', implode( Options::get_bool( 'posting', 'tag_separator_comma' ) ? ', ' : ' ', $post->tag_list() ) ), '', $post->id );
 		}
 
 		$viewer = Block_Context::viewer();
 		if ( null !== $viewer->user_id && user_can( $viewer->user_id, 'easyq_edit_silently' ) ) {
 			$fields .= sprintf(
-				'<p><label><input type="checkbox" name="silent" value="1" /> %s</label></p>',
+				'<p><label><input type="checkbox" name="silent" value="1"%s /> %s</label></p>',
+				checked( '' !== $value( 'silent', '' ), true, false ),
 				esc_html__( 'Do not show that the post was edited', 'easyq' )
 			);
 		}
@@ -635,8 +639,8 @@ final class Forms {
 	 */
 	public static function close_form( Post $question ): string {
 		$id     = 'easyq-close-' . $question->id;
-		$fields = self::field( 'action', 'note', __( 'Reason for closing', 'easyq' ), 'textarea', '', array(), '', $id )
-			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', '', array( 'min' => '1' ), '', $id );
+		$fields = self::field( 'action', 'note', __( 'Reason for closing', 'easyq' ), 'textarea', Flash::value( 'action', 'note', $question->id ), array(), '', $id, $question->id )
+			. self::field( 'action', 'duplicate_of', __( 'Or: number of the question this one duplicates', 'easyq' ), 'number', Flash::value( 'action', 'duplicate_of', $question->id ), array( 'min' => '1' ), '', $id, $question->id );
 		$cancel = sprintf( '<a href="%s">%s</a>', esc_url( remove_query_arg( self::CLOSE_VAR ) . '#easyq-post-' . $question->id ), esc_html__( 'Cancel', 'easyq' ) );
 
 		return sprintf(
@@ -723,7 +727,7 @@ final class Forms {
 
 		// The markup of the comment form block, so that the theme styles the fields as it styles that form.
 		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe', 'feedback', 'newsletter_confirm' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
-		$notice  = self::form_notice( $form );
+		$notice  = self::form_notice( $form, $post_id );
 
 		return sprintf(
 			'<div %s><form method="post" class="comment-form"%s%s>%s%s%s<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></p>%s</form></div>',
@@ -751,11 +755,12 @@ final class Forms {
 	 * @param array<string, string> $attributes Further attributes.
 	 * @param string                $hint       Help text.
 	 * @param string                $id_prefix  Prefix of the field ID, to keep IDs unique when a form appears several times.
+	 * @param int|null              $target     Post of a form that appears once per post, so that only its own errors show.
 	 * @return string
 	 */
-	public static function field( string $form, string $name, string $label, string $type, string $value, array $attributes = array(), string $hint = '', string $id_prefix = '' ): string {
+	public static function field( string $form, string $name, string $label, string $type, string $value, array $attributes = array(), string $hint = '', string $id_prefix = '', ?int $target = null ): string {
 		$id    = ( '' === $id_prefix ? 'easyq-' . $form : $id_prefix ) . '-' . $name;
-		$error = Flash::error( $form, $name );
+		$error = Flash::error( $form, $name, $target );
 		$attrs = '';
 
 		$described = array();
@@ -807,14 +812,15 @@ final class Forms {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $form  `ask` or `edit`.
-	 * @param string $value Current tags.
-	 * @param string $hint  Hint below the field.
+	 * @param string   $form  `ask` or `edit`.
+	 * @param string   $value Current tags.
+	 * @param string   $hint  Hint below the field.
+	 * @param int|null $target Post of the edit form, null for the ask form.
 	 * @return string
 	 */
-	private static function tag_field( string $form, string $value, string $hint = '' ): string {
+	private static function tag_field( string $form, string $value, string $hint = '', ?int $target = null ): string {
 		if ( ! Options::get_bool( 'posting', 'do_complete_tags' ) ) {
-			return self::field( $form, 'tags', __( 'Tags', 'easyq' ), 'text', $value, array(), $hint );
+			return self::field( $form, 'tags', __( 'Tags', 'easyq' ), 'text', $value, array(), $hint, '', $target );
 		}
 
 		Render::rest_state();
@@ -830,7 +836,9 @@ final class Forms {
 				'autocomplete'      => 'off',
 				'data-wp-on--input' => 'actions.suggestTags',
 			),
-			$hint
+			$hint,
+			'',
+			$target
 		);
 
 		$context  = wp_interactivity_data_wp_context(
@@ -889,24 +897,26 @@ final class Forms {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $form      Form name.
-	 * @param string $notify    Label of the notification checkbox.
-	 * @param string $id_prefix Prefix of the field IDs.
+	 * @param string   $form      Form name.
+	 * @param string   $notify    Label of the notification checkbox.
+	 * @param string   $id_prefix Prefix of the field IDs.
+	 * @param int|null $target    Post of a form that appears once per post.
 	 * @return string
 	 */
-	private static function author_fields( string $form, string $notify, string $id_prefix = '' ): string {
+	private static function author_fields( string $form, string $notify, string $id_prefix = '', ?int $target = null ): string {
 		$viewer = Block_Context::viewer();
+		$kept   = Flash::kept( $form, 'notify', $target );
 		$html   = sprintf(
 			'<p class="comment-form-cookies-consent"><label><input type="checkbox" name="notify" value="1"%s /> %s</label></p>',
-			checked( Options::get_bool( 'posting', 'notify_users_default' ), true, false ),
+			checked( null === $kept ? Options::get_bool( 'posting', 'notify_users_default' ) : '' !== $kept, true, false ),
 			esc_html( $notify )
 		);
 
 		if ( null === $viewer->user_id ) {
-			$html .= self::field( $form, 'email', __( 'Email address for notifications', 'easyq' ), 'email', Flash::value( $form, 'email' ), array(), '', $id_prefix );
+			$html .= self::field( $form, 'email', __( 'Email address for notifications', 'easyq' ), 'email', Flash::value( $form, 'email', $target ), array(), '', $id_prefix, $target );
 
 			if ( Options::get_bool( 'posting', 'allow_anonymous_naming' ) ) {
-				$html .= self::field( $form, 'name', __( 'Your name (optional)', 'easyq' ), 'text', Flash::value( $form, 'name' ), array(), '', $id_prefix );
+				$html .= self::field( $form, 'name', __( 'Your name (optional)', 'easyq' ), 'text', Flash::value( $form, 'name', $target ), array(), '', $id_prefix, $target );
 			}
 
 			$privacy = get_privacy_policy_url();
@@ -930,12 +940,13 @@ final class Forms {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $form Form name.
+	 * @param string $form    Form name.
+	 * @param int    $post_id Post the form relates to; 0 for none.
 	 * @return string
 	 */
-	private static function form_notice( string $form ): string {
-		$flash = Flash::current();
-		if ( null === $flash || $flash['form'] !== $form || 'error' !== $flash['type'] ) {
+	private static function form_notice( string $form, int $post_id ): string {
+		$flash = Flash::of( $form, $post_id );
+		if ( null === $flash || 'error' !== $flash['type'] ) {
 			return '';
 		}
 

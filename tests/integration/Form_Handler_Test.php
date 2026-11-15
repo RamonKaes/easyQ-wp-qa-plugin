@@ -23,6 +23,14 @@ use EasyQ\Services;
  */
 final class Form_Handler_Test extends REST_Test_Case {
 
+	/**
+	 * Text a user may type: markup to talk about, comparisons, a percent-encoded address and
+	 * backslashes, which `wp_magic_quotes()` slashes in the request.
+	 *
+	 * @var string
+	 */
+	private const TYPED = "Is x<y or y>x? Use <div class=\"a\"> and <?php echo 1; ?> at https://example.org/K%C3%B6ln\nC:\\Users\\me 'quoted' 100%";
+
 	public function tear_down(): void {
 		$_POST = array();
 		unset( $_SERVER['HTTP_REFERER'], $_GET[ Flash::QUERY_VAR ], $_REQUEST['_wp_http_referer'] );
@@ -36,16 +44,22 @@ final class Form_Handler_Test extends REST_Test_Case {
 	 * @param array<string, mixed> $fields Fields.
 	 * @param bool                 $nonce  Whether to send a valid nonce.
 	 * @param string               $from   Address of the page the form is on; default the ask page.
-	 * @return string Redirect address.
+	 * @return string Redirect address after a success, or an empty string after a failure, when
+	 *                the page of the form is shown in the same request.
 	 */
 	private function submit( string $form, array $fields, bool $nonce = true, string $from = '' ): string {
 		$_POST                   = $fields;
 		$_POST['easyq_form']     = $form;
 		$_POST['_easyq_nonce']   = $nonce ? wp_create_nonce( 'easyq_' . $form ) : 'invalid';
 		$_SERVER['HTTP_REFERER'] = '' === $from ? home_url( '/questions/ask/' ) : $from;
+		// Each submission is a request of its own, which starts without a kept message.
+		( new \ReflectionProperty( Flash::class, 'now' ) )->setValue( null, null );
 
 		$url = ( new Form_Handler() )->process();
-		$this->assertIsString( $url );
+		if ( null === $url ) {
+			$this->assertSame( 'error', Flash::current()['type'] ?? '', 'A failure keeps its message for the page.' );
+			return '';
+		}
 
 		wp_parse_str( (string) wp_parse_url( $url, PHP_URL_QUERY ), $query );
 		$_GET[ Flash::QUERY_VAR ] = $query[ Flash::QUERY_VAR ] ?? '';
@@ -63,6 +77,49 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->submit( 'ask', array( 'title' => 'A question from an old form' ), false );
 
 		$this->assertSame( 'error', Flash::current()['type'] ?? '' );
+	}
+
+	public function test_every_field_of_every_form_reaches_the_rest_api_as_typed(): void {
+		$values  = new \ReflectionMethod( Form_Handler::class, 'values' );
+		$checked = 0;
+
+		foreach ( (array) ( new \ReflectionClassConstant( Form_Handler::class, 'FIELDS' ) )->getValue() as $form => $fields ) {
+			foreach ( (array) $fields as $field ) {
+				$_POST = wp_slash( array( $field => self::TYPED ) );
+				$this->assertSame( array( $field => self::TYPED ), $values->invoke( new Form_Handler(), $form ), "$form: $field" );
+				++$checked;
+			}
+		}
+
+		$this->assertGreaterThan( 30, $checked );
+	}
+
+	public function test_profile_fields_reach_the_rest_api_as_typed(): void {
+		$id = Services::user_fields()->create( 'about', 'About', \EasyQ\Users\User_Field::FLAG_MULTI_LINE, null );
+		$this->assertIsInt( $id );
+		$_POST   = wp_slash( array( Form_Handler::PROFILE_FIELD_PREFIX . 'about' => self::TYPED ) );
+		$request = new \WP_REST_Request( 'POST', '/easyq/v1/users/me' );
+
+		( new \ReflectionMethod( Form_Handler::class, 'add_account_input' ) )->invoke( new Form_Handler(), $request );
+
+		$this->assertSame( array( 'about' => self::TYPED ), $request->get_param( 'fields' ) );
+	}
+
+	public function test_a_question_from_the_form_is_stored_as_one_from_the_rest_api(): void {
+		$this->login();
+		$fields = array(
+			'title'   => 'A question about x<y and 100% here',
+			'content' => self::TYPED,
+			'tags'    => 'forms php',
+		);
+		$this->submit( 'ask', wp_slash( $fields ) );
+		$from_form = $this->post( (int) Services::question_query()->find( array() )['posts'][0]->id );
+		$from_rest = $this->post( (int) $this->data( $this->request( 'POST', '/questions', $fields ) )['id'] );
+
+		$this->assertSame( self::TYPED, $from_form->content );
+		$this->assertSame( $from_rest->content, $from_form->content );
+		$this->assertSame( $from_rest->format, $from_form->format );
+		$this->assertSame( $from_rest->tag_list(), $from_form->tag_list() );
 	}
 
 	public function test_asks_a_question_and_redirects_to_it(): void {
@@ -101,35 +158,76 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertSame( '', Flash::error( 'answer', 'title' ) );
 	}
 
-	public function test_returns_to_the_form_page_after_failures(): void {
-		$this->login();
-		// Forms are sent to the page they are on, so the referer equals the current address.
-		$_SERVER['REQUEST_URI'] = '/questions/ask/';
+	public function test_a_failure_stores_nothing_and_keeps_what_was_typed_in_every_form(): void {
+		global $wpdb;
+		$count   = static fn (): int => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Counts the rows, in a test.
+		$before  = $count();
+		$checked = 0;
 
-		$url = $this->submit(
-			'ask',
-			array(
-				'title'   => 'Short',
-				'content' => 'Some text',
-			)
-		);
+		foreach ( array( 0, (int) $this->user()->user_id ) as $user_id ) {
+			wp_set_current_user( $user_id );
+			foreach ( (array) ( new \ReflectionClassConstant( Form_Handler::class, 'FIELDS' ) )->getValue() as $form => $fields ) {
+				$typed = array_fill_keys( (array) $fields, "Typed into $form" );
+				// An expired form: refused before anything else.
+				$this->assertSame( '', $this->submit( (string) $form, wp_slash( $typed ), false ), "$form" );
+				foreach ( $typed as $field => $value ) {
+					$this->assertSame( $value, Flash::kept( (string) $form, (string) $field ), "$form: $field" );
+				}
+				++$checked;
+			}
+		}
 
-		$this->assertStringStartsWith( home_url( '/questions/ask/?easyq_notice=' ), $url );
+		// Refused by the REST API.
+		$this->assertSame( '', $this->submit( 'ask', array( 'title' => 'Short' ) ) );
+		$this->assertSame( 'Short', Flash::kept( 'ask', 'title' ) );
+
+		$this->assertGreaterThan( 30, $checked );
+		$this->assertSame( $before, $count(), 'A refused request wrote to the options table.' );
 	}
 
-	public function test_does_not_return_to_other_sites(): void {
+	public function test_the_message_after_a_success_is_found_in_a_persistent_object_cache(): void {
 		$this->login();
+		// Transients then go to the object cache, whose keys keep their case.
+		$previous = wp_using_ext_object_cache( true );
+
+		try {
+			$checked = 0;
+			for ( $round = 0; $round < 10; $round++ ) {
+				$this->submit(
+					'ask',
+					array(
+						'title'   => "A question from the form, round $round",
+						'content' => 'Some text for the question.',
+					)
+				);
+				$this->assertSame( 'success', Flash::current()['type'] ?? null, "Round $round" );
+				++$checked;
+			}
+		} finally {
+			// The flag starts as null in the test suite, and passing null would change nothing.
+			wp_using_ext_object_cache( (bool) $previous );
+		}
+
+		$this->assertSame( 10, $checked );
+	}
+
+	public function test_a_successful_submission_does_not_return_to_other_sites(): void {
+		$this->login();
+		$question                     = $this->ask( $this->user() );
 		$_REQUEST['_wp_http_referer'] = 'https://attacker.example/phish';
 
 		$url = $this->submit(
-			'ask',
+			'favorite',
 			array(
-				'title'   => 'Short',
-				'content' => 'Some text',
-			)
+				'type'     => 'question',
+				'id'       => (string) $question->id,
+				'favorite' => '1',
+			),
+			true,
+			'https://attacker.example/phish'
 		);
 
-		$this->assertStringNotContainsString( 'attacker.example', $url );
+		$this->assertStringStartsWith( Routes::url( 'home' ), $url );
 	}
 
 	public function test_answers_and_votes(): void {
@@ -173,8 +271,8 @@ final class Form_Handler_Test extends REST_Test_Case {
 			$form_page
 		);
 		$this->assertFalse( $this->post( $question->id )->is_closed() );
-		$this->assertStringStartsWith( $form_page, $url );
-		$this->assertSame( 'error', Flash::current()['type'] ?? null );
+		$this->assertSame( '', $url, 'The close form is shown again with the error.' );
+		$this->assertSame( '999999', Flash::kept( 'action', 'duplicate_of', $question->id ) );
 
 		$url = $this->submit(
 			'action',

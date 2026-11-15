@@ -87,6 +87,41 @@ test.describe( 'Question page in place', () => {
 		);
 	} );
 
+	test( 'keeps a refused comment in its form without JavaScript, without storing anything', async ( {
+		browser,
+		requestUtils,
+	} ) => {
+		const question = await ask( requestUtils, 'Refused comment' );
+		const answer = await requestUtils.rest( {
+			method: 'POST',
+			path: `/easyq/v1/questions/${ question.id }/answers`,
+			data: { content: 'An answer to comment on.' },
+		} );
+		const context = await browser.newContext( {
+			javaScriptEnabled: false,
+			storageState: requestUtils.storageStatePath,
+		} );
+		const plain = await context.newPage();
+		const address = new URL(
+			`${ questionUrl( question.id ) }&easyq_comment=${ answer.id }`,
+			requestUtils.baseURL
+		).href;
+		await plain.goto( address );
+
+		const form = plain.locator( `#easyq-comment-form-${ answer.id }` );
+		await form.getByLabel( 'Your comment' ).fill( 'x' );
+		await form.getByRole( 'button', { name: 'Add comment' } ).click();
+
+		// The page answers the form itself: the address stays, without a stored notice.
+		await expect( plain ).toHaveURL( address );
+		const field = plain
+			.locator( `#easyq-comment-form-${ answer.id }` )
+			.getByLabel( 'Your comment' );
+		await expect( field ).toHaveValue( 'x' );
+		await expect( field ).toHaveAttribute( 'aria-invalid', 'true' );
+		await context.close();
+	} );
+
 	test( 'opens the answer form with the Answer button, with and without JavaScript', async ( {
 		browser,
 		page,

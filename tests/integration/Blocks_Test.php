@@ -317,6 +317,50 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringEndsWith( '#easyq-post-' . $question->id, $this->cancel_link( $html ) );
 	}
 
+	public function test_after_a_failure_each_form_shows_what_was_typed_for_its_own_post(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author, 'Question with forms', 'The question text.' );
+		$answer   = $this->answer( $this->user(), $question );
+		// Comments on questions too, so that the page has two comment forms.
+		Options::update( 'posting', array( 'comment_on_qs' => true ) );
+		$markup = '<!-- wp:easyq/question --><!-- wp:easyq/post-content /--><!-- wp:easyq/comment-form /--><!-- /wp:easyq/question --><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/post-content /--><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list -->';
+		wp_set_current_user( (int) $this->user()->user_id );
+
+		Flash::keep( 'Please check the form.', 'comment', $answer->id, array( 'content' => 'The comment is too short.' ), array( 'content' => 'Typed below the answer' ) );
+		$html = $this->render( $markup, new Route( 'question', $question ) );
+
+		$this->assertStringContainsString( 'id="easyq-comment-form-' . $question->id . '"', $html );
+		$this->assertSame( 1, substr_count( $html, 'Typed below the answer' ), 'Only the form of the answer shows the comment.' );
+		$this->assertStringContainsString( '>Typed below the answer</textarea>', $html );
+		$this->assertMatchesRegularExpression( '/<details[^>]*id="easyq-comment-form-' . $answer->id . '" open/', $html );
+		$this->assertDoesNotMatchRegularExpression( '/<details[^>]*id="easyq-comment-form-' . $question->id . '" open/', $html );
+		$this->assertSame( 1, substr_count( $html, 'The comment is too short.' ) );
+		$this->assertSame( 1, substr_count( $html, 'Please check the form.' ) );
+
+		// A field the user emptied stays empty.
+		wp_set_current_user( (int) $author->user_id );
+		$_GET['easyq_edit'] = (string) $question->id;
+		Flash::keep(
+			'Please check the form.',
+			'edit',
+			$question->id,
+			array( 'title' => 'The title is too short.' ),
+			array(
+				'title'   => 'Typed title',
+				'content' => '',
+			)
+		);
+		$html = $this->render( $markup, new Route( 'question', $question ) );
+		$this->assertStringContainsString( 'name="title" value="Typed title"', $html );
+		$this->assertStringContainsString( 'name="content" cols="45" rows="8"></textarea>', $html );
+		unset( $_GET['easyq_edit'] );
+
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+		$this->go_to( add_query_arg( 'easyq_close', $question->id, URLs::question( $question ) ) );
+		Flash::keep( 'Please check the form.', 'action', $question->id, array(), array( 'note' => 'Typed reason for closing' ) );
+		$this->assertStringContainsString( '>Typed reason for closing</textarea>', $this->render( $markup, new Route( 'question', $question ) ) );
+	}
+
 	public function test_forms_ask_visitors_to_log_in(): void {
 		$question = $this->ask( $this->user() );
 
@@ -451,7 +495,7 @@ final class Blocks_Test extends Test_Case {
 	public function test_category_errors_belong_to_the_select(): void {
 		Services::categories()->create( null, 'Software' );
 		wp_set_current_user( (int) $this->user()->user_id );
-		$_GET[ Flash::QUERY_VAR ] = Flash::store( 'error', 'Please check the form.', 'ask', array( 'category' => 'Please select a category.' ) );
+		Flash::keep( 'Please check the form.', 'ask', 0, array( 'category' => 'Please select a category.' ) );
 
 		$html = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) );
 

@@ -32,6 +32,8 @@ abstract class Test_Case extends WP_UnitTestCase {
 
 		wp_cache_flush();
 		Services::reset();
+		// The message of a failed form lives for one request; each test is one.
+		( new \ReflectionProperty( \EasyQ\Frontend\Flash::class, 'now' ) )->setValue( null, null );
 
 		$this->events = array();
 		add_action(

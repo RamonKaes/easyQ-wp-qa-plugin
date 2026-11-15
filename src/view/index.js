@@ -16,13 +16,24 @@ import { store, getContext, getElement } from '@wordpress/interactivity';
  *
  * @since 0.1.0
  *
- * @param {string} url Address to load.
+ * @param {string}      url    Address to load.
+ * @param {string|null} [html] The page itself, when the server sent it instead of an address.
  */
-function* navigateTo( url ) {
+function* navigateTo( url, html = null ) {
 	const { actions: router } =
 		yield import( '@wordpress/interactivity-router' );
 	// The router would announce "Page loaded"; the message, focused field or focused list says more.
-	yield router.navigate( url, { screenReaderAnnouncement: false } );
+	yield router.navigate(
+		url,
+		html
+			? {
+					screenReaderAnnouncement: false,
+					html,
+					force: true,
+					replace: true,
+				}
+			: { screenReaderAnnouncement: false }
+	);
 
 	const hash = new URL( url, window.location.href ).hash.slice( 1 );
 	const target =
@@ -249,9 +260,10 @@ const { state } = store( 'easyq', {
 
 		/**
 		 * Sends an answer or comment form in the background. The server handles
-		 * it like a regular submission and returns the address to show, which
-		 * contains the new post or the form with its errors. Without a usable
-		 * response the form is submitted normally.
+		 * it like a regular submission: after a success it returns the address
+		 * that shows the new post, after a failure the page itself with the
+		 * errors and what was typed. Without a usable response the form is
+		 * submitted normally.
 		 *
 		 * @since 0.1.0
 		 *
@@ -265,6 +277,7 @@ const { state } = store( 'easyq', {
 			form.setAttribute( 'aria-busy', 'true' );
 
 			let url = null;
+			let html = null;
 			try {
 				const response = yield fetch(
 					form.getAttribute( 'action' ) || window.location.href,
@@ -275,18 +288,24 @@ const { state } = store( 'easyq', {
 						headers: { 'X-EasyQ-In-Place': '1' },
 					}
 				);
-				const data = response.ok ? yield response.json() : null;
-				url = typeof data?.url === 'string' ? data.url : null;
+				const type = response.headers.get( 'Content-Type' ) || '';
+				if ( response.ok && type.includes( 'application/json' ) ) {
+					const data = yield response.json();
+					url = typeof data?.url === 'string' ? data.url : null;
+				} else if ( response.ok && type.includes( 'text/html' ) ) {
+					html = yield response.text();
+				}
 			} catch {
 				url = null;
+				html = null;
 			}
 
-			if ( ! url ) {
+			if ( ! url && ! html ) {
 				form.submit();
 				return;
 			}
 
-			yield* navigateTo( url );
+			yield* navigateTo( url || window.location.href, html );
 
 			// The router keeps the form element and what was typed into it.
 			form.removeAttribute( 'aria-busy' );
