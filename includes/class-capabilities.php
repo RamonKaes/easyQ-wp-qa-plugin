@@ -10,6 +10,7 @@ namespace EasyQ;
 
 use EasyQ\Posts\Post;
 use EasyQ\Users\Levels;
+use EasyQ\Users\User_Status;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -136,7 +137,9 @@ final class Capabilities {
 		$permissions = Services::permissions();
 
 		if ( self::MANAGE === $cap ) {
-			return user_can( $user_id, 'manage_options' ) || ( Services::user_levels()->maximum_level( $actor->user_id ) ?? -1 ) >= Levels::ADMIN;
+			// A blocked user loses the Q&A level, as every permission of Question2Answer refuses them (`qa_permit_value_error()`).
+			return user_can( $user_id, 'manage_options' )
+				|| ( ( Services::user_levels()->maximum_level( $actor->user_id ) ?? -1 ) >= Levels::ADMIN && ! User_Status::is_blocked( $user_id ) );
 		}
 
 		if ( self::MODERATE === $cap ) {

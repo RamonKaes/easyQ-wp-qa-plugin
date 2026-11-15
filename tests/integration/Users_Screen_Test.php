@@ -143,6 +143,19 @@ final class Users_Screen_Test extends Test_Case {
 		$this->assertFalse( User_Status::is_blocked( $admin ) );
 	}
 
+	public function test_bulk_block_skips_moderators_and_counts_changes_only(): void {
+		$admin     = $this->administrator();
+		$moderator = self::factory()->user->create();
+		\EasyQ\Services::user_levels()->set_level( new \EasyQ\Actor( $admin ), $moderator, \EasyQ\Users\Levels::MODERATOR );
+		$user    = self::factory()->user->create();
+		$blocked = self::factory()->user->create();
+		User_Status::block( new \EasyQ\Actor( $admin ), $blocked );
+
+		$this->assertSame( 1, $this->screen->perform( 'easyq_block', array( $moderator, $user, $blocked ), new \EasyQ\Actor( $admin ) ) );
+		$this->assertFalse( User_Status::is_blocked( $moderator ) );
+		$this->assertTrue( User_Status::is_blocked( $user ) );
+	}
+
 	public function test_views_and_query_filter(): void {
 		$blocked = self::factory()->user->create();
 		User_Status::block( \EasyQ\Actor::system(), $blocked );

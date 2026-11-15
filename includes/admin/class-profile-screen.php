@@ -118,7 +118,7 @@ final class Profile_Screen {
 					<?php if ( $this->can_set_levels( $editor, $user->ID ) ) : ?>
 						<select id="easyq-level" name="easyq_level">
 							<option value=""><?php esc_html_e( '— Based on the user’s role —', 'easyq' ); ?></option>
-							<?php foreach ( $this->assignable_levels( $editor ) as $level => $label ) : ?>
+							<?php foreach ( $this->assignable_levels( $editor, $user->ID ) as $level => $label ) : ?>
 								<option value="<?php echo esc_attr( (string) $level ); ?>" <?php selected( Services::user_levels()->assigned_level( $user->ID ), $level ); ?>><?php echo esc_html( $label ); ?></option>
 							<?php endforeach; ?>
 						</select>
@@ -152,7 +152,11 @@ final class Profile_Screen {
 							);
 							foreach ( $statuses as $status => [ $is_set, $label ] ) :
 								?>
-								<label><input type="checkbox" name="<?php echo esc_attr( 'easyq_' . $status ); ?>" value="1" <?php checked( $is_set ); ?> /> <?php echo esc_html( $label ); ?></label><br />
+								<?php $fixed = 'blocked' === $status && ! $is_set && ! User_Status::may_be_blocked( $user->ID ); ?>
+								<label><input type="checkbox" name="<?php echo esc_attr( 'easyq_' . $status ); ?>" value="1" <?php checked( $is_set ); ?> <?php disabled( $fixed ); ?> /> <?php echo esc_html( $label ); ?></label><br />
+								<?php if ( $fixed ) : ?>
+									<span class="description"><?php esc_html_e( 'Moderators and higher levels cannot be blocked.', 'easyq' ); ?></span><br />
+								<?php endif; ?>
 								<?php // The state the form shows: saving changes only what the moderator changed, not what changed since. ?>
 								<input type="hidden" name="<?php echo esc_attr( 'easyq_shown[' . $status . ']' ); ?>" value="<?php echo $is_set ? '1' : '0'; ?>" />
 							<?php endforeach; ?>
@@ -260,7 +264,7 @@ final class Profile_Screen {
 	 * @param Actor                $editor  Who saves the profile.
 	 */
 	private function save_levels( int $user_id, array $input, Actor $editor ): void {
-		$assignable = $this->assignable_levels( $editor );
+		$assignable = $this->assignable_levels( $editor, $user_id );
 		$levels     = Services::user_levels();
 
 		if ( array_key_exists( 'easyq_level', $input ) ) {
@@ -341,7 +345,7 @@ final class Profile_Screen {
 							<label for="<?php echo esc_attr( $select_id ); ?>"><?php echo esc_html( implode( ' › ', array_map( static fn ( $ancestor ): string => $ancestor->title, Services::categories()->path( $category->id ) ) ) ); ?></label><br />
 							<select id="<?php echo esc_attr( $select_id ); ?>" name="easyq_category_levels[<?php echo esc_attr( (string) $category->id ); ?>]">
 								<option value=""><?php esc_html_e( '— No special level —', 'easyq' ); ?></option>
-								<?php foreach ( $this->assignable_levels( $editor ) as $level => $label ) : ?>
+								<?php foreach ( $this->assignable_levels( $editor, $user->ID ) as $level => $label ) : ?>
 									<?php if ( $level >= Levels::EXPERT ) : ?>
 										<option value="<?php echo esc_attr( (string) $level ); ?>" <?php selected( $current[ $category->id ] ?? null, $level ); ?>><?php echo esc_html( $label ); ?></option>
 									<?php endif; ?>
@@ -376,15 +380,20 @@ final class Profile_Screen {
 	}
 
 	/**
-	 * Returns the levels an editor may assign: up to their own level.
+	 * Returns the levels an editor may assign: up to their own level, and up to Editor for a
+	 * blocked user, as Question2Answer limits it (`qa-include/pages/user-profile.php`).
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Actor $editor Who edits the profile.
+	 * @param Actor $editor  Who edits the profile.
+	 * @param int   $user_id The user being edited.
 	 * @return array<int, string>
 	 */
-	private function assignable_levels( Actor $editor ): array {
+	private function assignable_levels( Actor $editor, int $user_id ): array {
 		$maximum = $this->editor_level( $editor );
+		if ( User_Status::is_blocked( $user_id ) ) {
+			$maximum = min( $maximum, Levels::EDITOR );
+		}
 
 		return array_filter( Levels::labels(), static fn ( int $level ): bool => $level <= $maximum, ARRAY_FILTER_USE_KEY );
 	}

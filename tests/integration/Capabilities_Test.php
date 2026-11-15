@@ -12,6 +12,7 @@ use EasyQ\Capabilities;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Users\Levels;
+use EasyQ\Users\Site_Meta;
 use EasyQ\Users\User_Status;
 
 /**
@@ -118,6 +119,32 @@ final class Capabilities_Test extends Test_Case {
 
 		$this->assertFalse( user_can( (int) $user->user_id, 'easyq_post_question' ) );
 		$this->assertFalse( user_can( (int) $user->user_id, 'easyq_vote_post', $question->id ) );
+	}
+
+	public function test_moderators_cannot_be_blocked_and_blocked_users_lose_the_admin_level(): void {
+		$admin = (int) $this->user()->user_id;
+		Services::user_levels()->set_level( Actor::system(), $admin, Levels::ADMIN );
+		$category = Services::categories()->create( null, 'Topic' );
+		$this->assertIsInt( $category );
+		$category_moderator = (int) $this->user()->user_id;
+		Services::user_levels()->set_category_level( Actor::system(), $category_moderator, $category, Levels::MODERATOR );
+		$editor = (int) $this->user()->user_id;
+		Services::user_levels()->set_level( Actor::system(), $editor, Levels::EDITOR );
+
+		// As Question2Answer offers the block: below Moderator only, counting category levels.
+		foreach ( array( $admin, $category_moderator ) as $user_id ) {
+			$this->assertFalse( User_Status::may_be_blocked( $user_id ) );
+			User_Status::block( Actor::system(), $user_id );
+			$this->assertFalse( User_Status::is_blocked( $user_id ) );
+		}
+		User_Status::block( Actor::system(), $editor );
+		$this->assertTrue( User_Status::is_blocked( $editor ) );
+
+		// A block stored before, or set beside the plugin, takes the Q&A administration away.
+		$this->assertTrue( user_can( $admin, Capabilities::MANAGE ) );
+		Site_Meta::update( $admin, User_Status::BLOCKED_META, 1 );
+		$this->assertFalse( user_can( $admin, Capabilities::MANAGE ) );
+		$this->assertFalse( user_can( $admin, Capabilities::MODERATE ) );
 	}
 
 	public function test_leaves_other_capabilities_untouched(): void {

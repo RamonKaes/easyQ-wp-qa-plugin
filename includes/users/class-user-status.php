@@ -10,6 +10,7 @@ namespace EasyQ\Users;
 
 use EasyQ\Actor;
 use EasyQ\Events\Events;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use WP_User;
 
@@ -220,6 +221,19 @@ final class User_Status {
 	}
 
 	/**
+	 * Checks whether a user may be blocked: only below the level Moderator, counting category
+	 * levels, as Question2Answer offers the block (`qa-include/pages/user-profile.php`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return bool
+	 */
+	public static function may_be_blocked( int $user_id ): bool {
+		return ( Services::user_levels()->maximum_level( $user_id ) ?? Levels::BASIC ) < Levels::MODERATOR;
+	}
+
+	/**
 	 * Blocks a user from posting, voting and changing anything.
 	 *
 	 * @since 0.1.0
@@ -228,7 +242,7 @@ final class User_Status {
 	 * @param int   $user_id User ID.
 	 */
 	public static function block( Actor $actor, int $user_id ): void {
-		if ( self::is_blocked( $user_id ) ) {
+		if ( self::is_blocked( $user_id ) || ! self::may_be_blocked( $user_id ) ) {
 			return;
 		}
 

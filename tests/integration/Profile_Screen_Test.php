@@ -235,6 +235,45 @@ final class Profile_Screen_Test extends Test_Case {
 		return array_combine( $matches[1], $matches[2] );
 	}
 
+	public function test_blocked_users_get_no_level_above_editor_and_moderators_no_block(): void {
+		$admin    = $this->administrator();
+		$user     = self::factory()->user->create();
+		$category = Services::categories()->create( null, 'Topic' );
+		$this->assertIsInt( $category );
+		User_Status::block( new Actor( $admin ), $user );
+
+		$html = $this->render( $admin, $user );
+		$this->assertStringContainsString( '<option value="' . Levels::EDITOR . '"', $html );
+		$this->assertStringNotContainsString( '<option value="' . Levels::MODERATOR . '"', $html );
+
+		$this->screen->save(
+			$user,
+			array(
+				'easyq_level'           => (string) Levels::ADMIN,
+				'easyq_category_levels' => array( $category => (string) Levels::MODERATOR ),
+			),
+			new Actor( $admin )
+		);
+		$this->assertNull( Services::user_levels()->assigned_level( $user ) );
+		$this->assertSame( array(), Services::user_levels()->category_levels( $user ) );
+		$this->screen->save( $user, array( 'easyq_level' => (string) Levels::EDITOR ), new Actor( $admin ) );
+		$this->assertSame( Levels::EDITOR, Services::user_levels()->assigned_level( $user ) );
+
+		// A moderator cannot be blocked: the box is disabled and saving it changes nothing.
+		$moderator = self::factory()->user->create();
+		Services::user_levels()->set_level( new Actor( $admin ), $moderator, Levels::MODERATOR );
+		$this->assertMatchesRegularExpression( '/name="easyq_blocked" value="1"\s+disabled=\'disabled\'/', $this->render( $admin, $moderator ) );
+		$this->screen->save(
+			$moderator,
+			array(
+				'easyq_blocked' => '1',
+				'easyq_shown'   => $this->shown( $moderator ),
+			),
+			new Actor( $admin )
+		);
+		$this->assertFalse( User_Status::is_blocked( $moderator ) );
+	}
+
 	public function test_editors_cannot_change_other_users(): void {
 		$editor = self::factory()->user->create( array( 'role' => 'editor' ) );
 		$user   = self::factory()->user->create();
