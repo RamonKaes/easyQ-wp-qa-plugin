@@ -265,16 +265,15 @@ final class Categories_Screen_Test extends Test_Case {
 		$direct = $this->ask( $this->user(), 'Question only in the parent', 'x', array(), $parent );
 		$screen = new Categories_Screen();
 
-		// `wp_admin_notice()` passes the message through `wp_kses_post()`, which writes `&` as `&amp;`.
-		$this->assertStringContainsString(
-			'1 question has no category. <a href="' . esc_html(
-				Categories_Screen::url(
-					array(
-						'action'   => 'reassign',
-						'category' => 0,
-					)
-				)
-			) . '">',
+		// `wp_admin_notice()` writes `&` as `&#038;` up to WordPress 6.7 and as `&amp;` later.
+		$url = Categories_Screen::url(
+			array(
+				'action'   => 'reassign',
+				'category' => 0,
+			)
+		);
+		$this->assertMatchesRegularExpression(
+			'/1 question has no category\. <a href="' . str_replace( '&', '(?:&#038;|&amp;)', preg_quote( $url, '/' ) ) . '">/',
 			$this->render( $screen )
 		);
 		$this->assertStringContainsString(
