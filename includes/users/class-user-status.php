@@ -208,6 +208,18 @@ final class User_Status {
 	}
 
 	/**
+	 * Puts a user back into the queue of users awaiting approval.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 */
+	public static function unapprove( int $user_id ): void {
+		Site_Meta::update( $user_id, self::UNAPPROVED_META, 1 );
+		Site_Meta::delete( $user_id, self::APPROVED_META );
+	}
+
+	/**
 	 * Blocks a user from posting, voting and changing anything.
 	 *
 	 * @since 0.1.0

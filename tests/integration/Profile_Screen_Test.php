@@ -135,6 +135,7 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertSame( Levels::EXPERT, Services::user_levels()->assigned_level( $user ) );
 		$this->assertSame( 115, Services::points()->get( $user ) );
 		$this->assertSame( array( $category => Levels::EDITOR ), Services::user_levels()->category_levels( $user ) );
+		$this->assertFalse( User_Status::awaits_approval( $user ), 'Saving levels leaves the status alone.' );
 	}
 
 	public function test_levels_above_the_own_level_cannot_be_assigned(): void {
@@ -165,11 +166,16 @@ final class Profile_Screen_Test extends Test_Case {
 
 		$this->assertStringContainsString( 'name="easyq_blocked"', $this->render( $moderator, $user ) );
 
+		$html = $this->render( $moderator, $user );
+		$this->assertStringContainsString( 'name="easyq_shown[approved]" value="0"', $html );
+		$this->assertStringContainsString( 'name="easyq_shown[blocked]" value="0"', $html );
+
 		$this->screen->save(
 			$user,
 			array(
 				'easyq_approved' => '1',
 				'easyq_blocked'  => '1',
+				'easyq_shown'    => $this->shown( $user ),
 			),
 			new Actor( $moderator )
 		);
@@ -177,6 +183,56 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertFalse( User_Status::awaits_approval( $user ) );
 		$this->assertTrue( User_Status::is_blocked( $user ) );
 		$this->assertFalse( User_Status::is_confirmed( $user ) );
+
+		// Unticking takes each status back.
+		$this->screen->save( $user, array( 'easyq_shown' => $this->shown( $user ) ), new Actor( $moderator ) );
+		$this->assertTrue( User_Status::awaits_approval( $user ) );
+		$this->assertFalse( User_Status::is_blocked( $user ) );
+	}
+
+	public function test_a_stale_form_changes_only_what_the_moderator_changed(): void {
+		$moderator = $this->administrator();
+		$user      = self::factory()->user->create();
+		User_Status::unconfirm( $user );
+		Site_Meta::update( $user, User_Status::UNAPPROVED_META, 1 );
+		wp_set_current_user( $moderator );
+		$shown = $this->shown( $user );
+		$this->assertSame( '0', $shown['confirmed'] );
+
+		// Meanwhile the user confirms their address and another moderator approves them.
+		User_Status::confirm( new Actor( $user ), $user );
+		User_Status::approve( new Actor( $moderator ), $user );
+
+		$this->screen->save(
+			$user,
+			array(
+				'easyq_blocked' => '1',
+				'easyq_shown'   => $shown,
+			),
+			new Actor( $moderator )
+		);
+
+		$this->assertTrue( User_Status::is_confirmed( $user ) );
+		$this->assertFalse( User_Status::awaits_approval( $user ) );
+		$this->assertTrue( User_Status::is_blocked( $user ) );
+
+		// A save that does not come from the form leaves every status as it is.
+		$this->screen->save( $user, array(), new Actor( $moderator ) );
+		$this->assertTrue( User_Status::is_blocked( $user ) );
+		$this->assertTrue( User_Status::is_confirmed( $user ) );
+	}
+
+	/**
+	 * Reads the shown state the form of the section carries for a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array<string, string>
+	 */
+	private function shown( int $user_id ): array {
+		preg_match_all( '/name="easyq_shown\[(\w+)\]" value="([01])"/', $this->render( (int) get_current_user_id(), $user_id ), $matches );
+		$this->assertCount( 3, $matches[1] );
+
+		return array_combine( $matches[1], $matches[2] );
 	}
 
 	public function test_editors_cannot_change_other_users(): void {
@@ -203,5 +259,19 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertSame( 'Bremen', Services::user_fields()->value( $user, $location ) );
 
 		unset( $_POST['easyq_fields'], $_POST['easyq_profile_nonce'] );
+	}
+
+	public function test_the_submitted_form_blocks_with_its_shown_state(): void {
+		$moderator = $this->administrator();
+		$user      = self::factory()->user->create();
+		wp_set_current_user( $moderator );
+
+		$_POST['easyq_shown']         = $this->shown( $user );
+		$_POST['easyq_blocked']       = '1';
+		$_POST['easyq_profile_nonce'] = wp_create_nonce( 'easyq_profile_' . $user );
+		$this->screen->handle_save( $user );
+		unset( $_POST['easyq_shown'], $_POST['easyq_blocked'], $_POST['easyq_profile_nonce'] );
+
+		$this->assertTrue( User_Status::is_blocked( $user ) );
 	}
 }

@@ -15,7 +15,6 @@ use EasyQ\Services;
 use EasyQ\Users\Levels;
 use EasyQ\Users\User_Status;
 use WP_User;
-use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -145,9 +144,18 @@ final class Profile_Screen {
 					<td>
 						<fieldset>
 							<legend class="screen-reader-text"><?php esc_html_e( 'Status', 'easyq' ); ?></legend>
-							<label><input type="checkbox" name="easyq_confirmed" value="1" <?php checked( User_Status::is_confirmed( $user->ID ) ); ?> /> <?php esc_html_e( 'Email address confirmed', 'easyq' ); ?></label><br />
-							<label><input type="checkbox" name="easyq_approved" value="1" <?php checked( ! User_Status::awaits_approval( $user->ID ) ); ?> /> <?php esc_html_e( 'Approved', 'easyq' ); ?></label><br />
-							<label><input type="checkbox" name="easyq_blocked" value="1" <?php checked( User_Status::is_blocked( $user->ID ) ); ?> /> <?php esc_html_e( 'Blocked from posting, voting and flagging', 'easyq' ); ?></label>
+							<?php
+							$statuses = array(
+								'confirmed' => array( User_Status::is_confirmed( $user->ID ), __( 'Email address confirmed', 'easyq' ) ),
+								'approved'  => array( ! User_Status::awaits_approval( $user->ID ), __( 'Approved', 'easyq' ) ),
+								'blocked'   => array( User_Status::is_blocked( $user->ID ), __( 'Blocked from posting, voting and flagging', 'easyq' ) ),
+							);
+							foreach ( $statuses as $status => [ $is_set, $label ] ) :
+								?>
+								<label><input type="checkbox" name="<?php echo esc_attr( 'easyq_' . $status ); ?>" value="1" <?php checked( $is_set ); ?> /> <?php echo esc_html( $label ); ?></label><br />
+								<?php // The state the form shows: saving changes only what the moderator changed, not what changed since. ?>
+								<input type="hidden" name="<?php echo esc_attr( 'easyq_shown[' . $status . ']' ); ?>" value="<?php echo $is_set ? '1' : '0'; ?>" />
+							<?php endforeach; ?>
 						</fieldset>
 					</td>
 				</tr>
@@ -171,7 +179,7 @@ final class Profile_Screen {
 		}
 
 		$input = array();
-		foreach ( array( 'easyq_fields', 'easyq_bonus', 'easyq_level', 'easyq_category_levels', 'easyq_confirmed', 'easyq_approved', 'easyq_blocked' ) as $key ) {
+		foreach ( array( 'easyq_fields', 'easyq_bonus', 'easyq_level', 'easyq_category_levels', 'easyq_confirmed', 'easyq_approved', 'easyq_blocked', 'easyq_shown' ) as $key ) {
 			if ( isset( $_POST[ $key ] ) ) {
 				$input[ $key ] = map_deep( wp_unslash( $_POST[ $key ] ), 'sanitize_textarea_field' );
 			}
@@ -288,25 +296,21 @@ final class Profile_Screen {
 	 * @param Actor                $editor  Who saves the profile.
 	 */
 	private function save_status( int $user_id, array $input, Actor $editor ): void {
-		if ( ! empty( $input['easyq_confirmed'] ) ) {
-			User_Status::confirm( $editor, $user_id );
-		} elseif ( User_Status::is_confirmed( $user_id ) ) {
-			User_Status::unconfirm( $user_id );
-		}
+		$shown = is_array( $input['easyq_shown'] ?? null ) ? $input['easyq_shown'] : array();
 
-		if ( ! empty( $input['easyq_approved'] ) ) {
-			if ( User_Status::awaits_approval( $user_id ) ) {
-				User_Status::approve( $editor, $user_id );
+		foreach ( array( 'confirmed', 'approved', 'blocked' ) as $status ) {
+			// Only a status the form showed, and only if the moderator changed it: a form opened before
+			// the user confirmed their address does not take the confirmation back.
+			if ( ! isset( $shown[ $status ] ) || ! empty( $input[ 'easyq_' . $status ] ) === ( '1' === $shown[ $status ] ) ) {
+				continue;
 			}
-		} else {
-			Site_Meta::update( $user_id, User_Status::UNAPPROVED_META, 1 );
-			Site_Meta::delete( $user_id, User_Status::APPROVED_META );
-		}
 
-		if ( ! empty( $input['easyq_blocked'] ) ) {
-			User_Status::block( $editor, $user_id );
-		} else {
-			User_Status::unblock( $editor, $user_id );
+			$set = ! empty( $input[ 'easyq_' . $status ] );
+			match ( $status ) {
+				'confirmed' => $set ? User_Status::confirm( $editor, $user_id ) : User_Status::unconfirm( $user_id ),
+				'approved'  => $set ? User_Status::approve( $editor, $user_id ) : User_Status::unapprove( $user_id ),
+				default     => $set ? User_Status::block( $editor, $user_id ) : User_Status::unblock( $editor, $user_id ),
+			};
 		}
 	}
 
