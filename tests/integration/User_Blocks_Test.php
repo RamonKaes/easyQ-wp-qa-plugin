@@ -214,6 +214,8 @@ final class User_Blocks_Test extends Test_Case {
 	}
 
 	public function test_account_page_shows_the_profile_form(): void {
+		// Uploads are off by default; the site owner allows them.
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$user = self::factory()->user->create();
 		wp_set_current_user( $user );
 		Services::user_fields()->set_value( $user, Services::user_fields()->all()[0], 'Paris' );

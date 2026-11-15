@@ -189,7 +189,8 @@ code, and known vulnerabilities of the dependencies.
 | Forms: nonce action as specific as possible; required fields marked as the comment form does | F-33 | `Frontend\Form_Handler`, `includes/blocks/render/class-forms.php` |
 | Registration: `register_form`, `registration_errors`, `user_register`; markup of `wp-login.php` | Met on a single site | `Users\Registration` |
 | Registration on a multisite: `signup_extra_fields`, `wpmu_validate_user_signup` | F-32 | `Users\Blocked_Names` and `Limits\Account_Limits` cover the sign-up, `Users\Registration` does not |
-| Uploads: `wp_handle_upload()` with the allowed types, `wp_get_image_editor()`, `wp_delete_file()`, no direct file functions | Met; F-34 | `Users\Avatars` |
+| Uploads: `wp_handle_upload()` with the allowed types, `wp_get_image_editor()` and the file its `save()` writes, `wp_delete_file()`, no direct file functions | Met | `Users\Avatars`; evidence: `Users_REST_Test`, `Avatars_Test` |
+| Avatar uploads without `upload_files` | Kept, decided by the site owner of the project on 2026-11-15 | Question2Answer lets every user upload an avatar, and so do common avatar plugins; the image is the user's own and goes with them (F-20). The setting is off by default (decision 84), so a site owner allows it on purpose |
 | Uploads: capability `upload_files` | F-34, to decide | Login and the setting instead |
 | Avatars through `pre_get_avatar_data` | Met | `Users\Avatars` |
 | Admin notices through `wp_admin_notice()` | F-36 | Used in two files, written by hand in six |

@@ -86,7 +86,7 @@ final class Policy_Text_Test extends Test_Case {
 
 	public function test_describes_only_the_features_that_are_on(): void {
 		$features = array(
-			array( 'users', 'avatar_allow_upload', true, 'media library' ),
+			array( 'users', 'avatar_allow_upload', false, 'media library' ),
 			array( 'users', 'allow_user_walls', true, 'wall of a profile' ),
 			array( 'emails', 'feedback_enabled', true, 'feedback form' ),
 			array( 'newsletter', 'mailing_enabled', false, 'newsletter' ),

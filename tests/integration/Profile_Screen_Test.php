@@ -144,7 +144,7 @@ final class Profile_Screen_Test extends Test_Case {
 		if ( is_multisite() ) {
 			get_userdata( $manager )->add_cap( 'manage_network_users' );
 		}
-		$user    = self::factory()->user->create();
+		$user = self::factory()->user->create();
 
 		$html = $this->render( $manager, $user );
 		$this->assertStringContainsString( '<option value="' . Levels::ADMIN . '"', $html );

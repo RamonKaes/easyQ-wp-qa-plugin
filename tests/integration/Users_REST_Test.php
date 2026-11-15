@@ -166,6 +166,8 @@ final class Users_REST_Test extends REST_Test_Case {
 	}
 
 	public function test_uploads_replaces_and_removes_the_avatar(): void {
+		// Uploads are off by default; the site owner allows them.
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$user = $this->login();
 
 		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
@@ -188,6 +190,8 @@ final class Users_REST_Test extends REST_Test_Case {
 	}
 
 	public function test_refuses_files_that_are_not_images(): void {
+		// Uploads are off by default; the site owner allows them.
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$this->login();
 
 		$response = $this->upload( DIR_TESTDATA . '/uploads/dashicons.woff', array(), 'image/png' );
@@ -213,7 +217,27 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertSame( 429, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
 	}
 
+	public function test_the_avatar_is_the_file_the_image_editor_saved(): void {
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$this->login();
+		$format = static fn (): array => array( 'image/jpeg' => 'image/png' );
+		add_filter( 'image_editor_output_format', $format );
+
+		$response = $this->upload( DIR_TESTDATA . '/images/canola.jpg' );
+		remove_filter( 'image_editor_output_format', $format );
+
+		$this->assertSame( 200, $response->get_status() );
+		$attachment = (int) \EasyQ\Users\Avatars::attachment_id( get_current_user_id() );
+		$file       = (string) get_attached_file( $attachment );
+		$this->assertSame( 'image/png', get_post_mime_type( $attachment ) );
+		$this->assertStringEndsWith( '.png', $file );
+		$this->assertFileExists( $file );
+		$this->assertFileDoesNotExist( (string) preg_replace( '/\.png$/', '.jpg', $file ), 'The original stays.' );
+	}
+
 	public function test_an_upload_that_did_not_arrive_is_refused_with_its_reason(): void {
+		// Uploads are off by default; the site owner allows them.
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$this->login();
 		$request = new WP_REST_Request( 'POST', '/easyq/v1/users/me' );
 		// As PHP fills the entry when the file is larger than `upload_max_filesize`.

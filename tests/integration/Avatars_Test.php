@@ -119,6 +119,8 @@ final class Avatars_Test extends Test_Case {
 	}
 
 	public function test_uses_the_uploaded_avatar(): void {
+		// Uploads are off by default; the site owner allows them.
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$user          = self::factory()->user->create();
 		$attachment_id = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/canola.jpg' );
 

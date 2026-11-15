@@ -385,6 +385,8 @@ final class Form_Handler_Test extends REST_Test_Case {
 	}
 
 	public function test_account_errors_keep_the_values(): void {
+		// Uploads are off by default; the site owner allows them.
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$this->login();
 		$file = wp_tempnam( 'avatar' );
 		file_put_contents( $file, 'not an image' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.

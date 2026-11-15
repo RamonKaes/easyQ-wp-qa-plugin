@@ -194,15 +194,23 @@ final class Avatars {
 		$path   = $uploaded['file'];
 		$side   = max( 16, Options::get_int( 'users', 'avatar_store_size' ) );
 		$editor = wp_get_image_editor( $path );
-		if ( is_wp_error( $editor ) || is_wp_error( self::crop( $editor, $side ) ) || is_wp_error( $editor->save( $path ) ) ) {
+		$saved  = is_wp_error( $editor ) || is_wp_error( self::crop( $editor, $side ) ) ? null : $editor->save( $path );
+		if ( ! is_array( $saved ) || ! is_string( $saved['path'] ?? null ) || ! is_string( $saved['mime-type'] ?? null ) ) {
 			wp_delete_file( $path );
 			return new WP_Error( 'easyq_avatar_type', __( 'Please upload a JPEG, PNG, GIF or WebP image.', 'easyq' ) );
 		}
+		// The editor may write another file, for example with `image_editor_output_format`; the
+		// attachment is the cropped one, and the original, with its metadata, goes.
+		if ( $saved['path'] !== $path ) {
+			wp_delete_file( $path );
+		}
+		$path = $saved['path'];
+		$type = $saved['mime-type'];
 
 		$user          = get_userdata( $user_id );
 		$attachment_id = wp_insert_attachment(
 			array(
-				'post_mime_type' => $uploaded['type'],
+				'post_mime_type' => $type,
 				/* translators: %s: user name. */
 				'post_title'     => sprintf( __( 'Avatar of %s', 'easyq' ), false === $user ? $user_id : $user->display_name ),
 				'post_status'    => 'inherit',

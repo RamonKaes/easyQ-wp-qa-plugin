@@ -137,7 +137,7 @@ final class Options {
 				'register_notify_admin' => true,
 			),
 			'users'       => array(
-				'avatar_allow_upload'    => true,
+				'avatar_allow_upload'    => false,
 				'avatar_store_size'      => 400,
 				'show_custom_welcome'    => false,
 				'custom_welcome'         => '',
