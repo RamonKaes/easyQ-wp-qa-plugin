@@ -79,6 +79,29 @@ final class IP_Retention_Test extends Test_Case {
 		$this->assertSame( 30, Options::get_int( 'spam', 'ip_retention_days' ) );
 	}
 
+	public function test_the_retention_period_has_an_upper_limit_that_fits_a_timestamp(): void {
+		$name = Options::option_name( 'spam' );
+		update_option( $name, array( 'ip_retention_days' => '1e30' ) + (array) get_option( $name, array() ) );
+		$this->assertSame( IP_Retention::MAX_DAYS, Options::get_int( 'spam', 'ip_retention_days' ) );
+		$this->assertStringContainsString( 'must be between 1 and 36500', get_settings_errors( $name )[0]['message'] ?? '' );
+		$GLOBALS['wp_settings_errors'] = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Only the messages of this save.
+
+		// A value stored before the limit existed does not stop the daily deletion.
+		$stored  = static fn ( $value ): array => array( 'ip_retention_days' => PHP_INT_MAX ) + (array) $value;
+		add_filter( 'option_' . $name, $stored );
+		$author  = new Actor( $this->user()->user_id, null, '192.0.2.10' );
+		$ancient = $this->ask( $author, 'A question older than the longest period' );
+		$recent  = $this->ask( $author, 'A question from last year' );
+		$this->backdate( $ancient->id, IP_Retention::MAX_DAYS + 1, null );
+		$this->backdate( $recent->id, 365, null );
+
+		IP_Retention::run();
+		remove_filter( 'option_' . $name, $stored );
+
+		$this->assertNull( $this->column( 'posts', 'created_ip', $ancient->id ) );
+		$this->assertSame( '192.0.2.10', IP::from_binary( $this->column( 'posts', 'created_ip', $recent->id ) ) );
+	}
+
 	public function test_removes_the_addresses_of_posts_after_the_retention_period(): void {
 		Options::update( 'spam', array( 'ip_retention_days' => 7 ) );
 		$author   = new Actor( $this->user()->user_id, null, '192.0.2.10' );

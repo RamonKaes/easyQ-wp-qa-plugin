@@ -33,6 +33,25 @@ defined( 'ABSPATH' ) || exit;
 final class Points {
 
 	/**
+	 * Smallest bonus: the lowest value of the `bonus` column (`int(11)`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MIN_BONUS = -2147483648;
+
+	/**
+	 * Largest bonus: the highest value of the `bonus` column (`int(11)`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MAX_BONUS = 2147483647;
+
+
+	/**
 	 * Points of users loaded during the current request, keyed by user ID.
 	 *
 	 * Pages show the points of the same authors many times. Every write forgets them.

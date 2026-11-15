@@ -138,6 +138,35 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertFalse( User_Status::awaits_approval( $user ), 'Saving levels leaves the status alone.' );
 	}
 
+	public function test_the_bonus_stays_within_its_column(): void {
+		$admin = $this->administrator();
+		$user  = self::factory()->user->create();
+
+		$html = $this->render( $admin, $user );
+		$this->assertStringContainsString( 'min="-2147483648" max="2147483647" step="1"', $html );
+
+		$this->screen->save( $user, array( 'easyq_bonus' => '-5' ), new Actor( $admin ) );
+		$this->assertSame( 95, Services::points()->get( $user ) );
+		foreach ( array( '99999999999', '-2147483649', '1e3', '2.5' ) as $refused ) {
+			$this->screen->save( $user, array( 'easyq_bonus' => $refused ), new Actor( $admin ) );
+			$this->assertSame( 95, Services::points()->get( $user ), $refused );
+		}
+		$this->screen->save( $user, array( 'easyq_bonus' => '2147483647' ), new Actor( $admin ) );
+		$this->assertSame( 2147483647, $this->bonus_of( $user ) );
+	}
+
+	/**
+	 * Reads the stored bonus of a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return int
+	 */
+	private function bonus_of( int $user_id ): int {
+		global $wpdb;
+
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT bonus FROM %i WHERE user_id = %d', $wpdb->prefix . 'easyq_userpoints', $user_id ) );
+	}
+
 	public function test_levels_above_the_own_level_cannot_be_assigned(): void {
 		// A WordPress administrator of the site counts as a Q&A administrator; on a network core lets
 		// only those with `manage_network_users` edit other users.

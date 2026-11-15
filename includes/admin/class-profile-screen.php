@@ -10,6 +10,7 @@ namespace EasyQ\Admin;
 
 use EasyQ\Actor;
 use EasyQ\Capabilities;
+use EasyQ\Points\Points;
 use EasyQ\REST\REST_Errors;
 use EasyQ\Services;
 use EasyQ\Users\Levels;
@@ -101,7 +102,7 @@ final class Profile_Screen {
 					<?php if ( current_user_can( Capabilities::MANAGE ) ) : ?>
 						<p>
 							<label for="easyq-bonus"><?php esc_html_e( 'Bonus points', 'easyq' ); ?></label>
-							<input type="number" class="small-text" id="easyq-bonus" name="easyq_bonus" value="<?php echo esc_attr( (string) $this->bonus( $user->ID ) ); ?>" step="1" />
+							<input type="number" class="small-text" id="easyq-bonus" name="easyq_bonus" value="<?php echo esc_attr( (string) $this->bonus( $user->ID ) ); ?>" min="<?php echo esc_attr( (string) Points::MIN_BONUS ); ?>" max="<?php echo esc_attr( (string) Points::MAX_BONUS ); ?>" step="1" />
 						</p>
 					<?php endif; ?>
 				</td>
@@ -216,8 +217,18 @@ final class Profile_Screen {
 			}
 		}
 
-		if ( user_can( $editor_id, Capabilities::MANAGE ) && isset( $input['easyq_bonus'] ) && is_numeric( $input['easyq_bonus'] ) ) {
-			$bonus = (int) $input['easyq_bonus'];
+		// Only whole numbers the column holds; MySQL would cut a larger one down without a word.
+		$bonus = isset( $input['easyq_bonus'] ) ? filter_var(
+			$input['easyq_bonus'],
+			FILTER_VALIDATE_INT,
+			array(
+				'options' => array(
+					'min_range' => Points::MIN_BONUS,
+					'max_range' => Points::MAX_BONUS,
+				),
+			)
+		) : false;
+		if ( user_can( $editor_id, Capabilities::MANAGE ) && is_int( $bonus ) ) {
 			if ( $bonus !== $this->bonus( $user_id ) ) {
 				Services::points()->set_bonus( $user_id, $bonus );
 			}

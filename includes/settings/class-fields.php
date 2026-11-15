@@ -8,6 +8,7 @@
 
 namespace EasyQ\Settings;
 
+use EasyQ\Privacy\IP_Retention;
 use EasyQ\Services;
 use EasyQ\Users\Levels;
 use EasyQ\Users\Permits;
@@ -1072,7 +1073,7 @@ final class Fields {
 				'description' => __( 'These addresses can read but not post or vote. Separate them with commas; use * as a wildcard or a hyphen for a range.', 'easyq' ),
 			),
 			'ip_anonymize'          => self::bool( __( 'Store IP addresses shortened', 'easyq' ), __( 'Removes the last part of each stored address.', 'easyq' ) ),
-			'ip_retention_days'     => self::int( __( 'Delete IP addresses after this many days', 'easyq' ), 1, null, __( 'Addresses of posts and visitors are removed once a day; rate limits keep them only for the current hour.', 'easyq' ) ),
+			'ip_retention_days'     => self::int( __( 'Delete IP addresses after this many days', 'easyq' ), 1, IP_Retention::MAX_DAYS, __( 'Addresses of posts and visitors are removed once a day; rate limits keep them only for the current hour.', 'easyq' ) ),
 		);
 
 		foreach ( $limits as $key => $label ) {

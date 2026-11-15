@@ -54,7 +54,7 @@ final class Policy_Text {
 	 */
 	public static function content(): string {
 		$suggested = '<strong class="privacy-policy-tutorial">' . __( 'Suggested text:', 'easyq' ) . ' </strong>';
-		$days      = max( 1, Options::get_int( 'spam', 'ip_retention_days' ) );
+		$days      = IP_Retention::days();
 		$anonymous = self::anonymous_posting();
 		$strings   = array();
 

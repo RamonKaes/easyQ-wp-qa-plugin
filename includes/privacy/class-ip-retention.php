@@ -38,6 +38,17 @@ final class IP_Retention {
 	public const CRON_HOOK = 'easyq_delete_old_ips';
 
 	/**
+	 * Longest retention in days that the settings accept: a hundred years. More days than
+	 * this do not fit into a timestamp once they are counted in seconds (`gmdate()` refuses
+	 * the float), and the daily deletion would stop.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MAX_DAYS = 36500;
+
+	/**
 	 * Hooks the event into WordPress.
 	 *
 	 * @since 0.1.0
@@ -63,12 +74,24 @@ final class IP_Retention {
 	}
 
 	/**
+	 * Returns the retention period in days, within the limits of the setting also for a value
+	 * stored before the limits existed.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	public static function days(): int {
+		return min( self::MAX_DAYS, max( 1, Options::get_int( 'spam', 'ip_retention_days' ) ) );
+	}
+
+	/**
 	 * Removes the IP addresses stored longer than the retention period.
 	 *
 	 * @since 0.1.0
 	 */
 	public static function run(): void {
-		$cutoff = gmdate( 'Y-m-d H:i:s', time() - max( 1, Options::get_int( 'spam', 'ip_retention_days' ) ) * DAY_IN_SECONDS );
+		$cutoff = gmdate( 'Y-m-d H:i:s', time() - self::days() * DAY_IN_SECONDS );
 
 		Services::posts()->clear_ips_before( $cutoff );
 
