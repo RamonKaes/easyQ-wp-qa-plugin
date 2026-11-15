@@ -50,7 +50,7 @@ final class Form_Handler_Test extends REST_Test_Case {
 	private function submit( string $form, array $fields, bool $nonce = true, string $from = '' ): string {
 		$_POST                   = $fields;
 		$_POST['easyq_form']     = $form;
-		$_POST['_easyq_nonce']   = $nonce ? wp_create_nonce( 'easyq_' . $form ) : 'invalid';
+		$_POST['_easyq_nonce']   = $nonce ? wp_create_nonce( Form_Handler::nonce_action( $form, (int) ( $fields['easyq_post'] ?? 0 ), (string) ( $fields['easyq_action'] ?? '' ) ) ) : 'invalid';
 		$_SERVER['HTTP_REFERER'] = '' === $from ? home_url( '/questions/ask/' ) : $from;
 		// Each submission is a request of its own, which starts without a kept message.
 		( new \ReflectionProperty( Flash::class, 'now' ) )->setValue( null, null );
@@ -209,6 +209,29 @@ final class Form_Handler_Test extends REST_Test_Case {
 		}
 
 		$this->assertSame( 10, $checked );
+	}
+
+	public function test_the_nonce_of_a_form_holds_for_its_own_post_and_action_only(): void {
+		$this->login( 'editor' );
+		$first  = $this->ask( $this->user(), 'A first question to close' );
+		$second = $this->ask( $this->user(), 'A second question to close' );
+		$fields = array(
+			'easyq_post'   => (string) $second->id,
+			'easyq_action' => 'close',
+			'note'         => 'Closed with the nonce of another question.',
+		);
+
+		foreach ( array( Form_Handler::nonce_action( 'action', $first->id, 'close' ), Form_Handler::nonce_action( 'action', $second->id, 'hide' ) ) as $other ) {
+			$_POST                 = $fields;
+			$_POST['easyq_form']   = 'action';
+			$_POST['_easyq_nonce'] = wp_create_nonce( $other );
+			( new \ReflectionProperty( Flash::class, 'now' ) )->setValue( null, null );
+			$this->assertNull( ( new Form_Handler() )->process(), $other );
+			$this->assertFalse( $this->post( $second->id )->is_closed(), $other );
+		}
+
+		$this->submit( 'action', $fields );
+		$this->assertTrue( $this->post( $second->id )->is_closed() );
 	}
 
 	public function test_a_successful_submission_does_not_return_to_other_sites(): void {

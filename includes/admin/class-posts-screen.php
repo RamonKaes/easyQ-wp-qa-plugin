@@ -179,7 +179,7 @@ final class Posts_Screen {
 				),
 				self::url( self::filter_args( self::filters() ) )
 			),
-			'easyq-post_' . $id
+			'easyq-post-' . $action . '_' . $id
 		);
 	}
 
@@ -262,7 +262,8 @@ final class Posts_Screen {
 		}
 
 		if ( isset( $_GET['_wpnonce'] ) && 1 === count( $ids ) && ! isset( $_REQUEST['_wp_http_referer'] ) ) {
-			check_admin_referer( 'easyq-post_' . $ids[0] );
+			// As core's row actions, per action and post, for example `delete-comment_{id}`.
+			check_admin_referer( 'easyq-post-' . $action . '_' . $ids[0] );
 		} else {
 			check_admin_referer( 'bulk-easyq-posts' );
 		}

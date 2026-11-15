@@ -48,7 +48,7 @@ code, and known vulnerabilities of the dependencies.
 | Capability checks with `current_user_can()` for every action | Met; F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
 | Sanitize input, validate before saving | Met; F-36 | Settings API through `sanitize_option_{option}` with a named callback, REST argument schemas, services validate; the forms hand on what was typed and the REST API sanitizes (F-5) |
 | Escape late, on output | Met | PHPCS `EscapeOutput` |
-| Nonces on forms and links that change something | Met; F-23, F-33 | Admin forms and row actions, site forms; REST uses the core `wp_rest` nonce |
+| Nonces on forms and links that change something | Met | Admin forms and row actions, site forms, each per action and post as core's `delete-comment_{id}` (`Form_Handler::nonce_action()`, `easyq-post-{action}_{id}`); REST uses the core `wp_rest` nonce. Evidence: `Form_Handler_Test`, `Posts_Screen_Test`, `Users_Screen_Test` |
 | SQL only through `$wpdb->prepare()` | Met | PHPCS `PreparedSQL`, fixed SQL with placeholders |
 | Redirects with `wp_safe_redirect()` | Met | No `wp_redirect()` in the code |
 
@@ -186,7 +186,7 @@ code, and known vulnerabilities of the dependencies.
 | REST: `_fields` and `register_rest_field()` | Met | `REST\Controller` (`get_fields_for_response()`, `add_additional_fields_to_object()`) |
 | Forms: handled on `template_redirect`, `wp_safe_redirect()` and `exit` | Met | `Frontend\Form_Handler` |
 | Forms: whole sentences for translators | F-31 | `includes/blocks/render/class-forms.php` |
-| Forms: nonce action as specific as possible; required fields marked as the comment form does | F-33 | `Frontend\Form_Handler`, `includes/blocks/render/class-forms.php` |
+| Forms: nonce action as specific as possible; required fields marked as the comment form does (`wp_required_field_indicator()`, `wp_required_field_message()`); fields kept after a failure, also on the registration form | Met | `Frontend\Form_Handler`, `includes/blocks/render/class-forms.php`, `Users\Registration`; a failure shows the page again (decision 81). Evidence: `Blocks_Test`, `Registration_Test` |
 | Registration: `register_form`, `registration_errors`, `user_register`; markup of `wp-login.php` | Met on a single site | `Users\Registration` |
 | Registration on a multisite: `signup_extra_fields`, `wpmu_validate_user_signup` | F-32 | `Users\Blocked_Names` and `Limits\Account_Limits` cover the sign-up, `Users\Registration` does not |
 | Uploads: `wp_handle_upload()` with the allowed types, `wp_get_image_editor()` and the file its `save()` writes, `wp_delete_file()`, no direct file functions | Met | `Users\Avatars`; evidence: `Users_REST_Test`, `Avatars_Test` |

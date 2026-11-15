@@ -84,14 +84,31 @@ final class Form_Handler {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $form Form name.
+	 * @param string $form    Form name.
+	 * @param int    $post_id Post, or user for a wall, the form is for; 0 for none.
+	 * @param string $action  Action of the `action` form, such as `close`.
 	 * @return string HTML.
 	 */
-	public static function hidden_fields( string $form ): string {
+	public static function hidden_fields( string $form, int $post_id = 0, string $action = '' ): string {
 		// Not wp_nonce_field(): its field has an ID, which repeats when a page has several forms.
 		return sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( self::FIELD ), esc_attr( $form ) )
-			. sprintf( '<input type="hidden" name="_easyq_nonce" value="%s" />', esc_attr( wp_create_nonce( 'easyq_' . $form ) ) )
+			. sprintf( '<input type="hidden" name="_easyq_nonce" value="%s" />', esc_attr( wp_create_nonce( self::nonce_action( $form, $post_id, $action ) ) ) )
 			. wp_referer_field( false );
+	}
+
+	/**
+	 * Returns the nonce action of a form: as specific as core makes its own, for example
+	 * `delete-comment_{id}`, so a nonce for one post and action holds for no other.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $form    Form name.
+	 * @param int    $post_id Post, or user for a wall, the form is for; 0 for none.
+	 * @param string $action  Action of the `action` form, such as `close`.
+	 * @return string
+	 */
+	public static function nonce_action( string $form, int $post_id = 0, string $action = '' ): string {
+		return 'easyq_' . $form . ( '' === $action ? '' : '-' . $action ) . ( $post_id > 0 ? '_' . $post_id : '' );
 	}
 
 	/**
@@ -140,15 +157,14 @@ final class Form_Handler {
 		$nonce  = isset( $_POST['_easyq_nonce'] ) && is_string( $_POST['_easyq_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['_easyq_nonce'] ) ) : '';
 		$values = $this->values( $form );
 		$target = $this->target();
+		$action = isset( $_POST['easyq_action'] ) && is_string( $_POST['easyq_action'] ) ? sanitize_key( wp_unslash( $_POST['easyq_action'] ) ) : '';
 
 		// A failure shows the page of the form again, in this request: nothing is stored, and
 		// what the user typed stays in the form, also when the form has expired.
-		if ( ! wp_verify_nonce( $nonce, 'easyq_' . $form ) ) {
+		if ( ! wp_verify_nonce( $nonce, self::nonce_action( $form, $target, $action ) ) ) {
 			Flash::keep( __( 'The form has expired. Please try again.', 'easyq' ), $form, $target, array(), $values );
 			return null;
 		}
-		$action = isset( $_POST['easyq_action'] ) && is_string( $_POST['easyq_action'] ) ? sanitize_key( wp_unslash( $_POST['easyq_action'] ) ) : '';
-
 		[ $method, $route ] = match ( $form ) {
 			'ask'     => array( 'POST', '/questions' ),
 			'answer'  => array( 'POST', '/questions/' . $target . '/answers' ),

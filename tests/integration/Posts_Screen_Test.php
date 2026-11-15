@@ -121,16 +121,23 @@ final class Posts_Screen_Test extends Test_Case {
 
 	public function test_row_actions_go_through_the_rest_api_with_a_nonce(): void {
 		$queued = $this->ask( $this->user(), 'A question awaiting approval', 'x', array(), null, true );
-		$this->request(
-			array(
-				'page'     => Posts_Screen::PAGE,
-				'view'     => 'pending',
-				'action'   => 'approve',
-				'post'     => (string) $queued->id,
-				'_wpnonce' => wp_create_nonce( 'easyq-post_' . $queued->id ),
-			)
+		$link   = array(
+			'page'   => Posts_Screen::PAGE,
+			'view'   => 'pending',
+			'action' => 'approve',
+			'post'   => (string) $queued->id,
 		);
 
+		// As core's row actions: the nonce of another action on the post does not hold.
+		$this->request( $link + array( '_wpnonce' => wp_create_nonce( 'easyq-post-hide_' . $queued->id ) ) );
+		try {
+			( new Posts_Screen() )->handle();
+			$this->fail( 'The nonce of another action approved the post.' );
+		} catch ( \WPDieException $refused ) {
+			$this->assertFalse( $this->post( $queued->id )->is_visible() );
+		}
+
+		$this->request( $link + array( '_wpnonce' => wp_create_nonce( 'easyq-post-approve_' . $queued->id ) ) );
 		$redirect = ( new Posts_Screen() )->handle();
 
 		$this->assertSame(

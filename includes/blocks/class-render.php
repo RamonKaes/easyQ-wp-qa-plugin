@@ -85,7 +85,8 @@ final class Render {
 	 * @return string
 	 */
 	public static function action_button( string $form, int $post_id, string $label, array $fields = array(), array $button = array(), string $form_attributes = '' ): string {
-		$hidden = Form_Handler::hidden_fields( $form ) . sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
+		$action = is_string( $fields['easyq_action'] ?? null ) ? $fields['easyq_action'] : '';
+		$hidden = Form_Handler::hidden_fields( $form, $post_id, $action ) . sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
 		foreach ( $fields as $name => $value ) {
 			$hidden .= sprintf( '<input type="hidden" name="%s" value="%s" />', esc_attr( $name ), esc_attr( is_scalar( $value ) ? (string) $value : '' ) );
 		}

@@ -102,34 +102,43 @@ final class Registration {
 
 		wp_nonce_field( self::NONCE, self::NONCE );
 
+		// After core refused the registration, the form shows what was entered, as core keeps the
+		// username and the email address.
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- Only fills the form again; `save()` verifies the nonce.
+		$posted     = isset( $_POST['easyq_fields'] ) && is_array( $_POST['easyq_fields'] ) ? wp_unslash( $_POST['easyq_fields'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each value is escaped where it is printed.
+		$newsletter = $newsletter && isset( $_POST['easyq_newsletter'] ) ? 'checked' : ( $newsletter ? 'unchecked' : '' );
+		$terms      = $terms && isset( $_POST['easyq_terms'] ) ? 'checked' : ( $terms ? 'unchecked' : '' );
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
 		foreach ( $fields as $field ) {
-			$id = 'easyq-register-' . $field->id;
+			$id    = 'easyq-register-' . $field->id;
+			$value = is_array( $posted ) && is_string( $posted[ $field->id ] ?? null ) ? $posted[ $field->id ] : '';
 			?>
 			<p>
 				<label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $field->display_label() ); ?></label>
 				<?php if ( $field->is_multi_line() ) : ?>
-					<textarea name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" rows="3"></textarea>
+					<textarea name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" rows="3"><?php echo esc_textarea( $value ); ?></textarea>
 				<?php else : ?>
-					<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" size="25" />
+					<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" size="25" value="<?php echo esc_attr( $value ); ?>" />
 				<?php endif; ?>
 			</p>
 			<?php
 		}
 
-		if ( $newsletter ) {
+		if ( '' !== $newsletter ) {
 			?>
 			<p>
-				<input type="checkbox" name="easyq_newsletter" id="easyq-register-newsletter" value="1" />
+				<input type="checkbox" name="easyq_newsletter" id="easyq-register-newsletter" value="1"<?php checked( 'checked', $newsletter ); ?> />
 				<label for="easyq-register-newsletter"><?php esc_html_e( 'Send me the newsletter. I will confirm it with a link sent by email.', 'easyq' ); ?></label>
 			</p>
 			<?php
 		}
 
-		if ( $terms ) {
+		if ( '' !== $terms ) {
 			?>
 			<p>
-				<input type="checkbox" name="easyq_terms" id="easyq-register-terms" value="1" required="required" />
-				<label for="easyq-register-terms"><?php echo wp_kses_post( self::terms_label() ); ?></label>
+				<input type="checkbox" name="easyq_terms" id="easyq-register-terms" value="1" required="required"<?php checked( 'checked', $terms ); ?> />
+				<label for="easyq-register-terms"><?php echo wp_kses_post( self::terms_label() ) . ' ' . wp_required_field_indicator(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The indicator of core is escaped markup. ?></label>
 			</p>
 			<?php
 		}

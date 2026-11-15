@@ -717,7 +717,7 @@ final class Forms {
 	 * @return string
 	 */
 	public static function form( string $form, int $post_id, string $fields, string $label, array $hidden, string $after = '' ): string {
-		$hidden_html = Form_Handler::hidden_fields( $form );
+		$hidden_html = Form_Handler::hidden_fields( $form, $post_id, is_string( $hidden['easyq_action'] ?? null ) ? $hidden['easyq_action'] : '' );
 		if ( $post_id > 0 ) {
 			$hidden_html .= sprintf( '<input type="hidden" name="easyq_post" value="%d" />', $post_id );
 		}
@@ -727,7 +727,11 @@ final class Forms {
 
 		// The markup of the comment form block, so that the theme styles the fields as it styles that form.
 		$wrapper = in_array( $form, array( 'ask', 'account', 'unsubscribe', 'feedback', 'newsletter_confirm' ), true ) ? get_block_wrapper_attributes( array( 'class' => self::FORM_CLASS ) ) : sprintf( 'class="%s"', self::FORM_CLASS );
-		$notice  = self::form_notice( $form, $post_id );
+		// As the core comment form says what its marker means.
+		if ( str_contains( $fields, 'required="required"' ) ) {
+			$fields = sprintf( '<p class="comment-notes">%s</p>', wp_required_field_message() ) . $fields;
+		}
+		$notice = self::form_notice( $form, $post_id );
 
 		return sprintf(
 			'<div %s><form method="post" class="comment-form"%s%s>%s%s%s<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">%s</button></p>%s</form></div>',
@@ -795,7 +799,8 @@ final class Forms {
 			'<p%s><label for="%s">%s</label> %s%s%s</p>',
 			'' === $class ? '' : ' class="' . $class . '"',
 			esc_attr( $id ),
-			esc_html( $label ),
+			// The marker of the core comment form for required fields.
+			esc_html( $label ) . ( isset( $attributes['required'] ) ? ' ' . wp_required_field_indicator() : '' ),
 			$input,
 			'' === $hint ? '' : sprintf( '<small id="%s-hint">%s</small>', esc_attr( $id ), esc_html( $hint ) ),
 			'' === $error ? '' : sprintf( '%s<strong id="%s-error" role="alert">%s</strong>', '' === $hint ? '' : '<br />', esc_attr( $id ), esc_html( $error ) )

@@ -53,13 +53,36 @@ final class Registration_Test extends Test_Case {
 		$this->assertSame( 'Core', apply_filters( 'login_message', 'Core' ) );
 	}
 
+	public function test_the_form_keeps_what_was_entered_after_core_refused_it(): void {
+		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
+		$this->assertIsInt( $field );
+		Options::update( 'users', array( 'show_register_terms' => true ) );
+		Options::update( 'newsletter', array( 'mailing_enabled' => true ) );
+		// As wp-login.php shows the form again after `registration_errors`.
+		$_POST = wp_slash(
+			array(
+				'easyq_fields'     => array( $field => 'Ada & Co <ltd>' ),
+				'easyq_newsletter' => '1',
+				'easyq_terms'      => '1',
+			)
+		);
+
+		$html  = $this->render();
+		$_POST = array();
+
+		$this->assertStringContainsString( 'value="Ada &amp; Co &lt;ltd&gt;"', $html );
+		$this->assertMatchesRegularExpression( '/id="easyq-register-newsletter" value="1" checked=\'checked\'/', $html );
+		$this->assertMatchesRegularExpression( '/id="easyq-register-terms" value="1" required="required" checked=\'checked\'/', $html );
+		$this->assertStringNotContainsString( "checked='checked'", $this->render() );
+	}
+
 	public function test_asks_for_the_terms_with_a_link_to_the_privacy_policy(): void {
 		$this->assertStringNotContainsString( 'easyq_terms', $this->render() );
 
 		Options::update( 'users', array( 'show_register_terms' => true ) );
 		$html = $this->render();
 		$this->assertStringContainsString( 'name="easyq_terms" id="easyq-register-terms" value="1" required="required"', $html );
-		$this->assertStringContainsString( '<label for="easyq-register-terms">I accept the terms of this site.</label>', $html );
+		$this->assertStringContainsString( '<label for="easyq-register-terms">I accept the terms of this site. ' . wp_required_field_indicator() . '</label>', $html );
 		$this->assertStringContainsString( 'name="easyq_register"', $html );
 
 		$page = self::factory()->post->create(
@@ -72,7 +95,7 @@ final class Registration_Test extends Test_Case {
 		$this->assertStringContainsString( 'I accept the terms and the <a href="' . esc_url( (string) get_permalink( $page ) ) . '">privacy policy</a> of this site.', $this->render() );
 
 		Options::update( 'users', array( 'register_terms' => 'I accept the <a href="https://example.org/terms">house rules</a>.' ) );
-		$this->assertStringContainsString( '>I accept the <a href="https://example.org/terms">house rules</a>.</label>', $this->render() );
+		$this->assertStringContainsString( '>I accept the <a href="https://example.org/terms">house rules</a>. ' . wp_required_field_indicator() . '</label>', $this->render() );
 	}
 
 	public function test_offers_the_newsletter_unticked_only_when_there_is_one(): void {
