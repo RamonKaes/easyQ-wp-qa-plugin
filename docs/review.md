@@ -108,30 +108,46 @@ An entry that fits no row is a new row.
 | P | Values other plugins return through the filters | `docs/hooks.md` |
 | Q | Site Health | `includes/health/class-site-health.php` |
 
-## State on 2026-11-14
+## State on 2026-11-15
 
-The first round went through the rows A, B, F, G and I: the tools ran, the inventory
-was drawn again, the source and the tests of the five rows were read completely, 104
-checks were removed one at a time with the whole integration suite run against each,
-and the findings were reproduced. The other rows are as the matrix was set up: their
-`partly` cells are named from the tests that exist and no review has confirmed them.
+The findings of the first round were fixed on this day, each with a guard that turned
+red when the fix was taken back (the commits name the finding and the
+counter-check). Open findings: none. Deferred: F-2 (the coverage gate needs a
+decision on `@covers`) and F-25 (the readme, in phase 9). Rejected: one part of F-36.
 
-No cell of the five rows is a ✓. No test of these rows both reads its set from the
-plugin and asserts the allowed and the refused case; the one test that reads the
-routes from the server holds less than it seemed (F-15). The column Guidelines is new
-in this round and `open` wherever no review has read the row against the handbooks.
+A cell became ✓ where its guard reads the whole class from the plugin, holds the
+allowed and the refused case, and was seen red:
+
+- A × Identity: `REST_Roles_Test` sends every argument of every edit route of the
+  server alone, as visitor and subscriber, and every reading route with blocks, with
+  the view permission and in the edit context; the allowed side for authors,
+  administrators and the right to retag.
+- A × Frequency: every limit of `Limits::SETTINGS` through the REST API, the first
+  request passing and the second answering 429.
+- A × State: every route whose controller loads a post, every method and action,
+  with a hidden parent and with a closing note.
+- B × Value: every field of every form of `Form_Handler::FIELDS` reaches the REST API
+  as typed; the REST API sanitizes.
+- B × Error path: an expired submission of every form keeps every typed field and
+  stores nothing, as visitor and as user.
+- G × Error path: every field of every section that can refuse a value reports it.
+- I × Error path: every upload error PHP knows reports its reason.
+
+The other cells of the five rows stay `partly`: their guards hold a part of the
+class, or list what they check. The rows C, D, E, H and J to Q have still not been
+reviewed.
 
 | | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | partly | F-4 | partly | open | partly | partly | F-8 | open | partly | — | F-7 | F-26 |
-| B | open | F-5 | partly | partly | open | — | partly | partly | F-17 | F-6 | partly | F-32 | F-31 |
+| A | partly | partly | ✓ | ✓ | open | partly | partly | ✓ | open | partly | — | partly | partly |
+| B | partly | ✓ | partly | partly | open | — | partly | partly | partly | ✓ | partly | partly | partly |
 | C | open | open | partly | open | — | partly | — | partly | open | partly | partly | partly | open |
 | D | open | partly | open | — | — | partly | — | open | open | open | partly | partly | open |
 | E | — | partly | partly | — | — | open | — | partly | open | — | partly | partly | open |
-| F | open | partly | F-22 | open | open | F-21 | open | F-23 | open | partly | partly | partly | F-35 |
-| G | partly | partly | partly | open | open | open | — | open | open | F-37 | partly | partly | F-37 |
+| F | open | partly | partly | open | open | partly | open | partly | open | partly | partly | partly | partly |
+| G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |
 | H | open | partly | — | partly | — | — | partly | open | open | open | — | open | open |
-| I | open | partly | partly | partly | open | open | — | F-20 | open | F-19 | partly | open | F-34 |
+| I | open | partly | partly | partly | open | open | — | partly | open | ✓ | partly | partly | partly |
 | J | — | partly | partly | partly | open | partly | partly | partly | open | open | open | open | open |
 | K | — | — | — | partly | open | partly | open | open | — | open | — | partly | open |
 | L | open | open | partly | open | — | partly | open | partly | — | partly | open | open | open |
@@ -141,15 +157,16 @@ in this round and `open` wherever no review has read the row against the handboo
 | P | open | open | — | — | — | — | — | — | open | open | — | — | open |
 | Q | — | — | open | — | — | open | — | partly | — | partly | partly | open | open |
 
-A cell names one finding; the other findings of the cell are below.
-
 The release gate on this day:
 
-1. Holds: six findings classed blocker are open (F-4, F-5, F-6, F-7, F-8, F-25).
+1. Holds: F-25, classed blocker, is deferred to phase 9.
 2. Does not hold: no cell of Identity, Value or Error path is `open` in A, B, F, G
-   or I. Seven of the fifteen carry a finding, eight are `partly`.
+   or I.
 3. Holds: the rows C, D, E, H and J to Q have not been reviewed, and the column
    Guidelines is `open` outside the five rows.
+
+The sections below are the record of the round of 2026-11-14; the findings they
+name are fixed, their commits say how.
 
 ### What the tools said
 

@@ -19,14 +19,14 @@ The next free number is F-42.
 
 ## Open
 
-| No. | Class | Cell | Finding | Why no guard saw it |
-| --- | --- | --- | --- | --- |
-| F-2 | should | Cross-cutting | The coverage job of the CI only reports. A line no test runs does not turn anything red, and a line that runs without an assertion looks covered. Mutations are done by hand for each change and are not repeated when the code around them changes. | There is no guard; this is the gap. To decide: a list of the uncovered lines with a reason for each, red at every new one, and a script that removes the candidates and runs the tests. |
-| F-25 | blocker | Cross-cutting × Guidelines | `readme.txt` says the plugin is "not ready for live sites yet", and `Contributors` is missing. The plugin team does not accept plugins that are not ready (Plugin Developer FAQ; guideline 16), and the readme has to validate. Not verifiable yet: the slug. It is derived from the name, and text domain, main file and the bug address of the template assume `easyq`. | The checklist had "Guidelines 1–18: Met" as one row without evidence; Plugin Check does not read sentences. |
+None.
 
 ## Deferred
 
-None.
+| No. | Class | Finding | Why deferred | Comes back when |
+| --- | --- | --- | --- | --- |
+| F-2 | should | The coverage job of the CI only reports, and mutations are done by hand. | Measured on 2026-11-15 with Xdebug: 2,748 of 15,801 statements are reported as not covered, most of them code that runs while the test suite loads the plugin, and classes only the unit tests cover. A gate on that number would need thousands of exceptions. A gate on the lines a change adds works, but counts only tests that claim the lines with `@covers`: six test files, among them the guards that read whole classes (`REST_Roles_Test`, `Docs_Test`, `Admin_Capabilities_Test`), have `@coversNothing`. Which of the two to change is a decision of the owner. | The owner decides how the guards count (give them `@covers`, or drop the annotations and count every test); then the CI checks the added lines and the review command runs the mutation script. |
+| F-25 | blocker | `readme.txt` says the plugin is "not ready for live sites yet", and `Contributors` is missing. | The sentence is true until the release, and the owner gives the WordPress.org username in phase 9 (decided on 2026-11-15). | Phase 9, before the plugin is submitted. |
 
 ## Rejected
 
