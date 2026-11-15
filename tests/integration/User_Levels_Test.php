@@ -140,7 +140,8 @@ final class User_Levels_Test extends Test_Case {
 	public function test_levels_and_blocks_belong_to_one_site(): void {
 		$user  = self::factory()->user->create();
 		$other = self::factory()->blog->create();
-		$this->levels->set_level( Actor::system(), $user, Levels::MODERATOR );
+		// Editor: from Moderator on, users cannot be blocked (F-49).
+		$this->levels->set_level( Actor::system(), $user, Levels::EDITOR );
 		User_Status::block( Actor::system(), $user );
 
 		switch_to_blog( $other );
@@ -150,7 +151,7 @@ final class User_Levels_Test extends Test_Case {
 
 		$this->assertSame( Levels::BASIC, $level );
 		$this->assertFalse( $blocked );
-		$this->assertSame( Levels::MODERATOR, $this->levels->level( $user ) );
+		$this->assertSame( Levels::EDITOR, $this->levels->level( $user ) );
 		$this->assertTrue( User_Status::is_blocked( $user ) );
 	}
 
