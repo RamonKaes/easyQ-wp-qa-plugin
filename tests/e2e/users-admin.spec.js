@@ -77,8 +77,12 @@ test.describe( 'Points, user titles and user fields screens', () => {
 		const list = page.getByRole( 'table' );
 
 		await admin.visitAdminPage( 'admin.php', 'page=easyq-user-fields' );
-		await page.getByRole( 'textbox', { name: 'Label' } ).fill( 'Favourite Book' );
-		await page.getByLabel( 'Type' ).selectOption( 'multi_line' );
+		await page
+			.getByRole( 'textbox', { name: 'Label' } )
+			.fill( 'Favourite Book' );
+		await page
+			.getByRole( 'combobox', { name: 'Type' } )
+			.selectOption( 'multi_line' );
 		await page.getByLabel( 'Show on the registration form' ).check();
 		await page.getByRole( 'button', { name: 'Add User Field' } ).click();
 
@@ -89,10 +93,14 @@ test.describe( 'Points, user titles and user fields screens', () => {
 			.getByRole( 'link', { name: 'Favourite Book', exact: true } )
 			.click();
 		await page.getByRole( 'textbox', { name: 'Label' } ).fill( 'Book' );
-		await page.getByLabel( 'Position' ).selectOption( { label: 'First' } );
+		await page
+			.getByRole( 'combobox', { name: 'Position' } )
+			.selectOption( { label: 'First' } );
 		await page.getByRole( 'button', { name: 'Update' } ).click();
 		await expect( page.getByText( 'User field saved.' ) ).toBeVisible();
-		await expect( page.getByRole( 'textbox', { name: 'Label' } ) ).toHaveValue( 'Book' );
+		await expect(
+			page.getByRole( 'textbox', { name: 'Label' } )
+		).toHaveValue( 'Book' );
 
 		await page.getByRole( 'button', { name: 'Delete User Field' } ).click();
 		await expect( page.getByText( 'User field deleted.' ) ).toBeVisible();
