@@ -84,13 +84,13 @@ final class Tags_Controller extends Controller {
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_items( $request ): WP_REST_Response {
+	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$per_page = self::int_param( $request, 'per_page' ) ?? 30;
 		$result   = ( new Tags() )->popular( (string) self::string_param( $request, 'search' ), self::int_param( $request, 'page' ) ?? 1, $per_page );
 
-		return $this->paginated( $this->collection( $result['tags'], $request ), $result['total'], $per_page );
+		return $this->paginated( $this->collection( $result['tags'], $request ), $result['total'], $per_page, $request );
 	}
 
 	/**

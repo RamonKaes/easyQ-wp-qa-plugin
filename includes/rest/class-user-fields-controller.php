@@ -93,6 +93,7 @@ final class User_Fields_Controller extends Controller {
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_field' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
+					'args'                => $this->force_args(),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -232,6 +233,11 @@ final class User_Fields_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_field( $request ): WP_REST_Response|WP_Error {
+		$force = self::force_error( $request );
+		if ( null !== $force ) {
+			return $force;
+		}
+
 		$field = Services::user_fields()->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $field ) {
 			return REST_Errors::not_found();

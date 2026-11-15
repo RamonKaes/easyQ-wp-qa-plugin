@@ -62,7 +62,7 @@ final class Categories_Controller extends Controller {
 							'description' => __( 'Only children of this category; 0 for top-level categories. Omit for all categories.', 'easyq' ),
 							'type'        => 'integer',
 						),
-					) + $this->read_args(),
+					) + $this->read_args() + $this->pagination_args( 10 ),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -94,7 +94,7 @@ final class Categories_Controller extends Controller {
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_category' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
-					'args'                => array(
+					'args'                => $this->force_args() + array(
 						'reassign' => array(
 							'description' => __( 'Category that receives the questions; 0 or omitted to leave them without a category.', 'easyq' ),
 							'type'        => 'integer',
@@ -165,9 +165,9 @@ final class Categories_Controller extends Controller {
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_categories( $request ): WP_REST_Response {
+	public function get_categories( $request ): WP_REST_Response|WP_Error {
 		$categories = Services::categories();
 
 		if ( $request->has_param( 'parent' ) ) {
@@ -177,7 +177,11 @@ final class Categories_Controller extends Controller {
 			$list = array_values( $categories->all() );
 		}
 
-		return new WP_REST_Response( $this->collection( $list, $request ) );
+		// Paginated as core paginates terms, ten by default.
+		$per_page = self::int_param( $request, 'per_page' ) ?? 10;
+		$page     = max( 1, self::int_param( $request, 'page' ) ?? 1 );
+
+		return $this->paginated( $this->collection( array_slice( $list, ( $page - 1 ) * $per_page, $per_page ), $request ), count( $list ), $per_page, $request );
 	}
 
 	/**
@@ -276,6 +280,11 @@ final class Categories_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_category( $request ): WP_REST_Response|WP_Error {
+		$force = self::force_error( $request );
+		if ( null !== $force ) {
+			return $force;
+		}
+
 		$categories = Services::categories();
 		$category   = $categories->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $category ) {

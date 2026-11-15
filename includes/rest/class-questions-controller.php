@@ -79,7 +79,7 @@ final class Questions_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_similar' ),
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
-					'args'                => array(
+					'args'                => $this->read_args() + array(
 						'title' => array(
 							'description' => __( 'Title of the question being asked.', 'easyq' ),
 							'type'        => 'string',
@@ -130,7 +130,7 @@ final class Questions_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ): bool|WP_Error {
-		return $this->check_view( 'permit_view_q_page', $this->actor() );
+		return $this->edit_context_error( $request, $this->actor() ) ?? $this->check_view( 'permit_view_q_page', $this->actor() );
 	}
 
 	/**
@@ -140,9 +140,9 @@ final class Questions_Controller extends Controller {
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_items( $request ): WP_REST_Response {
+	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$per_page = self::int_param( $request, 'per_page' ) ?? 20;
 		$source   = self::string_param( $request, 'source' );
 		// The favorites of the current user, as the favorites page lists them; of nobody for visitors.
@@ -159,7 +159,7 @@ final class Questions_Controller extends Controller {
 			)
 		);
 
-		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page );
+		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page, $request );
 	}
 
 	/**
@@ -176,6 +176,10 @@ final class Questions_Controller extends Controller {
 		$question = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, Post::QUESTION );
 		if ( $question instanceof WP_Error ) {
 			return $question;
+		}
+		$context = $this->edit_context_error( $request, $actor, $question );
+		if ( null !== $context ) {
+			return $context;
 		}
 
 		return $this->respond_with_post( $question, $actor, $request, Services::posts()->children( $question->id ) );
@@ -412,7 +416,7 @@ final class Questions_Controller extends Controller {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public function get_collection_params(): array {
-		return array(
+		return $this->read_args() + array(
 			'source'   => array(
 				'description' => __( 'Which questions to list and how to sort them; `favorites` lists the favorites of the current user.', 'easyq' ),
 				'type'        => 'string',

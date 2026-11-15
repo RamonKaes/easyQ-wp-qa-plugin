@@ -96,12 +96,26 @@ final class Categories_REST_Test extends REST_Test_Case {
 		$this->assertSame( 404, $this->request( 'PUT', '/categories/999', array( 'title' => 'X' ) )->get_status() );
 
 		$question = $this->ask( $this->user(), 'Question about themes', 'x', array(), $child['id'] );
-		$deleted  = $this->data( $this->request( 'DELETE', '/categories/' . $child['id'], array( 'reassign' => $parent['id'] ) ) );
+		// As core for terms: no trash, so deleting needs `force`.
+		$refused = $this->request( 'DELETE', '/categories/' . $child['id'], array( 'reassign' => $parent['id'] ) );
+		$this->assertSame( 501, $refused->get_status() );
+		$this->assertSame( 'rest_trash_not_supported', $refused->as_error()?->get_error_code() );
+		$this->assertNotNull( Services::categories()->find( $child['id'] ) );
+		$deleted = $this->data(
+			$this->request(
+				'DELETE',
+				'/categories/' . $child['id'],
+				array(
+					'reassign' => $parent['id'],
+					'force'    => true,
+				)
+			)
+		);
 		$this->assertTrue( $deleted['deleted'] );
 		$this->assertSame( 'Block Themes', $deleted['previous']['title'] );
 		$this->assertNull( Services::categories()->find( $child['id'] ) );
 		$this->assertSame( $parent['id'], $this->post( $question->id )->category_id );
-		$this->assertSame( 404, $this->request( 'DELETE', '/categories/' . $child['id'] )->get_status() );
+		$this->assertSame( 404, $this->request( 'DELETE', '/categories/' . $child['id'], array( 'force' => true ) )->get_status() );
 	}
 
 	public function test_refuses_to_delete_categories_with_subcategories(): void {
@@ -110,7 +124,7 @@ final class Categories_REST_Test extends REST_Test_Case {
 		$this->assertIsInt( $parent );
 		Services::categories()->create( $parent, 'Child' );
 
-		$response = $this->request( 'DELETE', '/categories/' . $parent );
+		$response = $this->request( 'DELETE', '/categories/' . $parent, array( 'force' => true ) );
 
 		$this->assertSame( 400, $response->get_status() );
 		$this->assertNotNull( Services::categories()->find( $parent ) );

@@ -180,8 +180,9 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		wp_set_current_user( (int) $author->user_id );
 		$this->assertArrayNotHasKey( 'raw', $this->data( $this->request( 'GET', '/questions/' . $question->id ) )['content'] );
 		$this->assertSame( 'Text in contexts.', $this->data( $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) ) )['content']['raw'] );
+		// Others are refused the edit context, as core refuses it (`rest_forbidden_context`).
 		wp_set_current_user( (int) $this->user()->user_id );
-		$this->assertArrayNotHasKey( 'raw', $this->data( $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) ) )['content'] );
+		$this->assertSame( 'rest_forbidden_context', $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) )->as_error()?->get_error_code() );
 
 		// Contexts the schema does not name are refused, as core refuses them.
 		$this->assertSame( 400, $this->request( 'GET', '/categories', array( 'context' => 'edit' ) )->get_status() );
@@ -214,7 +215,7 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$this->assertIsInt( $category );
 		$schema = $this->schema( '/categories/' . $category );
 
-		$deleted = $this->data( $this->request( 'DELETE', '/categories/' . $category ) );
+		$deleted = $this->data( $this->request( 'DELETE', '/categories/' . $category, array( 'force' => true ) ) );
 
 		$this->assertTrue( $deleted['deleted'] );
 		$this->assertIsArray( $deleted['previous'] );

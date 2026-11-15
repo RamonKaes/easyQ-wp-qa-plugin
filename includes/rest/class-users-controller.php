@@ -148,6 +148,11 @@ final class Users_Controller extends Controller {
 		$sort   = (string) self::string_param( $request, 'sort' );
 		$option = User_Query::SORTS[ $sort ] ?? null;
 
+		// As core: the edit context of the list for those who may list users.
+		if ( 'edit' === self::context( $request ) && ! current_user_can( 'list_users' ) ) {
+			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you are not allowed to list users.', 'easyq' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
 		return $this->check_view( $option ?? 'permit_view_q_page', $this->actor(), null, true );
 	}
 
@@ -158,9 +163,9 @@ final class Users_Controller extends Controller {
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_items( $request ): WP_REST_Response {
+	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$per_page = (int) self::int_param( $request, 'per_page' );
 		$page     = max( 1, (int) self::int_param( $request, 'page' ) );
 		$sort     = (string) self::string_param( $request, 'sort' );
@@ -180,7 +185,7 @@ final class Users_Controller extends Controller {
 
 		$users = array_filter( array_map( 'get_userdata', $found['ids'] ) );
 
-		return $this->paginated( $this->collection( $users, $request ), $found['total'], $per_page );
+		return $this->paginated( $this->collection( $users, $request ), $found['total'], $per_page, $request );
 	}
 
 	/**

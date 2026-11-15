@@ -54,6 +54,7 @@ final class Newsletter_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'can_manage' ),
+					'args'                => $this->read_args(),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)

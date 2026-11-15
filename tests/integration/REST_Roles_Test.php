@@ -617,6 +617,164 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( array(), $wrong );
 	}
 
+	public function test_every_reading_route_takes_the_context_and_keeps_the_edit_context_to_editors(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		$answer   = $this->answer( $author, $question );
+		$posts    = array( $question->id, $answer->id, $this->comment( $author, $question, $answer )->id );
+		$missing  = array();
+		$open     = array();
+
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( empty( ( $handler['methods'] ?? array() )['GET'] ) || '/easyq/v1' === $route ) {
+					continue;
+				}
+				if ( ! isset( $handler['args']['context'] ) ) {
+					$missing[] = $route;
+				}
+			}
+		}
+		$this->assertSame( array(), $missing, 'Reading routes without the argument `context`, which core declares on each.' );
+
+		// Each route that answers a visitor must refuse the visitor the edit context.
+		wp_set_current_user( 0 );
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( empty( ( $handler['methods'] ?? array() )['GET'] ) || '/easyq/v1' === $route ) {
+					continue;
+				}
+				foreach ( $posts as $post ) {
+					$path   = $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $post );
+					$params = self::required_params( $handlers, 'GET', 0 );
+					if ( 200 !== $this->request( 'GET', $path, $params )->get_status() ) {
+						continue;
+					}
+					if ( 400 > $this->request( 'GET', $path, $params + array( 'context' => 'edit' ) )->get_status() ) {
+						$open[] = $route;
+					}
+					break;
+				}
+			}
+		}
+		$this->assertSame( array(), $open, 'Visitors read these in the edit context.' );
+
+		// The author edits their question, and gets its raw content.
+		wp_set_current_user( (int) $author->user_id );
+		$this->assertSame( 200, $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) )->get_status() );
+		$this->assertSame( 'rest_forbidden_context', $this->request( 'GET', '/questions', array( 'context' => 'edit' ) )->as_error()?->get_error_code() );
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( 200, $this->request( 'GET', '/questions', array( 'context' => 'edit' ) )->get_status() );
+	}
+
+	/**
+	 * Routes whose DELETE changes a state and deletes nothing for good, so they take no `force`,
+	 * as core's application passwords and sessions take none.
+	 *
+	 * @var array<string, string>
+	 */
+	private const DELETE_STATES = array(
+		'/notices/{}'         => 'Dismisses a notice.',
+		'/favorites'          => 'Removes a favorite.',
+		'/messages/{}'        => 'Hides a message for one side; it goes once both sides hid it.',
+		'/email-templates/{}' => 'Goes back to the default text.',
+	);
+
+	public function test_routes_that_delete_for_good_ask_for_force(): void {
+		$admin = $this->administrator();
+		wp_set_current_user( $admin );
+		$category = Services::categories()->create( null, 'To delete' );
+		$field    = Services::user_fields()->create( 'to-delete', 'To delete', 0, null );
+		$this->take_part( $admin );
+		$this->assertSame( 201, $this->request( 'POST', "/users/$admin/wall", array( 'content' => 'A wall post to delete.' ) )->get_status() );
+		$wall = (int) $this->data( $this->request( 'GET', "/users/$admin/wall" ) )[0]['id'];
+		// An item for each route that deletes for good; a new route turns the test red until it has one.
+		$targets = array(
+			'/categories/{}'    => '/categories/' . $category,
+			'/user-fields/{}'   => '/user-fields/' . (int) $field,
+			'/users/{}/wall/{}' => "/users/$admin/wall/$wall",
+		);
+		$states  = array();
+		$refused = array();
+		$open    = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( empty( ( $handler['methods'] ?? array() )['DELETE'] ) ) {
+					continue;
+				}
+				$key = (string) preg_replace( array( '#^/easyq/v1#', '/\(\?P<\w+>(?:[^()]|\([^()]*\))*\)/' ), array( '', '{}' ), $route );
+				if ( ! isset( $handler['args']['force'] ) ) {
+					$states[] = $key;
+					continue;
+				}
+				$this->assertArrayHasKey( $key, $targets, "No item to delete for $key." );
+				$response = $this->request( 'DELETE', $targets[ $key ] );
+				if ( 'rest_trash_not_supported' === $response->as_error()?->get_error_code() && 501 === $response->get_status() ) {
+					$refused[] = $key;
+				} else {
+					$open[] = "$key: " . $response->get_status();
+				}
+			}
+		}
+
+		sort( $states );
+		$expected = array_keys( self::DELETE_STATES );
+		sort( $expected );
+		$this->assertSame( $expected, $states, 'A DELETE without `force` that is not listed with its reason.' );
+		$this->assertSame( array(), $open );
+		$this->assertCount( 3, $refused );
+	}
+
+	public function test_every_paginated_list_pages_as_core_does(): void {
+		$admin    = $this->administrator();
+		$author   = $this->user();
+		$question = $this->ask( $author, 'A question with many replies', 'Text.', array( 'one', 'two' ) );
+		$this->ask( $author, 'Another question with tags', 'Text.', array( 'three' ) );
+		$answer = $this->answer( $this->user(), $question );
+		$this->answer( $this->user(), $question, 'Another answer here.' );
+		$this->comment( $this->user(), $question, $answer );
+		$this->comment( $this->user(), $question, $answer, 'Another comment here.' );
+		Services::categories()->create( null, 'First' );
+		Services::categories()->create( null, 'Second' );
+		wp_set_current_user( $admin );
+
+		$paged = array();
+		$wrong = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( empty( ( $handler['methods'] ?? array() )['GET'] ) || ! isset( $handler['args']['page'], $handler['args']['per_page'] ) ) {
+					continue;
+				}
+				$path     = $this->filled( substr( $route, strlen( '/easyq/v1' ) ), str_contains( $route, '(?P<parent>' ) ? $answer->id : ( str_contains( $route, '/users/' ) ? $admin : $question->id ) );
+				$params   = self::required_params( $handlers, 'GET', 0 ) + array( 'per_page' => 1 );
+				$response = $this->request( 'GET', $path, $params );
+				$headers  = $response->get_headers();
+				if ( 200 !== $response->get_status() || ! isset( $headers['X-WP-Total'], $headers['X-WP-TotalPages'] ) ) {
+					$wrong[] = "$route: no totals";
+					continue;
+				}
+				$total = (int) $headers['X-WP-Total'];
+				if ( $total < 2 ) {
+					continue;
+				}
+				$paged[] = $route;
+				if ( ! str_contains( (string) ( $headers['Link'] ?? '' ), 'rel="next"' ) ) {
+					$wrong[] = "$route: no link to the next page";
+				}
+				$last = $this->request( 'GET', $path, array( 'page' => $total ) + $params )->get_headers();
+				if ( ! str_contains( (string) ( $last['Link'] ?? '' ), 'rel="prev"' ) ) {
+					$wrong[] = "$route: no link to the previous page";
+				}
+				if ( 'rest_invalid_page_number' !== $this->request( 'GET', $path, array( 'page' => $total + 1 ) + $params )->as_error()?->get_error_code() ) {
+					$wrong[] = "$route: a page beyond the last is not refused";
+				}
+			}
+		}
+
+		$this->assertSame( array(), $wrong );
+		$this->assertGreaterThanOrEqual( 6, count( $paged ), 'Too few lists had two pages: ' . implode( ', ', $paged ) );
+	}
+
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {
 		$question = $this->ask( $this->user() );
 		wp_set_current_user( (int) $this->user()->user_id );

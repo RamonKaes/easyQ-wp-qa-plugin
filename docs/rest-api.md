@@ -24,10 +24,22 @@ and tools.
 - Every route describes its response in a JSON schema; an `OPTIONS` request returns
   it, e.g. `OPTIONS /easyq/v1/categories`. Lists are described by the schema of one
   item. Deleting responds with `deleted` and the `previous` item, as core does.
-- Every property names its contexts. Reading routes take `context`: `view` (default),
-  `embed` for the properties that identify an item, and for posts `edit`, which adds
-  the raw title and content for users who may edit the post. User lists default to
-  `embed`, without profile fields and counts.
+- Every property names its contexts. Every reading route takes `context`: `view`
+  (default), `embed` for the properties that identify an item, and `edit`, which adds
+  the raw title and content of a post. As in core, the edit context is refused with
+  `rest_forbidden_context` to those who may not edit: a post to those who may not edit
+  it, the lists of posts to those who may not moderate, users to those who may not list
+  them. User lists default to `embed`, without profile fields and counts.
+- Lists take `page` and `per_page` and page as core does: `X-WP-Total` and
+  `X-WP-TotalPages`, a `Link` header to the previous and next page, and `400
+  rest_invalid_page_number` for a page beyond the last. Categories and comments are
+  paginated too, ten per page by default, as core paginates terms and comments. Lists
+  of settings, such as notices, profile fields and email templates, are complete, as
+  core lists post types and statuses.
+- A DELETE that deletes for good (categories, profile fields, wall posts) asks for
+  `force=true`, as core asks for terms, and answers `501 rest_trash_not_supported`
+  without it; a DELETE that changes a state (a notice, a favorite, a template, a
+  message hidden for one side) takes none, as core's application passwords take none.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
@@ -135,7 +147,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `GET /categories/{id}` | A category with its slug path |
 | `POST /categories` | Add a category: `title`, optional `slug` (derived from the name, with a `category-…` fallback as in Q2A), `description`, `parent` (0 for the top level) and `position` (1 for first). Needs `easyq_manage` |
 | `PUT`/`PATCH /categories/{id}` | Change name, slug, description, parent or position; parameters that are not passed keep their value. A category that gets another parent goes to the end of its new siblings unless `position` is given. Every change is checked before any is stored. Needs `easyq_manage` |
-| `DELETE /categories/{id}` | Delete a category without subcategories; `reassign` names the category that receives its posts (0 or omitted for none). Needs `easyq_manage` |
+| `DELETE /categories/{id}` | Delete a category without subcategories; `reassign` names the category that receives its posts (0 or omitted for none). Needs `easyq_manage` and, as core for terms, `force=true`: there is no trash, so without it `501 rest_trash_not_supported` |
 | `POST /categories/{id}/reassign` | Move the posts directly in a category, not those in its subcategories, to the category `to` (0 for none); the ID 0 stands for posts without a category. Returns the number of moved questions. Needs `easyq_manage` |
 | `GET /tags` | Tags by popularity; `search` completes a prefix, `page` and `per_page` paginate |
 | `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`), users with special levels (`special`) or the favorites of the current user (`favorites`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages |
@@ -162,10 +174,10 @@ category) and to the `move` action; a question may always keep the category it h
 | --- | --- |
 | `GET /users/{id}/wall` | Posts on the wall of a user, newest first, with `page` and `per_page`; `404` while walls are off |
 | `POST /users/{id}/wall` | Post on a wall: `content`. Needs the permission of the settings; users can turn off posts by others on their wall |
-| `DELETE /users/{id}/wall/{message}` | Delete a wall post: the owner of the wall, the author until someone else posted after it, and moderators who may hide and delete posts |
+| `DELETE /users/{id}/wall/{message}` | Delete a wall post for good, with `force=true` as for categories: the owner of the wall, the author until someone else posted after it, and moderators who may hide and delete posts |
 | `GET /messages` | Private messages of the logged in user: `box` (`inbox`, `sent`), `page`, `per_page`; or `with` a user for the latest 20 between both, oldest first. `404` without the message history |
 | `POST /messages` | Send a private message: `to`, `content`. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
-| `DELETE /messages/{id}` | Delete a message from your box; it is gone once both sides deleted it |
+| `DELETE /messages/{id}` | Delete a message from your box; it is gone once both sides deleted it, so one request deletes nothing for good and takes no `force` |
 
 ### Feedback
 
@@ -220,7 +232,7 @@ Actions on single posts, such as `approve`, `hide` or `delete`, are under
 | `GET /user-fields` | The profile fields in order, each with `id`, `name`, `label`, `type` (`text`, `multi_line`, `link`), `permit` (who may see it), `on_register` and `position`. Needs `easyq_manage` |
 | `POST /user-fields` | Add a field: `label`, optional `name` (derived from the label, as in Q2A), `type`, `permit`, `on_register`, `position` |
 | `GET`, `PUT`/`PATCH /user-fields/{id}` | A field; change label, type, visibility, registration form and position. Parameters that are not passed keep their value; the name cannot change |
-| `DELETE /user-fields/{id}` | Delete a field and the values users entered |
+| `DELETE /user-fields/{id}` | Delete a field and the values users entered, with `force=true` as for categories |
 
 The values users enter are part of `/users/{id}` and `/users/me`.
 

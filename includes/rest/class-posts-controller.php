@@ -235,9 +235,9 @@ final class Posts_Controller extends Controller {
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_posts( $request ): WP_REST_Response {
+	public function get_posts( $request ): WP_REST_Response|WP_Error {
 		$actor    = $this->actor();
 		$per_page = self::int_param( $request, 'per_page' ) ?? 20;
 		$result   = Services::moderation_query()->find(
@@ -255,7 +255,7 @@ final class Posts_Controller extends Controller {
 			)
 		);
 
-		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page );
+		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page, $request );
 	}
 
 	/**
@@ -270,8 +270,11 @@ final class Posts_Controller extends Controller {
 	public function get_post( $request ): WP_REST_Response|WP_Error {
 		$actor = $this->actor();
 		$post  = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor );
+		if ( $post instanceof WP_Error ) {
+			return $post;
+		}
 
-		return $post instanceof WP_Error ? $post : $this->respond_with_post( $post, $actor, $request );
+		return $this->edit_context_error( $request, $actor, $post ) ?? $this->respond_with_post( $post, $actor, $request );
 	}
 
 	/**

@@ -56,6 +56,7 @@ final class Comments_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_items' ),
 					'permission_callback' => '__return_true',
+					'args'                => $this->read_args() + $this->pagination_args( 10 ),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -109,6 +110,10 @@ final class Comments_Controller extends Controller {
 		if ( $parent instanceof WP_Error ) {
 			return $parent;
 		}
+		$context = $this->edit_context_error( $request, $actor );
+		if ( null !== $context ) {
+			return $context;
+		}
 
 		$permissions = Services::permissions();
 		$comments    = array_filter(
@@ -116,7 +121,12 @@ final class Comments_Controller extends Controller {
 			static fn ( Post $child ): bool => Post::COMMENT === $child->base_type() && $permissions->post_rules( $child, $actor )['viewable']
 		);
 
-		return new WP_REST_Response( $this->collection( $comments, $request ) );
+		// Paginated as core paginates comments, ten by default, oldest first.
+		$comments = array_values( $comments );
+		$per_page = self::int_param( $request, 'per_page' ) ?? 10;
+		$page     = max( 1, self::int_param( $request, 'page' ) ?? 1 );
+
+		return $this->paginated( $this->collection( array_slice( $comments, ( $page - 1 ) * $per_page, $per_page ), $request ), count( $comments ), $per_page, $request );
 	}
 
 	/**
@@ -133,6 +143,10 @@ final class Comments_Controller extends Controller {
 		$comment = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, Post::COMMENT );
 		if ( $comment instanceof WP_Error ) {
 			return $comment;
+		}
+		$context = $this->edit_context_error( $request, $actor, $comment );
+		if ( null !== $context ) {
+			return $context;
 		}
 
 		return $this->respond_with_post( $comment, $actor, $request );

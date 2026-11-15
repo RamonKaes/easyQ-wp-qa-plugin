@@ -86,6 +86,7 @@ final class Messages_Controller extends Controller {
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_wall_post' ),
 					'permission_callback' => array( $this, 'delete_wall_post_permissions_check' ),
+					'args'                => $this->force_args(),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -171,7 +172,7 @@ final class Messages_Controller extends Controller {
 		$per_page = max( 1, (int) self::int_param( $request, 'per_page' ) );
 		$found    = Services::messages()->wall( $owner->ID, max( 1, (int) self::int_param( $request, 'page' ) ), $per_page );
 
-		return $this->paginated( $this->collection( $found['messages'], $request ), $found['total'], $per_page );
+		return $this->paginated( $this->collection( $found['messages'], $request ), $found['total'], $per_page, $request );
 	}
 
 	/**
@@ -263,6 +264,11 @@ final class Messages_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_wall_post( $request ): WP_REST_Response|WP_Error {
+		$force = self::force_error( $request );
+		if ( null !== $force ) {
+			return $force;
+		}
+
 		$id   = (int) self::int_param( $request, 'message' );
 		$post = Services::messages()->find( $id );
 		if ( null === $post || (int) self::int_param( $request, 'id' ) !== $post->to_user_id ) {
@@ -308,7 +314,7 @@ final class Messages_Controller extends Controller {
 		$per_page = max( 1, (int) self::int_param( $request, 'per_page' ) );
 		$found    = Services::messages()->box( $user_id, (string) self::string_param( $request, 'box' ), max( 1, (int) self::int_param( $request, 'page' ) ), $per_page );
 
-		return $this->paginated( $this->collection( $found['messages'], $request ), $found['total'], $per_page );
+		return $this->paginated( $this->collection( $found['messages'], $request ), $found['total'], $per_page, $request );
 	}
 
 	/**

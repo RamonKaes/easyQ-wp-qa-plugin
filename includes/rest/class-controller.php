@@ -9,6 +9,7 @@
 namespace EasyQ\REST;
 
 use EasyQ\Actor;
+use EasyQ\Capabilities;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Users\Visitor_Cookie;
@@ -200,6 +201,68 @@ abstract class Controller extends WP_REST_Controller {
 		$context = $request->get_param( 'context' );
 
 		return is_string( $context ) && '' !== $context ? $context : 'view';
+	}
+
+	/**
+	 * Refuses the edit context to users who may not edit, as core answers
+	 * `rest_forbidden_context` (`WP_REST_Posts_Controller::get_item_permissions_check()` and
+	 * `get_items_permissions_check()`) instead of leaving fields out.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @param Actor           $actor   The actor.
+	 * @param Post|null       $post    The post of a single item; null for a list, whose edit
+	 *                                 context needs the right to moderate, as core's needs
+	 *                                 `edit_posts`.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_Error|null
+	 */
+	protected function edit_context_error( WP_REST_Request $request, Actor $actor, ?Post $post = null ): ?WP_Error {
+		if ( 'edit' !== self::context( $request ) ) {
+			return null;
+		}
+
+		$allowed = null === $post
+			? null !== $actor->user_id && user_can( $actor->user_id, Capabilities::MODERATE )
+			: Services::permissions()->post_rules( $post, $actor )['editable'];
+
+		return $allowed ? null : new WP_Error( 'rest_forbidden_context', __( 'Sorry, you are not allowed to edit this post.', 'easyq' ), array( 'status' => rest_authorization_required_code() ) );
+	}
+
+	/**
+	 * Returns the argument `force` of a route that deletes for good, as core declares it for
+	 * terms (`WP_REST_Terms_Controller`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	protected function force_args(): array {
+		return array(
+			'force' => array(
+				'description' => __( 'Required to be true, as the item does not support trashing.', 'easyq' ),
+				'type'        => 'boolean',
+				'default'     => false,
+			),
+		);
+	}
+
+	/**
+	 * Refuses to delete for good without `force`, as core refuses for terms with
+	 * `rest_trash_not_supported` (501).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_Error|null
+	 */
+	protected static function force_error( WP_REST_Request $request ): ?WP_Error {
+		return self::bool_param( $request, 'force' )
+			? null
+			/* translators: %s: force=true */
+			: new WP_Error( 'rest_trash_not_supported', sprintf( __( "This item does not support trashing. Set '%s' to delete.", 'easyq' ), 'force=true' ), array( 'status' => 501 ) );
 	}
 
 	/**
@@ -404,19 +467,37 @@ abstract class Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Returns a response with the pagination headers.
+	 * Returns a page of a collection as core returns one (`WP_REST_Posts_Controller::get_items()`):
+	 * the totals in `X-WP-Total` and `X-WP-TotalPages`, the neighbouring pages in the `Link`
+	 * header, and a page beyond the last refused with 400.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<mixed> $items    Items of the page.
-	 * @param int          $total    Number of items on all pages.
-	 * @param int          $per_page Items per page.
-	 * @return WP_REST_Response
+	 * @param array<mixed>    $items    Items of the page.
+	 * @param int             $total    Number of items on all pages.
+	 * @param int             $per_page Items per page.
+	 * @param WP_REST_Request $request  Request, for the page and the addresses of the others.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response|WP_Error
 	 */
-	protected function paginated( array $items, int $total, int $per_page ): WP_REST_Response {
+	protected function paginated( array $items, int $total, int $per_page, WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$pages = (int) ceil( $total / max( 1, $per_page ) );
+		$page  = max( 1, self::int_param( $request, 'page' ) ?? 1 );
+		if ( $page > $pages && $total > 0 ) {
+			return new WP_Error( 'rest_invalid_page_number', __( 'The page number requested is larger than the number of pages available.', 'easyq' ), array( 'status' => 400 ) );
+		}
+
 		$response = new WP_REST_Response( $items );
 		$response->header( 'X-WP-Total', (string) $total );
-		$response->header( 'X-WP-TotalPages', (string) (int) ceil( $total / max( 1, $per_page ) ) );
+		$response->header( 'X-WP-TotalPages', (string) $pages );
+
+		$base = add_query_arg( urlencode_deep( $request->get_query_params() ), rest_url( $request->get_route() ) );
+		if ( $page > 1 ) {
+			$response->link_header( 'prev', add_query_arg( 'page', $page - 1, $base ) );
+		}
+		if ( $page < $pages ) {
+			$response->link_header( 'next', add_query_arg( 'page', $page + 1, $base ) );
+		}
 
 		return $response;
 	}

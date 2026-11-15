@@ -172,6 +172,10 @@ final class Form_Handler {
 		foreach ( $values as $key => $value ) {
 			$request->set_param( $key, $value );
 		}
+		// The delete button of a wall post deletes it for good, which the REST API asks to confirm.
+		if ( 'wall_delete' === $form ) {
+			$request->set_param( 'force', true );
+		}
 
 		if ( 'account' === $form ) {
 			$values += $this->add_account_input( $request );

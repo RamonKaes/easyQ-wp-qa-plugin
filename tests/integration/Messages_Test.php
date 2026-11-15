@@ -95,7 +95,9 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertSame( 403, $this->request( 'DELETE', '/users/' . $owner->ID . '/wall/' . $post['id'] )->get_status() );
 
 		wp_set_current_user( $owner->ID );
-		$deleted = $this->data( $this->request( 'DELETE', '/users/' . $owner->ID . '/wall/' . $post['id'] ) );
+		$this->assertSame( 501, $this->request( 'DELETE', '/users/' . $owner->ID . '/wall/' . $post['id'] )->get_status() );
+		$this->assertNotNull( Services::messages()->find( $post['id'] ) );
+		$deleted = $this->data( $this->request( 'DELETE', '/users/' . $owner->ID . '/wall/' . $post['id'], array( 'force' => true ) ) );
 		$this->assertTrue( $deleted['deleted'] );
 		$this->assertNull( Services::messages()->find( $post['id'] ) );
 		$this->assertContains( 'u_wall_delete', $this->event_names() );

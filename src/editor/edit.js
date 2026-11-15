@@ -529,7 +529,7 @@ function categoryOptions( categories, parent = null, depth = 0 ) {
  */
 function QueryInspector( { attributes, setAttributes } ) {
 	const query = attributes.query ?? {};
-	const categories = useEasyQ( 'categories' );
+	const categories = useEasyQ( 'categories?per_page=100' );
 	const update = ( change ) =>
 		setAttributes( { query: { ...query, ...change } } );
 
@@ -997,7 +997,7 @@ function ChildTemplateEdit( { context, type } ) {
 		parentId &&
 		( type === 'answers'
 			? `questions/${ parentId }/answers?per_page=1`
-			: `posts/${ parentId }/comments` );
+			: `posts/${ parentId }/comments?per_page=1` );
 	const children = useEasyQ( path || null );
 	const first = Array.isArray( children ) ? children[ 0 ] : undefined;
 

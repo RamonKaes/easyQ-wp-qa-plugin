@@ -81,7 +81,9 @@ final class User_Fields_REST_Test extends REST_Test_Case {
 		$this->assertSame( 400, $this->request( 'PATCH', '/user-fields/' . $field['id'], array( 'permit' => Permits::APPROVED ) )->get_status() );
 		$this->assertSame( 404, $this->request( 'PATCH', '/user-fields/999', array( 'label' => 'x' ) )->get_status() );
 
-		$deleted = $this->data( $this->request( 'DELETE', '/user-fields/' . $field['id'] ) );
+		$this->assertSame( 501, $this->request( 'DELETE', '/user-fields/' . $field['id'] )->get_status() );
+		$this->assertNotNull( Services::user_fields()->find( $field['id'] ) );
+		$deleted = $this->data( $this->request( 'DELETE', '/user-fields/' . $field['id'], array( 'force' => true ) ) );
 		$this->assertTrue( $deleted['deleted'] );
 		$this->assertSame( 'favourite-book', $deleted['previous']['name'] );
 		$this->assertNull( Services::user_fields()->find( $field['id'] ) );

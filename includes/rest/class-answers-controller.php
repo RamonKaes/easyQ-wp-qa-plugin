@@ -56,7 +56,7 @@ final class Answers_Controller extends Controller {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_items' ),
 					'permission_callback' => '__return_true',
-					'args'                => $this->pagination_args( Options::get_int( 'viewing', 'page_size_q_as' ) ),
+					'args'                => $this->read_args() + $this->pagination_args( Options::get_int( 'viewing', 'page_size_q_as' ) ),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
@@ -112,6 +112,10 @@ final class Answers_Controller extends Controller {
 		if ( $question instanceof WP_Error ) {
 			return $question;
 		}
+		$context = $this->edit_context_error( $request, $actor );
+		if ( null !== $context ) {
+			return $context;
+		}
 
 		$permissions = Services::permissions();
 		$answers     = array_values(
@@ -139,7 +143,7 @@ final class Answers_Controller extends Controller {
 		$page     = self::int_param( $request, 'page' ) ?? 1;
 		$items    = $this->collection( array_slice( $answers, ( $page - 1 ) * $per_page, $per_page ), $request );
 
-		return $this->paginated( $items, count( $answers ), $per_page );
+		return $this->paginated( $items, count( $answers ), $per_page, $request );
 	}
 
 	/**
@@ -156,6 +160,10 @@ final class Answers_Controller extends Controller {
 		$answer = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, Post::ANSWER );
 		if ( $answer instanceof WP_Error ) {
 			return $answer;
+		}
+		$context = $this->edit_context_error( $request, $actor, $answer );
+		if ( null !== $context ) {
+			return $context;
 		}
 
 		return $this->respond_with_post( $answer, $actor, $request, Services::posts()->children( $answer->id ) );

@@ -107,9 +107,9 @@ final class Favorites_Controller extends Controller {
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_items( $request ): WP_REST_Response {
+	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$type    = (string) self::string_param( $request, 'type' );
 		$user_id = get_current_user_id();
 		$items   = array();
@@ -131,7 +131,8 @@ final class Favorites_Controller extends Controller {
 		return $this->paginated(
 			$this->collection( array_slice( $items, ( $page - 1 ) * $per_page, $per_page ), $request ),
 			count( $items ),
-			$per_page
+			$per_page,
+			$request
 		);
 	}
 
