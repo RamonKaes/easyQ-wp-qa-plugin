@@ -306,7 +306,7 @@ final class Users_Render {
 			switch ( $row ) {
 				case 'member':
 					$registered = (int) strtotime( $user->user_registered . ' UTC' );
-					if ( $registered > 0 ) {
+					if ( $registered > 0 && Services::user_query()->shows_registration( $user, Block_Context::viewer()->user_id ) ) {
 						$items .= self::item( __( 'Member for', 'easyq' ), esc_html( human_time_diff( $registered ) ) );
 					}
 					break;

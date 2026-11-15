@@ -207,8 +207,14 @@ final class Users_Controller extends Controller {
 	 */
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$user = get_userdata( (int) self::int_param( $request, 'id' ) );
-		if ( false === $user || ! Services::user_query()->is_member( $user ) ) {
+		if ( false === $user || ! Services::user_query()->is_shown( $user, $this->actor()->user_id ) ) {
 			return REST_Errors::not_found();
+		}
+
+		// As core: the edit context, which holds the date of the registration, for the user and
+		// those who may list or edit users.
+		if ( 'edit' === self::context( $request ) && ! Services::user_query()->shows_registration( $user, $this->actor()->user_id ) ) {
+			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you are not allowed to edit this user.', 'easyq' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		return $this->prepare_item_for_response( $user, $request );

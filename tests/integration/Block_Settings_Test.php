@@ -614,6 +614,8 @@ final class Block_Settings_Test extends Test_Case {
 			)
 		);
 		Block_Context::router()->set_current( new Route( 'user', get_userdata( $id ) ) );
+		// The user sees the row with the date of the registration, which others do not see.
+		wp_set_current_user( $id );
 
 		$stats = do_blocks( '<!-- wp:easyq/user --><!-- wp:easyq/user-stats {"rows":["points","comments"]} /--><!-- /wp:easyq/user -->' );
 		$this->assertStringContainsString( 'Points', $stats );

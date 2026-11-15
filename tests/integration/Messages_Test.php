@@ -65,7 +65,7 @@ final class Messages_Test extends REST_Test_Case {
 	}
 
 	public function test_posts_lists_and_deletes_on_a_wall(): void {
-		$owner  = get_userdata( (int) $this->user()->user_id );
+		$owner  = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
 		$author = (int) $this->user()->user_id;
 		wp_set_current_user( $author );
 
@@ -102,7 +102,7 @@ final class Messages_Test extends REST_Test_Case {
 	}
 
 	public function test_walls_follow_settings_permissions_and_wishes(): void {
-		$owner = get_userdata( (int) $this->user()->user_id );
+		$owner = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
 		$route = '/users/' . $owner->ID . '/wall';
 
 		wp_set_current_user( 0 );
@@ -230,7 +230,7 @@ final class Messages_Test extends REST_Test_Case {
 	}
 
 	public function test_privacy_tools_and_deleted_users(): void {
-		$user  = get_userdata( (int) $this->user()->user_id );
+		$user  = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
 		$other = get_userdata( (int) $this->user()->user_id );
 		wp_set_current_user( $other->ID );
 		$this->request( 'POST', '/users/' . $user->ID . '/wall', array( 'content' => 'On the wall of the user' ) );

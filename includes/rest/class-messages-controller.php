@@ -414,7 +414,7 @@ final class Messages_Controller extends Controller {
 	 */
 	private function owner( WP_REST_Request $request ): WP_User|WP_Error {
 		$owner = get_userdata( (int) self::int_param( $request, 'id' ) );
-		if ( ! Options::get_bool( 'users', 'allow_user_walls' ) || false === $owner || ! Services::user_query()->is_member( $owner ) ) {
+		if ( ! Options::get_bool( 'users', 'allow_user_walls' ) || false === $owner || ! Services::user_query()->is_shown( $owner, $this->actor()->user_id ) ) {
 			return REST_Errors::not_found();
 		}
 

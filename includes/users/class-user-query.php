@@ -102,6 +102,47 @@ final class User_Query {
 	}
 
 	/**
+	 * Checks whether a viewer may see the profile of a user, as core decides for its users
+	 * endpoint (`WP_REST_Users_Controller::get_item_permissions_check()`): the profile of a user
+	 * who took part in the Q&A area, the own profile, and every profile for those who may list
+	 * or edit users. Taking part means having a row of points, which only an action in the Q&A
+	 * area writes.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User  $user      User.
+	 * @param int|null $viewer_id Viewer, null for a visitor.
+	 * @return bool
+	 */
+	public function is_shown( WP_User $user, ?int $viewer_id ): bool {
+		if ( ! $this->is_member( $user ) ) {
+			return false;
+		}
+
+		if ( null !== $viewer_id && ( $viewer_id === $user->ID || user_can( $viewer_id, 'list_users' ) || user_can( $viewer_id, 'edit_user', $user->ID ) ) ) {
+			return true;
+		}
+
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return null !== $wpdb->get_var( $wpdb->prepare( 'SELECT user_id FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user->ID ) );
+	}
+
+	/**
+	 * Checks whether a viewer may see when a user registered: core shows it in the edit context
+	 * only, to the user and to those who may list or edit users.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User  $user      User.
+	 * @param int|null $viewer_id Viewer, null for a visitor.
+	 * @return bool
+	 */
+	public function shows_registration( WP_User $user, ?int $viewer_id ): bool {
+		return null !== $viewer_id && ( $viewer_id === $user->ID || user_can( $viewer_id, 'list_users' ) || user_can( $viewer_id, 'edit_user', $user->ID ) );
+	}
+
+	/**
 	 * Lists users by points.
 	 *
 	 * @since 0.1.0

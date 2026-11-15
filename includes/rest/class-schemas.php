@@ -139,7 +139,7 @@ final class Schemas {
 				'points'        => self::property( __( 'Points of the user.', 'easyq' ), 'integer', self::EMBED ),
 				'url'           => self::property( __( 'Website of the user.', 'easyq' ), 'string' ),
 				'description'   => self::property( __( 'Biographical info of the user.', 'easyq' ), 'string' ),
-				'registered'    => self::property( __( 'Time of the registration.', 'easyq' ), 'string' ) + array( 'format' => 'date-time' ),
+				'registered'    => self::property( __( 'Time of the registration; in the edit context, as in core.', 'easyq' ), 'string', array( 'edit' ) ) + array( 'format' => 'date-time' ),
 				'rank'          => self::property( __( 'Rank by points; null without points.', 'easyq' ), array( 'integer', 'null' ) ),
 				'counts'        => self::property( __( 'Activity of the user.', 'easyq' ), 'object' ) + array(
 					'properties' => array(

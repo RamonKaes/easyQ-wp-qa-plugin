@@ -104,6 +104,18 @@ abstract class Test_Case extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Lets a user take part in the Q&A area: their row of points makes their profile public.
+	 *
+	 * @param int $user_id User ID.
+	 * @return int The user ID.
+	 */
+	protected function take_part( int $user_id ): int {
+		Services::points()->update( $user_id, array() );
+
+		return $user_id;
+	}
+
+	/**
 	 * Creates a question.
 	 *
 	 * @param Actor    $author      Author.

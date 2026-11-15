@@ -51,6 +51,49 @@ final class Users_REST_Test extends REST_Test_Case {
 		return rest_get_server()->dispatch( $request );
 	}
 
+	public function test_profiles_are_shown_as_core_shows_users(): void {
+		$quiet  = get_userdata( (int) $this->user()->user_id );
+		$router = \EasyQ\Blocks\Block_Context::router();
+
+		foreach ( array(
+			'visitor'          => 0,
+			'other subscriber' => (int) $this->user()->user_id,
+		) as $who => $viewer ) {
+			wp_set_current_user( $viewer );
+			$this->assertSame( 404, $this->request( 'GET', '/users/' . $quiet->ID )->get_status(), $who );
+			$this->assertSame( 404, $this->request( 'GET', '/users/' . $quiet->ID . '/wall' )->get_status(), $who );
+			$this->assertTrue( 'not_found' === $router->resolve( 'user', $quiet->user_nicename, null )->name, $who );
+		}
+
+		foreach ( array(
+			'the user'      => $quiet->ID,
+			'administrator' => $this->administrator(),
+		) as $who => $viewer ) {
+			wp_set_current_user( $viewer );
+			$this->assertSame( 200, $this->request( 'GET', '/users/' . $quiet->ID )->get_status(), $who );
+			$this->assertFalse( 'not_found' === $router->resolve( 'user', $quiet->user_nicename, null )->name, $who );
+		}
+
+		$this->take_part( $quiet->ID );
+		wp_set_current_user( 0 );
+		$this->assertSame( 200, $this->request( 'GET', '/users/' . $quiet->ID )->get_status() );
+		$this->assertFalse( 'not_found' === $router->resolve( 'user', $quiet->user_nicename, null )->name );
+	}
+
+	public function test_the_registration_date_is_in_the_edit_context_as_in_core(): void {
+		$user = $this->take_part( (int) $this->user()->user_id );
+
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertArrayNotHasKey( 'registered', $this->data( $this->request( 'GET', '/users/' . $user ) ) );
+		$response = $this->request( 'GET', '/users/' . $user, array( 'context' => 'edit' ) );
+		$this->assertSame( 'rest_forbidden_context', $response->as_error()?->get_error_code() );
+
+		foreach ( array( $user, $this->administrator() ) as $viewer ) {
+			wp_set_current_user( $viewer );
+			$this->assertArrayHasKey( 'registered', $this->data( $this->request( 'GET', '/users/' . $user, array( 'context' => 'edit' ) ) ) );
+		}
+	}
+
 	public function test_lists_users_by_points(): void {
 		$author = $this->user();
 		$this->ask( $author );

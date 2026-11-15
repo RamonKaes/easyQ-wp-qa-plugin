@@ -124,8 +124,13 @@ final class User_Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( '120 points', $html );
 		$this->assertStringContainsString( '(ranked #1)', $html );
 		$this->assertStringContainsString( 'Questions (1)', $html );
-		$this->assertStringContainsString( '<dt>Member for</dt>', $html );
 		$this->assertStringContainsString( 'aria-current="page"', $html );
+		// As in core, only the user and those who may list users see when an account was registered.
+		$this->assertStringNotContainsString( '<dt>Member for</dt>', $html );
+		wp_set_current_user( $user->ID );
+		$this->assertStringContainsString( '<dt>Member for</dt>', $this->render_template( 'easyq-user', new Route( 'user', get_userdata( $user->ID ) ) ) );
+		wp_set_current_user( $this->administrator() );
+		$this->assertStringContainsString( '<dt>Member for</dt>', $this->render_template( 'easyq-user', new Route( 'user', get_userdata( $user->ID ) ) ) );
 	}
 
 	public function test_profile_sections_list_the_posts_of_the_user(): void {

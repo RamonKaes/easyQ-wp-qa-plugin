@@ -67,6 +67,7 @@ final class Routing_Test extends Test_Case {
 		$child = Services::categories()->create( $category, 'Plugins' );
 		$this->assertIsInt( $child );
 		$user = self::factory()->user->create_and_get( array( 'user_nicename' => 'ada' ) );
+		$this->take_part( $user->ID );
 
 		$this->assertSame( $question->id, $router->resolve( 'question', (string) $question->id, null )->question()?->id );
 		$this->assertSame( 'not_found', $router->resolve( 'question', '999999', null )->name );
@@ -124,7 +125,7 @@ final class Routing_Test extends Test_Case {
 		switch_theme( 'twentytwentyfive' );
 		// Block themes get the support for block templates on `after_setup_theme`, which does not run again in tests.
 		wp_enable_block_templates();
-		self::factory()->user->create( array( 'user_nicename' => 'grace' ) );
+		$this->take_part( self::factory()->user->create( array( 'user_nicename' => 'grace' ) ) );
 		$this->go_to( Routes::url( 'user', 'grace', 'activity' ) );
 		$templates = new Templates( Block_Context::router() );
 
