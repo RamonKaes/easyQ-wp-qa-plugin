@@ -61,24 +61,29 @@ the report of a review, whatever its row.
 The inventory is **drawn again for every review**, not copied from this table; the
 table is the state, not the source.
 
+Every command searches fixed strings (`grep -F`, one `-e` per string), so `$` and `(` mean
+themselves in GNU grep and in the ugrep that some shells put behind `grep`. Each command
+but the last must print at least one line; an empty result is a broken command, not an
+empty class.
+
 ```bash
-grep -rn "register_rest_route(" includes                       # A
-grep -n "easyq_action\|\$_POST\|\$_FILES" includes/frontend includes/users   # B, I
-grep -rn "\$_GET\|\$_REQUEST\|get_query_var(" includes         # C, F
-ls blocks && grep -rn "register_block_pattern" includes    # D
-grep -rln "wp_kses\|Content_Renderer" includes                 # E
-grep -rn "add_menu_page\|add_submenu_page\|admin_post_" includes   # F
-grep -rn "register_setting(" includes                          # G
-grep -rn "\$_COOKIE\|\$_SERVER" includes                       # H
-grep -rn "wp_mail(" includes                                   # J
-grep -rn "wp_schedule_" includes                               # K
-grep -rn "add_feed(\|wp_sitemaps" includes                     # L
-grep -rn "WP_CLI::add_command" includes                        # M
-grep -rn "wp_privacy_personal_data_" includes                  # N
-grep -rn "register_activation_hook\|register_deactivation_hook\|wp_initialize_site\|wp_uninitialize_site" easyq.php includes   # O
-grep -rhn "apply_filters(\|do_action(" includes | grep easyq_  # P
-grep -rn "site_status_tests\|debug_information" includes       # Q
-grep -rn "wp_remote_\|wp_safe_remote_" includes                # must stay empty
+grep -rnF -e 'register_rest_route(' includes                                        # A
+grep -rnF -e 'easyq_action' -e '$_POST' -e '$_FILES' includes/frontend includes/users   # B, I
+grep -rnF -e '$_GET' -e '$_REQUEST' -e 'get_query_var(' includes                     # C, F
+ls blocks && grep -rnF -e 'register_block_pattern' includes                         # D
+grep -rlnF -e 'wp_kses' -e 'Content_Renderer' includes                               # E
+grep -rnF -e 'add_menu_page' -e 'add_submenu_page' -e 'admin_post_' includes         # F
+grep -rnF -e 'register_setting(' includes                                            # G
+grep -rnF -e '$_COOKIE' -e '$_SERVER' includes                                       # H
+grep -rnF -e 'wp_mail(' includes                                                     # J
+grep -rnF -e 'wp_schedule_' includes                                                 # K
+grep -rnF -e 'add_feed(' -e 'wp_sitemaps' includes                                   # L
+grep -rnF -e 'WP_CLI::add_command' includes                                          # M
+grep -rnF -e 'wp_privacy_personal_data_' includes                                    # N
+grep -rnF -e 'register_activation_hook' -e 'register_deactivation_hook' -e 'wp_initialize_site' -e 'wp_uninitialize_site' easyq.php includes   # O
+grep -rhnF -e 'apply_filters(' -e 'do_action(' includes | grep -F -e "'easyq_"       # P
+grep -rnF -e 'site_status_tests' -e 'debug_information' includes                     # Q
+grep -rnF -e 'wp_remote_' -e 'wp_safe_remote_' includes                              # must stay empty
 ```
 
 An entry that fits no row is a new row.

@@ -256,6 +256,70 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array(), array_values( array_diff( $documented, $routes ) ), 'Documented routes that do not exist.' );
 	}
 
+	public function test_the_values_route_parameters_take_are_documented(): void {
+		$document = $this->read( self::root() . 'docs/rest-api.md' );
+		$row      = static function ( string $route ) use ( $document ): string {
+			preg_match( '/^\| `[A-Z]+ ' . preg_quote( $route, '/' ) . '` \|.*$/m', $document, $match );
+			return $match[0] ?? '';
+		};
+		$missing  = array();
+
+		foreach ( array_keys( \EasyQ\Tools\Tools::STEPS ) as $tool ) {
+			if ( ! str_contains( $row( '/tools/{tool}' ), '`' . $tool . '`' ) ) {
+				$missing[] = "tool $tool";
+			}
+		}
+		foreach ( array_keys( (array) ( new \ReflectionClassConstant( \EasyQ\REST\Posts_Controller::class, 'ACTIONS' ) )->getValue() ) as $action ) {
+			// The first cell of a row of the table of actions, which may name several.
+			if ( 1 !== preg_match( '/^\| (?:`[a-z-]+`, )*`' . preg_quote( (string) $action, '/' ) . '`(?:, `[a-z-]+`)* \|/m', $document ) ) {
+				$missing[] = "action $action";
+			}
+		}
+		// Path parameters that list their values, such as `(?P<action>start|cancel|test)`.
+		foreach ( array_keys( rest_get_server()->get_routes( 'easyq/v1' ) ) as $route ) {
+			if ( preg_match_all( '/\(\?P<(\w+)>([a-z_-]+(?:\|[a-z_-]+)+)\)/', $route, $lists, PREG_SET_ORDER ) ) {
+				foreach ( $lists as [ , , $values ] ) {
+					foreach ( explode( '|', $values ) as $value ) {
+						if ( ! str_contains( $document, '/' . $value . '`' ) && ! str_contains( $document, '`' . $value . '`' ) ) {
+							$missing[] = "value $value of $route";
+						}
+					}
+				}
+			}
+		}
+
+		$this->assertNotSame( '', $row( '/tools/{tool}' ) );
+		$this->assertSame( array(), $missing );
+	}
+
+	public function test_the_inventory_commands_of_the_review_find_what_they_look_for(): void {
+		$review = $this->read( self::root() . 'docs/review.md' );
+		$start  = (int) strpos( $review, '```bash', (int) strpos( $review, '## Entry classes' ) );
+		$block  = substr( $review, $start + 7, (int) strpos( $review, '```', $start + 7 ) - $start - 7 );
+		$lines  = array_values( array_filter( array_map( 'trim', explode( "\n", $block ) ) ) );
+		$empty  = array();
+
+		foreach ( $lines as $index => $line ) {
+			$command = trim( (string) preg_replace( '/\s+#.*$/', '', $line ) );
+			if ( str_starts_with( $command, 'grep' ) && ! str_contains( $command, ' -' ) ) {
+				$empty[] = "no options: $command";
+			}
+			// Fixed strings, so that a shell whose grep reads `$` as an anchor finds the same.
+			if ( str_contains( $command, 'grep' ) && 1 !== preg_match( '/grep -\w*F/', $command ) ) {
+				$empty[] = "not fixed strings: $command";
+			}
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec -- Runs the commands of the document in a test.
+			$output = (string) shell_exec( 'cd ' . escapeshellarg( self::root() ) . ' && ' . $command . ' 2>/dev/null' );
+			$last   = count( $lines ) - 1 === $index;
+			if ( $last ? '' !== trim( $output ) : '' === trim( $output ) ) {
+				$empty[] = ( $last ? 'not empty: ' : 'empty: ' ) . $command;
+			}
+		}
+
+		$this->assertGreaterThan( 15, count( $lines ) );
+		$this->assertSame( array(), $empty );
+	}
+
 	public function test_templates_are_in_the_feature_mapping(): void {
 		$mapping     = $this->read( self::root() . 'docs/feature-mapping.md' );
 		$definitions = ( new Templates( Block_Context::router() ) )->definitions();
