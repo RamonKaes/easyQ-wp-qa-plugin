@@ -296,17 +296,17 @@ final class Questions_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$input   = Post_Input::content( $request );
+		$input   = Post_Input::edited( $request, $question );
 		$title   = $request->has_param( 'title' ) ? sanitize_text_field( (string) self::string_param( $request, 'title' ) ) : (string) $question->title;
-		$content = $request->has_param( 'content' ) ? $input['content'] : (string) $question->content;
-		$format  = $request->has_param( 'content' ) ? $input['format'] : $question->format;
+		$content = $input['content'];
+		$format  = $input['format'];
 		$tags    = $request->has_param( 'tags' ) && Post_Input::uses_tags() ? Post_Input::tags( $request->get_param( 'tags' ) ) : $question->tag_list();
 
 		$fields = array();
 		if ( $request->has_param( 'title' ) ) {
 			$fields['title'] = $title;
 		}
-		if ( $request->has_param( 'content' ) ) {
+		if ( $request->has_param( 'content' ) || $request->has_param( 'format' ) ) {
 			$fields['content'] = $content;
 			$fields['format']  = $format;
 		}

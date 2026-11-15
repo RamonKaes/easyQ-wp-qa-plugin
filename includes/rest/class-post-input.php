@@ -9,6 +9,7 @@
 namespace EasyQ\REST;
 
 use EasyQ\Actor;
+use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Visitor_Cookie;
@@ -71,7 +72,9 @@ final class Post_Input {
 	 */
 	public static function edit_args(): array {
 		$args = self::content_args( required: false );
-		unset( $args['name'] );
+		// As core builds the arguments of an update (`get_endpoint_args_for_item_schema()` with
+		// `EDITABLE`): no defaults, so a field left out keeps its stored value.
+		unset( $args['name'], $args['format']['default'] );
 
 		return $args;
 	}
@@ -88,6 +91,28 @@ final class Post_Input {
 	public static function content( WP_REST_Request $request ): array {
 		$format  = 'html' === $request->get_param( 'format' ) ? 'html' : '';
 		$content = $request->get_param( 'content' );
+		$content = is_string( $content ) ? wp_check_invalid_utf8( $content ) : '';
+
+		return array(
+			'content' => 'html' === $format ? wp_kses_post( $content ) : $content,
+			'format'  => $format,
+		);
+	}
+
+	/**
+	 * Returns the content of an edited post: each of content and format from the request
+	 * if it has it, else as stored, and filtered for the resulting format.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @param Post            $post    The post as stored.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return array{content: string, format: string}
+	 */
+	public static function edited( WP_REST_Request $request, Post $post ): array {
+		$format  = $request->has_param( 'format' ) ? ( 'html' === $request->get_param( 'format' ) ? 'html' : '' ) : $post->format;
+		$content = $request->has_param( 'content' ) ? $request->get_param( 'content' ) : (string) $post->content;
 		$content = is_string( $content ) ? wp_check_invalid_utf8( $content ) : '';
 
 		return array(

@@ -265,9 +265,9 @@ final class Answers_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$input   = Post_Input::content( $request );
-		$content = $request->has_param( 'content' ) ? $input['content'] : (string) $answer->content;
-		$format  = $request->has_param( 'content' ) ? $input['format'] : $answer->format;
+		$input   = Post_Input::edited( $request, $answer );
+		$content = $input['content'];
+		$format  = $input['format'];
 
 		$errors = Services::validator()->validate_answer(
 			array(

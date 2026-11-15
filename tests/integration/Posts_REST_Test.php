@@ -156,7 +156,43 @@ final class Posts_REST_Test extends REST_Test_Case {
 		$this->assertSame( $question->id, $data['parent'] );
 	}
 
+	public function test_edits_keep_the_stored_format_unless_one_is_sent(): void {
+		$author   = $this->user();
+		$service  = Services::post_service();
+		$question = $this->post( (int) $service->create_question( $author, 'A question written in HTML', '<p>Old</p>', 'html', array() ) );
+		$answer   = $this->post( (int) $service->create_answer( $author, $question, '<p>Old</p>', 'html', null ) );
+		$comment  = $this->post( (int) $service->create_comment( $author, $question, $answer, '<p>Old</p>', 'html', null ) );
+		wp_set_current_user( (int) $author->user_id );
 
+		foreach ( array(
+			'questions' => $question,
+			'answers'   => $answer,
+			'comments'  => $comment,
+		) as $base => $post ) {
+			$route = '/' . $base . '/' . $post->id;
+			$this->assertSame( 200, $this->request( 'PUT', $route, array( 'content' => '<p>New <strong>text of the post</strong></p><script>x</script>' ) )->get_status(), $base );
+			$this->assertSame( 'html', $this->post( $post->id )->format, $base );
+			$this->assertSame( '<p>New <strong>text of the post</strong></p>x', $this->post( $post->id )->content, $base );
+
+			// Sending a format changes it; HTML is filtered also when only the format is sent.
+			$this->assertSame(
+				200,
+				$this->request(
+					'PUT',
+					$route,
+					array(
+						'content' => 'Plain text <b>' . $base . '</b>',
+						'format'  => '',
+					)
+				)->get_status(),
+				$base
+			);
+			$this->assertSame( '', $this->post( $post->id )->format, $base );
+			$this->assertSame( 200, $this->request( 'PUT', $route, array( 'format' => 'html' ) )->get_status(), $base );
+			$this->assertSame( 'html', $this->post( $post->id )->format, $base );
+			$this->assertSame( 'Plain text <b>' . $base . '</b>', $this->post( $post->id )->content, $base );
+		}
+	}
 
 	public function test_converts_answers_to_comments_on_other_answers(): void {
 		$question = $this->ask( $this->user() );

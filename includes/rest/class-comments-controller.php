@@ -250,9 +250,9 @@ final class Comments_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$input   = Post_Input::content( $request );
-		$content = $request->has_param( 'content' ) ? $input['content'] : (string) $comment->content;
-		$format  = $request->has_param( 'content' ) ? $input['format'] : $comment->format;
+		$input   = Post_Input::edited( $request, $comment );
+		$content = $input['content'];
+		$format  = $input['format'];
 
 		$errors = Services::validator()->validate_comment(
 			array(
