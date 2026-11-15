@@ -310,11 +310,20 @@ final class Users_Controller extends Controller {
 		}
 
 		$file = $this->avatar_file( $request );
-		if ( null !== $file ) {
-			if ( ! Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
-				return REST_Errors::permission( 'avatar' );
-			}
+		if ( null !== $file && ! Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
+			return REST_Errors::permission( 'avatar' );
+		}
 
+		// Refusals come before anything is saved, as core validates before `wp_update_user()`.
+		$subscribe = $request->has_param( 'newsletter' ) && self::bool_param( $request, 'newsletter' ) && '' === Newsletter::state( $user_id );
+		if ( $subscribe ) {
+			$allowed = Services::newsletter()->can_subscribe( $user );
+			if ( $allowed instanceof WP_Error ) {
+				return $allowed;
+			}
+		}
+
+		if ( null !== $file ) {
 			$uploaded = Avatars::upload( $user_id, $file );
 			if ( $uploaded instanceof WP_Error ) {
 				$errors = new WP_Error();
@@ -337,28 +346,28 @@ final class Users_Controller extends Controller {
 			}
 		}
 
-		if ( $request->has_param( 'newsletter' ) ) {
-			$wants      = self::bool_param( $request, 'newsletter' );
-			$subscriber = get_userdata( $user_id );
-			if ( ! $wants ) {
-				Newsletter::unsubscribe( $user_id );
-			} elseif ( false !== $subscriber && '' === Newsletter::state( $user_id ) ) {
-				$subscribed = Services::newsletter()->subscribe( $subscriber );
-				if ( $subscribed instanceof WP_Error ) {
-					return $subscribed;
-				}
-			}
+		if ( $request->has_param( 'newsletter' ) && ! self::bool_param( $request, 'newsletter' ) ) {
+			Newsletter::unsubscribe( $user_id );
 		}
-				Messages::set_preferences(
-					$user_id,
-					$request->has_param( 'messages' ) ? self::bool_param( $request, 'messages' ) : null,
-					$request->has_param( 'wall' ) ? self::bool_param( $request, 'wall' ) : null
-				);
+
+		Messages::set_preferences(
+			$user_id,
+			$request->has_param( 'messages' ) ? self::bool_param( $request, 'messages' ) : null,
+			$request->has_param( 'wall' ) ? self::bool_param( $request, 'wall' ) : null
+		);
 		if ( $request->has_param( 'notifications' ) ) {
 			Notifications::set_enabled( $user_id, self::bool_param( $request, 'notifications' ) );
 		}
 
 		Events::dispatch( 'u_save', array( 'user_id' => $user_id ), $actor );
+
+		// The confirmation email goes last: only a failed `wp_mail()` can still go wrong here, and then the rest is saved.
+		if ( $subscribe ) {
+			$subscribed = Services::newsletter()->subscribe( $user );
+			if ( $subscribed instanceof WP_Error ) {
+				return $subscribed;
+			}
+		}
 
 		return $this->respond_with( $this->format( $user, ! self::embedded( $request ), all_fields: true ), $request );
 	}

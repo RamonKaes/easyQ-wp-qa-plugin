@@ -126,14 +126,17 @@ final class Newsletter {
 	}
 
 	/**
-	 * Asks a user to confirm the subscription by email.
+	 * Checks whether a user may ask for the newsletter now, without sending anything.
+	 *
+	 * Callers that save more than the subscription check this first, so that a refusal
+	 * leaves nothing half saved.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param WP_User $user User.
 	 * @return true|WP_Error
 	 */
-	public function subscribe( WP_User $user ): bool|WP_Error {
+	public function can_subscribe( WP_User $user ): bool|WP_Error {
 		if ( ! Options::get_bool( 'newsletter', 'mailing_enabled' ) ) {
 			return new WP_Error( 'easyq_newsletter_off', __( 'There is no newsletter.', 'easyq' ), array( 'status' => 404 ) );
 		}
@@ -147,6 +150,24 @@ final class Newsletter {
 		if ( is_numeric( $sent ) && time() < (int) $sent + self::CONFIRMATION_PAUSE ) {
 			return new WP_Error( 'easyq_limit', __( 'A confirmation email was sent a moment ago. Please check your inbox, or try again in a few minutes.', 'easyq' ), array( 'status' => 429 ) );
 		}
+
+		return true;
+	}
+
+	/**
+	 * Asks a user to confirm the subscription by email.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User $user User.
+	 * @return true|WP_Error
+	 */
+	public function subscribe( WP_User $user ): bool|WP_Error {
+		$allowed = $this->can_subscribe( $user );
+		if ( true !== $allowed || 'confirmed' === self::state( $user->ID ) ) {
+			return $allowed;
+		}
+
 		Site_Meta::update( $user->ID, self::SENT_META, time() );
 
 		// As core stores request keys: only a hash, with the time for the expiry.

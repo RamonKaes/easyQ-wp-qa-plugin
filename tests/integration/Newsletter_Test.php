@@ -7,6 +7,8 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Mail\Notifications;
+use EasyQ\Messages\Messages;
 use EasyQ\Newsletter\Newsletter;
 use EasyQ\Privacy\Privacy;
 use EasyQ\Services;
@@ -119,6 +121,36 @@ final class Newsletter_Test extends REST_Test_Case {
 		Site_Meta::update( $user, Newsletter::SENT_META, time() - Newsletter::CONFIRMATION_PAUSE - 1 );
 		$this->subscribe( $user );
 		$this->assertCount( 2, tests_retrieve_phpmailer_instance()->mock_sent );
+	}
+
+	public function test_a_refused_subscription_saves_nothing_of_the_profile(): void {
+		$user = (int) $this->user()->user_id;
+		$this->subscribe( $user );
+		$this->request( 'POST', '/users/me', array( 'newsletter' => false ) );
+		$events = count( $this->event_names() );
+		$change = array(
+			'fields'        => array( 'location' => 'Rome' ),
+			'newsletter'    => true,
+			'messages'      => false,
+			'notifications' => false,
+		);
+
+		$this->assertSame( 429, $this->request( 'POST', '/users/me', $change )->get_status() );
+		$profile = $this->data( $this->request( 'GET', '/users/me' ) );
+		$this->assertSame( '', array_column( $profile['fields'], 'value', 'name' )['location'] ?? null );
+		$this->assertTrue( Messages::accepts_messages( $user ) );
+		$this->assertTrue( Notifications::enabled( $user ) );
+		$this->assertCount( $events, $this->event_names(), 'No u_save event.' );
+
+		// Only a failed email can still go wrong after the checks; then the rest is saved and the error is reported.
+		Site_Meta::update( $user, Newsletter::SENT_META, time() - Newsletter::CONFIRMATION_PAUSE - 1 );
+		add_filter( 'pre_wp_mail', '__return_false' );
+		$failed = $this->request( 'POST', '/users/me', $change );
+		remove_filter( 'pre_wp_mail', '__return_false' );
+		$this->assertSame( 500, $failed->get_status() );
+		$this->assertFalse( Messages::accepts_messages( $user ) );
+		$this->assertFalse( Notifications::enabled( $user ) );
+		$this->assertContains( 'u_save', $this->event_names() );
 	}
 
 	public function test_confirmation_keys_expire(): void {
