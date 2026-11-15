@@ -324,6 +324,9 @@ final class Users_Controller extends Controller {
 		}
 
 		if ( null !== $file ) {
+			// Every attempt counts, also one that is refused, as `qa_limits_increment()` comes before
+			// the checks of the image in Question2Answer: decoding an image costs the server either way.
+			Services::limits()->increment( Limits::UPLOADS, $actor );
 			$uploaded = Avatars::upload( $user_id, $file );
 			if ( $uploaded instanceof WP_Error ) {
 				$errors = new WP_Error();
@@ -331,8 +334,6 @@ final class Users_Controller extends Controller {
 
 				return REST_Errors::invalid( $errors );
 			}
-
-			Services::limits()->increment( Limits::UPLOADS, $actor );
 		} elseif ( self::bool_param( $request, 'remove_avatar' ) ) {
 			Avatars::remove( $user_id );
 		}

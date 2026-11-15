@@ -272,6 +272,64 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertFalse( has_filter( 'wp_image_editors', array( \EasyQ\Users\Avatars::class, 'image_editors' ) ), 'Only for the avatar.' );
 	}
 
+	public function test_an_image_too_large_for_the_memory_is_refused_before_it_is_decoded_and_counted(): void {
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$user_id = $this->login();
+		$actor   = new \EasyQ\Actor( $user_id );
+		$before  = \EasyQ\Services::limits()->remaining( \EasyQ\Limits\Limits::UPLOADS, $actor );
+
+		// A PNG of 5000 x 5000 pixels of one colour: 30 kB on disk, about 180 MB in GD.
+		$png  = get_temp_dir() . 'easyq-many-pixels.png';
+		$data = deflate_init( ZLIB_ENCODING_DEFLATE );
+		$idat = '';
+		$row  = "\0" . str_repeat( "\x80", 5000 * 3 );
+		for ( $y = 0; $y < 5000; $y++ ) {
+			$idat .= deflate_add( $data, $row, ZLIB_NO_FLUSH );
+		}
+		$idat .= deflate_add( $data, '', ZLIB_FINISH );
+		$chunk = static fn ( string $type, string $body ): string => pack( 'N', strlen( $body ) ) . $type . $body . pack( 'N', crc32( $type . $body ) );
+		file_put_contents( $png, "\x89PNG\r\n\x1a\n" . $chunk( 'IHDR', pack( 'NNCCCCC', 5000, 5000, 8, 2, 0, 0, 0 ) ) . $chunk( 'IDAT', $idat ) . $chunk( 'IEND', '' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Test fixture.
+
+		// With about 64 MB left for images, as on a small host. PHP accepts no limit below what it
+		// uses, and `wp_raise_memory_limit()` takes the filtered limit only above the current one.
+		$limit   = (string) ini_get( 'memory_limit' );
+		$used    = (int) ceil( memory_get_usage() / MB_IN_BYTES );
+		$small_m = $used + 64 . 'M';
+		$small   = static fn (): string => $used + 65 . 'M';
+		$this->assertNotFalse( ini_set( 'memory_limit', $small_m ) ); // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- The limit the check reads.
+		add_filter( 'image_memory_limit', $small );
+		$attachments = count(
+			get_posts(
+				array(
+					'post_type'   => 'attachment',
+					'post_status' => 'any',
+					'fields'      => 'ids',
+				)
+			)
+		);
+		$response    = $this->upload( $png );
+		remove_filter( 'image_memory_limit', $small );
+		ini_set( 'memory_limit', $limit ); // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- Restores the limit.
+		wp_delete_file( $png );
+
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertMatchesRegularExpression( '/too many pixels to be processed\. Please scale it down to \d\d%/', (string) ( $response->as_error()?->get_error_data()['params']['avatar'] ?? '' ) );
+		$this->assertCount(
+			$attachments,
+			get_posts(
+				array(
+					'post_type'   => 'attachment',
+					'post_status' => 'any',
+					'fields'      => 'ids',
+				)
+			)
+		);
+		$this->assertSame( $before - 1, \EasyQ\Services::limits()->remaining( \EasyQ\Limits\Limits::UPLOADS, $actor ), 'A refused upload counts.' );
+
+		// An ordinary photo fits.
+		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
+	}
+
 	public function test_the_avatar_editor_keeps_only_the_colour_profiles(): void {
 		$image = new \Imagick();
 		$image->newImage( 4, 4, new \ImagickPixel( 'white' ) );

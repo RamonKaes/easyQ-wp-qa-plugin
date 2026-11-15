@@ -49,6 +49,16 @@ final class Avatars {
 	public const ATTACHMENT_META = '_easyq_avatar_user';
 
 	/**
+	 * Memory an image editor needs per pixel of an image, with a margin: GD holds a true colour
+	 * image in about 7.1 bytes per pixel (measured with PHP 8.4 and a PNG of 4000 x 4000 pixels).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const BYTES_PER_PIXEL = 8;
+
+	/**
 	 * Image types accepted as avatar.
 	 *
 	 * @since 0.1.0
@@ -177,6 +187,15 @@ final class Avatars {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
+		$scale = self::fits_into_memory( $file['tmp_name'] );
+		if ( $scale < 1 ) {
+			return new WP_Error(
+				'easyq_avatar_size',
+				/* translators: %d: percentage, such as 50. */
+				sprintf( __( 'The image has too many pixels to be processed. Please scale it down to %d%% and try again.', 'easyq' ), (int) floor( $scale * 100 ) )
+			);
+		}
+
 		$overrides = array(
 			'test_form' => false,
 			'mimes'     => self::MIME_TYPES,
@@ -240,6 +259,35 @@ final class Avatars {
 		self::set( $user_id, $attachment_id );
 
 		return $attachment_id;
+	}
+
+	/**
+	 * Tells whether an image can be decoded within the memory limit for images, before an
+	 * image editor tries it and PHP stops with a fatal error, as `qa_image_file_too_big()` checks
+	 * it in Question2Answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $path Image file.
+	 * @return float 1 if it fits or cannot be measured, else the factor to scale both sides by.
+	 */
+	private static function fits_into_memory( string $path ): float {
+		$size = wp_getimagesize( $path );
+		if ( ! is_array( $size ) ) {
+			return 1.0;
+		}
+
+		// The editors of core raise the limit for images first; the check counts with that limit.
+		wp_raise_memory_limit( 'image' );
+		$limit = wp_convert_hr_to_bytes( (string) ini_get( 'memory_limit' ) );
+		if ( $limit <= 0 ) {
+			return 1.0;
+		}
+
+		$available = ( $limit - memory_get_usage() ) * 0.9;
+		$needed    = (int) filesize( $path ) + $size[0] * $size[1] * self::BYTES_PER_PIXEL;
+
+		return $needed <= $available ? 1.0 : sqrt( max( 0, $available ) / $needed );
 	}
 
 	/**
