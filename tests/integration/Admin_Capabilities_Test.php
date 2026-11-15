@@ -16,6 +16,27 @@ use WPDieException;
 final class Admin_Capabilities_Test extends Test_Case {
 
 	/**
+	 * The admin menu before the test, restored afterwards for the tests that follow.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $saved = array();
+
+	public function set_up(): void {
+		parent::set_up();
+		foreach ( array( 'submenu', 'menu', '_registered_pages' ) as $name ) {
+			$this->saved[ $name ] = $GLOBALS[ $name ] ?? null;
+		}
+	}
+
+	public function tear_down(): void {
+		foreach ( $this->saved as $name => $value ) {
+			$GLOBALS[ $name ] = $value; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restores the admin menu of the test before.
+		}
+		parent::tear_down();
+	}
+
+	/**
 	 * Returns the screen classes of easyQ: the classes under `includes/admin/` with a `PAGE`
 	 * constant and a `register()` method.
 	 *

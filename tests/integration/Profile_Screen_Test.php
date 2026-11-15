@@ -138,8 +138,12 @@ final class Profile_Screen_Test extends Test_Case {
 	}
 
 	public function test_levels_above_the_own_level_cannot_be_assigned(): void {
-		// A WordPress administrator, who may edit the user, counts as a Q&A administrator.
-		$manager = $this->administrator();
+		// A WordPress administrator of the site counts as a Q&A administrator; on a network core lets
+		// only those with `manage_network_users` edit other users.
+		$manager = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		if ( is_multisite() ) {
+			get_userdata( $manager )->add_cap( 'manage_network_users' );
+		}
 		$user    = self::factory()->user->create();
 
 		$html = $this->render( $manager, $user );
