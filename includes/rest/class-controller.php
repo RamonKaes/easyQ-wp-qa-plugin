@@ -292,6 +292,69 @@ abstract class Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Returns the arguments of the route that the client sent, in the query or the body.
+	 *
+	 * Unlike `WP_REST_Request::has_param()`, this leaves out the path parameters and the
+	 * defaults of the route, so it tells what the client asks to change.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return string[] Names of the arguments.
+	 */
+	protected static function sent_args( WP_REST_Request $request ): array {
+		$args = $request->get_attributes()['args'] ?? array();
+		$sent = array_merge(
+			(array) $request->get_query_params(),
+			(array) $request->get_body_params(),
+			(array) $request->get_json_params(),
+			(array) $request->get_file_params()
+		);
+
+		return array_values( array_intersect( array_map( 'strval', array_keys( is_array( $args ) ? $args : array() ) ), array_map( 'strval', array_keys( $sent ) ) ) );
+	}
+
+	/**
+	 * Checks that the actor may change every field of a post the request sends.
+	 *
+	 * Core checks `edit_post` before any field is read (`WP_REST_Posts_Controller::update_item_permissions_check()`),
+	 * so a request without fields needs a right as well. Fields that only change the
+	 * tags or the category also pass with the right to retag; the notification settings
+	 * belong to the author alone, as in Question2Answer, where only the form of a new post
+	 * sets them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post            $post         Post to change.
+	 * @param Actor           $actor        The actor.
+	 * @param WP_REST_Request $request      Request.
+	 * @param string[]        $retag_fields Fields that the right to retag allows.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	protected function check_edit( Post $post, Actor $actor, WP_REST_Request $request, array $retag_fields = array() ): bool|WP_Error {
+		$rules  = Services::permissions()->post_rules( $post, $actor );
+		$fields = array_diff( self::sent_args( $request ), array( 'silent' ) );
+
+		if ( array() !== array_intersect( $fields, array( 'notify', 'email' ) ) && ! $rules['by_user'] ) {
+			return REST_Errors::permission( 'author' );
+		}
+
+		$needs_edit = array_diff( $fields, $retag_fields );
+		$allowed    = array() === $needs_edit ? $rules['editable'] || ( array() !== $retag_fields && $rules['retaggable'] ) : $rules['editable'];
+		if ( ! $allowed ) {
+			return REST_Errors::permission( 'level' );
+		}
+
+		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
+			return REST_Errors::permission( 'level' );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Loads a post the actor may see.
 	 *
 	 * @since 0.1.0

@@ -35,6 +35,7 @@ final class REST_Errors {
 			'userblock' => array( 403, __( 'Your account is blocked.', 'easyq' ) ),
 			'ipblock'   => array( 403, __( 'Your IP address is blocked.', 'easyq' ) ),
 			'limit'     => array( 429, __( 'You have reached the limit for this hour. Please try again later.', 'easyq' ) ),
+			'author'    => array( 403, __( 'Only the author can change the notification settings of a post.', 'easyq' ) ),
 			'read_only' => array( 503, __( 'The Q&A area is read-only at the moment.', 'easyq' ) ),
 			default     => array( 403, __( 'Sorry, you are not allowed to do this.', 'easyq' ) ),
 		};

@@ -62,6 +62,21 @@ final class Post_Input {
 	}
 
 	/**
+	 * Returns the arguments of an edited post: those of a new post without the name of an
+	 * anonymous author, which an edit keeps.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public static function edit_args(): array {
+		$args = self::content_args( required: false );
+		unset( $args['name'] );
+
+		return $args;
+	}
+
+	/**
 	 * Returns the content of a request, filtered for its format.
 	 *
 	 * @since 0.1.0

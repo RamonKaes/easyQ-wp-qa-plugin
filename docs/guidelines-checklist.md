@@ -45,7 +45,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Capability checks with `current_user_can()` for every action | Met; F-4, F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
+| Capability checks with `current_user_can()` for every action | Met; F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
 | Sanitize input, validate before saving | Met; F-5, F-36 | Settings API `sanitize_callback`, REST argument schemas, services validate |
 | Escape late, on output | Met | PHPCS `EscapeOutput` |
 | Nonces on forms and links that change something | Met; F-23, F-33 | Admin forms and row actions, site forms; REST uses the core `wp_rest` nonce |

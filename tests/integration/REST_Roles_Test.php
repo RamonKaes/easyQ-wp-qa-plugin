@@ -7,7 +7,9 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Database\Schema;
 use EasyQ\Services;
+use EasyQ\Settings\Options;
 use WP_REST_Request;
 
 /**
@@ -27,9 +29,6 @@ final class REST_Roles_Test extends REST_Test_Case {
 		'POST /posts/{}/vote'        => 'Answers with the reason in the check of the permission.',
 		'POST /posts/{}/actions/{}'  => 'Answers with the reason in the check of the permission.',
 		'DELETE /notices/{}'         => 'First-time visitors dismiss their notice.',
-		'POST /questions/{}'         => 'Without fields there is nothing to change; see the test with fields.',
-		'PUT /questions/{}'          => 'Without fields there is nothing to change; see the test with fields.',
-		'PATCH /questions/{}'        => 'Without fields there is nothing to change; see the test with fields.',
 	);
 
 	/**
@@ -126,18 +125,147 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( array(), $open );
 	}
 
-	public function test_visitors_cannot_change_questions(): void {
-		$question = $this->ask( $this->user(), 'A question that stays the same' );
-		wp_set_current_user( 0 );
+	/**
+	 * Returns a valid value for an argument of a route, from its schema.
+	 *
+	 * @param string               $name     Argument.
+	 * @param array<string, mixed> $schema   Schema of the argument.
+	 * @param int                  $category Category for integer arguments.
+	 * @return mixed
+	 */
+	private static function value_for( string $name, array $schema, int $category ): mixed {
+		$types  = (array) ( $schema['type'] ?? 'string' );
+		$format = $schema['format'] ?? '';
+
+		return match ( true ) {
+			isset( $schema['enum'] ) && is_array( $schema['enum'] ) => end( $schema['enum'] ),
+			in_array( 'boolean', $types, true ) => false,
+			in_array( 'array', $types, true ) => array( 'changed' ),
+			in_array( 'integer', $types, true ) => $category,
+			'email' === $format => 'changed@example.org',
+			default => "Changed through $name by someone without the right.",
+		};
+	}
+
+	/**
+	 * Returns the stored row of a post.
+	 *
+	 * @param int $id Post ID.
+	 * @return array<string, mixed>
+	 */
+	private static function row( int $id ): array {
+		global $wpdb;
+
+		$table = Schema::table( 'posts' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- The row as stored, in a test.
+		return (array) $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+	}
+
+	public function test_posts_can_only_be_edited_field_by_field_with_the_right(): void {
+		$author   = $this->user();
+		$service  = Services::post_service();
+		$question = $this->post( $service->create_question( $author, 'How do I configure the widget?', 'I tried everything.', '', array( 'widgets' ), null, '@' ) );
+		$answer   = $this->post( $service->create_answer( $author, $question, 'Open the settings screen.', '', '@' ) );
+		// Every field holds a value that a request could change, the notifications included.
+		$posts    = array( $question->id, $answer->id, $service->create_comment( $author, $question, $answer, 'Thanks, that helped.', '', '@' ) );
+		$category = Services::categories()->create( null, 'Changed' );
+		$this->assertIsInt( $category );
+		$others  = array(
+			'visitor'    => 0,
+			'subscriber' => (int) $this->user()->user_id,
+		);
+		$checked = array();
+		$changed = array();
+
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( ! isset( ( $handler['methods'] ?? array() )['PUT'] ) || ! str_contains( $route, '(?P<id>' ) ) {
+					continue;
+				}
+
+				// The post the route edits: the one an administrator can change without fields.
+				wp_set_current_user( $this->administrator() );
+				$target = null;
+				foreach ( $posts as $post ) {
+					if ( 200 === $this->request( 'PUT', $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $post ) )->get_status() ) {
+						$target = $post;
+					}
+				}
+				if ( null === $target ) {
+					continue;
+				}
+
+				$path   = $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $target );
+				$fields = array_diff( array_keys( (array) ( $handler['args'] ?? array() ) ), array( 'silent' ) );
+				$before = self::row( $target );
+				foreach ( $others as $who => $user_id ) {
+					wp_set_current_user( $user_id );
+					$requests = array( 'no field' => array() );
+					foreach ( $fields as $field ) {
+						$requests[ $field ] = array( $field => self::value_for( $field, (array) $handler['args'][ $field ], $category ) );
+					}
+					foreach ( $requests as $label => $params ) {
+						$status    = $this->request( 'PUT', $path, $params )->get_status();
+						$checked[] = "$who PUT $path $label";
+						if ( 400 > $status || self::row( $target ) !== $before ) {
+							$changed[] = "$who PUT $route $label: $status";
+						}
+					}
+				}
+			}
+		}
+
+		$this->assertGreaterThanOrEqual( 3 * 2 * 6, count( $checked ), 'The routes that edit questions, answers and comments were not found.' );
+		$this->assertSame( array(), $changed );
+	}
+
+	public function test_only_the_author_changes_the_notifications_of_a_post(): void {
+		$author   = $this->user();
+		$service  = Services::post_service();
+		$question = $this->post( $service->create_question( $author, 'How do I configure the widget?', 'I tried everything.', '', array( 'widgets' ), null, '@' ) );
+		$answer   = $this->post( $service->create_answer( $author, $question, 'Open the settings screen.', '', '@' ) );
+		$comment  = $this->post( $service->create_comment( $author, $question, $answer, 'Thanks, that helped.', '', '@' ) );
 
 		foreach ( array(
-			'title'   => 'A title by a visitor here',
-			'content' => 'Content by a visitor here.',
-			'tags'    => array( 'visitor' ),
-		) as $field => $value ) {
-			$this->assertSame( 403, $this->request( 'PUT', '/questions/' . $question->id, array( $field => $value ) )->get_status(), $field );
+			'/questions/' => $question->id,
+			'/answers/'   => $answer->id,
+			'/comments/'  => $comment->id,
+		) as $route => $id ) {
+			wp_set_current_user( $this->administrator() );
+			$response = $this->request( 'PUT', $route . $id, array( 'notify' => false ) );
+			$this->assertSame( 'easyq_author', $response->as_error()->get_error_code(), $route );
+			$this->assertSame( 403, $response->get_status(), $route );
+			$this->assertSame( 200, $this->request( 'PUT', $route . $id, array( 'content' => 'Edited by the administrator, long enough.' ) )->get_status(), $route );
+			$this->assertSame( '@', $this->post( $id )->notify, $route );
+
+			wp_set_current_user( (int) $author->user_id );
+			$this->assertSame( 200, $this->request( 'PUT', $route . $id, array( 'notify' => false ) )->get_status(), $route );
+			$this->assertNull( $this->post( $id )->notify, $route );
 		}
-		$this->assertSame( 'A question that stays the same', $this->post( $question->id )->title );
+	}
+
+	public function test_the_right_to_retag_allows_tags_and_category_only(): void {
+		$question = $this->ask( $this->user() );
+		$retagger = $this->user();
+		Options::update( 'permissions', array( 'permit_retag_cat' => \EasyQ\Users\Permits::USERS ) );
+		wp_set_current_user( (int) $retagger->user_id );
+
+		$this->assertSame( 200, $this->request( 'PUT', '/questions/' . $question->id, array( 'tags' => array( 'retagged' ) ) )->get_status() );
+		$this->assertSame( array( 'retagged' ), $this->post( $question->id )->tag_list() );
+		$this->assertSame( 200, $this->request( 'PUT', '/questions/' . $question->id )->get_status() );
+		$this->assertSame( 403, $this->request( 'PUT', '/questions/' . $question->id, array( 'title' => 'A title by the retagger here' ) )->get_status() );
+		$this->assertSame(
+			403,
+			$this->request(
+				'PUT',
+				'/questions/' . $question->id,
+				array(
+					'tags'    => array( 'both' ),
+					'content' => 'Content by the retagger.',
+				)
+			)->get_status()
+		);
+		$this->assertSame( array( 'retagged' ), $this->post( $question->id )->tag_list() );
 	}
 
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {

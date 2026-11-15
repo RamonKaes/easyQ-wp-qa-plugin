@@ -82,7 +82,7 @@ final class Answers_Controller extends Controller {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'update_item_permissions_check' ),
-					'args'                => Post_Input::content_args( required: false ) + array(
+					'args'                => Post_Input::edit_args() + array(
 						'silent' => array(
 							'description' => __( 'Whether to hide that the answer was edited.', 'easyq' ),
 							'type'        => 'boolean',
@@ -247,15 +247,7 @@ final class Answers_Controller extends Controller {
 			return $answer;
 		}
 
-		if ( ! Services::permissions()->post_rules( $answer, $actor )['editable'] ) {
-			return REST_Errors::permission( 'level' );
-		}
-
-		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
-			return REST_Errors::permission( 'level' );
-		}
-
-		return true;
+		return $this->check_edit( $answer, $actor, $request );
 	}
 
 	/**

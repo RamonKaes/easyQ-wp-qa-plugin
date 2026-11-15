@@ -281,19 +281,7 @@ final class Questions_Controller extends Controller {
 			return $question;
 		}
 
-		$rules        = Services::permissions()->post_rules( $question, $actor );
-		$changes_text = $request->has_param( 'title' ) || $request->has_param( 'content' );
-		$changes_meta = $request->has_param( 'tags' ) || $request->has_param( 'category' );
-
-		if ( ( $changes_text && ! $rules['editable'] ) || ( $changes_meta && ! $rules['retaggable'] && ! $rules['editable'] ) ) {
-			return REST_Errors::permission( 'level' );
-		}
-
-		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
-			return REST_Errors::permission( 'level' );
-		}
-
-		return true;
+		return $this->check_edit( $question, $actor, $request, array( 'tags', 'category' ) );
 	}
 
 	/**
@@ -485,7 +473,7 @@ final class Questions_Controller extends Controller {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function question_args( bool $is_new ): array {
-		return array(
+		$args = array(
 			'title'    => array(
 				'description' => __( 'Title of the question.', 'easyq' ),
 				'type'        => 'string',
@@ -504,11 +492,16 @@ final class Questions_Controller extends Controller {
 				'description' => __( 'Value of the extra question field.', 'easyq' ),
 				'type'        => 'string',
 			),
-			'follow'   => array(
+		) + ( $is_new ? Post_Input::content_args( required: false ) : Post_Input::edit_args() );
+
+		if ( $is_new ) {
+			$args['follow'] = array(
 				'description' => __( 'Answer the new question follows on from.', 'easyq' ),
 				'type'        => 'integer',
-			),
-		) + Post_Input::content_args( required: false );
+			);
+		}
+
+		return $args;
 	}
 
 	/**

@@ -43,6 +43,7 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 | `easyq_confirm` | 403 | Confirm the email address first |
 | `easyq_approve` | 403 | The account must be approved first |
 | `easyq_level` | 403 | Not allowed for this user |
+| `easyq_author` | 403 | Only the author can change the notification settings of a post |
 | `easyq_userblock` | 403 | The user is blocked |
 | `easyq_ipblock` | 403 | The IP address is blocked |
 | `easyq_limit` | 429 | Rate limit reached for this hour |
@@ -84,7 +85,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `POST /questions` | Ask a question: `title`, `content`, `format` (empty for plain text or `html`), `tags` (array, or text as entered by users), `category`, `notify`, `email` and `name` (anonymous authors), `extra` (only while the extra field is on) |
 | `GET /questions/similar` | Similar questions and suggested tags for a `title`, as configured for the ask form |
 | `GET /questions/{id}` | A question; `context=edit` adds the raw content for users who may edit. While the extra field is on, `extra` holds its value as `rendered` (empty unless question pages show it) and, in the edit context, `raw` |
-| `PUT /questions/{id}` | Edit title, content, tags, category or, while the extra field is on, `extra`; `silent` hides the edit for users allowed to edit silently |
+| `PUT /questions/{id}` | Edit title, content, tags, category or, while the extra field is on, `extra`; `silent` hides the edit for users allowed to edit silently. Every field sent needs the right to edit, except `tags` and `category`, which the right to retag allows as well; a request without fields needs one of the two, as in core. `notify` and `email` change the notifications of the author and only the author may send them |
 
 ### Answers
 
@@ -93,7 +94,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `GET /questions/{id}/answers` | Answers sorted as configured, optionally with the selected answer first; `page`, `per_page` |
 | `POST /questions/{id}/answers` | Answer: `content`, `format`, `notify`, `email`, `name` |
 | `GET /answers/{id}` | An answer |
-| `PUT /answers/{id}` | Edit an answer: `content`, `format`, `silent` |
+| `PUT /answers/{id}` | Edit an answer: `content`, `format`, `silent`; `notify` and `email` by the author only, as for questions |
 
 ### Comments
 
@@ -103,7 +104,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `GET /posts/{id}/comments` | Comments on a question or answer, oldest first |
 | `POST /posts/{id}/comments` | Comment: `content`, `format`, `notify`, `email`, `name` |
 | `GET /comments/{id}` | A comment |
-| `PUT /comments/{id}` | Edit a comment |
+| `PUT /comments/{id}` | Edit a comment: `content`, `format`, `silent`; `notify` and `email` by the author only, as for questions |
 
 ### Votes and actions
 
