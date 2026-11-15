@@ -577,8 +577,11 @@ final class Posts_Controller extends Controller {
 	 */
 	private function convert( Actor $actor, Post $answer, Post $question, int $parent_id ): bool|WP_Error {
 		$answers = Services::posts()->answers_of( $question->id );
-		if ( $parent_id === $answer->id || ( $parent_id !== $question->id && ! isset( $answers[ $parent_id ] ) ) ) {
-			return $this->invalid( 'parent', __( 'The comment must belong to the question or another of its answers.', 'easyq' ) );
+		$target  = $parent_id === $question->id ? $question : ( $parent_id !== $answer->id ? ( $answers[ $parent_id ] ?? null ) : null );
+		// Question2Answer offers only targets that may get comments and are not hidden (`qa-include/pages/question-post.php`,
+		// `qa_page_q_edit_a_form()`); the rule `commentable` is false for hidden posts as well.
+		if ( null === $target || ! Services::permissions()->post_rules( $target, $actor, $target === $question ? null : $question )['commentable'] ) {
+			return $this->invalid( 'parent', __( 'The comment must belong to the question or another of its answers that may get comments.', 'easyq' ) );
 		}
 
 		Services::post_service()->answer_to_comment( $actor, $answer, $question, $parent_id, (string) $answer->content, $answer->format, $answer->notify );

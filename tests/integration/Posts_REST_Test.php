@@ -130,12 +130,44 @@ final class Posts_REST_Test extends REST_Test_Case {
 	public function test_converts_answers_to_comments(): void {
 		$question = $this->ask( $this->user() );
 		$answer   = $this->answer( $this->user(), $question );
+		$other    = $this->answer( $this->user(), $question, 'Another answer.' );
+		$hidden   = $this->answer( $this->user(), $question, 'A hidden answer.' );
+		Services::post_service()->set_answer_status( new Actor( $this->administrator() ), $hidden, $question, Post::STATUS_HIDDEN );
 		$this->login( 'editor' );
+		$convert = fn ( array $params = array() ): \WP_REST_Response => $this->request( 'POST', '/posts/' . $answer->id . '/actions/convert', $params );
 
-		$data = $this->data( $this->request( 'POST', '/posts/' . $answer->id . '/actions/convert' ) );
+		// Comments on questions are off by default, so the question is no target, as in Question2Answer.
+		$this->assertSame( 400, $convert()->get_status() );
+		$this->assertSame( 400, $convert( array( 'parent' => $hidden->id ) )->get_status() );
+		$this->assertSame( 400, $convert( array( 'parent' => $answer->id ) )->get_status() );
+		Options::update( 'posting', array( 'comment_on_as' => false ) );
+		$this->assertSame( 400, $convert( array( 'parent' => $other->id ) )->get_status() );
+		$this->assertSame( Post::ANSWER, $this->post( $answer->id )->type );
 
+		Options::update(
+			'posting',
+			array(
+				'comment_on_qs' => true,
+				'comment_on_as' => true,
+			)
+		);
+		$data = $this->data( $convert() );
 		$this->assertSame( 'comment', $data['type'] );
 		$this->assertSame( $question->id, $data['parent'] );
+	}
+
+
+
+	public function test_converts_answers_to_comments_on_other_answers(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$other    = $this->answer( $this->user(), $question, 'Another answer.' );
+		$this->login( 'editor' );
+
+		$data = $this->data( $this->request( 'POST', '/posts/' . $answer->id . '/actions/convert', array( 'parent' => $other->id ) ) );
+
+		$this->assertSame( 'comment', $data['type'] );
+		$this->assertSame( $other->id, $data['parent'] );
 	}
 
 	public function test_moves_questions(): void {
