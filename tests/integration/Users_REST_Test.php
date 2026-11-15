@@ -236,6 +236,60 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertFileDoesNotExist( (string) preg_replace( '/\.png$/', '.jpg', $file ), 'The original stays.' );
 	}
 
+	public function test_avatars_are_turned_upright_by_the_editor_core_chooses_with_the_avatar_editor_first(): void {
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$this->login();
+		$seen    = array();
+		$editors = static function ( array $editors ) use ( &$seen ): array {
+			$seen[] = implode( ', ', $editors );
+
+			return $editors;
+		};
+		$rotated = static function ( $orientation ) use ( &$seen ) {
+			$seen[] = 'orientation ' . $orientation;
+
+			return $orientation;
+		};
+		add_filter( 'wp_image_editors', $editors, 20 );
+		add_filter( 'wp_image_maybe_exif_rotate', $rotated );
+
+		$response = $this->upload( DIR_TESTDATA . '/images/test-image-rotated-90ccw.jpg' );
+		remove_filter( 'wp_image_editors', $editors, 20 );
+		remove_filter( 'wp_image_maybe_exif_rotate', $rotated );
+
+		$this->assertSame( 200, $response->get_status() );
+		// The upload chooses with the avatar editor first and turns the image upright; the metadata
+		// of the stored avatar, made afterwards with core's editors, finds no EXIF orientation left.
+		$this->assertSame(
+			array(
+				\EasyQ\Users\Avatar_Editor_Imagick::class . ', WP_Image_Editor_Imagick, WP_Image_Editor_GD',
+				'orientation 6',
+				'WP_Image_Editor_Imagick, WP_Image_Editor_GD',
+				'orientation ',
+			),
+			$seen
+		);
+		$this->assertFalse( has_filter( 'wp_image_editors', array( \EasyQ\Users\Avatars::class, 'image_editors' ) ), 'Only for the avatar.' );
+	}
+
+	public function test_the_avatar_editor_keeps_only_the_colour_profiles(): void {
+		$image = new \Imagick();
+		$image->newImage( 4, 4, new \ImagickPixel( 'white' ) );
+		foreach ( array(
+			'exif' => "Exif\0\0camera",
+			'xmp'  => '<x:xmpmeta/>',
+			'iptc' => 'rights',
+			'icm'  => 'colours',
+		) as $profile => $data ) {
+			$image->setImageProfile( $profile, $data );
+		}
+		$editor = new \EasyQ\Users\Avatar_Editor_Imagick( 'avatar.png' );
+		( new \ReflectionProperty( \WP_Image_Editor_Imagick::class, 'image' ) )->setValue( $editor, $image );
+
+		$this->assertTrue( $editor->strip_profiles() );
+		$this->assertSame( array( 'icm' ), array_keys( $image->getImageProfiles( '*', true ) ) );
+	}
+
 	public function test_an_upload_that_did_not_arrive_is_refused_with_its_reason(): void {
 		// Uploads are off by default; the site owner allows them.
 		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );

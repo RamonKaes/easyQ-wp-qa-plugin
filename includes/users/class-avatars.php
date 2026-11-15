@@ -150,8 +150,9 @@ final class Avatars {
 	/**
 	 * Stores an uploaded image as the avatar of a user, replacing the previous one.
 	 *
-	 * The image is cropped to a square of the configured size, which also drops
-	 * the metadata of the original file, and added to the Media Library.
+	 * The image is turned upright as its EXIF data says, cropped to a square of the
+	 * configured size, stripped of its metadata (see Avatar_Editor_Imagick), and added
+	 * to the Media Library.
 	 *
 	 * @since 0.1.0
 	 *
@@ -191,10 +192,17 @@ final class Avatars {
 			return new WP_Error( 'easyq_avatar_type', __( 'Please upload a JPEG, PNG, GIF or WebP image.', 'easyq' ) );
 		}
 
-		$path   = $uploaded['file'];
-		$side   = max( 16, Options::get_int( 'users', 'avatar_store_size' ) );
+		$path = $uploaded['file'];
+		$side = max( 16, Options::get_int( 'users', 'avatar_store_size' ) );
+		add_filter( 'wp_image_editors', array( self::class, 'image_editors' ) );
 		$editor = wp_get_image_editor( $path );
-		$saved  = is_wp_error( $editor ) || is_wp_error( self::crop( $editor, $side ) ) ? null : $editor->save( $path );
+		remove_filter( 'wp_image_editors', array( self::class, 'image_editors' ) );
+		if ( ! is_wp_error( $editor ) ) {
+			$editor->maybe_exif_rotate();
+		}
+		$ready = ! is_wp_error( $editor ) && ! is_wp_error( self::crop( $editor, $side ) )
+			&& ! ( $editor instanceof Avatar_Editor_Imagick && is_wp_error( $editor->strip_profiles() ) );
+		$saved = $ready ? $editor->save( $path ) : null;
 		if ( ! is_array( $saved ) || ! is_string( $saved['path'] ?? null ) || ! is_string( $saved['mime-type'] ?? null ) ) {
 			wp_delete_file( $path );
 			return new WP_Error( 'easyq_avatar_type', __( 'Please upload a JPEG, PNG, GIF or WebP image.', 'easyq' ) );
@@ -232,6 +240,23 @@ final class Avatars {
 		self::set( $user_id, $attachment_id );
 
 		return $attachment_id;
+	}
+
+	/**
+	 * Puts the avatar editor before the ImageMagick editor of core, for the upload of an avatar.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string[] $editors Class names of the image editors, in the order core tries them.
+	 * @return string[]
+	 */
+	public static function image_editors( array $editors ): array {
+		$position = array_search( 'WP_Image_Editor_Imagick', $editors, true );
+		if ( false !== $position ) {
+			array_splice( $editors, (int) $position, 0, array( Avatar_Editor_Imagick::class ) );
+		}
+
+		return $editors;
 	}
 
 	/**
