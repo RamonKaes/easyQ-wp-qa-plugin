@@ -115,7 +115,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 
 | Action | Parameters | Description |
 | --- | --- | --- |
-| `select` | `answer` | Select the best answer of the question `{id}` |
+| `select` | `answer` | Select the best answer of the question `{id}`; without `answer`, `400` |
 | `unselect` | – | Remove the selection |
 | `flag`, `unflag`, `clear-flags` | – | Flag, remove own flag, remove all flags |
 | `hide`, `reshow` | – | Hide, show again |

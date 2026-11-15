@@ -383,7 +383,9 @@ final class Posts_Controller extends Controller {
 		$previous = 'delete' === $action ? $this->respond_with_post( $post, $actor, $request )->get_data() : null;
 
 		$result = match ( $action ) {
-			'select', 'unselect' => $this->select( $actor, $post, 'select' === $action ? self::int_param( $request, 'answer' ) : null ),
+			// Selecting needs the answer; clearing the selection is `unselect`.
+			'select'             => null === self::int_param( $request, 'answer' ) ? $this->invalid( 'answer', __( 'Choose the answer to select.', 'easyq' ) ) : $this->select( $actor, $post, self::int_param( $request, 'answer' ) ),
+			'unselect'           => $this->select( $actor, $post, null ),
 			'flag'               => $this->flag( $actor, $post, $question ),
 			'unflag'             => $this->run( static fn () => Services::votes()->unflag( $actor, $post ) ),
 			'clear-flags'        => $this->run( static fn () => Services::votes()->clear_flags( $actor, $post ) ),

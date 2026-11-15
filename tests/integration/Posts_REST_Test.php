@@ -53,6 +53,9 @@ final class Posts_REST_Test extends REST_Test_Case {
 		$this->assertSame( $answer->id, $data['selected_answer'] );
 
 		$this->assertSame( 400, $this->request( 'POST', '/posts/' . $question->id . '/actions/select', array( 'answer' => $question->id ) )->get_status() );
+		// Without the answer: refused, and the selection stays.
+		$this->assertSame( 400, $this->request( 'POST', '/posts/' . $question->id . '/actions/select' )->get_status() );
+		$this->assertSame( $answer->id, $this->post( $question->id )->selected_child_id );
 
 		$data = $this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/unselect' ) );
 		$this->assertNull( $data['selected_answer'] );
