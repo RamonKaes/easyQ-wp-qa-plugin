@@ -74,7 +74,7 @@ code, and known vulnerabilities of the dependencies.
 | --- | --- | --- |
 | Top-level menu only if needed | Met | easyQ has nine screens; a single page would belong under Settings |
 | Capability per screen | Met | `easyq_manage`, Posts from `easyq_moderate` |
-| Menu icon | Kept; reasons to be rewritten, F-38 | `dashicons-format-chat`. Dashicons are to be replaced in menus (Developer Blog, October 2026), without a replacement yet; a base64 SVG would need `base64_encode()`, which the coding standards discourage. Switch once core offers the replacement |
+| Menu icon | Kept | `dashicons-format-chat`. Core paints a menu icon in the colors of the admin color scheme only as `data:image/svg+xml;base64,` (`wp-admin/menu-header.php`, `wp-admin/js/svg-painter.js`), which needs `base64_encode()`, discouraged by the coding standards; other data URIs show as a plain image. Registered icon names need WordPress 7.2, above the minimum of 6.7. Checked on 2026-11-15 |
 
 ## Settings
 
@@ -133,7 +133,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Text domain `easyq` as a literal, placeholders, translator comments, plurals | Met for what PHPCS checks; F-31 | PHPCS i18n sniffs |
-| `load_plugin_textdomain()` on `init` for bundled translations | Open, phase 9; F-38 | No translations are bundled yet; only `languages/easyq.pot` |
+| `load_plugin_textdomain()` | Not used | Translations of a plugin on WordPress.org come as language packs, which core loads when a string of the text domain is first used (`_load_textdomain_just_in_time()` in `wp-includes/l10n.php`); easyQ bundles none, only `languages/easyq.pot`. Needed only if translations are bundled, which phase 9 decides |
 
 ## Plugin directory
 
