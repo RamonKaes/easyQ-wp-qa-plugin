@@ -28,13 +28,16 @@ final class Unsubscribe {
 	/**
 	 * Returns the token of a post.
 	 *
+	 * The site is part of it: the salts are shared by the sites of a network, and post and user
+	 * IDs repeat or are shared there, so a token of one site must not hold on another.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $post_id Post ID.
 	 * @return string
 	 */
 	public static function token( int $post_id ): string {
-		return wp_hash( 'easyq_unsubscribe|' . $post_id );
+		return wp_hash( 'easyq_unsubscribe|' . get_current_blog_id() . '|' . $post_id );
 	}
 
 	/**

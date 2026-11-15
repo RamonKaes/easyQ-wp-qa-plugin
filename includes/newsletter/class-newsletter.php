@@ -252,13 +252,16 @@ final class Newsletter {
 	/**
 	 * Returns the token of the link to stop the newsletter.
 	 *
+	 * The site is part of it: the salts are shared by the sites of a network, and post and user
+	 * IDs repeat or are shared there, so a token of one site must not hold on another.
+	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 * @return string
 	 */
 	public static function token( int $user_id ): string {
-		return wp_hash( 'easyq_newsletter|' . $user_id );
+		return wp_hash( 'easyq_newsletter|' . get_current_blog_id() . '|' . $user_id );
 	}
 
 	/**
