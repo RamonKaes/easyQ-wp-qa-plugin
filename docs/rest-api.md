@@ -100,7 +100,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 
 | Method and route | Description |
 | --- | --- |
-| `GET /posts/{id}` | A question, answer or comment by its ID, with the fields of its type; `context=edit` adds the raw content for users who may edit it. Posts the user may not see answer `404` |
+| `GET /posts/{id}` | A question, answer or comment by its ID, with the fields of its type, or the closing note of a question (`closed_by`); `context=edit` adds the raw content for users who may edit it. Posts the user may not see answer `404`, and so does a post below one: a comment below a hidden answer is hidden with it on every route |
 | `GET /posts/{id}/comments` | Comments on a question or answer, oldest first |
 | `POST /posts/{id}/comments` | Comment: `content`, `format`, `notify`, `email`, `name` |
 | `GET /comments/{id}` | A comment |
@@ -110,7 +110,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 
 | Method and route | Description |
 | --- | --- |
-| `POST /posts/{id}/vote` | `vote`: `1`, `0` or `-1` |
+| `POST /posts/{id}/vote` | `vote`: `1`, `0` or `-1`. Questions, answers and comments only: a closing note changes only when its question is closed or reopened, so votes and actions on it answer `404` |
 | `POST /posts/{id}/actions/{action}` | Perform an action; responds with the changed post, with its question if an answer or comment was converted or moved away, or, after `delete`, with `deleted` and the `previous` post, as core responds to deleting |
 
 | Action | Parameters | Description |

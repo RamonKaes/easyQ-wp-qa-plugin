@@ -357,33 +357,42 @@ abstract class Controller extends WP_REST_Controller {
 	/**
 	 * Loads a post the actor may see.
 	 *
+	 * The post and every post above it must be visible: the question page shows a comment
+	 * only below an answer it shows, as in Question2Answer (`qa-include/pages/question.php`).
+	 *
 	 * @since 0.1.0
 	 *
-	 * @param int         $id    Post ID.
-	 * @param Actor       $actor The actor.
-	 * @param string|null $type  Required base type, e.g. Post::QUESTION.
+	 * @param int                  $id    Post ID.
+	 * @param Actor                $actor The actor.
+	 * @param string|string[]|null $type  Allowed base types, e.g. Post::QUESTION; null for all,
+	 *                                    the closing notes of questions included.
 	 * @return Post|WP_Error
 	 */
-	protected function visible_post( int $id, Actor $actor, ?string $type = null ): Post|WP_Error {
+	protected function visible_post( int $id, Actor $actor, string|array|null $type = null ): Post|WP_Error {
 		$post = Services::posts()->find( $id );
 
-		if ( null === $post || ( null !== $type && $post->base_type() !== $type ) ) {
+		if ( null === $post || ( null !== $type && ! in_array( $post->base_type(), (array) $type, true ) ) ) {
 			return REST_Errors::not_found();
 		}
 
-		$question = Services::post_service()->question_of( $post );
-		if ( null === $question ) {
-			return REST_Errors::not_found();
+		// A comment hangs below an answer or a question, a note or an answer below a question.
+		$chain = array( $post );
+		while ( Post::QUESTION !== end( $chain )->base_type() ) {
+			$parent_id = end( $chain )->parent_id;
+			$parent    = null === $parent_id || count( $chain ) > 2 ? null : Services::posts()->find( $parent_id );
+			if ( null === $parent ) {
+				return REST_Errors::not_found();
+			}
+			$chain[] = $parent;
 		}
 
-		$view = $this->check( 'permit_view_q_page', $actor, $question );
+		$view = $this->check( 'permit_view_q_page', $actor, end( $chain ) );
 		if ( true !== $view ) {
 			return $view;
 		}
 
 		$permissions = Services::permissions();
-		foreach ( array_unique( array( $question->id, $post->id ) ) as $check_id ) {
-			$check = $check_id === $post->id ? $post : $question;
+		foreach ( array_reverse( $chain ) as $check ) {
 			if ( ! $permissions->post_rules( $check, $actor )['viewable'] ) {
 				return REST_Errors::not_found();
 			}

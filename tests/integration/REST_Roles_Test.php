@@ -268,6 +268,102 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( array( 'retagged' ), $this->post( $question->id )->tag_list() );
 	}
 
+	/**
+	 * Sends a request to every route that takes a post, on every method, with the given post,
+	 * and to the actions route with every action.
+	 *
+	 * @param int $post Post ID.
+	 * @return array<string, int> Status by method and route.
+	 */
+	private function every_route_with( int $post ): array {
+		$actions  = array_keys( (array) ( new \ReflectionClassConstant( \EasyQ\REST\Posts_Controller::class, 'ACTIONS' ) )->getValue() );
+		$statuses = array();
+		$routes   = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			// The routes that take a post: their controller loads it with `visible_post()`.
+			$callback = $handlers[0]['callback'] ?? null;
+			$file     = is_array( $callback ) && is_object( $callback[0] ) ? (string) ( new \ReflectionClass( $callback[0] ) )->getFileName() : '';
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file in a test.
+			if ( 1 !== preg_match( '/\(\?P<\w+>/', $route ) || '' === $file || ! str_contains( (string) file_get_contents( $file ), '->visible_post(' ) ) {
+				continue;
+			}
+			$routes[] = $route;
+			$methods  = array();
+			foreach ( $handlers as $handler ) {
+				$methods = array_merge( $methods, array_keys( array_filter( (array) ( $handler['methods'] ?? array() ) ) ) );
+			}
+			foreach ( array_diff( array_unique( $methods ), array( 'HEAD' ) ) as $method ) {
+				foreach ( str_contains( $route, '(?P<action>' ) ? $actions : array( 'hide' ) as $action ) {
+					$path                        = (string) preg_replace( '/\(\?P<action>[^)]*\)/', $action, substr( $route, strlen( '/easyq/v1' ) ) );
+					$path                        = $this->filled( $path, $post );
+					$statuses[ "$method $path" ] = $this->request(
+						$method,
+						$path,
+						array(
+							'content' => 'A comment on what nobody may see.',
+							'answer'  => $post,
+						)
+					)->get_status();
+				}
+			}
+		}
+
+		$this->assertGreaterThanOrEqual( 8, count( $routes ), 'The routes that take a post were not found.' );
+
+		return $statuses;
+	}
+
+	public function test_posts_below_a_hidden_post_are_hidden_on_every_route(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$comment  = $this->comment( $this->user(), $question, $answer );
+		Services::post_service()->set_answer_status( \EasyQ\Actor::system(), $this->post( $answer->id ), $this->post( $question->id ), \EasyQ\Posts\Post::STATUS_HIDDEN );
+		$before = array(
+			$answer->id  => self::row( $answer->id ),
+			$comment->id => self::row( $comment->id ),
+		);
+		$shown  = array();
+
+		foreach ( array( 0, (int) $this->user()->user_id ) as $user_id ) {
+			foreach ( array( $answer->id, $comment->id ) as $post ) {
+				wp_set_current_user( $user_id );
+				foreach ( $this->every_route_with( $post ) as $request => $status ) {
+					if ( 400 > $status ) {
+						$shown[] = "user $user_id, post $post: $request $status";
+					}
+				}
+			}
+		}
+
+		$this->assertSame( array(), $shown );
+		$this->assertSame( $before[ $answer->id ], self::row( $answer->id ) );
+		$this->assertSame( $before[ $comment->id ], self::row( $comment->id ) );
+
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( 200, $this->request( 'GET', '/comments/' . $comment->id )->get_status(), 'Moderators still see it.' );
+	}
+
+	public function test_the_closing_note_is_read_with_its_question_and_changed_by_nothing_else(): void {
+		$question = $this->ask( $this->user() );
+		Services::post_service()->close_with_note( \EasyQ\Actor::system(), $question, 'Closed because it is answered elsewhere.' );
+		$note = (int) $this->post( $question->id )->closed_by_id;
+		$this->assertGreaterThan( 0, $note );
+		$before = self::row( $note );
+
+		wp_set_current_user( $this->administrator() );
+		$changed = array();
+		foreach ( $this->every_route_with( $note ) as $request => $status ) {
+			if ( 400 > $status && ! str_starts_with( $request, 'GET ' ) ) {
+				$changed[] = "$request $status";
+			}
+		}
+
+		$this->assertSame( array(), $changed );
+		$this->assertSame( $before, self::row( $note ) );
+		$this->assertSame( 200, $this->request( 'GET', '/posts/' . $note )->get_status() );
+		$this->assertSame( $note, $this->post( $question->id )->closed_by_id );
+	}
+
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {
 		$question = $this->ask( $this->user() );
 		wp_set_current_user( (int) $this->user()->user_id );

@@ -48,6 +48,16 @@ final class Posts_Controller extends Controller {
 	protected $rest_base = 'posts';
 
 	/**
+	 * Base types that can be voted on or acted on. The closing note of a question is read with
+	 * it and changes only when the question is closed or reopened.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string[]
+	 */
+	private const TARGETS = array( Post::QUESTION, Post::ANSWER, Post::COMMENT );
+
+	/**
 	 * Actions and the post rule that allows each.
 	 *
 	 * @since 0.1.0
@@ -280,7 +290,7 @@ final class Posts_Controller extends Controller {
 			return $writable;
 		}
 
-		$post = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor );
+		$post = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, self::TARGETS );
 		if ( $post instanceof WP_Error ) {
 			return $post;
 		}
@@ -339,7 +349,7 @@ final class Posts_Controller extends Controller {
 			return $writable;
 		}
 
-		$post = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor );
+		$post = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, self::TARGETS );
 		if ( $post instanceof WP_Error ) {
 			return $post;
 		}
