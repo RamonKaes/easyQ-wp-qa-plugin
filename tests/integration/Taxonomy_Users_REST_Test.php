@@ -55,6 +55,9 @@ final class Taxonomy_Users_REST_Test extends REST_Test_Case {
 		);
 
 		$this->assertSame( array( 'php' ), array_column( $this->data( $this->request( 'GET', '/tags', array( 'search' => 'P' ) ) ), 'name' ) );
+		// The wildcards of LIKE are letters to search for, not patterns.
+		$this->assertSame( array(), $this->data( $this->request( 'GET', '/tags', array( 'search' => '%' ) ) ) );
+		$this->assertSame( array(), $this->data( $this->request( 'GET', '/tags', array( 'search' => 'w_rd' ) ) ) );
 	}
 
 	public function test_returns_public_profiles(): void {

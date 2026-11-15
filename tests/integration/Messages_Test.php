@@ -199,6 +199,12 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertSame( 403, $this->request( 'POST', '/messages', $message )->get_status() );
 		Messages::set_preferences( $recipient, true, null );
 
+		// The longest message is accepted, one character more is not, and nothing is sent then.
+		$this->assertSame( 400, $this->request( 'POST', '/messages', array( 'content' => str_repeat( 'ä', Messages::MAX_LENGTH + 1 ) ) + $message )->get_status() );
+		$this->assertCount( 0, tests_retrieve_phpmailer_instance()->mock_sent );
+		$this->assertSame( 201, $this->request( 'POST', '/messages', array( 'content' => str_repeat( 'ä', Messages::MAX_LENGTH ) ) + $message )->get_status() );
+		reset_phpmailer_instance();
+
 		// Without the history, messages are only emailed.
 		Options::update( 'users', array( 'show_message_history' => false ) );
 		$sent = $this->data( $this->request( 'POST', '/messages', $message ) );

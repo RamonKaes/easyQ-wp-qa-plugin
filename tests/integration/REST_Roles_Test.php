@@ -29,7 +29,32 @@ final class REST_Roles_Test extends REST_Test_Case {
 		'POST /posts/{}/vote'        => 'Answers with the reason in the check of the permission.',
 		'POST /posts/{}/actions/{}'  => 'Answers with the reason in the check of the permission.',
 		'DELETE /notices/{}'         => 'First-time visitors dismiss their notice.',
+		'POST /feedback'             => 'Visitors send feedback, as in Q2A (`qa-include/pages/feedback.php`); limited per hour.',
 	);
+
+	/**
+	 * Sends emails through the mock mailer of the test suite with a valid sender, so that the
+	 * routes that send one, such as feedback, can succeed.
+	 */
+	public function set_up(): void {
+		parent::set_up();
+		reset_phpmailer_instance();
+		add_filter( 'wp_mail_from', array( $this, 'mail_from' ) );
+	}
+
+	public function tear_down(): void {
+		remove_filter( 'wp_mail_from', array( $this, 'mail_from' ) );
+		parent::tear_down();
+	}
+
+	/**
+	 * Returns a valid sender address.
+	 *
+	 * @return string
+	 */
+	public function mail_from(): string {
+		return 'wordpress@example.org';
+	}
 
 	/**
 	 * Returns a route with its parameters filled in.
@@ -79,6 +104,8 @@ final class REST_Roles_Test extends REST_Test_Case {
 
 	public function test_no_route_fails_and_visitors_cannot_write(): void {
 		$question = $this->ask( $this->user() );
+		$category = Services::categories()->create( null, 'Target' );
+		$this->assertIsInt( $category );
 		$this->answer( $this->user(), $question );
 		$subscriber = (int) $this->user()->user_id;
 		$server     = rest_get_server();
@@ -96,7 +123,11 @@ final class REST_Roles_Test extends REST_Test_Case {
 					// Each request on a post of its own would hide or delete it for the next route.
 					$post    = $this->ask( $this->user(), "Target of $method" )->id;
 					$request = new WP_REST_Request( $method, $this->filled( $route, $post ) );
-					$status  = $server->dispatch( $request )->get_status();
+					// Valid required arguments: without them core answers 400 before any check.
+					foreach ( self::required_params( $handlers, $method, $category ) as $name => $value ) {
+						$request->set_param( $name, $value );
+					}
+					$status = $server->dispatch( $request )->get_status();
 					++$checked;
 
 					if ( $status >= 500 ) {
@@ -522,6 +553,68 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( 200, $this->request( 'GET', "/users/$reader/wall" )->get_status() );
 		wp_set_current_user( 0 );
 		$this->assertSame( 'easyq_login', $this->request( 'GET', "/users/$reader/wall" )->as_error()?->get_error_code() );
+	}
+
+	public function test_every_rate_limit_stops_the_action_through_the_rest_api(): void {
+		$limits = (array) ( new \ReflectionClassConstant( \EasyQ\Limits\Limits::class, 'SETTINGS' ) )->getValue();
+		// Limits of actions outside the REST API, held by the tests named.
+		$elsewhere = array(
+			\EasyQ\Limits\Limits::REGISTRATIONS => 'Account_Limits_Test',
+			\EasyQ\Limits\Limits::LOGINS        => 'Account_Limits_Test',
+			\EasyQ\Limits\Limits::UPLOADS       => 'Users_REST_Test::test_uploads_can_be_disabled_and_are_rate_limited',
+		);
+		$owner     = $this->take_part( (int) $this->user()->user_id );
+		$question  = $this->ask( $this->user() );
+		$answer    = $this->answer( $this->user(), $question );
+		$recipes   = array(
+			\EasyQ\Limits\Limits::QUESTIONS  => fn ( int $round ): array => array(
+				'POST',
+				'/questions',
+				array(
+					'title'   => "A question near the limit, round $round",
+					'content' => 'Some text.',
+				),
+			),
+			\EasyQ\Limits\Limits::ANSWERS    => fn ( int $round ): array => array( 'POST', '/questions/' . $this->ask( $this->user(), "Question to answer $round" )->id . '/answers', array( 'content' => "An answer near the limit, round $round." ) ),
+			\EasyQ\Limits\Limits::COMMENTS   => fn ( int $round ): array => array( 'POST', '/posts/' . $answer->id . '/comments', array( 'content' => "A comment near the limit, round $round." ) ),
+			\EasyQ\Limits\Limits::VOTES      => fn ( int $round ): array => array( 'POST', '/posts/' . $this->ask( $this->user(), "Question to vote on $round" )->id . '/vote', array( 'vote' => 1 ) ),
+			\EasyQ\Limits\Limits::FLAGS      => fn ( int $round ): array => array( 'POST', '/posts/' . $this->ask( $this->user(), "Question to flag $round" )->id . '/actions/flag' ),
+			\EasyQ\Limits\Limits::MESSAGES   => fn ( int $round ): array => array(
+				'POST',
+				'/messages',
+				array(
+					'to'      => $owner,
+					'content' => "A message near the limit, round $round.",
+				),
+			),
+			\EasyQ\Limits\Limits::WALL_POSTS => fn ( int $round ): array => array( 'POST', "/users/$owner/wall", array( 'content' => "A wall post near the limit, round $round." ) ),
+			\EasyQ\Limits\Limits::FEEDBACK   => fn ( int $round ): array => array( 'POST', '/feedback', array( 'message' => "Feedback near the limit, round $round." ) ),
+		);
+		$this->assertSame( array(), array_diff( array_keys( $limits ), array_keys( $recipes ), array_keys( $elsewhere ) ), 'A limit without a request here.' );
+
+		$settings = array( 'confirm_user_emails' => false );
+		foreach ( $limits as $names ) {
+			foreach ( array_filter( (array) $names ) as $name ) {
+				$settings[ $name ] = 1;
+			}
+		}
+		Options::update( 'spam', $settings );
+
+		$wrong = array();
+		foreach ( $recipes as $limit => $recipe ) {
+			wp_set_current_user( (int) $this->user()->user_id );
+			$_SERVER['REMOTE_ADDR'] = '198.51.100.' . ord( $limit );
+			foreach ( array( 1, 2 ) as $round ) {
+				[ $method, $path, $params ] = $recipe( $round ) + array( 2 => array() );
+				$status                     = $this->request( $method, $path, $params )->get_status();
+				if ( ( 1 === $round && 400 <= $status ) || ( 2 === $round && 429 !== $status ) ) {
+					$wrong[] = "$limit, round $round: $method $path $status";
+				}
+			}
+		}
+		unset( $_SERVER['REMOTE_ADDR'] );
+
+		$this->assertSame( array(), $wrong );
 	}
 
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {
