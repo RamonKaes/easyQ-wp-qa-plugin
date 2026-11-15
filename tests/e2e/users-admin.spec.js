@@ -27,6 +27,7 @@ test.describe( 'Points, user titles and user fields screens', () => {
 				await requestUtils.rest( {
 					method: 'DELETE',
 					path: `/easyq/v1/user-fields/${ field.id }`,
+					params: { force: true },
 				} );
 			}
 		}

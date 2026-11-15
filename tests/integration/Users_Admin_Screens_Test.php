@@ -95,6 +95,19 @@ final class Users_Admin_Screens_Test extends Test_Case {
 		$this->assertContains( 'easyq-recalculated', $codes() );
 	}
 
+	public function test_saving_points_reports_the_recalculation_also_when_the_option_is_added(): void {
+		( new Points_Screen() )->register();
+		$name = Options::option_name( 'points' );
+		// Settings that were never stored, or stored as the defaults: core adds the option on saving.
+		delete_option( $name );
+		$GLOBALS['wp_settings_errors'] = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Only the messages of this save.
+
+		update_option( $name, array( 'points_post_q' => 3 ) + Options::defaults()['points'] );
+
+		$this->assertSame( 3, Options::get_int( 'points', 'points_post_q' ) );
+		$this->assertContains( 'easyq-recalculated', array_column( get_settings_errors( 'easyq_points' ), 'code' ) );
+	}
+
 	public function test_user_titles_screen_lists_titles_with_rows_for_new_ones(): void {
 		Options::update(
 			'points',

@@ -63,6 +63,8 @@ final class Points_Screen {
 		add_action( 'admin_menu', array( $this, 'add_menu' ), 12 );
 		add_action( 'admin_init', array( $this, 'add_fields' ) );
 		add_action( 'update_option_' . Options::option_name( 'points' ), array( $this, 'report_recalculation' ), 20, 2 );
+		// The first save of settings that were never stored, or reset to the defaults, adds the option.
+		add_action( 'add_option_' . Options::option_name( 'points' ), array( $this, 'report_first_recalculation' ), 20, 2 );
 	}
 
 	/**
@@ -77,6 +79,19 @@ final class Points_Screen {
 		if ( array() !== Points::changed_settings( is_array( $old ) ? $old : array(), is_array( $value ) ? $value : array() ) ) {
 			add_settings_error( Registry::group( 'points' ), 'easyq-recalculated', __( 'Settings saved. The points of all users were recalculated.', 'easyq' ), 'success' );
 		}
+	}
+
+	/**
+	 * Tells the user that the first save of the settings recalculated the points of all users,
+	 * as `Points::settings_added()` does for the option core adds then.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $option Option name.
+	 * @param mixed $value  Settings saved.
+	 */
+	public function report_first_recalculation( mixed $option, mixed $value ): void {
+		$this->report_recalculation( array(), $value );
 	}
 
 	/**

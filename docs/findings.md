@@ -15,7 +15,7 @@ for good. The rules of the reviews and the matrix the findings refer to are in
 - **Rejected** findings and **refuted suspicions** stay as well, so that the next
   review does not spend its time on them again.
 
-The next free number is F-41.
+The next free number is F-42.
 
 ## Open
 

@@ -18,6 +18,7 @@ async function deleteCategories( requestUtils ) {
 		await requestUtils.rest( {
 			method: 'DELETE',
 			path: `/easyq/v1/categories/${ category.id }`,
+			params: { force: true },
 		} );
 	}
 }
