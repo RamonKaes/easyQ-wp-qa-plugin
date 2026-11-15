@@ -134,12 +134,54 @@ final class Settings_Test extends Test_Case {
 				$this->assertArrayHasKey( $key, $defaults, "$section.$key" );
 			}
 
-			// The defaults are valid values, so saving them changes nothing.
-			// Registering the setting leaves a missing option missing.
+			// The defaults are valid values, so saving them changes nothing, and they are the
+			// registered default of the setting, which a missing option reads as, as in core.
 			delete_option( Options::option_name( $section ) );
-			$this->assertFalse( get_option( Options::option_name( $section ) ), $section );
+			$this->assertSame( $defaults, get_option( Options::option_name( $section ) ), $section );
+			$this->assertArrayNotHasKey( Options::option_name( $section ), wp_load_alloptions(), $section );
 			$this->assertSame( $defaults, Fields::sanitize( $section, $defaults ), $section );
+			$this->assertSame( array(), get_settings_errors( Options::option_name( $section ) ), $section );
 		}
+	}
+
+	public function test_every_value_the_settings_cannot_take_is_reported_and_the_rest_saved(): void {
+		$checked = array();
+		foreach ( array_keys( Fields::sections() ) as $section ) {
+			$option = Options::option_name( $section );
+			foreach ( Fields::section( $section ) as $key => $field ) {
+				// A stored address, so that keeping it differs from storing an empty one.
+				if ( 'email' === $field['type'] ) {
+					Options::update( $section, array( $key => 'owner@example.org' ) );
+				}
+				$stored = Options::get( $section, $key );
+				$wrong  = match ( $field['type'] ) {
+					'int'    => isset( $field['max'] ) ? $field['max'] + 1 : 'many',
+					'choice' => 'no such choice',
+					'email'  => 'not an address',
+					'slug'   => '%%%',
+					default  => null,
+				};
+				if ( null === $wrong ) {
+					continue;
+				}
+
+				$GLOBALS['wp_settings_errors'] = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Each value on its own.
+				$saved                         = Fields::sanitize( $section, array( $key => $wrong ) );
+				$codes                         = array_column( get_settings_errors( $option ), 'code' );
+
+				$this->assertContains( 'easyq_' . $key, $codes, "$section.$key" );
+				if ( 'int' !== $field['type'] || ! isset( $field['max'] ) ) {
+					$this->assertSame( $stored, $saved[ $key ], "$section.$key keeps its value." );
+				} else {
+					$this->assertSame( $field['max'], $saved[ $key ], "$section.$key takes the nearest value." );
+				}
+				$checked[] = $field['type'];
+			}
+		}
+
+		// Every kind of field that can refuse a value was tried.
+		$this->assertSame( array( 'choice', 'email', 'int', 'slug' ), array_values( array_intersect( array( 'choice', 'email', 'int', 'slug' ), array_unique( $checked ) ) ) );
+		$this->assertGreaterThan( 30, count( $checked ) );
 	}
 
 	public function test_email_settings_accept_addresses_only(): void {

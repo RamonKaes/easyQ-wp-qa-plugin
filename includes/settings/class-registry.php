@@ -55,16 +55,32 @@ final class Registry {
 				$group,
 				Options::option_name( $section ),
 				array(
-					'type'              => 'object',
-					'label'             => Fields::sections()[ $section ],
-					'sanitize_callback' => static fn ( mixed $input ): array => Fields::sanitize( $section, $input ),
-					'show_in_rest'      => array( 'schema' => Fields::schema( $section ) ),
+					'type'         => 'object',
+					'label'        => Fields::sections()[ $section ],
+					'default'      => Options::defaults()[ $section ] ?? array(),
+					'show_in_rest' => array( 'schema' => Fields::schema( $section ) ),
 				)
 			);
+			// Not as `sanitize_callback`, which core hooks with the value alone: the section comes
+			// from the name of the option, which the filter passes second.
+			add_filter( 'sanitize_option_' . Options::option_name( $section ), array( self::class, 'sanitize' ), 10, 2 );
 
 			// Users who manage easyQ may save its settings without managing the whole site.
 			add_filter( 'option_page_capability_' . $group, array( self::class, 'capability' ) );
 		}
+	}
+
+	/**
+	 * Sanitizes a section of the settings when it is saved.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed  $value  Submitted value.
+	 * @param string $option Option name.
+	 * @return array<string, mixed>
+	 */
+	public static function sanitize( mixed $value, string $option ): array {
+		return Fields::sanitize( substr( $option, strlen( Options::option_name( '' ) ) ), $value );
 	}
 
 	/**

@@ -46,7 +46,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Capability checks with `current_user_can()` for every action | Met; F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
-| Sanitize input, validate before saving | Met; F-5, F-36 | Settings API `sanitize_callback`, REST argument schemas, services validate |
+| Sanitize input, validate before saving | Met; F-36 | Settings API through `sanitize_option_{option}` with a named callback, REST argument schemas, services validate; the forms hand on what was typed and the REST API sanitizes (F-5) |
 | Escape late, on output | Met | PHPCS `EscapeOutput` |
 | Nonces on forms and links that change something | Met; F-23, F-33 | Admin forms and row actions, site forms; REST uses the core `wp_rest` nonce |
 | SQL only through `$wpdb->prepare()` | Met | PHPCS `PreparedSQL`, fixed SQL with placeholders |
@@ -80,7 +80,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Settings API: `register_setting()`, sections, fields, `options.php` | Met; F-37 | `Settings\Registry`, `Admin\Settings_Screen` |
+| Settings API: `register_setting()` with `default`, sections, fields, `options.php`, `add_settings_error()` for a value that cannot be saved | Met | `Settings\Registry`, `Settings\Fields::problem()`, `Admin\Settings_Screen`; evidence: `Settings_Test` (every field that can refuse a value, read from the sections) |
 | Layout of the core settings screens | Met | Sections with headings; related settings in one row with a fieldset (Settings → Discussion); dependent fields disabled, not hidden (Settings → Reading) |
 | Design system of 7.1 (`@wordpress/theme`, `--wpds-*` tokens, `ThemeProvider`) | Not used | It styles React interfaces built from `@wordpress/components`; the classic admin styles (`forms.css`, `common.css`, `list-tables.css`) do not use it. easyQ's screens are Settings API and list table pages with core classes; the editor controls come from `@wordpress/components` and take the tokens from core |
 

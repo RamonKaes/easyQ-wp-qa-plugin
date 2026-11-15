@@ -15,7 +15,7 @@ for good. The rules of the reviews and the matrix the findings refer to are in
 - **Rejected** findings and **refuted suspicions** stay as well, so that the next
   review does not spend its time on them again.
 
-The next free number is F-40.
+The next free number is F-41.
 
 ## Open
 
@@ -33,7 +33,6 @@ The next free number is F-40.
 | F-33 | should | B × Guidelines | Smaller deviations in the forms: one nonce action per form, not per post and action (core: `delete-comment_{id}`), also for the row actions of the posts screen; required fields without the marker of `wp_required_field_indicator()`; the registration fields come back empty after an error; failures redirect with a message where core ends with `wp_die()`. The last is kinder than core and needs a decision. | Not in the checklist. |
 | F-35 | should | F × Guidelines | The list tables differ from core: no `set_screen_reader_content()`, so the hidden headings are missing; the page slug as `screen` and hand-set column headers, so Screen Options offers no columns; `_wpnonce` and `_wp_http_referer` stay in the address after a filter or search; views and the checkbox column built by hand. | The checklist row checks the base class and the row header only. |
 | F-36 | should | F × Guidelines | Smaller deviations on the screens: notices written by hand in six files although `wp_admin_notice()` is used in two; one inline `style` attribute on the newsletter buttons; `id="submit"` twice on three screens; the whole `$_POST` handed to four handlers; `did`, `done` and `failed` unprefixed in `removable_query_args` while `easyq_done` is never removed; no help tabs; the label of "Level" on the profile; one constant without `@since`. | PHPCS and axe see none of these as errors. |
-| F-37 | should | G × Error path | A value the sanitizing refuses is dropped or clamped without a message and the screen says "Settings saved."; an invalid email address is stored as empty. Core reports with `add_settings_error()`, and the email templates of the plugin do too. Also: the sections are registered without `default`. | `Settings_Test` asserts the stored value, not what the user is told. |
 | F-38 | should | Cross-cutting × Guidelines | The checklist said more than was checked: the reasons of "Kept: menu icon" do not hold (a data URI needs no `base64_encode()`, and WordPress 7.2 accepts a registered icon name), "three lists" are four, `load_plugin_textdomain()` is not needed for a plugin translated on WordPress.org, and no "Met" named its evidence. | The checklist had no column for evidence; `Docs_Test` checks names. |
 
 ## Deferred

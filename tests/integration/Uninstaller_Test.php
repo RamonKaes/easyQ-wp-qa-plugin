@@ -105,9 +105,10 @@ final class Uninstaller_Test extends Test_Case {
 		$names   = fn (): array => $wpdb->get_col( $wpdb->prepare( 'SELECT option_name FROM %i WHERE option_name LIKE %s', $wpdb->options, '%easyq%' ) );
 		$options = $names();
 		Uninstaller::uninstall_site();
-		$left     = $names();
-		$version  = get_option( Installer::DB_VERSION_OPTION );
-		$settings = get_option( Options::option_name( 'general' ) );
+		$left    = $names();
+		$version = get_option( Installer::DB_VERSION_OPTION );
+		// With a default, as the registered setting has one, a deleted option reads as that default.
+		$settings = get_option( Options::option_name( 'general' ), false );
 		// With a default, as the registered setting has one, a deleted option reads as that default.
 		$templates = get_option( Templates::OPTION, false );
 		restore_current_blog();

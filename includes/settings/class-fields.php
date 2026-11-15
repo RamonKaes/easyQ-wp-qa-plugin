@@ -161,6 +161,12 @@ final class Fields {
 
 			if ( isset( $fields[ $key ] ) ) {
 				$values[ $key ] = self::sanitize_value( $fields[ $key ], $input[ $key ], $current );
+				// As core reports a value it could not take (`sanitize_option()`), so the screen does
+				// not say "Settings saved." over a value that was dropped or changed.
+				$problem = self::problem( $fields[ $key ], $input[ $key ], $values[ $key ] );
+				if ( null !== $problem ) {
+					add_settings_error( Options::option_name( $section ), 'easyq_' . $key, $problem );
+				}
 			} elseif ( ( Options::updating() || ( defined( 'WP_CLI' ) && WP_CLI ) ) && gettype( $input[ $key ] ) === gettype( Options::defaults()[ $section ][ $key ] ?? $current ) ) {
 				// Settings without a field change only through Options::update() or WP-CLI, with the type
 				// of their default, so a value that slipped in with another type does not lock the setting.
@@ -313,7 +319,13 @@ final class Fields {
 				return is_string( $value ) ? wp_kses_post( $value ) : $current;
 
 			case 'email':
-				return is_string( $value ) ? sanitize_email( $value ) : $current;
+				if ( ! is_string( $value ) ) {
+					return $current;
+				}
+				$email = sanitize_email( $value );
+
+				// Empty means the default; an address that is not one keeps the stored address, as core keeps `admin_email`.
+				return '' === trim( $value ) || is_email( $email ) ? $email : $current;
 
 			case 'role_levels':
 				if ( ! is_array( $value ) ) {
@@ -335,6 +347,53 @@ final class Fields {
 
 			default:
 				return is_string( $value ) ? sanitize_text_field( $value ) : $current;
+		}
+	}
+
+	/**
+	 * Says what happened to a submitted value that could not be saved as it was.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $field Field definition.
+	 * @param mixed                $value Submitted value.
+	 * @param mixed                $saved Value that is saved.
+	 * @return string|null The message, or null if the value was saved as submitted.
+	 */
+	private static function problem( array $field, mixed $value, mixed $saved ): ?string {
+		$label = is_string( $field['label'] ?? null ) ? $field['label'] : '';
+
+		switch ( $field['type'] ?? '' ) {
+			case 'int':
+				if ( ! is_numeric( $value ) ) {
+					/* translators: %s: label of a setting. */
+					return sprintf( __( '%s needs a number; the previous value is kept.', 'easyq' ), $label );
+				}
+				$min = is_int( $field['min'] ?? null ) ? $field['min'] : 0;
+				if ( (int) $value !== $saved && is_int( $saved ) ) {
+					return isset( $field['max'] ) && is_int( $field['max'] )
+						/* translators: 1: label of a setting, 2: smallest value, 3: largest value, 4: value saved. */
+						? sprintf( __( '%1$s must be between %2$d and %3$d, so %4$d was saved.', 'easyq' ), $label, $min, $field['max'], $saved )
+						/* translators: 1: label of a setting, 2: smallest value, 3: value saved. */
+						: sprintf( __( '%1$s must be at least %2$d, so %3$d was saved.', 'easyq' ), $label, $min, $saved );
+				}
+				return null;
+
+			case 'choice':
+				$offered = array_map( 'strval', array_keys( is_array( $field['choices'] ?? null ) ? $field['choices'] : array() ) );
+				/* translators: %s: label of a setting. */
+				return is_scalar( $value ) && in_array( (string) $value, $offered, true ) ? null : sprintf( __( '%s needs one of the offered values; the previous one is kept.', 'easyq' ), $label );
+
+			case 'slug':
+				/* translators: %s: label of a setting. */
+				return is_string( $value ) && '' !== sanitize_title( $value ) ? null : sprintf( __( '%s needs letters or digits; the previous value is kept.', 'easyq' ), $label );
+
+			case 'email':
+				/* translators: %s: label of a setting. */
+				return ! is_string( $value ) || ( '' !== trim( $value ) && ! is_email( sanitize_email( $value ) ) ) ? sprintf( __( '%s needs a valid email address; the previous one is kept.', 'easyq' ), $label ) : null;
+
+			default:
+				return null;
 		}
 	}
 

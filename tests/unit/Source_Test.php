@@ -25,7 +25,8 @@ final class Source_Test extends TestCase {
 	 * @return int[] Line numbers.
 	 */
 	private function closure_hooks( string $source ): array {
-		preg_match_all( '/\badd_(?:action|filter)\(\s*[^,;]+,\s*(?:static\s+)?(?:function|fn)\b/', $source, $matches, PREG_OFFSET_CAPTURE );
+		// Hooks, and callbacks that core hooks itself, such as the `sanitize_callback` of `register_setting()`.
+		preg_match_all( '/\badd_(?:action|filter)\(\s*[^,;]+,\s*(?:static\s+)?(?:function|fn)\b|[\'"]\w*callback[\'"]\s*=>\s*(?:static\s+)?(?:function|fn)\b/', $source, $matches, PREG_OFFSET_CAPTURE );
 
 		return array_map(
 			static fn ( array $found ): int => substr_count( substr( $source, 0, $found[1] ), "\n" ) + 1,
@@ -71,5 +72,8 @@ final class Source_Test extends TestCase {
 		$this->assertSame( array( 2 ), $this->closure_hooks( "\nadd_action(\n\t'init',\n\tstatic function (): void {}\n);" ) );
 		$this->assertSame( array(), $this->closure_hooks( "add_action( 'init', array( \$this, 'load' ) );" ) );
 		$this->assertSame( array(), $this->closure_hooks( "add_action( 'init', 'easyq_load' ); \$a = fn () => 1;" ) );
+		$this->assertSame( array( 1 ), $this->closure_hooks( "register_setting( 'g', 'o', array( 'sanitize_callback' => static fn ( \$v ) => \$v ) );" ) );
+		$this->assertSame( array( 1 ), $this->closure_hooks( 'array( "render_callback" => function () {} );' ) );
+		$this->assertSame( array(), $this->closure_hooks( "array( 'sanitize_callback' => array( self::class, 'sanitize' ) );" ) );
 	}
 }
