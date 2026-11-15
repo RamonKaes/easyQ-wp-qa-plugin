@@ -272,6 +272,11 @@ const { state } = store( 'easyq', {
 		*submit( event ) {
 			event.preventDefault();
 			const form = event.target;
+			// A second click while the form is on its way would post it twice: the nonce
+			// can be used again, as core's nonces can.
+			if ( form.getAttribute( 'aria-busy' ) === 'true' ) {
+				return;
+			}
 			const button = form.querySelector( '[type="submit"]' );
 			button?.setAttribute( 'aria-disabled', 'true' );
 			form.setAttribute( 'aria-busy', 'true' );

@@ -66,6 +66,49 @@ test.describe( 'Question page in place', () => {
 		);
 	} );
 
+	test( 'sends a form once however often its button is pressed', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		const question = await ask(
+			requestUtils,
+			'Answered with a double click'
+		);
+		await page.goto( questionUrl( question.id ) );
+
+		// Slow the background request down, so that the second click comes while it is on its way.
+		let sent = 0;
+		await page.route( '**/*', async ( route ) => {
+			const request = route.request();
+			if (
+				request.method() === 'POST' &&
+				request.headers()[ 'x-easyq-in-place' ] === '1'
+			) {
+				sent++;
+				await new Promise( ( resolve ) => setTimeout( resolve, 1000 ) );
+			}
+			await route.continue();
+		} );
+
+		await openAnswerForm( page );
+		await page
+			.getByLabel( 'Your answer' )
+			.fill( 'This answer is sent only once.' );
+		const button = page.getByRole( 'button', { name: 'Answer' } );
+		await button.click();
+		await button.click( { force: true } );
+
+		await expect(
+			page.locator( '[data-wp-router-region="easyq/notices"]' )
+		).toHaveText( 'Your answer has been published.' );
+		await page.unroute( '**/*' );
+		expect( sent ).toBe( 1 );
+		const answers = await requestUtils.rest( {
+			path: `/easyq/v1/questions/${ question.id }/answers`,
+		} );
+		expect( answers ).toHaveLength( 1 );
+	} );
+
 	test( 'shows errors next to the field without reloading the page', async ( {
 		page,
 		requestUtils,
