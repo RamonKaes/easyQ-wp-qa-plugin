@@ -40,14 +40,7 @@ final class Render {
 			$ids[] = $post->user_id;
 			$ids[] = $post->last_user_id;
 		}
-		$ids = array_values( array_unique( array_filter( $ids ) ) );
-
-		cache_users( $ids );
-		Services::points()->prime( $ids );
-		// The titles of the authors depend on their levels, see User_Titles::title().
-		if ( Options::get_bool( 'viewing', 'show_user_titles' ) ) {
-			Services::user_levels()->prime_category_levels( $ids );
-		}
+		Services::user_query()->prime( $ids );
 	}
 
 	/**

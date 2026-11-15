@@ -199,7 +199,7 @@ final class Users_Controller extends Controller {
 			$found = Services::user_query()->find( $sort, $page, $per_page );
 		}
 
-		cache_users( $found['ids'] );
+		Services::user_query()->prime( $found['ids'] );
 
 		$users = array_filter( array_map( 'get_userdata', $found['ids'] ) );
 

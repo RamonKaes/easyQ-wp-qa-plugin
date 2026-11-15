@@ -10,6 +10,7 @@ namespace EasyQ\Users;
 
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
+use EasyQ\Services;
 use WP_User;
 use WP_User_Query;
 
@@ -115,17 +116,74 @@ final class User_Query {
 	 * @return bool
 	 */
 	public function is_shown( WP_User $user, ?int $viewer_id ): bool {
-		if ( ! $this->is_member( $user ) ) {
-			return false;
+		return array() !== $this->shown_ids( array( $user->ID ), $viewer_id );
+	}
+
+	/**
+	 * Loads users who are about to be shown, with their points and category levels, at once,
+	 * as `update_post_author_caches()` does in core.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<?int> $user_ids User IDs; empty values are skipped.
+	 */
+	public function prime( array $user_ids ): void {
+		$ids = array_values( array_unique( array_filter( array_map( 'intval', $user_ids ) ) ) );
+
+		cache_users( $ids );
+		Services::points()->prime( $ids );
+		// Levels and titles depend on the category levels, see User_Titles::title().
+		Services::user_levels()->prime_category_levels( $ids );
+	}
+
+	/**
+	 * Returns those of several users whose profiles a viewer may see, as `is_shown()` decides
+	 * for one, with one query for the whole list instead of one per user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[]    $user_ids  User IDs.
+	 * @param int|null $viewer_id Viewer, null for a visitor.
+	 * @return int[] The shown users, in the given order.
+	 */
+	public function shown_ids( array $user_ids, ?int $viewer_id ): array {
+		$user_ids = array_values( array_unique( array_map( 'intval', $user_ids ) ) );
+		if ( array() === $user_ids ) {
+			return array();
 		}
 
-		if ( null !== $viewer_id && ( $viewer_id === $user->ID || user_can( $viewer_id, 'list_users' ) || user_can( $viewer_id, 'edit_user', $user->ID ) ) ) {
-			return true;
-		}
+		cache_users( $user_ids );
+		$wpdb      = DB::wpdb();
+		$took_part = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$wpdb->get_col(
+				$wpdb->prepare(
+					'SELECT user_id FROM %i WHERE user_id IN (' . implode( ',', array_fill( 0, count( $user_ids ), '%d' ) ) . ')',
+					array_merge( array( Schema::table( 'userpoints' ) ), $user_ids )
+				)
+			)
+		);
+		$took_part = array_flip( $took_part );
 
-		$wpdb = DB::wpdb();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		return null !== $wpdb->get_var( $wpdb->prepare( 'SELECT user_id FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user->ID ) );
+		return array_values(
+			array_filter(
+				$user_ids,
+				function ( int $id ) use ( $took_part, $viewer_id ): bool {
+					$user = get_userdata( $id );
+					if ( false === $user ) {
+						return false;
+					}
+
+					if ( isset( $took_part[ $id ] ) ) {
+						return true;
+					}
+
+					// Without a row of points: members only, and only to themselves and to those who may list or edit users.
+					return ( ! is_multisite() || is_user_member_of_blog( $id ) )
+						&& null !== $viewer_id && ( $viewer_id === $id || user_can( $viewer_id, 'list_users' ) || user_can( $viewer_id, 'edit_user', $id ) );
+				}
+			)
+		);
 	}
 
 	/**

@@ -10,6 +10,7 @@ namespace EasyQ\REST;
 
 use EasyQ\Actor;
 use EasyQ\Capabilities;
+use EasyQ\Messages\Message;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Users\Visitor_Cookie;
@@ -260,6 +261,25 @@ abstract class Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Returns the posts of a list the actor may see, with the actor's votes and flags, which the
+	 * rules read, loaded for the whole list at once.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post[] $posts Posts.
+	 * @param Actor  $actor The actor.
+	 * @return list<Post>
+	 */
+	protected function viewable( array $posts, Actor $actor ): array {
+		if ( null !== $actor->user_id && array() !== $posts ) {
+			Services::votes()->prime( array_map( static fn ( Post $post ): int => $post->id, $posts ), $actor->user_id );
+		}
+		$permissions = Services::permissions();
+
+		return array_values( array_filter( $posts, static fn ( Post $post ): bool => $permissions->post_rules( $post, $actor )['viewable'] ) );
+	}
+
+	/**
 	 * Returns the prepared items of a list.
 	 *
 	 * @since 0.1.0
@@ -274,6 +294,26 @@ abstract class Controller extends WP_REST_Controller {
 		$questions = array_filter( $items, static fn ( $item ): bool => $item instanceof Post && Post::QUESTION === $item->base_type() );
 		if ( array() !== $questions && Post_Input::uses_extra_field() ) {
 			update_meta_cache( 'easyq_post', array_map( static fn ( Post $question ): int => $question->id, $questions ) );
+		}
+
+		// Load the authors and the viewer's votes of posts, and both sides of messages, at once, so
+		// that a longer list costs no more queries, as core primes the caches of its collections.
+		$posts   = array_filter( $items, static fn ( $item ): bool => $item instanceof Post );
+		$viewer  = $this->actor()->user_id;
+		$authors = array();
+		foreach ( $posts as $post ) {
+			$authors[] = $post->user_id;
+			$authors[] = $post->last_user_id;
+		}
+		foreach ( $items as $item ) {
+			if ( $item instanceof Message ) {
+				$authors[] = $item->from_user_id;
+				$authors[] = $item->to_user_id;
+			}
+		}
+		Services::user_query()->prime( $authors );
+		if ( array() !== $posts && null !== $viewer ) {
+			Services::votes()->prime( array_map( static fn ( Post $post ): int => $post->id, $posts ), $viewer );
 		}
 
 		$data = array();

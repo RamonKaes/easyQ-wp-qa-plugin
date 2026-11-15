@@ -119,8 +119,14 @@ final class Favorites_Controller extends Controller {
 				$items[] = $this->item( 'tag', $tag['name'] );
 			}
 		} else {
-			foreach ( Services::favorites()->ids( $user_id, $type ) as $id ) {
-				$items[] = $this->item( $type, $id );
+			// Loaded at once, as core primes the caches of a list.
+			$ids = 'user' === $type ? Services::favorites()->shown_users( $user_id ) : Services::favorites()->ids( $user_id, $type );
+			if ( 'question' === $type ) {
+				Services::posts()->find_many( $ids );
+				Services::votes()->prime( $ids, $user_id );
+			}
+			foreach ( $ids as $id ) {
+				$items[] = $this->item( $type, $id, shown: true );
 			}
 		}
 
@@ -208,11 +214,12 @@ final class Favorites_Controller extends Controller {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string     $type Type name.
-	 * @param int|string $id   ID, for tags the name.
+	 * @param string     $type  Type name.
+	 * @param int|string $id    ID, for tags the name.
+	 * @param bool       $shown Whether a user is known to have a profile the viewer may see.
 	 * @return array{type: string, id: int|string, title: string, link: string}|null Null if it no longer exists.
 	 */
-	private function item( string $type, int|string $id ): ?array {
+	private function item( string $type, int|string $id, bool $shown = false ): ?array {
 		$title = '';
 		$link  = '';
 		switch ( $type ) {
@@ -225,7 +232,7 @@ final class Favorites_Controller extends Controller {
 				break;
 			case 'user':
 				$user = get_userdata( (int) $id );
-				if ( false !== $user && Services::user_query()->is_shown( $user, $this->actor()->user_id ) ) {
+				if ( false !== $user && ( $shown || Services::user_query()->is_shown( $user, $this->actor()->user_id ) ) ) {
 					$title = $user->display_name;
 					$link  = URLs::user( $user );
 				}

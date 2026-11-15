@@ -115,14 +115,12 @@ final class Comments_Controller extends Controller {
 			return $context;
 		}
 
-		$permissions = Services::permissions();
-		$comments    = array_filter(
-			Services::posts()->children( $parent->id ),
-			static fn ( Post $child ): bool => Post::COMMENT === $child->base_type() && $permissions->post_rules( $child, $actor )['viewable']
+		$comments = $this->viewable(
+			array_filter( Services::posts()->children( $parent->id ), static fn ( Post $child ): bool => Post::COMMENT === $child->base_type() ),
+			$actor
 		);
 
 		// Paginated as core paginates comments, ten by default, oldest first.
-		$comments = array_values( $comments );
 		$per_page = self::int_param( $request, 'per_page' ) ?? 10;
 		$page     = max( 1, self::int_param( $request, 'page' ) ?? 1 );
 

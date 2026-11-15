@@ -117,13 +117,7 @@ final class Answers_Controller extends Controller {
 			return $context;
 		}
 
-		$permissions = Services::permissions();
-		$answers     = array_values(
-			array_filter(
-				Services::posts()->answers_of( $question->id ),
-				static fn ( Post $answer ): bool => $permissions->post_rules( $answer, $actor )['viewable']
-			)
-		);
+		$answers = $this->viewable( Services::posts()->answers_of( $question->id ), $actor );
 
 		$by_votes = 'votes' === Options::get_string( 'viewing', 'sort_answers_by' );
 		$selected = Options::get_bool( 'viewing', 'show_selected_first' ) ? $question->selected_child_id : null;

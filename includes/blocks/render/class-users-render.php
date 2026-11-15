@@ -113,9 +113,7 @@ final class Users_Render {
 			return '';
 		}
 
-		cache_users( $found['ids'] );
-		Services::points()->prime( $found['ids'] );
-		Services::user_levels()->prime_category_levels( $found['ids'] );
+		Services::user_query()->prime( $found['ids'] );
 
 		$items = '';
 		foreach ( $found['ids'] as $id ) {

@@ -239,19 +239,7 @@ final class Favorites {
 	 * @return int[] User IDs.
 	 */
 	public function shown_users( int $user_id ): array {
-		$ids = $this->ids( $user_id, 'user' );
-		cache_users( $ids );
-
-		return array_values(
-			array_filter(
-				$ids,
-				static function ( int $id ) use ( $user_id ): bool {
-					$user = get_userdata( $id );
-
-					return false !== $user && Services::user_query()->is_shown( $user, $user_id );
-				}
-			)
-		);
+		return Services::user_query()->shown_ids( $this->ids( $user_id, 'user' ), $user_id );
 	}
 
 	/**
