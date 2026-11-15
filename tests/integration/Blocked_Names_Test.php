@@ -28,6 +28,62 @@ final class Blocked_Names_Test extends Test_Case {
 		$this->assertSame( 10, has_filter( 'wpmu_validate_user_signup', array( $names, 'check_signup' ) ) );
 		$this->assertSame( 10, has_action( 'user_profile_update_errors', array( $names, 'check_profile' ) ) );
 		$this->assertSame( 10, has_filter( 'rest_request_before_callbacks', array( $names, 'check_rest' ) ) );
+		$this->assertSame( 10, has_filter( 'wp_pre_insert_user_data', array( $names, 'keep_display_name' ) ) );
+		$this->assertSame( 10, has_filter( 'insert_user_meta', array( $names, 'keep_nickname' ) ) );
+	}
+
+	public function test_keeps_a_blocked_name_out_of_every_other_way_to_save_a_user(): void {
+		$user_id = self::factory()->user->create(
+			array(
+				'role'         => 'subscriber',
+				'display_name' => 'Ada',
+				'nickname'     => 'ada',
+			)
+		);
+		wp_set_current_user( $user_id );
+
+		// As XML-RPC (`wp.editProfile`) saves a profile.
+		wp_update_user(
+			array(
+				'ID'           => $user_id,
+				'display_name' => 'Anonymous',
+				'nickname'     => 'The anonymous one',
+			)
+		);
+		$this->assertSame( 'Ada', get_userdata( $user_id )->display_name );
+		$this->assertSame( 'ada', get_user_meta( $user_id, 'nickname', true ) );
+
+		wp_update_user(
+			array(
+				'ID'           => $user_id,
+				'display_name' => 'Grace',
+			)
+		);
+		$this->assertSame( 'Grace', get_userdata( $user_id )->display_name );
+
+		// A new user that a plugin creates for a visitor.
+		wp_set_current_user( 0 );
+		$new = wp_insert_user(
+			array(
+				'user_login'   => 'newcomer',
+				'user_pass'    => 'password',
+				'display_name' => 'Anonymous',
+				'nickname'     => 'Anonymous',
+			)
+		);
+		$this->assertIsInt( $new );
+		$this->assertSame( 'newcomer', get_userdata( $new )->display_name );
+		$this->assertSame( 'newcomer', get_user_meta( $new, 'nickname', true ) );
+
+		// Administrators choose any name.
+		wp_set_current_user( $this->administrator() );
+		wp_update_user(
+			array(
+				'ID'           => $user_id,
+				'display_name' => 'Anonymous',
+			)
+		);
+		$this->assertSame( 'Anonymous', get_userdata( $user_id )->display_name );
 	}
 
 	public function test_refuses_blocked_usernames_as_question2answer_does(): void {
@@ -70,6 +126,8 @@ final class Blocked_Names_Test extends Test_Case {
 
 	public function test_lets_users_keep_an_older_name_and_administrators_choose_any(): void {
 		require_once ABSPATH . 'wp-admin/includes/user.php';
+		// The name dates from before the word was blocked, or an administrator gave it.
+		wp_set_current_user( $this->administrator() );
 		$user_id = self::factory()->user->create(
 			array(
 				'role'         => 'subscriber',

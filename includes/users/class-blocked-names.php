@@ -12,6 +12,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
 use WP_Error;
 use WP_REST_Request;
+use WP_User;
 use WP_REST_Users_Controller;
 
 defined( 'ABSPATH' ) || exit;
@@ -52,6 +53,8 @@ final class Blocked_Names {
 		add_filter( 'wpmu_validate_user_signup', array( $this, 'check_signup' ) );
 		add_action( 'user_profile_update_errors', array( $this, 'check_profile' ), 10, 3 );
 		add_filter( 'rest_request_before_callbacks', array( $this, 'check_rest' ), 10, 3 );
+		add_filter( 'wp_pre_insert_user_data', array( $this, 'keep_display_name' ), 10, 3 );
+		add_filter( 'insert_user_meta', array( $this, 'keep_nickname' ), 10, 3 );
 	}
 
 	/**
@@ -127,6 +130,56 @@ final class Blocked_Names {
 				$errors->add( $field, __( '<strong>Error:</strong> Sorry, that name is not allowed. Please choose another one.', 'easyq' ), array( 'form-field' => $field ) );
 			}
 		}
+	}
+
+	/**
+	 * Keeps a blocked display name out of every other way to save a user, such as XML-RPC
+	 * (`wp.editProfile`) or another plugin calling `wp_update_user()`: those have no way to
+	 * report an error, so the stored name stays, or for a new user the login.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $data    Data of the users table that `wp_insert_user()` is about to save.
+	 * @param mixed $update  Whether an existing user is updated.
+	 * @param mixed $user_id ID of the updated user, null for a new one.
+	 * @return mixed
+	 */
+	public function keep_display_name( mixed $data, mixed $update, mixed $user_id ): mixed {
+		if ( ! is_array( $data ) || ! is_string( $data['display_name'] ?? null ) || current_user_can( 'edit_users' ) ) {
+			return $data;
+		}
+
+		$user_id = $update && is_numeric( $user_id ) ? (int) $user_id : 0;
+		if ( self::is_new_blocked_name( $user_id, 'display_name', $data['display_name'] ) ) {
+			$current              = $user_id > 0 ? get_userdata( $user_id ) : false;
+			$data['display_name'] = false !== $current ? $current->display_name : ( is_string( $data['user_login'] ?? null ) ? $data['user_login'] : '' );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Keeps a blocked nickname out of every other way to save a user, as `keep_display_name()`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $meta   Meta of the user that `wp_insert_user()` is about to save.
+	 * @param mixed $user   The user, as saved so far.
+	 * @param mixed $update Whether an existing user is updated.
+	 * @return mixed
+	 */
+	public function keep_nickname( mixed $meta, mixed $user, mixed $update ): mixed {
+		if ( ! is_array( $meta ) || ! is_string( $meta['nickname'] ?? null ) || ! $user instanceof WP_User || current_user_can( 'edit_users' ) ) {
+			return $meta;
+		}
+
+		$user_id = $update ? $user->ID : 0;
+		if ( self::is_new_blocked_name( $user_id, 'nickname', $meta['nickname'] ) ) {
+			$current          = $user_id > 0 ? get_user_meta( $user_id, 'nickname', true ) : '';
+			$meta['nickname'] = is_string( $current ) && '' !== $current ? $current : $user->user_login;
+		}
+
+		return $meta;
 	}
 
 	/**
