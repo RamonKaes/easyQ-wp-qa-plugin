@@ -27,6 +27,15 @@ defined( 'ABSPATH' ) || exit;
 final class Users_Screen {
 
 	/**
+	 * Bulk actions of easyQ on the users list.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string[]
+	 */
+	private const BULK_ACTIONS = array( 'easyq_approve', 'easyq_block', 'easyq_unblock' );
+
+	/**
 	 * Query argument that selects a view.
 	 *
 	 * @since 0.1.0
@@ -46,7 +55,7 @@ final class Users_Screen {
 		add_filter( 'views_users', array( $this, 'views' ) );
 		add_action( 'pre_get_users', array( $this, 'filter_query' ) );
 		add_filter( 'bulk_actions-users', array( $this, 'bulk_actions' ) );
-		add_filter( 'handle_bulk_actions-users', array( $this, 'handle_bulk_action' ), 10, 3 );
+		add_action( 'load-users.php', array( $this, 'handle_bulk_request' ) );
 		add_action( 'admin_notices', array( $this, 'notice' ) );
 	}
 
@@ -180,33 +189,59 @@ final class Users_Screen {
 	}
 
 	/**
-	 * Performs a bulk action.
+	 * Carries out a bulk action of easyQ on the users list, on the request the form sends.
 	 *
-	 * WordPress does not verify the nonce of the users list before it runs custom bulk
-	 * actions (see the `default` branch of wp-admin/users.php), so this method does.
+	 * Core runs `handle_bulk_actions-users` only after it redirected the form to an address
+	 * without `_wpnonce` (the `default` branch of `wp-admin/users.php`), so the nonce can only be
+	 * verified before that, here, as core verifies its own bulk actions with
+	 * `check_admin_referer( 'bulk-users' )`.
+	 *
+	 * @since 0.1.0
+	 */
+	public function handle_bulk_request(): void {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- The nonce is verified once the action is ours.
+		$action = isset( $_REQUEST['action'] ) && is_string( $_REQUEST['action'] ) && '-1' !== $_REQUEST['action'] ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+		if ( '' === $action && isset( $_REQUEST['action2'] ) && is_string( $_REQUEST['action2'] ) ) {
+			$action = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
+		}
+		$user_ids = isset( $_REQUEST['users'] ) && is_array( $_REQUEST['users'] ) ? array_map( static fn ( mixed $id ): int => is_numeric( $id ) ? (int) $id : 0, (array) wp_unslash( $_REQUEST['users'] ) ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each ID is cast to an integer.
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		if ( ! in_array( $action, self::BULK_ACTIONS, true ) ) {
+			return;
+		}
+
+		check_admin_referer( 'bulk-users' );
+		if ( ! current_user_can( Capabilities::MODERATE ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do this.', 'easyq' ), 403 );
+		}
+
+		$back = remove_query_arg( array( 'action', 'action2', 'users', '_wpnonce', '_wp_http_referer', 'easyq_done', 'easyq_count' ), (string) wp_get_referer() );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'easyq_done'  => $action,
+					'easyq_count' => $this->perform( $action, $user_ids, Actor::current() ),
+				),
+				'' === $back ? admin_url( 'users.php' ) : $back
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Carries out a bulk action on users the actor may edit, never on the actor.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $redirect Address to redirect to.
-	 * @param string $action   Bulk action.
+	 * @param string $action   Bulk action, one of `BULK_ACTIONS`.
 	 * @param int[]  $user_ids Selected users.
-	 * @return string
+	 * @param Actor  $actor    Who acts.
+	 * @return int Number of users changed.
 	 */
-	public function handle_bulk_action( string $redirect, string $action, array $user_ids ): string {
-		if ( ! in_array( $action, array( 'easyq_approve', 'easyq_block', 'easyq_unblock' ), true ) || ! current_user_can( Capabilities::MODERATE ) ) {
-			return $redirect;
-		}
-
-		$nonce = isset( $_REQUEST['_wpnonce'] ) && is_string( $_REQUEST['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['_wpnonce'] ) ) : '';
-		if ( ! wp_verify_nonce( $nonce, 'bulk-users' ) ) {
-			return $redirect;
-		}
-
-		$actor = Actor::current();
+	public function perform( string $action, array $user_ids, Actor $actor ): int {
 		$count = 0;
-
-		foreach ( array_map( 'intval', $user_ids ) as $user_id ) {
-			if ( $user_id === $actor->user_id || ! current_user_can( 'edit_user', $user_id ) ) {
+		foreach ( $user_ids as $user_id ) {
+			if ( $user_id === $actor->user_id || ! user_can( (int) $actor->user_id, 'edit_user', $user_id ) ) {
 				continue;
 			}
 
@@ -218,13 +253,7 @@ final class Users_Screen {
 			++$count;
 		}
 
-		return add_query_arg(
-			array(
-				'easyq_done'  => $action,
-				'easyq_count' => $count,
-			),
-			$redirect
-		);
+		return $count;
 	}
 
 	/**

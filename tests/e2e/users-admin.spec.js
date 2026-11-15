@@ -98,6 +98,45 @@ test.describe( 'Points, user titles and user fields screens', () => {
 		await expect( list.getByText( 'favourite-book' ) ).toHaveCount( 0 );
 	} );
 
+	test( 'blocks and unblocks users through the bulk actions of the users list', async ( {
+		admin,
+		page,
+		requestUtils,
+	} ) => {
+		const login = `blocked${ Date.now() }`;
+		const user = await requestUtils.createUser( {
+			username: login,
+			email: `${ login }@example.org`,
+			password: 'password',
+			roles: [ 'subscriber' ],
+		} );
+
+		const bulk = async ( action ) => {
+			await admin.visitAdminPage( 'users.php', `s=${ login }` );
+			await page.locator( `#user_${ user.id }` ).check();
+			await page
+				.locator( '#bulk-action-selector-top' )
+				.selectOption( action );
+			await page.locator( '#doaction' ).click();
+		};
+
+		await bulk( 'easyq_block' );
+		await expect( page.getByText( '1 user blocked.' ) ).toBeVisible();
+		await admin.visitAdminPage( 'users.php', 'easyq_status=blocked' );
+		await expect( page.locator( `#user_${ user.id }` ) ).toBeVisible();
+
+		await bulk( 'easyq_unblock' );
+		await expect( page.getByText( '1 user unblocked.' ) ).toBeVisible();
+		await admin.visitAdminPage( 'users.php', 'easyq_status=blocked' );
+		await expect( page.locator( `#user_${ user.id }` ) ).toBeHidden();
+
+		await requestUtils.rest( {
+			method: 'DELETE',
+			path: `/wp/v2/users/${ user.id }`,
+			params: { force: true, reassign: 1 },
+		} );
+	} );
+
 	test( 'has no accessibility violations', async ( {
 		admin,
 		page,
