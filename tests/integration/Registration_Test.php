@@ -53,6 +53,72 @@ final class Registration_Test extends Test_Case {
 		$this->assertSame( 'Core', apply_filters( 'login_message', 'Core' ) );
 	}
 
+	/**
+	 * @group ms-required
+	 */
+	public function test_the_sign_up_of_a_network_asks_and_keeps_the_input_until_the_account_is_activated(): void {
+		global $wpdb;
+		reset_phpmailer_instance();
+		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
+		$this->assertIsInt( $field );
+		Options::update( 'users', array( 'show_register_terms' => true ) );
+		Options::update(
+			'newsletter',
+			array(
+				'mailing_enabled' => true,
+				'mailing_subject' => 'News',
+				'mailing_body'    => 'Some news.',
+			)
+		);
+
+		// The text above the form, as on the registration form of a single site.
+		Options::update(
+			'users',
+			array(
+				'show_custom_register' => true,
+				'custom_register'      => 'Welcome to the questions.',
+			)
+		);
+		ob_start();
+		do_action( 'before_signup_form' );
+		$this->assertStringContainsString( 'Welcome to the questions.', (string) ob_get_clean() );
+
+		// The fields appear in `wp-signup.php`, with the error of the terms next to them.
+		$errors = new \WP_Error( 'easyq_terms', 'Please accept the terms.' );
+		ob_start();
+		do_action( 'signup_extra_fields', $errors );
+		$form = (string) ob_get_clean();
+		$this->assertStringContainsString( 'name="easyq_fields[' . $field . ']"', $form );
+		$this->assertStringContainsString( 'name="easyq_terms"', $form );
+		$this->assertStringContainsString( 'name="easyq_newsletter"', $form );
+		$this->assertStringContainsString( 'Please accept the terms.', $form );
+
+		// Refused without the terms, accepted with them.
+		$_POST = array(
+			'stage'          => 'validate-user-signup',
+			'easyq_register' => wp_create_nonce( 'easyq_register' ),
+		);
+		$this->assertContains( 'easyq_terms', wpmu_validate_user_signup( 'signupuser', 'signup@example.org' )['errors']->get_error_codes() );
+		$_POST += array(
+			'easyq_terms'      => '1',
+			'easyq_newsletter' => '1',
+			'easyq_fields'     => array( $field => 'Lovelace Ltd' ),
+		);
+		$this->assertNotContains( 'easyq_terms', wpmu_validate_user_signup( 'signupuser', 'signup@example.org' )['errors']->get_error_codes() );
+
+		// Kept in the sign-up, saved when the account is activated.
+		wpmu_signup_user( 'signupuser', 'signup@example.org', apply_filters( 'add_signup_meta', array() ) );
+		$_POST = array();
+		$key   = (string) $wpdb->get_var( $wpdb->prepare( "SELECT activation_key FROM {$wpdb->signups} WHERE user_login = %s", 'signupuser' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The key core mails, in a test.
+		$user  = wpmu_activate_signup( $key );
+		$this->assertIsArray( $user );
+		$user_id = (int) $user['user_id'];
+
+		$this->assertSame( 'Lovelace Ltd', Services::user_fields()->value( $user_id, Services::user_fields()->find( $field ) ) );
+		$this->assertIsArray( Site_Meta::get( $user_id, Registration::TERMS_META ) );
+		$this->assertNotSame( Newsletter::state( $user_id ), Newsletter::state( (int) $this->user()->user_id ), 'The newsletter was asked for.' );
+	}
+
 	public function test_the_form_keeps_what_was_entered_after_core_refused_it(): void {
 		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
 		$this->assertIsInt( $field );

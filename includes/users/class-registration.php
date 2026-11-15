@@ -51,6 +51,13 @@ final class Registration {
 		add_action( 'register_form', array( $this, 'render' ) );
 		add_filter( 'registration_errors', array( $this, 'validate' ) );
 		add_action( 'user_register', array( $this, 'save' ) );
+		// The sign-up of a network (`wp-signup.php`), where `register_form` never runs: core creates
+		// the user only when the account is activated, so the input waits in the sign-up meta.
+		add_action( 'before_signup_form', array( $this, 'print_signup_message' ) );
+		add_action( 'signup_extra_fields', array( $this, 'render' ) );
+		add_filter( 'wpmu_validate_user_signup', array( $this, 'validate_signup' ) );
+		add_filter( 'add_signup_meta', array( $this, 'add_signup_meta' ) );
+		add_action( 'wpmu_activate_user', array( $this, 'activate' ), 10, 3 );
 	}
 
 	/**
@@ -88,11 +95,14 @@ final class Registration {
 	}
 
 	/**
-	 * Outputs the profile fields, the terms and the newsletter.
+	 * Outputs the profile fields, the terms and the newsletter, in the registration form and
+	 * in the sign-up form of a network.
 	 *
 	 * @since 0.1.0
+	 *
+	 * @param mixed $errors Errors of the sign-up form of a network; none for the registration form.
 	 */
-	public function render(): void {
+	public function render( mixed $errors = null ): void {
 		$fields     = $this->fields();
 		$terms      = self::asks_for_terms();
 		$newsletter = Options::get_bool( 'newsletter', 'mailing_enabled' );
@@ -141,6 +151,10 @@ final class Registration {
 				<label for="easyq-register-terms"><?php echo wp_kses_post( self::terms_label() ) . ' ' . wp_required_field_indicator(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The indicator of core is escaped markup. ?></label>
 			</p>
 			<?php
+			// The sign-up of a network shows its errors next to the fields, as core does for its own.
+			if ( $errors instanceof WP_Error && '' !== $errors->get_error_message( 'easyq_terms' ) ) {
+				printf( '<p class="error" id="easyq-register-terms-error">%s</p>', wp_kses_post( $errors->get_error_message( 'easyq_terms' ) ) );
+			}
 		}
 	}
 
@@ -161,42 +175,160 @@ final class Registration {
 	}
 
 	/**
-	 * Stores the profile fields, the accepted terms and the newsletter request of a new user.
+	 * Saves the input of the registration form for a new user.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
 	 */
 	public function save( int $user_id ): void {
-		if ( ! $this->has_valid_nonce() ) {
+		$input = $this->input();
+		if ( null !== $input ) {
+			$this->apply( $user_id, $input );
+		}
+	}
+
+	/**
+	 * Prints the text above the sign-up form of a network, as `message()` adds it to the
+	 * registration form.
+	 *
+	 * @since 0.1.0
+	 */
+	public function print_signup_message(): void {
+		echo $this->message( '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- `message()` escapes the text.
+	}
+
+	/**
+	 * Refuses a sign-up of a network without accepted terms, as `validate()` refuses a
+	 * registration.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $result Result of `wpmu_validate_user_signup()`, with `errors`.
+	 * @return mixed
+	 */
+	public function validate_signup( mixed $result ): mixed {
+		// Only the form of `wp-signup.php`; network administrators add users without it.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only tells which form was sent.
+		$stage = isset( $_POST['stage'] ) && is_string( $_POST['stage'] ) ? sanitize_key( wp_unslash( $_POST['stage'] ) ) : '';
+		if ( 'validate-user-signup' !== $stage || ! is_array( $result ) || ! ( $result['errors'] ?? null ) instanceof WP_Error ) {
+			return $result;
+		}
+
+		$this->validate( $result['errors'] );
+
+		return $result;
+	}
+
+	/**
+	 * Keeps the input of the sign-up form of a network until the account is activated.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $meta Meta of the sign-up.
+	 * @return mixed
+	 */
+	public function add_signup_meta( mixed $meta ): mixed {
+		$input = $this->input();
+		if ( ! is_array( $meta ) || null === $input ) {
+			return $meta;
+		}
+
+		$meta['easyq_registration'] = $input + array( 'site' => get_current_blog_id() );
+
+		return $meta;
+	}
+
+	/**
+	 * Saves the input of the sign-up form of a network once its account is activated, on the
+	 * site it was sent on.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $user_id  ID of the new user.
+	 * @param mixed $password Password, unused.
+	 * @param mixed $meta     Meta of the sign-up.
+	 */
+	public function activate( mixed $user_id, mixed $password, mixed $meta ): void {
+		unset( $password );
+		$input = is_array( $meta ) && is_array( $meta['easyq_registration'] ?? null ) ? $meta['easyq_registration'] : null;
+		if ( null === $input || ! is_numeric( $user_id ) ) {
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in has_valid_nonce().
-		if ( isset( $_POST['easyq_fields'] ) && is_array( $_POST['easyq_fields'] ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in has_valid_nonce().
-			$values = map_deep( wp_unslash( $_POST['easyq_fields'] ), 'sanitize_textarea_field' );
+		$site     = is_numeric( $input['site'] ?? null ) ? (int) $input['site'] : get_current_blog_id();
+		$switched = get_current_blog_id() !== $site && switch_to_blog( $site );
+		/**
+		 * The input as `input()` stored it.
+		 *
+		 * @var array<string, mixed> $input
+		 */
+		$this->apply( (int) $user_id, $input );
+		if ( $switched ) {
+			restore_current_blog();
+		}
+	}
 
-			foreach ( $this->fields() as $field ) {
-				if ( isset( $values[ $field->id ] ) && is_string( $values[ $field->id ] ) ) {
-					Services::user_fields()->set_value( $user_id, $field, $values[ $field->id ] );
-				}
+	/**
+	 * Returns the input of the registration or sign-up form, or null without a valid nonce.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array{fields: array<int, string>, terms: bool, terms_text: string, time: int, newsletter: bool}|null
+	 */
+	private function input(): ?array {
+		if ( ! $this->has_valid_nonce() ) {
+			return null;
+		}
+
+		$fields = array();
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in has_valid_nonce().
+		$posted = isset( $_POST['easyq_fields'] ) && is_array( $_POST['easyq_fields'] ) ? map_deep( wp_unslash( $_POST['easyq_fields'] ), 'sanitize_textarea_field' ) : array();
+		foreach ( $this->fields() as $field ) {
+			if ( is_array( $posted ) && is_string( $posted[ $field->id ] ?? null ) ) {
+				$fields[ $field->id ] = $posted[ $field->id ];
 			}
 		}
 
-		if ( self::asks_for_terms() && $this->ticked( 'easyq_terms' ) ) {
+		return array(
+			'fields'     => $fields,
+			'terms'      => self::asks_for_terms() && $this->ticked( 'easyq_terms' ),
+			'terms_text' => wp_strip_all_tags( self::terms_label() ),
+			'time'       => time(),
+			'newsletter' => $this->ticked( 'easyq_newsletter' ),
+		);
+	}
+
+	/**
+	 * Saves the input of a registration for a user: profile fields, the consent to the terms
+	 * with its time and text, and the request for the newsletter.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int                  $user_id User ID.
+	 * @param array<string, mixed> $input   Input, see `input()`.
+	 */
+	private function apply( int $user_id, array $input ): void {
+		$values = is_array( $input['fields'] ?? null ) ? $input['fields'] : array();
+		foreach ( $this->fields() as $field ) {
+			if ( is_string( $values[ $field->id ] ?? null ) ) {
+				Services::user_fields()->set_value( $user_id, $field, $values[ $field->id ] );
+			}
+		}
+
+		if ( true === ( $input['terms'] ?? false ) ) {
 			Site_Meta::update(
 				$user_id,
 				self::TERMS_META,
 				array(
-					'time' => time(),
-					'text' => wp_strip_all_tags( self::terms_label() ),
+					'time' => is_int( $input['time'] ?? null ) ? $input['time'] : time(),
+					'text' => is_string( $input['terms_text'] ?? null ) ? $input['terms_text'] : '',
 				)
 			);
 		}
 
 		$user = get_userdata( $user_id );
-		if ( false !== $user && $this->ticked( 'easyq_newsletter' ) ) {
+		if ( false !== $user && true === ( $input['newsletter'] ?? false ) ) {
 			// Double opt-in: the subscription starts once the user confirms the email. Without a newsletter, subscribe() refuses.
 			Services::newsletter()->subscribe( $user );
 		}
