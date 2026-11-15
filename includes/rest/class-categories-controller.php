@@ -64,7 +64,7 @@ final class Categories_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_categories' ),
+					'callback'            => array( $this, 'get_items' ),
 					'permission_callback' => array( $this, 'view_permissions_check' ),
 					'args'                => array(
 						'parent' => array(
@@ -75,7 +75,7 @@ final class Categories_Controller extends Controller {
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( $this, 'create_category' ),
+					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->category_args( true ),
 				),
@@ -89,19 +89,19 @@ final class Categories_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_category' ),
+					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'view_permissions_check' ),
 					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
-					'callback'            => array( $this, 'update_category' ),
+					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->category_args( false ),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
-					'callback'            => array( $this, 'delete_category' ),
+					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->force_args() + array(
 						'reassign' => array(
@@ -176,7 +176,7 @@ final class Categories_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_categories( $request ): WP_REST_Response|WP_Error {
+	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$categories = Services::categories();
 
 		if ( $request->has_param( 'parent' ) ) {
@@ -202,7 +202,7 @@ final class Categories_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_category( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$category = Services::categories()->find( (int) self::int_param( $request, 'id' ) );
 
 		return null === $category ? REST_Errors::not_found() : $this->prepare_item_for_response( $category, $request );
@@ -217,7 +217,7 @@ final class Categories_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function create_category( $request ): WP_REST_Response|WP_Error {
+	public function create_item( $request ): WP_REST_Response|WP_Error {
 		$categories = Services::categories();
 		$result     = $categories->create(
 			self::parent_param( $request, 'parent' ),
@@ -254,7 +254,7 @@ final class Categories_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function update_category( $request ): WP_REST_Response|WP_Error {
+	public function update_item( $request ): WP_REST_Response|WP_Error {
 		$categories = Services::categories();
 		$id         = (int) self::int_param( $request, 'id' );
 		$category   = $categories->find( $id );
@@ -288,7 +288,7 @@ final class Categories_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function delete_category( $request ): WP_REST_Response|WP_Error {
+	public function delete_item( $request ): WP_REST_Response|WP_Error {
 		$force = self::force_error( $request );
 		if ( null !== $force ) {
 			return $force;

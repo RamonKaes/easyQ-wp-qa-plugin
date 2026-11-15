@@ -182,6 +182,38 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		return '';
 	}
 
+	public function test_what_a_route_accepts_is_not_read_only_and_every_path_part_is_described(): void {
+		$readonly    = array();
+		$undescribed = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			$schema = rest_get_server()->get_route_options( $route )['schema'] ?? null;
+			$schema = is_callable( $schema ) ? (array) call_user_func( $schema ) : array();
+			preg_match_all( '/\(\?P<(\w+)>/', $route, $parts );
+			foreach ( $handlers as $handler ) {
+				$methods = array_keys( array_filter( (array) ( $handler['methods'] ?? array() ) ) );
+				foreach ( $parts[1] as $part ) {
+					// As core describes `id` on each route that takes it.
+					if ( empty( $handler['args'][ $part ]['description'] ) || empty( $handler['args'][ $part ]['type'] ) ) {
+						$undescribed[] = "$route: $part";
+					}
+				}
+				// The routes that create or change the item itself, as core's schemas mean read-only.
+				$callback = $handler['callback'] ?? null;
+				if ( ! is_array( $callback ) || ! in_array( $callback[1] ?? '', array( 'create_item', 'update_item' ), true ) ) {
+					continue;
+				}
+				foreach ( array_keys( (array) ( $handler['args'] ?? array() ) ) as $arg ) {
+					if ( ! empty( $schema['properties'][ $arg ]['readonly'] ) && ! in_array( $arg, $parts[1], true ) ) {
+						$readonly[] = "$route: $arg";
+					}
+				}
+			}
+		}
+
+		$this->assertSame( array(), array_values( array_unique( $readonly ) ), 'Properties that a route accepts but the schema calls read-only.' );
+		$this->assertSame( array(), array_values( array_unique( $undescribed ) ), 'Parts of the path without a description and a type.' );
+	}
+
 	public function test_every_item_links_itself_and_can_be_changed_by_its_filter_as_in_core(): void {
 		$author   = $this->user();
 		$question = $this->ask( $author );

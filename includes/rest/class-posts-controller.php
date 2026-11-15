@@ -94,7 +94,7 @@ final class Posts_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_posts' ),
+					'callback'            => array( $this, 'get_items' ),
 					'permission_callback' => array( $this, 'list_permissions_check' ),
 					'args'                => array(
 						'view'     => array(
@@ -141,7 +141,7 @@ final class Posts_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_post' ),
+					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => '__return_true',
 					'args'                => $this->read_args(),
 				),
@@ -180,8 +180,9 @@ final class Posts_Controller extends Controller {
 					'permission_callback' => array( $this, 'perform_permissions_check' ),
 					'args'                => array(
 						'action'       => array(
-							'type' => 'string',
-							'enum' => array_keys( self::ACTIONS ),
+							'description' => __( 'Name of the action.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array_keys( self::ACTIONS ),
 						),
 						'answer'       => array(
 							'description' => __( 'Answer to select (select).', 'easyq' ),
@@ -237,7 +238,7 @@ final class Posts_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_posts( $request ): WP_REST_Response|WP_Error {
+	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$actor    = $this->actor();
 		$per_page = self::int_param( $request, 'per_page' ) ?? 20;
 		$result   = Services::moderation_query()->find(
@@ -267,7 +268,7 @@ final class Posts_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_post( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$actor = $this->actor();
 		$post  = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor );
 		if ( $post instanceof WP_Error ) {

@@ -77,13 +77,13 @@ final class User_Fields_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_fields' ),
+					'callback'            => array( $this, 'get_items' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
-					'callback'            => array( $this, 'create_field' ),
+					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->field_args( true ),
 				),
@@ -97,19 +97,19 @@ final class User_Fields_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_field' ),
+					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->read_args(),
 				),
 				array(
 					'methods'             => WP_REST_Server::EDITABLE,
-					'callback'            => array( $this, 'update_field' ),
+					'callback'            => array( $this, 'update_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->field_args( false ),
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
-					'callback'            => array( $this, 'delete_field' ),
+					'callback'            => array( $this, 'delete_item' ),
 					'permission_callback' => array( $this, 'manage_permissions_check' ),
 					'args'                => $this->force_args(),
 				),
@@ -144,7 +144,7 @@ final class User_Fields_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response
 	 */
-	public function get_fields( $request ): WP_REST_Response {
+	public function get_items( $request ): WP_REST_Response {
 		return new WP_REST_Response( $this->collection( Services::user_fields()->all(), $request ) );
 	}
 
@@ -157,7 +157,7 @@ final class User_Fields_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_field( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$field = Services::user_fields()->find( (int) self::int_param( $request, 'id' ) );
 
 		return null === $field ? REST_Errors::not_found() : $this->prepare_item_for_response( $field, $request );
@@ -172,7 +172,7 @@ final class User_Fields_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function create_field( $request ): WP_REST_Response|WP_Error {
+	public function create_item( $request ): WP_REST_Response|WP_Error {
 		$fields = Services::user_fields();
 		$result = $fields->create(
 			(string) self::string_param( $request, 'name' ),
@@ -213,7 +213,7 @@ final class User_Fields_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function update_field( $request ): WP_REST_Response|WP_Error {
+	public function update_item( $request ): WP_REST_Response|WP_Error {
 		$fields = Services::user_fields();
 		$field  = $fields->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $field ) {
@@ -250,7 +250,7 @@ final class User_Fields_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function delete_field( $request ): WP_REST_Response|WP_Error {
+	public function delete_item( $request ): WP_REST_Response|WP_Error {
 		$force = self::force_error( $request );
 		if ( null !== $force ) {
 			return $force;

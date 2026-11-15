@@ -153,7 +153,12 @@ final class Favorites_Controller extends Controller {
 			return REST_Errors::with_status( $result, 'easyq_favorite_self' === $result->get_error_code() ? 400 : 404 );
 		}
 
-		return $this->respond_with( (array) $this->item( $type, $id ), $request );
+		// As core answers a new item: 201 Created. A favorite has no route of its own, so there is
+		// no `Location`; the collection lists it.
+		$response = $this->respond_with( (array) $this->item( $type, $id ), $request );
+		$response->set_status( 201 );
+
+		return $response;
 	}
 
 	/**

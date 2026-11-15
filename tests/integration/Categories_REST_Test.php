@@ -91,7 +91,7 @@ final class Categories_REST_Test extends REST_Test_Case {
 
 		$response = $this->request( 'PUT', '/categories/' . $child['id'], array( 'title' => 'HARDWARE' ) );
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertArrayHasKey( 'title', $response->as_error()->get_error_data()['fields'] );
+		$this->assertArrayHasKey( 'title', $response->as_error()->get_error_data()['params'] );
 		$this->assertSame( 400, $this->request( 'POST', '/categories', array( 'title' => '' ) )->get_status() );
 		$this->assertSame( 404, $this->request( 'PUT', '/categories/999', array( 'title' => 'X' ) )->get_status() );
 
@@ -159,10 +159,10 @@ final class Categories_REST_Test extends REST_Test_Case {
 
 		$response = $this->request( 'POST', '/questions', $question );
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertSame( 'Please choose a category.', $response->as_error()->get_error_data()['fields']['category'] );
+		$this->assertSame( 'Please choose a category.', $response->as_error()->get_error_data()['params']['category'] );
 
 		$response = $this->request( 'POST', '/questions', $question + array( 'category' => $parent ) );
-		$this->assertSame( 'Please choose a subcategory.', $response->as_error()->get_error_data()['fields']['category'] );
+		$this->assertSame( 'Please choose a subcategory.', $response->as_error()->get_error_data()['params']['category'] );
 
 		$created = $this->data( $this->request( 'POST', '/questions', $question + array( 'category' => $child ) ) );
 		$this->assertSame( $child, $created['category']['id'] );

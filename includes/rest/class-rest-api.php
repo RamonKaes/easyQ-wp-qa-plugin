@@ -28,6 +28,63 @@ final class REST_API {
 	public function register(): void {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_filter( 'rest_request_before_callbacks', array( $this, 'refuse_while_read_only' ), 10, 3 );
+		add_filter( 'rest_endpoints', array( $this, 'describe_path_parts' ) );
+	}
+
+	/**
+	 * Describes the parts of the paths of the easyQ API as arguments, as core describes `id` on
+	 * each of its routes, so the index of the API names them with their type.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $endpoints Routes and their handlers.
+	 * @return mixed
+	 */
+	public function describe_path_parts( mixed $endpoints ): mixed {
+		if ( ! is_array( $endpoints ) ) {
+			return $endpoints;
+		}
+
+		$descriptions = array(
+			'id'       => __( 'Unique identifier of the item.', 'easyq' ),
+			'question' => __( 'ID of the question.', 'easyq' ),
+			'parent'   => __( 'ID of the question or answer the comments belong to.', 'easyq' ),
+			'message'  => __( 'ID of the wall post.', 'easyq' ),
+			'ip'       => __( 'IP address.', 'easyq' ),
+			'tool'     => __( 'Name of the tool.', 'easyq' ),
+			'action'   => __( 'Name of the action.', 'easyq' ),
+			'name'     => __( 'Name of the email template.', 'easyq' ),
+		);
+
+		foreach ( $endpoints as $route => $handlers ) {
+			if ( ! is_string( $route ) || ! str_starts_with( $route, '/' . Controller::NAMESPACE . '/' ) || ! is_array( $handlers ) ) {
+				continue;
+			}
+			preg_match_all( '/\(\?P<(\w+)>((?:[^()]|\([^()]*\))*)\)/', $route, $parts, PREG_SET_ORDER );
+			foreach ( $handlers as $key => $handler ) {
+				if ( ! is_int( $key ) || ! is_array( $handler ) ) {
+					continue;
+				}
+				$args = is_array( $handler['args'] ?? null ) ? $handler['args'] : array();
+				foreach ( $parts as [ , $part, $pattern ] ) {
+					if ( isset( $args[ $part ] ) || ! isset( $descriptions[ $part ] ) ) {
+						continue;
+					}
+					$args[ $part ] = array(
+						'description' => $descriptions[ $part ],
+						'type'        => '\\d+' === $pattern ? 'integer' : 'string',
+					);
+					if ( 1 === preg_match( '/^[a-z_-]+(\|[a-z_-]+)+$/', $pattern ) ) {
+						$args[ $part ]['enum'] = explode( '|', $pattern );
+					}
+				}
+				$handler['args']  = $args;
+				$handlers[ $key ] = $handler;
+			}
+			$endpoints[ $route ] = $handlers;
+		}
+
+		return $endpoints;
 	}
 
 	/**

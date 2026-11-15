@@ -68,12 +68,12 @@ final class Schemas {
 			'easyq-category',
 			array(
 				'id'             => self::property( __( 'Unique identifier of the category.', 'easyq' ), 'integer', self::EMBED ),
-				'parent'         => self::property( __( 'Parent category; null for a top-level category.', 'easyq' ), array( 'integer', 'null' ), self::EMBED ),
-				'title'          => self::property( __( 'Name of the category.', 'easyq' ), 'string', self::EMBED ),
-				'slug'           => self::property( __( 'Slug of the category in addresses.', 'easyq' ), 'string', self::EMBED ),
-				'description'    => self::property( __( 'Description of the category.', 'easyq' ), 'string' ),
+				'parent'         => self::WRITABLE + self::property( __( 'Parent category; null for a top-level category.', 'easyq' ), array( 'integer', 'null' ), self::EMBED ),
+				'title'          => self::WRITABLE + self::property( __( 'Name of the category.', 'easyq' ), 'string', self::EMBED ),
+				'slug'           => self::WRITABLE + self::property( __( 'Slug of the category in addresses.', 'easyq' ), 'string', self::EMBED ),
+				'description'    => self::WRITABLE + self::property( __( 'Description of the category.', 'easyq' ), 'string' ),
 				'question_count' => self::property( __( 'Number of questions in the category and its subcategories.', 'easyq' ), 'integer' ),
-				'position'       => self::property( __( 'Position among the categories with the same parent.', 'easyq' ), 'integer' ),
+				'position'       => self::WRITABLE + self::property( __( 'Position among the categories with the same parent.', 'easyq' ), 'integer' ),
 				'path'           => self::property( __( 'Slugs from the top-level category down to this one.', 'easyq' ), 'array', self::EMBED ) + array( 'items' => array( 'type' => 'string' ) ),
 			)
 		);
@@ -182,12 +182,12 @@ final class Schemas {
 			'easyq-user-field',
 			array(
 				'id'          => self::property( __( 'Unique identifier of the field.', 'easyq' ), 'integer', self::EMBED ),
-				'name'        => self::property( __( 'Internal name of the field, part of its user meta key.', 'easyq' ), 'string', self::EMBED ),
-				'label'       => self::property( __( 'Label of the field.', 'easyq' ), 'string', self::EMBED ),
-				'type'        => self::property( __( 'Kind of value.', 'easyq' ), 'string', self::EMBED ) + array( 'enum' => array_keys( User_Fields_Controller::TYPES ) ),
-				'permit'      => self::property( __( 'Who may see the value, as a permission threshold.', 'easyq' ), 'integer' ),
-				'on_register' => self::property( __( 'Whether the field is on the registration form.', 'easyq' ), 'boolean' ),
-				'position'    => self::property( __( 'Position in the list of fields.', 'easyq' ), 'integer' ),
+				'name'        => self::WRITABLE + self::property( __( 'Internal name of the field, part of its user meta key.', 'easyq' ), 'string', self::EMBED ),
+				'label'       => self::WRITABLE + self::property( __( 'Label of the field.', 'easyq' ), 'string', self::EMBED ),
+				'type'        => self::WRITABLE + self::property( __( 'Kind of value.', 'easyq' ), 'string', self::EMBED ) + array( 'enum' => array_keys( User_Fields_Controller::TYPES ) ),
+				'permit'      => self::WRITABLE + self::property( __( 'Who may see the value, as a permission threshold.', 'easyq' ), 'integer' ),
+				'on_register' => self::WRITABLE + self::property( __( 'Whether the field is on the registration form.', 'easyq' ), 'boolean' ),
+				'position'    => self::WRITABLE + self::property( __( 'Position in the list of fields.', 'easyq' ), 'integer' ),
 			)
 		);
 	}
@@ -250,9 +250,9 @@ final class Schemas {
 		return self::schema(
 			'easyq-unsubscribe',
 			array(
-				'post'       => self::property( __( 'The post.', 'easyq' ), 'integer' ),
+				'post'       => self::WRITABLE + self::property( __( 'The post.', 'easyq' ), 'integer' ),
 				'emails'     => self::property( __( 'Whether emails about the post are sent; always false after this request.', 'easyq' ), 'boolean' ),
-				'user'       => self::property( __( 'The user who stops the newsletter.', 'easyq' ), 'integer' ),
+				'user'       => self::WRITABLE + self::property( __( 'The user who stops the newsletter.', 'easyq' ), 'integer' ),
 				'newsletter' => self::property( __( 'Whether the user gets the newsletter; always false after this request.', 'easyq' ), 'boolean' ),
 			)
 		);
@@ -323,7 +323,7 @@ final class Schemas {
 					'description' => __( 'Recipient or owner of the wall.', 'easyq' ),
 					'context'     => array( 'view', 'embed' ),
 				) + $user,
-				'content'  => self::property( __( 'Text of the message.', 'easyq' ), 'object' ) + array( 'properties' => array( 'rendered' => array( 'type' => 'string' ) ) ),
+				'content'  => self::WRITABLE + self::property( __( 'Text of the message.', 'easyq' ), 'object' ) + array( 'properties' => array( 'rendered' => array( 'type' => 'string' ) ) ),
 				'date_gmt' => self::property( __( 'Time of sending, in UTC.', 'easyq' ), 'string' ),
 				'can'      => self::property( __( 'What the current user may do with it.', 'easyq' ), 'object' ) + array( 'properties' => array( 'delete' => array( 'type' => 'boolean' ) ) ),
 				'deleted'  => self::property( __( 'Whether it was deleted, in delete responses.', 'easyq' ), 'boolean' ),
@@ -362,8 +362,8 @@ final class Schemas {
 		return self::schema(
 			'easyq-favorite',
 			array(
-				'type'  => self::property( __( 'Type of the favorite.', 'easyq' ), 'string' ),
-				'id'    => self::property( __( 'ID of the question, user or category, or the name of the tag.', 'easyq' ), array( 'integer', 'string' ) ),
+				'type'  => self::WRITABLE + self::property( __( 'Type of the favorite.', 'easyq' ), 'string' ),
+				'id'    => self::WRITABLE + self::property( __( 'ID of the question, user or category, or the name of the tag.', 'easyq' ), array( 'integer', 'string' ) ),
 				'title' => self::property( __( 'Title or name.', 'easyq' ), 'string' ),
 				'link'  => self::property( __( 'Address of its page.', 'easyq' ), 'string' ),
 			)
@@ -422,6 +422,15 @@ final class Schemas {
 			)
 		);
 	}
+
+	/**
+	 * Marks a property that clients may send, which core does not mark read-only.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, bool>
+	 */
+	private const WRITABLE = array( 'readonly' => false );
 
 	/**
 	 * Returns a read-only property.

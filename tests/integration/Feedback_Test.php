@@ -66,7 +66,7 @@ final class Feedback_Test extends REST_Test_Case {
 	public function test_checks_the_fields(): void {
 		$empty = $this->request( 'POST', '/feedback', array( 'message' => '  ' ) );
 		$this->assertSame( 400, $empty->get_status() );
-		$this->assertArrayHasKey( 'message', $empty->get_data()['data']['fields'] );
+		$this->assertArrayHasKey( 'message', $empty->get_data()['data']['params'] );
 
 		$email = $this->request(
 			'POST',
@@ -77,7 +77,7 @@ final class Feedback_Test extends REST_Test_Case {
 			)
 		);
 		$this->assertSame( 400, $email->get_status() );
-		$this->assertArrayHasKey( 'email', $email->get_data()['data']['fields'] );
+		$this->assertArrayHasKey( 'email', $email->get_data()['data']['params'] );
 		$this->assertSame( array(), tests_retrieve_phpmailer_instance()->mock_sent );
 	}
 

@@ -54,7 +54,7 @@ final class Favorites_Test extends REST_Test_Case {
 					'id'   => $id,
 				)
 			);
-			$this->assertSame( 200, $added->get_status(), $type );
+			$this->assertSame( 201, $added->get_status(), $type );
 			$this->assertSame( $id, $this->data( $added )['id'] );
 			$this->assertTrue( Services::favorites()->has( (int) $fan->user_id, $type, $id ), $type );
 

@@ -81,7 +81,7 @@ final class IPs_Controller extends Controller {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( $this, 'get_ip' ),
+					'callback'            => array( $this, 'get_item' ),
 					'permission_callback' => array( $this, 'ip_permissions_check' ),
 					'args'                => $this->read_args(),
 				),
@@ -168,7 +168,7 @@ final class IPs_Controller extends Controller {
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return WP_REST_Response|WP_Error
 	 */
-	public function get_ip( $request ): WP_REST_Response|WP_Error {
+	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$ip = self::ip( $request );
 
 		return null === $ip ? REST_Errors::not_found() : $this->respond_with( $this->describe( $ip ), $request );

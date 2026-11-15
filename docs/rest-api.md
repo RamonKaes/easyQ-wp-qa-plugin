@@ -21,6 +21,9 @@ The controllers follow `WP_REST_Controller`, one controller per resource: posts,
 questions, answers, comments, categories, tags, users, profile fields, IP addresses
 and tools.
 
+- The callbacks have the names of `WP_REST_Controller` (`get_items`, `get_item`,
+  `create_item`, `update_item`, `delete_item`), every part of a path is described as an
+  argument with its type, and the properties a route accepts are not read-only.
 - Every route describes its response in a JSON schema; an `OPTIONS` request returns
   it, e.g. `OPTIONS /easyq/v1/categories`. Lists are described by the schema of one
   item. Deleting responds with `deleted` and the `previous` item, as core does.
@@ -57,14 +60,14 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 | `easyq_login` | 401 | Log in first |
 | `easyq_confirm` | 403 | Confirm the email address first |
 | `easyq_approve` | 403 | The account must be approved first |
-| `easyq_level` | 403 | Not allowed for this user |
+| `easyq_level` | 401 or 403 | Not allowed: 401 for visitors, who may be allowed once logged in, 403 for users, as core decides (`rest_authorization_required_code()`) |
 | `easyq_author` | 403 | Only the author can change the notification settings of a post |
 | `easyq_userblock` | 403 | The user is blocked; a block stops changes, not reading, as in Q2A |
 | `easyq_ipblock` | 403 | The IP address is blocked; like a blocked user, it may still read |
 | `easyq_limit` | 429 | Rate limit reached for this hour |
 | `easyq_read_only` | 503 | The Q&A area is read-only: every request that changes something answers this before its own checks, unless the user manages easyQ; reading stays open |
 | `easyq_not_found` | 404 | Missing, or not visible to the user |
-| `easyq_invalid` | 400 | Invalid input; `data.fields` holds a message per field |
+| `rest_invalid_param` | 400 | Invalid input, as core answers invalid parameters: `data.params` holds a message per field, `data.details` its error |
 
 ## Posts
 
@@ -156,7 +159,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`), users with special levels (`special`) or the favorites of the current user (`favorites`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages |
 | `GET /users/{id}` | Public Q&A profile: name, avatar, level, title, points, rank, activity counts and the profile fields the viewer may see. As core shows users, a profile is public once its user took part in the Q&A area; until then only the user and those who may list or edit users see it, and others get `404`, here, on the wall and on the profile page. The date of the registration is in the edit context, which, as in core, only they may ask for (`rest_forbidden_context` otherwise). On multisite, users of other sites only have a profile once they took part |
 | `GET /users/me` | The profile of the current user, with all profile fields, including those hidden from others |
-| `POST /users/me` | Change the own profile: `fields` (object of field name and value), `remove_avatar`, `notifications` (whether the user gets emails about their posts; only the current user sees this field), or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; cropped to a square; counts towards the upload rate limit). Name, email address and password are changed in the WordPress profile |
+| `POST /users/me` | Also `PUT` and `PATCH`, as `/wp/v2/users/me`. Change the own profile: `fields` (object of field name and value), `remove_avatar`, `notifications` (whether the user gets emails about their posts; only the current user sees this field), or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; cropped to a square; counts towards the upload rate limit). Name, email address and password are changed in the WordPress profile |
 
 Unless the site allows it in the posting settings, a question needs a category once
 categories exist, and that category must not have subcategories. This applies to
@@ -168,7 +171,7 @@ category) and to the `move` action; a question may always keep the category it h
 | Method and route | Description |
 | --- | --- |
 | `GET /favorites` | The favorites of the logged in user: `type` (`question`, `user`, `tag`, `category`), `page`, `per_page`. Each item has `type`, `id`, `title` and `link` |
-| `POST /favorites` | Add a favorite: `type`, and `id` with the ID, for tags the name. Adding it twice changes nothing. Your own user answers `400`, what does not exist `404` |
+| `POST /favorites` | Add a favorite: `type`, and `id` with the ID, for tags the name; `201`, without `Location`, since a favorite has no route of its own. Adding it twice changes nothing. Your own user answers `400`, what does not exist `404` |
 | `DELETE /favorites` | Remove a favorite: `type` and `id`; responds with `deleted` and `previous` |
 
 ### Walls and private messages
@@ -179,7 +182,7 @@ category) and to the `move` action; a question may always keep the category it h
 | `POST /users/{id}/wall` | Post on a wall: `content`. Needs the permission of the settings; users can turn off posts by others on their wall |
 | `DELETE /users/{id}/wall/{message}` | Delete a wall post for good, with `force=true` as for categories: the owner of the wall, the author until someone else posted after it, and moderators who may hide and delete posts |
 | `GET /messages` | Private messages of the logged in user: `box` (`inbox`, `sent`), `page`, `per_page`; or `with` a user for the latest 20 between both, oldest first. `404` without the message history |
-| `POST /messages` | Send a private message: `to`, `content`. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
+| `POST /messages` | Send a private message: `to`, `content`; `201`, without `Location`, since a message has no route to read it alone. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
 | `DELETE /messages/{id}` | Delete a message from your box; it is gone once both sides deleted it, so one request deletes nothing for good and takes no `force` |
 
 ### Feedback

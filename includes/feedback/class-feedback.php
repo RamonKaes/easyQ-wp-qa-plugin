@@ -108,14 +108,12 @@ final class Feedback {
 			$fields['email'] = __( 'Please enter a valid email address.', 'easyq' );
 		}
 		if ( array() !== $fields ) {
-			return new WP_Error(
-				'easyq_invalid',
-				__( 'Please check the form.', 'easyq' ),
-				array(
-					'status' => 400,
-					'fields' => $fields,
-				)
-			);
+			$errors = new WP_Error();
+			foreach ( $fields as $field => $message ) {
+				$errors->add( $field, $message );
+			}
+
+			return \EasyQ\REST\REST_Errors::invalid( $errors );
 		}
 
 		$user  = null === $actor->user_id ? false : get_userdata( $actor->user_id );

@@ -37,7 +37,8 @@ final class REST_Errors {
 			'limit'     => array( 429, __( 'You have reached the limit for this hour. Please try again later.', 'easyq' ) ),
 			'author'    => array( 403, __( 'Only the author can change the notification settings of a post.', 'easyq' ) ),
 			'read_only' => array( 503, __( 'The Q&A area is read-only at the moment.', 'easyq' ) ),
-			default     => array( 403, __( 'Sorry, you are not allowed to do this.', 'easyq' ) ),
+			// As core: 401 for visitors, who may be allowed once logged in, 403 for users.
+			default     => array( rest_authorization_required_code(), __( 'Sorry, you are not allowed to do this.', 'easyq' ) ),
 		};
 
 		return new WP_Error( 'easyq_' . $reason, $message, array( 'status' => $status ) );
@@ -55,7 +56,9 @@ final class REST_Errors {
 	}
 
 	/**
-	 * Adds the HTTP status and field details to validation errors.
+	 * Returns validation errors as core returns invalid parameters (`rest_invalid_param` in
+	 * `WP_REST_Request::has_valid_params()`): the names in the message, the message of each
+	 * parameter in `params` and its error in `details`.
 	 *
 	 * @since 0.1.0
 	 *
@@ -63,17 +66,25 @@ final class REST_Errors {
 	 * @return WP_Error
 	 */
 	public static function invalid( WP_Error $errors ): WP_Error {
-		$fields = array();
+		$params  = array();
+		$details = array();
 		foreach ( $errors->get_error_codes() as $field ) {
-			$fields[ (string) $field ] = $errors->get_error_message( $field );
+			$params[ (string) $field ]  = $errors->get_error_message( $field );
+			$details[ (string) $field ] = array(
+				'code'    => 'easyq_invalid',
+				'message' => $params[ (string) $field ],
+				'data'    => null,
+			);
 		}
 
 		return new WP_Error(
-			'easyq_invalid',
-			implode( ' ', array_values( $fields ) ),
+			'rest_invalid_param',
+			/* translators: %s: list of invalid parameters. */
+			sprintf( __( 'Invalid parameter(s): %s', 'easyq' ), implode( ', ', array_keys( $params ) ) ),
 			array(
-				'status' => 400,
-				'fields' => $fields,
+				'status'  => 400,
+				'params'  => $params,
+				'details' => $details,
 			)
 		);
 	}

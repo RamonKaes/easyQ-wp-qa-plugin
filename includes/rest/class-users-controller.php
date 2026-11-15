@@ -102,7 +102,7 @@ final class Users_Controller extends Controller {
 					'args'                => $this->read_args(),
 				),
 				array(
-					'methods'             => WP_REST_Server::CREATABLE,
+					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( $this, 'update_current_item' ),
 					'permission_callback' => array( $this, 'update_current_item_permissions_check' ),
 					'args'                => array(

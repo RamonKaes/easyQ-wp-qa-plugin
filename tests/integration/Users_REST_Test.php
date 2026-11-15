@@ -197,7 +197,7 @@ final class Users_REST_Test extends REST_Test_Case {
 		$response = $this->upload( DIR_TESTDATA . '/uploads/dashicons.woff', array(), 'image/png' );
 
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertArrayHasKey( 'avatar', $response->as_error()?->get_error_data()['fields'] ?? array() );
+		$this->assertArrayHasKey( 'avatar', $response->as_error()?->get_error_data()['params'] ?? array() );
 	}
 
 	public function test_uploads_can_be_disabled_and_are_rate_limited(): void {
@@ -256,6 +256,6 @@ final class Users_REST_Test extends REST_Test_Case {
 		$response = rest_get_server()->dispatch( $request );
 
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertStringContainsString( 'too large', (string) ( $response->as_error()?->get_error_data()['fields']['avatar'] ?? '' ) );
+		$this->assertStringContainsString( 'too large', (string) ( $response->as_error()?->get_error_data()['params']['avatar'] ?? '' ) );
 	}
 }

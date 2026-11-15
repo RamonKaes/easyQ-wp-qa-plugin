@@ -177,10 +177,10 @@ final class Questions_REST_Test extends REST_Test_Case {
 		);
 
 		$this->assertSame( 400, $response->get_status() );
-		$this->assertArrayHasKey( 'category', $response->as_error()->get_error_data()['fields'] );
+		$this->assertArrayHasKey( 'category', $response->as_error()->get_error_data()['params'] );
 
 		$response = $this->request( 'POST', '/questions', array( 'title' => 'Short' ) );
-		$this->assertArrayHasKey( 'title', $response->as_error()->get_error_data()['fields'] );
+		$this->assertArrayHasKey( 'title', $response->as_error()->get_error_data()['params'] );
 	}
 
 	public function test_moderated_users_ask_queued_questions(): void {

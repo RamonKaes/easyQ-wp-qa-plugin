@@ -775,6 +775,27 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertGreaterThanOrEqual( 6, count( $paged ), 'Too few lists had two pages: ' . implode( ', ', $paged ) );
 	}
 
+	public function test_errors_and_methods_follow_core(): void {
+		// 401 for visitors, who may be allowed once logged in, 403 for users, as core decides.
+		$question = $this->ask( $this->user() );
+		$this->assertSame( 401, $this->request( 'PUT', '/questions/' . $question->id, array( 'title' => 'A title by someone else' ) )->get_status() );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertSame( 403, $this->request( 'PUT', '/questions/' . $question->id, array( 'title' => 'A title by someone else' ) )->get_status() );
+
+		// The own profile takes POST, PUT and PATCH, as `/wp/v2/users/me`.
+		foreach ( array( 'POST', 'PUT', 'PATCH' ) as $method ) {
+			$this->assertSame( 200, $this->request( $method, '/users/me' )->get_status(), $method );
+		}
+
+		// Invalid values as core reports invalid parameters.
+		$error = $this->request( 'POST', '/questions', array( 'title' => 'x' ) )->as_error();
+		$this->assertSame( 'rest_invalid_param', $error?->get_error_code() );
+		$data = (array) $error?->get_error_data();
+		$this->assertSame( 400, $data['status'] ?? null );
+		$this->assertArrayHasKey( 'title', (array) ( $data['params'] ?? array() ) );
+		$this->assertSame( 'easyq_invalid', $data['details']['title']['code'] ?? null );
+	}
+
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {
 		$question = $this->ask( $this->user() );
 		wp_set_current_user( (int) $this->user()->user_id );

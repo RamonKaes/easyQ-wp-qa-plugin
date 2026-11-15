@@ -204,13 +204,16 @@ final class Form_Handler {
 		if ( null !== $error ) {
 			$data   = $error->get_error_data();
 			$fields = array();
-			foreach ( is_array( $data ) && is_array( $data['fields'] ?? null ) ? $data['fields'] : array() as $field => $message ) {
+			foreach ( is_array( $data ) && is_array( $data['params'] ?? null ) ? $data['params'] : array() as $field => $message ) {
 				if ( is_string( $field ) && is_string( $message ) ) {
 					$fields[ $field ] = $message;
 				}
 			}
 
-			Flash::keep( $error->get_error_message(), $form, $target, $fields, $values );
+			// The names core puts into the message of invalid parameters mean nothing to the user;
+			// the fields show their own messages.
+			$message = 'rest_invalid_param' === $error->get_error_code() ? __( 'Please check the form.', 'easyq' ) : $error->get_error_message();
+			Flash::keep( $message, $form, $target, $fields, $values );
 			return null;
 		}
 
