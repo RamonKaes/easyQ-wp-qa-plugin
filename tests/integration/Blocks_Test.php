@@ -371,9 +371,16 @@ final class Blocks_Test extends Test_Case {
 		};
 		add_filter( 'gettext', $german, 10, 2 );
 
+		// On a network core reads `users_can_register` from the network setting `registration`.
 		update_option( 'users_can_register', 1 );
+		if ( is_multisite() ) {
+			update_site_option( 'registration', 'user' );
+		}
 		$this->assertStringContainsString( '">Melde dich an</a> oder <a href="' . esc_url( wp_registration_url() ) . '">registriere dich</a>, um mitzumachen.', Forms::permission_message( 'login' ) );
 		update_option( 'users_can_register', 0 );
+		if ( is_multisite() ) {
+			update_site_option( 'registration', 'none' );
+		}
 		$this->assertStringContainsString( '">Melde dich an</a>, um mitzumachen.</p>', Forms::permission_message( 'login' ) );
 
 		$page = self::factory()->post->create( array( 'post_type' => 'page' ) );
@@ -383,6 +390,15 @@ final class Blocks_Test extends Test_Case {
 		remove_filter( 'gettext', $german, 10 );
 
 		$this->assertStringContainsString( 'Siehe die <a href="' . esc_url( (string) get_permalink( $page ) ) . '">Datenschutzerklärung</a>.', $html );
+	}
+
+	public function test_required_fields_carry_the_marker_of_the_core_comment_form(): void {
+		wp_set_current_user( (int) $this->user()->user_id );
+		$html = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) );
+
+		$this->assertStringContainsString( 'Your question in one sentence ' . wp_required_field_indicator() . '</label>', $html );
+		$this->assertStringContainsString( '<p class="comment-notes">' . wp_required_field_message() . '</p>', $html );
+		$this->assertStringNotContainsString( 'More information for the question ' . wp_required_field_indicator(), $html );
 	}
 
 	public function test_forms_ask_visitors_to_log_in(): void {
