@@ -190,6 +190,34 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertNull( get_post( (int) $second ) );
 	}
 
+	public function test_no_avatar_is_left_behind_by_two_uploads_at_once(): void {
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$user = $this->login();
+		// What the slower of two uploads at once leaves: an avatar of the user that the user does not point to.
+		$left = function () use ( $user ): int {
+			$id = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/canola.jpg' );
+			update_post_meta( $id, Avatars::ATTACHMENT_META, $user );
+
+			return $id;
+		};
+		// An image of the library the user edited last, which core records in `_edit_last`.
+		$library = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/canola.jpg' );
+		update_post_meta( $library, '_edit_last', $user );
+
+		$first = $left();
+		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/test-image.png' )->get_status() );
+		$this->assertNull( get_post( $first ) );
+		$this->assertNotNull( get_post( (int) Avatars::attachment_id( $user ) ) );
+
+		// Deleting the user, or removing the avatar, takes every avatar of the user, and no other image.
+		$second = $left();
+		$third  = (int) Avatars::attachment_id( $user );
+		( new Avatars() )->remove_with_user( $user );
+		$this->assertNull( get_post( $second ) );
+		$this->assertNull( get_post( $third ) );
+		$this->assertNotNull( get_post( $library ) );
+	}
+
 	public function test_refuses_files_that_are_not_images(): void {
 		// Uploads are off by default; the site owner allows them.
 		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );

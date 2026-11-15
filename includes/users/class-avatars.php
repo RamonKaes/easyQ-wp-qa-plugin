@@ -255,8 +255,10 @@ final class Avatars {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $path ) );
 		update_post_meta( $attachment_id, self::ATTACHMENT_META, $user_id );
 
-		self::remove( $user_id );
 		self::set( $user_id, $attachment_id );
+		// What the user points to now stays, whatever another upload at the same time did: every
+		// other avatar of the user goes, so that none is left behind without a user pointing to it.
+		self::delete_attachments( $user_id, (int) self::attachment_id( $user_id ) );
 
 		return $attachment_id;
 	}
@@ -377,14 +379,34 @@ final class Avatars {
 	 * @param int $user_id User ID.
 	 */
 	public static function remove( int $user_id ): void {
-		$stored        = Site_Meta::get( $user_id, self::META );
-		$attachment_id = is_numeric( $stored ) ? (int) $stored : 0;
-
 		self::set( $user_id, null );
+		self::delete_attachments( $user_id, 0 );
+	}
 
-		$owner = $attachment_id > 0 ? get_post_meta( $attachment_id, self::ATTACHMENT_META, true ) : '';
-		if ( is_numeric( $owner ) && (int) $owner === $user_id ) {
-			wp_delete_attachment( $attachment_id, true );
+	/**
+	 * Deletes the uploaded avatars of a user, found by their mark, except one.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $keep    Attachment to keep, 0 for none.
+	 */
+	private static function delete_attachments( int $user_id, int $keep ): void {
+		$attachments = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'any',
+				'fields'         => 'ids',
+				'posts_per_page' => -1,
+				'no_found_rows'  => true,
+				'meta_key'       => self::ATTACHMENT_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Only the avatars of one user.
+				'meta_value'     => (string) $user_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- Only the avatars of one user.
+			)
+		);
+		foreach ( $attachments as $attachment_id ) {
+			if ( (int) $attachment_id !== $keep ) {
+				wp_delete_attachment( (int) $attachment_id, true );
+			}
 		}
 	}
 
