@@ -10,6 +10,7 @@ namespace EasyQ\Admin;
 
 use EasyQ\Actor;
 use EasyQ\Capabilities;
+use EasyQ\REST\REST_Errors;
 use EasyQ\Services;
 use EasyQ\Users\Levels;
 use EasyQ\Users\User_Status;
@@ -70,15 +71,15 @@ final class Profile_Screen {
 		$editor = Actor::current();
 		$fields = Services::user_fields()->all();
 
-		$read_only = Services::permissions()->is_read_only_for( $editor->user_id );
+		$locked = $this->locked( $editor, $user->ID );
 
 		wp_nonce_field( self::NONCE_ACTION . $user->ID, self::NONCE_FIELD );
 		?>
 		<h2><?php esc_html_e( 'Questions and answers', 'easyq' ); ?></h2>
-		<?php if ( $read_only ) : ?>
-			<p class="description"><?php esc_html_e( 'The Q&A area is read-only at the moment, so this section cannot be changed.', 'easyq' ); ?></p>
+		<?php if ( null !== $locked ) : ?>
+			<p class="description"><?php echo esc_html( $locked ); ?></p>
 		<?php endif; ?>
-		<fieldset<?php disabled( $read_only ); ?>>
+		<fieldset<?php disabled( null !== $locked ); ?>>
 		<table class="form-table" role="presentation">
 			<?php foreach ( $fields as $field ) : ?>
 				<?php $field_id = 'easyq-field-' . $field->id; ?>
@@ -187,8 +188,8 @@ final class Profile_Screen {
 	public function save( int $user_id, array $input, Actor $editor ): void {
 		$editor_id = (int) $editor->user_id;
 
-		// The read-only mode keeps the Q&A section as it is, as it keeps the REST API.
-		if ( ! user_can( $editor_id, 'edit_user', $user_id ) || Services::permissions()->is_read_only_for( $editor->user_id ) ) {
+		// Locked as the REST API locks the profile: while read-only, and for a user who may not change it.
+		if ( ! user_can( $editor_id, 'edit_user', $user_id ) || null !== $this->locked( $editor, $user_id ) ) {
 			return;
 		}
 
@@ -213,6 +214,28 @@ final class Profile_Screen {
 		if ( user_can( $editor_id, Capabilities::MODERATE ) && $editor_id !== $user_id ) {
 			$this->save_status( $user_id, $input, $editor );
 		}
+	}
+
+	/**
+	 * Tells why the Q&A section cannot be changed, as `POST /users/me` refuses it: while the Q&A
+	 * area is read-only, and on the own profile of a user who is blocked, or who must confirm
+	 * their address or be approved first. Question2Answer does not save the profile of a blocked
+	 * user either.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Actor $editor  Who edits the profile.
+	 * @param int   $user_id The user being edited.
+	 * @return string|null The reason, or null if the section can be changed.
+	 */
+	private function locked( Actor $editor, int $user_id ): ?string {
+		if ( Services::permissions()->is_read_only_for( $editor->user_id ) ) {
+			return __( 'The Q&A area is read-only at the moment, so this section cannot be changed.', 'easyq' );
+		}
+
+		$reason = $editor->user_id === $user_id && ! user_can( $user_id, Capabilities::MANAGE ) ? Services::permissions()->error( null, $editor ) : null;
+
+		return null === $reason ? null : REST_Errors::permission( $reason )->get_error_message();
 	}
 
 	/**

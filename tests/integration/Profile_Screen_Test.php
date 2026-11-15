@@ -86,6 +86,32 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertSame( 'Berlin', Services::user_fields()->value( $user, $location ) );
 	}
 
+	public function test_blocked_users_cannot_change_their_section_as_in_the_rest_api(): void {
+		$user     = self::factory()->user->create();
+		$location = Services::user_fields()->all()[0];
+		User_Status::block( Actor::system(), $user );
+
+		$html = $this->render( $user, $user );
+		$this->assertStringContainsString( '<fieldset disabled', $html );
+		$this->assertStringContainsString( 'Your account is blocked.', $html );
+		$this->screen->save( $user, array( 'easyq_fields' => array( $location->id => 'Hamburg' ) ), new Actor( $user ) );
+		$this->assertSame( '', Services::user_fields()->value( $user, $location ) );
+
+		wp_set_current_user( $user );
+		$this->assertSame( 403, rest_get_server()->dispatch( new \WP_REST_Request( 'POST', '/easyq/v1/users/me' ) )->get_status() );
+
+		$manager = $this->administrator();
+		$this->assertStringNotContainsString( '<fieldset disabled', $this->render( $manager, $user ) );
+		$this->screen->save( $user, array( 'easyq_fields' => array( $location->id => 'Berlin' ) ), new Actor( $manager ) );
+		$this->assertSame( 'Berlin', Services::user_fields()->value( $user, $location ) );
+
+		// A block stops a user's own posting, not the managing of others, which follows the capability.
+		User_Status::block( Actor::system(), $manager );
+		$other = self::factory()->user->create();
+		$this->screen->save( $other, array( 'easyq_fields' => array( $location->id => 'Bremen' ) ), new Actor( $manager ) );
+		$this->assertSame( 'Bremen', Services::user_fields()->value( $other, $location ) );
+	}
+
 	public function test_administrators_set_levels_and_bonus_points(): void {
 		$admin    = $this->administrator();
 		$user     = self::factory()->user->create();
