@@ -255,9 +255,12 @@ final class Comments_Controller extends Controller {
 		$format  = $input['format'];
 
 		$errors = Services::validator()->validate_comment(
-			array(
-				'content' => $content,
-				'format'  => $format,
+			Post_Input::validation_fields(
+				$request,
+				array(
+					'content' => $content,
+					'format'  => $format,
+				)
 			)
 		);
 		if ( $errors->has_errors() ) {

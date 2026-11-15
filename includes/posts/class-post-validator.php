@@ -183,7 +183,8 @@ final class Post_Validator {
 	private function check_author( WP_Error $errors, array $fields ): void {
 		$email = isset( $fields['email'] ) && is_scalar( $fields['email'] ) ? trim( (string) $fields['email'] ) : '';
 
-		if ( ! empty( $fields['notify'] ) && '' !== $email ) {
+		// Checked whenever it is given: notifications may be on by default (`notify_users_default`) without `notify` being sent.
+		if ( '' !== $email ) {
 			if ( ! is_email( $email ) ) {
 				$errors->add( 'email', __( 'Please enter a valid email address.', 'easyq' ) );
 			} elseif ( Text::length( $email ) > self::MAX_EMAIL_LENGTH ) {

@@ -320,6 +320,49 @@ final class Questions_REST_Test extends REST_Test_Case {
 		$this->assertSame( 401, $this->request( 'GET', '/questions/' . $question->id )->get_status() );
 	}
 
+	public function test_refuses_notification_addresses_longer_than_the_column(): void {
+		Options::update( 'permissions', array( 'permit_post_q' => Permits::ALL ) );
+		Options::update( 'posting', array( 'notify_users_default' => true ) );
+		$long = str_repeat( 'x', 89 ) . '@example.org';
+
+		// Without `notify` the default applies and the address would be stored.
+		$response = $this->request(
+			'POST',
+			'/questions',
+			array(
+				'title'   => 'A question from a visitor',
+				'content' => 'x',
+				'email'   => $long,
+			)
+		);
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'rest_invalid_param', $response->as_error()->get_error_code() );
+
+		$created = $this->request(
+			'POST',
+			'/questions',
+			array(
+				'title'   => 'A question from a visitor',
+				'content' => 'x',
+				'email'   => 'grace@example.org',
+			)
+		);
+		$this->assertSame( 201, $created->get_status() );
+		$id = $this->data( $created )['id'];
+
+		// An edit checks the address as well instead of failing silently in the database.
+		$edited = $this->request(
+			'PUT',
+			'/questions/' . $id,
+			array(
+				'notify' => true,
+				'email'  => $long,
+			)
+		);
+		$this->assertSame( 400, $edited->get_status() );
+		$this->assertSame( 'grace@example.org', $this->post( $id )->notify );
+	}
+
 	public function test_shows_ip_addresses_of_anonymous_posts_to_editors(): void {
 		$question = $this->post( Services::post_service()->create_question( new Actor( null, 5, '203.0.113.9' ), 'Anonymous question title', 'x', '', array() ) );
 

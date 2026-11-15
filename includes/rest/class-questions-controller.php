@@ -314,7 +314,7 @@ final class Questions_Controller extends Controller {
 			$fields['tags'] = $tags;
 		}
 
-		$errors      = Services::validator()->validate_question( $fields, is_new: false );
+		$errors      = Services::validator()->validate_question( Post_Input::validation_fields( $request, $fields ), is_new: false );
 		$category_id = $question->category_id;
 		if ( $request->has_param( 'category' ) && Post_Input::uses_categories() ) {
 			$category_id = self::int_param( $request, 'category' );

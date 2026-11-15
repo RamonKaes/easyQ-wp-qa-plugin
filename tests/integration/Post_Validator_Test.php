@@ -70,6 +70,8 @@ final class Post_Validator_Test extends Test_Case {
 				),
 				'email',
 			),
+			// Notifications may be on by default, so the address is checked also without `notify`.
+			'long email'    => array( array( 'email' => str_repeat( 'x', 89 ) . '@example.org' ), 'email' ),
 			'long name'     => array( array( 'name' => str_repeat( 'x', 41 ) ), 'name' ),
 		);
 	}
