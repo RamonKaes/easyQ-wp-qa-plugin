@@ -53,7 +53,7 @@ final class Users_Screen {
 		add_filter( 'manage_users_columns', array( $this, 'columns' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'column_value' ), 10, 3 );
 		add_filter( 'views_users', array( $this, 'views' ) );
-		add_action( 'pre_get_users', array( $this, 'filter_query' ) );
+		add_filter( 'users_list_table_query_args', array( $this, 'list_query_args' ) );
 		add_filter( 'bulk_actions-users', array( $this, 'bulk_actions' ) );
 		add_action( 'load-users.php', array( $this, 'handle_bulk_request' ) );
 		add_action( 'admin_notices', array( $this, 'notice' ) );
@@ -160,15 +160,17 @@ final class Users_Screen {
 	/**
 	 * Limits the users list to the selected view.
 	 *
+	 * Hooked on the arguments of the list table only, as core offers them, so that other user
+	 * queries on the screen, such as the counts of the views, stay as they are.
+	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_User_Query $query Users query.
+	 * @param array<string, mixed> $args Arguments of the `WP_User_Query` of the users list table.
+	 * @return array<string, mixed>
 	 */
-	public function filter_query( WP_User_Query $query ): void {
-		global $pagenow;
-
-		if ( ! is_admin() || 'users.php' !== $pagenow || ! current_user_can( Capabilities::MODERATE ) ) {
-			return;
+	public function list_query_args( array $args ): array {
+		if ( ! current_user_can( Capabilities::MODERATE ) ) {
+			return $args;
 		}
 
 		$meta_key = match ( $this->current_view() ) {
@@ -178,9 +180,15 @@ final class Users_Screen {
 		};
 
 		if ( null !== $meta_key ) {
-			$query->set( 'meta_key', $meta_key );
-			$query->set( 'meta_compare', 'EXISTS' );
+			$meta_query         = is_array( $args['meta_query'] ?? null ) ? $args['meta_query'] : array();
+			$meta_query[]       = array(
+				'key'     => $meta_key,
+				'compare' => 'EXISTS',
+			);
+			$args['meta_query'] = $meta_query; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Indexed by WordPress.
 		}
+
+		return $args;
 	}
 
 	/**

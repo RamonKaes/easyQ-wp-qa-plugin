@@ -9,7 +9,7 @@ namespace EasyQ\Tests\Integration;
 
 use EasyQ\Admin\Users_Screen;
 use EasyQ\Users\User_Status;
-use WP_User_Query;
+use EasyQ\Settings\Options;
 use EasyQ\Users\Site_Meta;
 
 /**
@@ -144,8 +144,6 @@ final class Users_Screen_Test extends Test_Case {
 	}
 
 	public function test_views_and_query_filter(): void {
-		global $pagenow;
-
 		$blocked = self::factory()->user->create();
 		User_Status::block( \EasyQ\Actor::system(), $blocked );
 
@@ -153,14 +151,34 @@ final class Users_Screen_Test extends Test_Case {
 		$this->assertArrayHasKey( 'easyq_blocked', $views );
 		$this->assertArrayNotHasKey( 'easyq_unapproved', $views );
 
+		Options::update( 'spam', array( 'moderate_users' => true ) );
+		$waiting = array( self::factory()->user->create(), self::factory()->user->create() );
+		foreach ( $waiting as $user_id ) {
+			Site_Meta::update( $user_id, User_Status::UNAPPROVED_META, 1 );
+		}
 		set_current_screen( 'users' );
-		$pagenow                        = 'users.php'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Simulates the users screen.
-		$_GET[ Users_Screen::VIEW_ARG ] = 'blocked';
+		add_filter( 'users_list_table_query_args', array( $this->screen, 'list_query_args' ) );
 
-		$query = new WP_User_Query();
-		$this->screen->filter_query( $query );
+		foreach ( array(
+			'blocked'    => array( $blocked ),
+			'unapproved' => $waiting,
+		) as $view => $expected ) {
+			$_GET[ Users_Screen::VIEW_ARG ] = $view;
 
-		$this->assertSame( Site_Meta::key( User_Status::BLOCKED_META ), $query->get( 'meta_key' ) );
+			// The list core builds shows the view only.
+			$table = _get_list_table( 'WP_Users_List_Table', array( 'screen' => 'users' ) );
+			$table->prepare_items();
+			$ids = array_map( 'intval', array_keys( $table->items ) );
+			sort( $ids );
+			$this->assertSame( $expected, $ids, $view );
+
+			// The counts of both views stay their own while one is selected.
+			$views = $this->screen->views( array() );
+			$this->assertStringContainsString( '<span class="count">(1)</span>', $views['easyq_blocked'], $view );
+			$this->assertStringContainsString( '<span class="count">(2)</span>', $views['easyq_unapproved'], $view );
+		}
+
+		remove_filter( 'users_list_table_query_args', array( $this->screen, 'list_query_args' ) );
 	}
 
 	public function test_shows_a_notice_after_bulk_actions(): void {
