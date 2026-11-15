@@ -85,6 +85,47 @@ final class Settings_Test extends Test_Case {
 		return (string) ob_get_clean();
 	}
 
+	public function test_a_section_that_is_no_array_keeps_the_stored_values(): void {
+		$sections = array_keys( Options::defaults() );
+		$this->assertGreaterThan( 5, count( $sections ) );
+
+		foreach ( $sections as $section ) {
+			foreach ( array( 'not a section', 7, null, true ) as $input ) {
+				$this->assertSame( Options::get_section( $section ), Fields::sanitize( $section, $input ), $section );
+			}
+		}
+	}
+
+	public function test_the_newsletter_buttons_need_their_nonce(): void {
+		wp_set_current_user( $this->administrator() );
+		Options::update(
+			'newsletter',
+			array(
+				'mailing_enabled' => true,
+				'mailing_subject' => 'News',
+				'mailing_body'    => 'Some news.',
+			)
+		);
+		$_POST    = array( 'do' => 'start' );
+		$_REQUEST = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- The request without a nonce is the point of the test.
+		// A handler that got past the nonce would redirect and end the request.
+		$redirect = static function (): never {
+			throw new \RuntimeException( 'The handler went on without the nonce.' );
+		};
+		add_filter( 'wp_redirect', $redirect );
+
+		try {
+			( new Settings_Screen() )->newsletter_action();
+			$this->fail( 'The newsletter started without the nonce of its form.' );
+		} catch ( \WPDieException $refused ) {
+			$this->assertFalse( \EasyQ\Newsletter\Newsletter::progress()['running'] );
+		} finally {
+			remove_filter( 'wp_redirect', $redirect );
+			$_POST    = array();
+			$_REQUEST = array();
+		}
+	}
+
 	public function test_every_field_belongs_to_a_setting_and_accepts_its_default(): void {
 		foreach ( array_keys( Fields::tabs() ) as $section ) {
 			$defaults = Options::defaults()[ $section ];

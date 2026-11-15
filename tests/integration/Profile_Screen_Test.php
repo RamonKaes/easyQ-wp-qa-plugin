@@ -112,13 +112,19 @@ final class Profile_Screen_Test extends Test_Case {
 	}
 
 	public function test_levels_above_the_own_level_cannot_be_assigned(): void {
-		$manager = self::factory()->user->create();
+		// A WordPress administrator, who may edit the user, counts as a Q&A administrator.
+		$manager = $this->administrator();
 		$user    = self::factory()->user->create();
-		Services::user_levels()->set_level( Actor::system(), $manager, Levels::ADMIN );
+
+		$html = $this->render( $manager, $user );
+		$this->assertStringContainsString( '<option value="' . Levels::ADMIN . '"', $html );
+		$this->assertStringNotContainsString( '<option value="' . Levels::SUPER . '"', $html );
 
 		$this->screen->save( $user, array( 'easyq_level' => (string) Levels::SUPER ), new Actor( $manager ) );
-
 		$this->assertNull( Services::user_levels()->assigned_level( $user ) );
+
+		$this->screen->save( $user, array( 'easyq_level' => (string) Levels::ADMIN ), new Actor( $manager ) );
+		$this->assertSame( Levels::ADMIN, Services::user_levels()->assigned_level( $user ) );
 	}
 
 	public function test_moderators_who_may_edit_users_change_the_status(): void {
