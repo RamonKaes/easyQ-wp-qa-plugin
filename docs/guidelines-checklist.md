@@ -4,7 +4,9 @@ How easyQ meets the WordPress developer documentation, chapter by chapter. Check
 on 2026-10-29 against WordPress 7.1.4. Checked again on 2026-11-14 for the REST API,
 the forms, the admin screens, the settings and the uploads (rows A, B, F, G and I of
 [review.md](review.md)), against the handbooks and against core; the evidence is in
-the last section. A **Met** without evidence there counts as not checked.
+the evidence section of that day. Checked on 2026-11-15 for the rows C, D, E, H and
+J to Q; their chapter and evidence follow at the end. A **Met** without evidence
+there counts as not checked.
 
 Sources:
 
@@ -56,14 +58,14 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Own hooks prefixed and documented | Met | `easyq_*`, [hooks.md](hooks.md), doc blocks at each hook |
+| Own hooks prefixed and documented | Prefix Met; F-97, F-130 | `easyq_*`, [hooks.md](hooks.md), doc blocks at each hook |
 
 ## Privacy
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Met | `EasyQ\Privacy\Policy_Text` on `admin_init`, in the markup of the suggested text of core, following the settings (section 11 of the [feature mapping](feature-mapping.md)); `Policy_Text_Test` |
-| Personal data exporter and eraser | Met | `EasyQ\Privacy\Privacy`, `Post_Data` and `Profile_Data` after `wp_comments_personal_data_exporter()` and `_eraser()`: posts, votes, flags, profile, favorites, updates, notices, messages, wall posts and the newsletter, 500 posts per page; `Personal_Data_Test`, `Privacy_Test` (decisions 54 and 77) |
+| Suggested privacy policy text (`wp_add_privacy_policy_content()`) | Form Met; F-89 | `EasyQ\Privacy\Policy_Text` on `admin_init`, in the markup of the suggested text of core, following the settings (section 11 of the [feature mapping](feature-mapping.md)); `Policy_Text_Test` |
+| Personal data exporter and eraser | Form Met; F-63, F-87, F-88 | `EasyQ\Privacy\Privacy`, `Post_Data` and `Profile_Data` after `wp_comments_personal_data_exporter()` and `_eraser()`: posts, votes, flags, profile, favorites, updates, notices, messages, wall posts and the newsletter, 500 posts per page; `Personal_Data_Test`, `Privacy_Test` (decisions 54 and 77) |
 | Users visible to visitors as core shows them | Met | `User_Query::is_shown()` after `WP_REST_Users_Controller::get_item_permissions_check()`: public once a user took part; the registration date in the edit context only (`shows_registration()`), also for the row "Member for" of the profile block. Evidence: `Users_REST_Test`, `User_Blocks_Test`, counter-checks in the commit of F-13 |
 | No tracking, privacy by default, collect only what is needed | Met | No external requests; IP addresses optional shortened and removed after `ip_retention_days` (`IP_Retention_Test`) |
 | Consent recorded where it is asked | Met | Newsletter (time of the confirmed opt-in) and the registration terms (`Users\Registration`: time and text), both exported; the registration form adds its parts through `register_form` and `registration_errors` (`Registration_Test`). On a network the sign-up of `wp-signup.php` asks for the same fields and terms (`signup_extra_fields`, `wpmu_validate_user_signup`), keeps them in the sign-up meta and saves them when the account is activated (`wpmu_activate_user`); evidence: `Registration_Test` on the multisite suite |
@@ -101,10 +103,10 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
+| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met for `Mail\Mailer`; F-76 | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
 | Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
-| Stop emails with one click | Met | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
+| Stop emails with one click | Met for the emails about posts and the newsletter; F-93, F-117 | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
 | `Reply-To` of the author, as core's comment emails | Kept | Addresses stay private on a Q&A site; Q2A sets none there either |
 
 ## HTTP API
@@ -126,7 +128,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Schedule on activation, clear on deactivation | Met | Newsletter batches as single events (`wp_schedule_single_event()`), and the daily removal of IP addresses (`wp_schedule_event()` on `init`, like `wp_schedule_delete_old_privacy_export_files()`), cleared on deactivation and uninstall, on every site of a network; `IP_Retention_Test` finds every `CRON_HOOK` and checks both |
+| Schedule on activation, clear on deactivation | Met on one site; F-118, F-119 | Newsletter batches as single events (`wp_schedule_single_event()`), and the daily removal of IP addresses (`wp_schedule_event()` on `init`, like `wp_schedule_delete_old_privacy_export_files()`), cleared on deactivation and uninstall, on every site of a network; `IP_Retention_Test` finds every `CRON_HOOK` and checks both |
 
 ## Internationalization
 
@@ -201,7 +203,7 @@ code, and known vulnerabilities of the dependencies.
 | No inline styles, no duplicate IDs | Met | The newsletter buttons are one form; delete and move buttons have names of their own. Evidence: `Admin_Capabilities_Test` (no `style` attribute under `includes/admin/`) |
 | Inline documentation: `@since` on classes, methods, properties, constants and hooks | Met | Checked on 2026-11-15 for every constant |
 | Readme: a plugin that is ready, source and build named | F-25 | `readme.txt` |
-| WP-CLI, Site Health, privacy tools | Open: rows M, N and Q of the review have not been read against the handbooks | `CLI\Command`, `Health\Site_Health`, `Privacy\Privacy` |
+| WP-CLI, Site Health, privacy tools | Read on 2026-11-15, see "Chapters added on 2026-11-15" | `CLI\Command`, `Health\Site_Health`, `Privacy\Privacy` |
 
 ## Evidence of 2026-11-14
 
@@ -233,3 +235,59 @@ Not checked against a source in this round: the row on the design system of 7.1,
 Kept rows on custom tables and on `Reply-To`, and every section the five rows do not
 touch (blocks, cron, email, hooks, JavaScript of the blocks).
 
+## Chapters added on 2026-11-15
+
+Read for the rows C, D, E, H and J to Q of the review, against the handbooks and core.
+
+| Rule | Status | Where |
+| --- | --- | --- |
+| Rewrite API: rules on `init`, flushed only when they change, public query variables | Met | `Frontend\Router` (hash of the rules) |
+| Robots through `wp_robots`, `wp_robots_no_robots()` for pages that open a form | Met | `Frontend\Page_Meta` |
+| Canonical address with the comment page, as `wp_get_canonical_url()` adds `cpage` | F-64 | `Frontend\Page_Meta` |
+| A page out of range or of a hidden post answers 404 | F-57, F-65 | `Frontend\Router`, `Frontend\Templates` |
+| Login redirect as `auth_redirect()` | Met | `Frontend\Templates::require_login()` |
+| Block metadata: `$schema`, `apiVersion` 3, namespaced name, text domain, category, keywords; `parent` and `ancestor` for child blocks; block supports instead of own options | Met | `blocks/*/block.json` |
+| `supports.interactivity` on blocks that print directives | F-104 | `blocks/ask-form/block.json` |
+| Block context instead of globals | Met | `providesContext` and `usesContext`; the router is the fallback where core falls back to the global post |
+| Block bindings: label, `get_value_callback`, `uses_context`, values escaped as core; only what the viewer may read | Form Met; F-61 | `Blocks\Blocks` |
+| Patterns: `register_block_pattern()` on `init`, category, translated titles | Met | `Blocks\Patterns` |
+| Block templates through `register_block_template()` and `locate_block_template()` | Met | `Frontend\Templates` |
+| Attributes serialized with `serialize_block_attributes()` | F-105 | `Blocks\Layouts::json()` |
+| State the server renders matches the state after hydration (`aria-pressed`) | F-72 | `includes/blocks/render/` |
+| Unique IDs on a page | F-107 | `includes/blocks/render/` |
+| Editor controls accessible, pickers that search | Read, not checked by axe; F-106 | `src/editor/` |
+| Text of users without `unfiltered_html` with the allow-list core gives commenters; `wp_rel_ugc()` on links | F-60, F-68 | `Posts\Content_Renderer` |
+| JSON in a `<script>` element with `JSON_HEX_TAG` (`wp_print_inline_script_tag()`) | F-70 | `Frontend\Page_Meta` |
+| Cookies: prefixed name, `COOKIEPATH` and `COOKIE_DOMAIN`, `secure` from the scheme of `home_url()`, renewed when used, asked for as `show_comments_cookies_opt_in` asks | Prefix Met; F-74, F-75, F-108, F-109 | `Users\Visitor_Cookie`, `Notices\Notices` |
+| Client IP from `REMOTE_ADDR`, a proxy only through a filter; shortened as `wp_privacy_anonymize_ip()` | Met; F-73 for an invalid filter value | `Util\IP` |
+| Links built from `home_url()` or the permalink, not from `HTTP_HOST` | F-110 | `includes/blocks/render/class-forms.php` |
+| Mass mailing: language per recipient, batches that survive a broken request, recipients still members | F-76, F-77, F-78, F-79 | `Newsletter\Newsletter` |
+| WP-CLI: synopsis with options and examples, `WP_CLI::confirm()` with `--yes`, `WP_CLI::error()`, progress bar, `wp_clear_object_cache()`, registered only under `WP_CLI` | Met; F-125 | `CLI\Command` |
+| Site Health: result as core builds it, direct tests, private fields marked `private`, actions that work on a network | Form Met; F-98, F-132, F-133 | `Health\Site_Health` |
+| Privacy tools: exporter and eraser through the filters, pages of a fixed size for every kind of data, addresses compared as core compares them, everything stored is exported | Form Met; F-63, F-87, F-88 | `Privacy\Privacy`, `Post_Data`, `Profile_Data` |
+| Multisite lifecycle: network activation in steps as `network/upgrade.php` (five sites, no spam, deleted or archived sites); data of a deleted site removed with the site | F-91, F-92, F-126 | `Database\Installer`, `Uninstaller` |
+| Upgrade path: the version saved only when the schema is in place; defaults not brought back | F-128, F-129 | `Database\Installer` |
+| Feeds through `add_feed()`, the hooks and fields of `feed-rss2.php`, conditional requests | `add_feed()` Met; F-84, F-86 | `Feeds\Feeds` |
+| Sitemaps: `WP_Sitemaps_Provider`, registered with `wp_register_sitemap_provider()`, the filters of the core providers, no empty terms, users with posts | Class Met; F-85, F-121, F-122 | `Frontend\Sitemap_Provider` |
+| Values returned by filters checked before use, as core does with `rest_ensure_response()` and friends | F-93, F-94, F-95, F-96 | `docs/hooks.md` |
+| Every hook documented, the filters of others easyQ applies included | F-97, F-130 | `docs/hooks.md` |
+
+## Evidence of 2026-11-15
+
+What the rows marked **Met** in the chapter above rest on. Core is WordPress 7.1.4.
+
+| Row | Rule set by | Evidence in the plugin | Held by |
+| --- | --- | --- | --- |
+| Rewrite API | Plugin Handbook, Rewrite API; `flush_rewrite_rules()` | `Router::add_rewrite_rules()`, `maybe_flush_rules()` | `Routing_Test` |
+| Robots | `wp-includes/robots-template.php` | `Page_Meta::robots()` | `Page_Meta_Test` (pages that open a form) |
+| Login redirect | `wp-includes/pluggable.php`, `auth_redirect()` | `Templates::require_login()` | — (read; a mutation of the check stays green) |
+| Block metadata | Block Editor Handbook, Metadata and Supports | 52 files of `blocks/` | `Blocks_Test` (reads the registry) |
+| Block context, patterns, templates | Block Editor Handbook; `register_block_template()` | `Blocks\Patterns`, `Frontend\Templates` | `Patterns_Test`, `patterns.spec.js`, `Blocks_Test` |
+| Client IP | `wp-includes/comment.php` (`REMOTE_ADDR`), `wp_privacy_anonymize_ip()` | `Util\IP` | `Limits_Test` (anonymized addresses share a limit) |
+| WP-CLI | Commands Cookbook; internal API `WP_CLI::confirm()`, `WP_CLI::error()` | `CLI\Command` | `tests/e2e/cli.spec.js` |
+| Site Health form | `wp-admin/includes/class-wp-site-health.php` | `Health\Site_Health` | `Site_Health_Test`, `site-health.spec.js` |
+| Privacy tools form | Plugin Handbook, privacy exporter and eraser; `wp-admin/includes/privacy-tools.php` | `Privacy\Privacy` | `Personal_Data_Test`, `Privacy_Test` |
+| `add_feed()` | Code Reference | `Feeds::add_feed()` | `Feeds_Test`, e2e |
+
+Not checked against a source in this round: the editor with a screen reader, right to
+left, and the rule sets for widgets of classic themes.
