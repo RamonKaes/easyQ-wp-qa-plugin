@@ -74,7 +74,7 @@ final class Tags_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_items_permissions_check( $request ): bool|WP_Error {
-		return $this->check( 'permit_view_q_page', $this->actor() );
+		return $this->check_view( 'permit_view_q_page', $this->actor() );
 	}
 
 	/**

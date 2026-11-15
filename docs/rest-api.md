@@ -44,8 +44,8 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 | `easyq_approve` | 403 | The account must be approved first |
 | `easyq_level` | 403 | Not allowed for this user |
 | `easyq_author` | 403 | Only the author can change the notification settings of a post |
-| `easyq_userblock` | 403 | The user is blocked |
-| `easyq_ipblock` | 403 | The IP address is blocked |
+| `easyq_userblock` | 403 | The user is blocked; a block stops changes, not reading, as in Q2A |
+| `easyq_ipblock` | 403 | The IP address is blocked; like a blocked user, it may still read |
 | `easyq_limit` | 429 | Rate limit reached for this hour |
 | `easyq_read_only` | 503 | The Q&A area is read-only: every request that changes something answers this before its own checks, unless the user manages easyQ; reading stays open |
 | `easyq_not_found` | 404 | Missing, or not visible to the user |

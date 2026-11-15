@@ -447,6 +447,83 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( array(), $open );
 	}
 
+	/**
+	 * Returns the error code of every reading route, keyed by route. A route with a post takes
+	 * the first of the posts it finds, so that each route gets a post of its type.
+	 *
+	 * @param int ...$posts Posts for the parameters of posts: a question, an answer, a comment.
+	 * @return array<string, string> Error code, or an empty string for a success.
+	 */
+	private function reading_codes( int ...$posts ): array {
+		$codes = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			$params = self::required_params( $handlers, 'GET', 0 );
+			foreach ( $handlers as $handler ) {
+				if ( empty( ( $handler['methods'] ?? array() )['GET'] ) ) {
+					continue;
+				}
+				foreach ( $posts as $post ) {
+					$codes[ $route ] = (string) $this->request( 'GET', $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $post ), $params )->as_error()?->get_error_code();
+					if ( 'easyq_not_found' !== $codes[ $route ] ) {
+						break;
+					}
+				}
+			}
+		}
+		$this->assertGreaterThan( 20, count( $codes ) );
+
+		return $codes;
+	}
+
+	public function test_blocks_stop_writing_not_reading(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		$answer   = $this->answer( $this->user(), $question );
+		$posts    = array( $question->id, $answer->id, $this->comment( $this->user(), $question, $answer )->id );
+		wp_set_current_user( (int) $author->user_id );
+		$own = $this->reading_codes( ...$posts );
+
+		\EasyQ\Users\User_Status::block( \EasyQ\Actor::system(), (int) $author->user_id );
+		$blocked = $this->reading_codes( ...$posts );
+
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.7';
+		Options::update( 'spam', array( 'block_ips_write' => '203.0.113.*' ) );
+		wp_set_current_user( 0 );
+		$visitor = $this->reading_codes( ...$posts );
+		unset( $_SERVER['REMOTE_ADDR'] );
+		Options::update( 'spam', array( 'block_ips_write' => '' ) );
+		$open = $this->reading_codes( ...$posts );
+
+		$this->assertSame( $own, $blocked, 'A blocked user reads what they read before.' );
+		$this->assertSame( $open, $visitor, 'A visitor from a blocked address reads what other visitors read.' );
+		$this->assertContains( '', $blocked );
+	}
+
+	public function test_every_reading_route_follows_the_permission_to_view(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$posts    = array( $question->id, $answer->id, $this->comment( $this->user(), $question, $answer )->id );
+		Options::update( 'permissions', array( 'permit_view_q_page' => \EasyQ\Users\Permits::USERS ) );
+		// Routes that show no Q&A content: the index of the namespace and the notices of the visitor.
+		$own = array( '/easyq/v1', '/easyq/v1/notices' );
+
+		wp_set_current_user( 0 );
+		$shown = array();
+		foreach ( $this->reading_codes( ...$posts ) as $route => $code ) {
+			if ( 'easyq_login' !== $code && 'rest_forbidden' !== $code && ! in_array( $route, $own, true ) ) {
+				$shown[] = "$route: $code";
+			}
+		}
+		$this->assertSame( array(), $shown, 'Visitors read these although viewing needs a login.' );
+
+		$reader = (int) $this->user()->user_id;
+		wp_set_current_user( $reader );
+		$this->assertSame( '', $this->reading_codes( ...$posts )['/easyq/v1/questions/(?P<id>\\d+)'] );
+		$this->assertSame( 200, $this->request( 'GET', "/users/$reader/wall" )->get_status() );
+		wp_set_current_user( 0 );
+		$this->assertSame( 'easyq_login', $this->request( 'GET', "/users/$reader/wall" )->as_error()?->get_error_code() );
+	}
+
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {
 		$question = $this->ask( $this->user() );
 		wp_set_current_user( (int) $this->user()->user_id );

@@ -148,7 +148,7 @@ final class Users_Controller extends Controller {
 		$sort   = (string) self::string_param( $request, 'sort' );
 		$option = User_Query::SORTS[ $sort ] ?? null;
 
-		return $this->check_view( $option ?? 'permit_view_q_page' );
+		return $this->check_view( $option ?? 'permit_view_q_page', $this->actor(), null, true );
 	}
 
 	/**
@@ -193,7 +193,7 @@ final class Users_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function get_item_permissions_check( $request ): bool|WP_Error {
-		return $this->check_view( 'permit_view_q_page' );
+		return $this->check_view( 'permit_view_q_page', $this->actor(), null, true );
 	}
 
 	/**
@@ -396,20 +396,6 @@ final class Users_Controller extends Controller {
 			'wall'          => Messages::accepts_wall_posts( $user->ID ),
 			'newsletter'    => Newsletter::state( $user->ID ),
 		) : array() );
-	}
-
-	/**
-	 * Checks a permission to view pages; blocked users may still view them.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $option Permission setting.
-	 * @return true|WP_Error
-	 */
-	private function check_view( string $option ): bool|WP_Error {
-		$reason = Services::permissions()->error( $option, $this->actor(), check_blocks: false, maximum_level: true );
-
-		return null === $reason ? true : REST_Errors::permission( $reason );
 	}
 
 	/**

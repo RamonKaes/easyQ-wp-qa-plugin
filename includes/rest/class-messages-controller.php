@@ -65,7 +65,7 @@ final class Messages_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_wall' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'view_wall_permissions_check' ),
 					'args'                => $this->read_args() + $this->pagination_args( 10 ),
 				),
 				array(
@@ -198,6 +198,18 @@ final class Messages_Controller extends Controller {
 		$response->set_status( 201 );
 
 		return $response;
+	}
+
+	/**
+	 * Checks whether the user may read a wall: as the profile it belongs to, with the
+	 * permission to view the Q&A pages.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return true|WP_Error
+	 */
+	public function view_wall_permissions_check(): bool|WP_Error {
+		return $this->check_view( 'permit_view_q_page', $this->actor(), null, true );
 	}
 
 	/**

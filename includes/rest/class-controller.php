@@ -274,6 +274,26 @@ abstract class Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Checks a permission to view, which blocked users and blocked addresses keep, as in
+	 * Question2Answer (`qa_user_post_permit_error( 'permit_view_q_page', $question, null, false )`
+	 * in `qa-include/pages/question.php`): a block stops writing, not reading.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string    $option        Permission setting.
+	 * @param Actor     $actor         The actor.
+	 * @param Post|null $post          Post whose category levels apply.
+	 * @param bool      $maximum_level Whether the highest level of the user counts, as on the
+	 *                                 user pages of Question2Answer.
+	 * @return true|WP_Error
+	 */
+	protected function check_view( string $option, Actor $actor, ?Post $post = null, bool $maximum_level = false ): bool|WP_Error {
+		$reason = Services::permissions()->error( $option, $actor, $post, check_blocks: false, maximum_level: $maximum_level );
+
+		return null === $reason ? true : REST_Errors::permission( $reason );
+	}
+
+	/**
 	 * Returns the arguments of the route that the client sent, in the query or the body.
 	 *
 	 * Unlike `WP_REST_Request::has_param()`, this leaves out the path parameters and the
@@ -368,7 +388,7 @@ abstract class Controller extends WP_REST_Controller {
 			$chain[] = $parent;
 		}
 
-		$view = $this->check( 'permit_view_q_page', $actor, end( $chain ) );
+		$view = $this->check_view( 'permit_view_q_page', $actor, end( $chain ) );
 		if ( true !== $view ) {
 			return $view;
 		}
