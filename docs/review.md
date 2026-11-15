@@ -132,6 +132,10 @@ allowed and the refused case, and was seen red:
   stores nothing, as visitor and as user.
 - G × Error path: every field of every section that can refuse a value reports it.
 - I × Error path: every upload error PHP knows reports its reason.
+- A × Volume: `REST_Query_Growth_Test` reads the list routes from the server (every
+  `get_items`, the wall and the similar questions; the email templates are a fixed
+  set), fails for a list it does not measure, and expects no statement to run more
+  often with more items, for all 16 lists (F-51).
 
 The other cells of the five rows stay `partly`: their guards hold a part of the
 class, or list what they check. The rows C, D, E, H and J to Q have still not been
@@ -139,15 +143,15 @@ reviewed.
 
 | | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | partly | ✓ | ✓ | open | partly | partly | ✓ | open | partly | — | partly | partly |
-| B | partly | ✓ | partly | partly | open | — | partly | partly | partly | ✓ | partly | partly | partly |
+| A | partly | partly | ✓ | ✓ | open | ✓ | partly | ✓ | open | partly | — | partly | partly |
+| B | partly | ✓ | partly | partly | partly | — | partly | partly | partly | ✓ | partly | partly | partly |
 | C | open | open | partly | open | — | partly | — | partly | open | partly | partly | partly | open |
 | D | open | partly | open | — | — | partly | — | open | open | open | partly | partly | open |
 | E | — | partly | partly | — | — | open | — | partly | open | — | partly | partly | open |
-| F | open | partly | partly | open | open | partly | open | partly | open | partly | partly | partly | partly |
+| F | open | partly | partly | open | partly | partly | open | partly | open | partly | partly | partly | partly |
 | G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |
 | H | open | partly | — | partly | — | — | partly | open | open | open | — | open | open |
-| I | open | partly | partly | partly | open | open | — | partly | open | ✓ | partly | partly | partly |
+| I | open | partly | partly | partly | partly | partly | — | partly | partly | ✓ | partly | partly | partly |
 | J | — | partly | partly | partly | open | partly | partly | partly | open | open | open | open | open |
 | K | — | — | — | partly | open | partly | open | open | — | open | — | partly | open |
 | L | open | open | partly | open | — | partly | open | partly | — | partly | open | open | open |
@@ -166,7 +170,8 @@ The release gate on this day:
    Guidelines is `open` outside the five rows.
 
 The sections below are the record of the round of 2026-11-14; the findings they
-name are fixed, their commits say how.
+name are fixed, their commits say how. The cells that changed with F-42 to F-55 are
+listed under "Reproduced on 2026-11-15".
 
 ### What the tools said
 
@@ -315,21 +320,31 @@ for a ✓. "Green" means the suite did not notice the removal.
 - Presentation, partly: axe on the account page.
 - Guidelines, F-34.
 
-### Read in this round and not reproduced
+### Reproduced on 2026-11-15
 
-These were found by reading and are not findings until someone has seen them:
+The 16 suspicions the round of 2026-11-14 found by reading and did not run were
+reproduced, by a test, a measurement or, for the ImageMagick case, on the PHP of the
+site. Fourteen were real and are fixed, each with a guard and a counter-check:
 
-- A: `POST /users/me` stores avatar and fields and then answers with the error of the
-  newsletter step; converting an answer accepts the question as target while comments
-  on questions are off; a PUT with `content` and without `format` stores an HTML post
-  as plain text; `notify` longer than its column; the lists of the REST API query per
-  item; `POST /favorites` names users who are not members of the site.
-- B and I: a second submit of an in-place form; metadata of square images with
-  Imagick; a PNG with huge dimensions; two uploads at once.
-- F and G: the count of the other view on the users list; the row-action nonce of the
-  posts screen; integers beyond the column; a minimum above its maximum; the status
-  checkboxes of the profile written from a stale form; a blocked user with the level
-  Administrator keeps `easyq_manage`.
+- A: the newsletter step after a half-saved profile (F-43), converting into a target
+  that takes no comments (F-42), an edit without `format` (F-45), the address for
+  notifications longer than its column (F-46), the lists of the REST API (F-51),
+  favorite users whose profile is not shown, also on a single site (F-44).
+- B and I: a second click on an in-place form (F-52), the metadata of avatars with
+  ImageMagick, cropped or not (F-53), an image with more pixels than the memory holds,
+  and uploads that were not counted when refused (F-54), two uploads at once (F-55).
+- F and G: the counts of the views of the users list (F-47), the retention period and
+  the bonus beyond what a timestamp and the column hold (F-50), statuses written from
+  a stale profile form (F-48), a blocked user with the level Administrator (F-49).
+
+Two were not: a minimum above its maximum still lets questions be asked (measured;
+`docs/findings.md`), and the row-action nonce was bound to the action by F-33.
+
+The cells this changed: A × Volume became ✓ (above); B × Concurrency (F-52),
+F × Concurrency (F-48), I × Concurrency (F-55), I × Volume and I × Abuse (F-54) went
+from `open` to `partly`. A × Concurrency stays `open`: the rate limits are read before
+and counted after the insert, as in Question2Answer, and no test runs requests at
+once.
 
 ### What carries the `partly` cells of the other rows
 

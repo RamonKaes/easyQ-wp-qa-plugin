@@ -15,7 +15,7 @@ for good. The rules of the reviews and the matrix the findings refer to are in
 - **Rejected** findings and **refuted suspicions** stay as well, so that the next
   review does not spend its time on them again.
 
-The next free number is F-42.
+The next free number is F-56.
 
 ## Open
 
@@ -56,3 +56,23 @@ Read on 2026-11-14 in the rows A, B, F, G and I, with what was read:
   is set for every group (mutation red for the templates and the registry).
 - SQL without `prepare()` or a `LIKE` without `esc_like()` in the services behind the
   routes: none found.
+
+Reproduced on 2026-11-15, of the suspicions the round of 2026-11-14 found by reading
+(the others became F-42 to F-55):
+
+- A minimum above its maximum (`min_len_q_title` over `max_len_q_title`,
+  `min_num_q_tags` over `max_num_q_tags`) blocks asking: measured with 50 over 20 and
+  5 over 2, a title of 50 characters and two tags pass. The validator takes the
+  larger of the two for titles and caps the minimum of tags, as
+  `qa-include/plugins/qa-filter-basic.php` does.
+- The row-action nonce of the posts screen is not bound to the action: F-33 made it
+  `easyq-post-{action}_{id}`.
+- A huge hotness weight breaks the order: measured, it gives a float near 5e19, which
+  the `float` column holds; the order follows the weights the site owner chose.
+- Category levels below Expert are accepted on save although the form offers Expert
+  and higher: Question2Answer accepts every level up to the editor's own as well and
+  even offers Approved, and a category level only ever raises the level.
+- Rate limits are read before and counted after the insert, so requests at the same
+  moment pass together: so does `qa_user_limits_remaining()` with
+  `qa_limits_increment()`, and core has no lock for comments either. It stays under
+  A × Concurrency, `open`.
