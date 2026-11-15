@@ -54,13 +54,14 @@ final class Moderation_Query {
 	);
 
 	/**
-	 * Most posts per page.
+	 * Most posts per page: the range of the screen options of core (`set_screen_options()`), which
+	 * the posts screen offers. The REST API limits its own requests to 100, as core does.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @var int
 	 */
-	public const MAX_PER_PAGE = 100;
+	public const MAX_PER_PAGE = 999;
 
 	/**
 	 * Sets up the query.

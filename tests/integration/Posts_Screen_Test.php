@@ -92,6 +92,33 @@ final class Posts_Screen_Test extends Test_Case {
 		$this->assertCount( 2, array_unique( $listed[1] ) );
 	}
 
+	public function test_every_number_of_the_screen_option_is_listed_and_counted(): void {
+		$author = $this->user();
+		for ( $i = 0; $i < 103; $i++ ) {
+			$this->ask( $author, 'Many questions on the screen, number ' . $i );
+		}
+		set_current_screen( 'easyq_page_' . Posts_Screen::PAGE );
+		$screen = new Posts_Screen();
+		$screen->register();
+		$screen->load();
+		// More than the REST API lists at once, which the screen option allows as core does.
+		update_user_meta( get_current_user_id(), Posts_Screen::PER_PAGE_OPTION, 101 );
+
+		$this->request( array( 'page' => Posts_Screen::PAGE ) );
+		preg_match_all( '/Many questions on the screen, number (\d+)/', $this->render(), $first );
+		$this->request(
+			array(
+				'page'  => Posts_Screen::PAGE,
+				'paged' => '2',
+			)
+		);
+		preg_match_all( '/Many questions on the screen, number (\d+)/', $this->render(), $second );
+
+		$this->assertCount( 101, array_unique( $first[1] ) );
+		$this->assertCount( 2, array_unique( $second[1] ) );
+		$this->assertSame( array(), array_intersect( $first[1], $second[1] ) );
+	}
+
 	public function test_row_actions_go_through_the_rest_api_with_a_nonce(): void {
 		$queued = $this->ask( $this->user(), 'A question awaiting approval', 'x', array(), null, true );
 		$this->request(
