@@ -9,10 +9,8 @@
 namespace EasyQ\REST;
 
 use EasyQ\Actor;
-use EasyQ\Capabilities;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
-use EasyQ\Settings\Options;
 use EasyQ\Users\Visitor_Cookie;
 use WP_Error;
 use WP_REST_Controller;
@@ -273,22 +271,6 @@ abstract class Controller extends WP_REST_Controller {
 		$reason = Services::permissions()->error( $option, $actor, $post, $limit_action );
 
 		return null === $reason ? true : REST_Errors::permission( $reason );
-	}
-
-	/**
-	 * Refuses changes while the Q&A area is read-only, except for plugin administrators.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param Actor $actor The actor.
-	 * @return true|WP_Error
-	 */
-	protected function check_writable( Actor $actor ): bool|WP_Error {
-		if ( Options::get_bool( 'general', 'read_only' ) && ( null === $actor->user_id || ! user_can( $actor->user_id, Capabilities::MANAGE ) ) ) {
-			return REST_Errors::permission( 'read_only' );
-		}
-
-		return true;
 	}
 
 	/**

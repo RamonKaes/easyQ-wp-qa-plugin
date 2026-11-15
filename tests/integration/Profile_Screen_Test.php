@@ -69,6 +69,23 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertNull( Services::user_levels()->assigned_level( $user ) );
 	}
 
+	public function test_the_read_only_mode_keeps_the_section_as_it_is_except_for_managers(): void {
+		$user     = self::factory()->user->create();
+		$location = Services::user_fields()->all()[0];
+		\EasyQ\Settings\Options::update( 'general', array( 'read_only' => true ) );
+
+		$html = $this->render( $user, $user );
+		$this->assertStringContainsString( '<fieldset disabled', $html );
+		$this->assertStringContainsString( 'The Q&amp;A area is read-only', $html );
+		$this->screen->save( $user, array( 'easyq_fields' => array( $location->id => 'Hamburg' ) ), new Actor( $user ) );
+		$this->assertSame( '', Services::user_fields()->value( $user, $location ) );
+
+		$manager = $this->administrator();
+		$this->assertStringNotContainsString( '<fieldset disabled', $this->render( $manager, $user ) );
+		$this->screen->save( $user, array( 'easyq_fields' => array( $location->id => 'Berlin' ) ), new Actor( $manager ) );
+		$this->assertSame( 'Berlin', Services::user_fields()->value( $user, $location ) );
+	}
+
 	public function test_administrators_set_levels_and_bonus_points(): void {
 		$admin    = $this->administrator();
 		$user     = self::factory()->user->create();

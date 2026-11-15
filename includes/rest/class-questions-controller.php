@@ -191,10 +191,7 @@ final class Questions_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ): bool|WP_Error {
-		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-
-		return true === $writable ? $this->check( 'permit_post_q', $actor, null, Limits::QUESTIONS ) : $writable;
+		return $this->check( 'permit_post_q', $this->actor(), null, Limits::QUESTIONS );
 	}
 
 	/**
@@ -271,11 +268,6 @@ final class Questions_Controller extends Controller {
 	 */
 	public function update_item_permissions_check( $request ): bool|WP_Error {
 		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
 		$question = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, Post::QUESTION );
 		if ( $question instanceof WP_Error ) {
 			return $question;

@@ -172,11 +172,6 @@ final class Answers_Controller extends Controller {
 	 */
 	public function create_item_permissions_check( $request ): bool|WP_Error {
 		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
 		$question = $this->visible_post( (int) self::int_param( $request, 'question' ), $actor, Post::QUESTION );
 		if ( $question instanceof WP_Error ) {
 			return $question;
@@ -236,12 +231,7 @@ final class Answers_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function update_item_permissions_check( $request ): bool|WP_Error {
-		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
+		$actor  = $this->actor();
 		$answer = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, Post::ANSWER );
 		if ( $answer instanceof WP_Error ) {
 			return $answer;

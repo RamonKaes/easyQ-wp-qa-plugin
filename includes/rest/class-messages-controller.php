@@ -211,11 +211,6 @@ final class Messages_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function post_on_wall_permissions_check( $request ): bool|WP_Error {
-		$writable = $this->check_writable( $this->actor() );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
 		$owner = $this->owner( $request );
 		if ( $owner instanceof WP_Error ) {
 			return $owner;
@@ -314,11 +309,6 @@ final class Messages_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ): WP_REST_Response|WP_Error {
-		$writable = $this->check_writable( $this->actor() );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
 		$to = get_userdata( (int) self::int_param( $request, 'to' ) );
 		if ( false === $to || ! Services::user_query()->is_member( $to ) ) {
 			return REST_Errors::not_found();

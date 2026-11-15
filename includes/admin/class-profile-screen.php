@@ -70,9 +70,15 @@ final class Profile_Screen {
 		$editor = Actor::current();
 		$fields = Services::user_fields()->all();
 
+		$read_only = Services::permissions()->is_read_only_for( $editor->user_id );
+
 		wp_nonce_field( self::NONCE_ACTION . $user->ID, self::NONCE_FIELD );
 		?>
 		<h2><?php esc_html_e( 'Questions and answers', 'easyq' ); ?></h2>
+		<?php if ( $read_only ) : ?>
+			<p class="description"><?php esc_html_e( 'The Q&A area is read-only at the moment, so this section cannot be changed.', 'easyq' ); ?></p>
+		<?php endif; ?>
+		<fieldset<?php disabled( $read_only ); ?>>
 		<table class="form-table" role="presentation">
 			<?php foreach ( $fields as $field ) : ?>
 				<?php $field_id = 'easyq-field-' . $field->id; ?>
@@ -142,6 +148,7 @@ final class Profile_Screen {
 				</tr>
 			<?php endif; ?>
 		</table>
+		</fieldset>
 		<?php
 	}
 
@@ -180,7 +187,8 @@ final class Profile_Screen {
 	public function save( int $user_id, array $input, Actor $editor ): void {
 		$editor_id = (int) $editor->user_id;
 
-		if ( ! user_can( $editor_id, 'edit_user', $user_id ) ) {
+		// The read-only mode keeps the Q&A section as it is, as it keeps the REST API.
+		if ( ! user_can( $editor_id, 'edit_user', $user_id ) || Services::permissions()->is_read_only_for( $editor->user_id ) ) {
 			return;
 		}
 

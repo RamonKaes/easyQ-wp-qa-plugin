@@ -44,6 +44,11 @@ final class REST_Roles_Test extends REST_Test_Case {
 			'/\(\?P<(\w+)>(?:[^()]|\([^()]*\))*\)/',
 			static function ( array $parts ) use ( $post, &$names ): string {
 				$names[] = $parts[1];
+				// A parameter that lists its values, such as `start|cancel|test`, takes the first.
+				$pattern = substr( $parts[0], strlen( '(?P<' . $parts[1] . '>' ), -1 );
+				if ( 1 === preg_match( '/^[a-z_-]+(\|[a-z_-]+)+$/', $pattern ) ) {
+					return explode( '|', $pattern )[0];
+				}
 
 				return match ( $parts[1] ) {
 					'ip'     => '198.51.100.9',
@@ -362,6 +367,84 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( $before, self::row( $note ) );
 		$this->assertSame( 200, $this->request( 'GET', '/posts/' . $note )->get_status() );
 		$this->assertSame( $note, $this->post( $question->id )->closed_by_id );
+	}
+
+	/**
+	 * Returns valid values for the required arguments of the handlers of a route and method, so
+	 * that the request passes the validation of core, which runs before any other check.
+	 *
+	 * @param array<int, array<string, mixed>> $handlers Handlers of the route.
+	 * @param string                           $method   HTTP method.
+	 * @param int                              $category Category for integer arguments.
+	 * @return array<string, mixed>
+	 */
+	private static function required_params( array $handlers, string $method, int $category ): array {
+		$params = array();
+		foreach ( $handlers as $handler ) {
+			if ( empty( ( $handler['methods'] ?? array() )[ $method ] ) ) {
+				continue;
+			}
+			foreach ( (array) ( $handler['args'] ?? array() ) as $name => $schema ) {
+				if ( is_array( $schema ) && ! empty( $schema['required'] ) ) {
+					$params[ (string) $name ] = self::value_for( (string) $name, $schema, $category );
+				}
+			}
+		}
+
+		return $params;
+	}
+
+	public function test_the_read_only_mode_refuses_every_change_except_for_managers(): void {
+		$question = $this->ask( $this->user() );
+		$category = Services::categories()->create( null, 'Read only' );
+		$this->assertIsInt( $category );
+		Options::update( 'general', array( 'read_only' => true ) );
+		$users   = array(
+			'visitor'    => 0,
+			'subscriber' => (int) $this->user()->user_id,
+			'editor'     => (int) $this->user( 'editor' )->user_id,
+		);
+		$open    = array();
+		$checked = 0;
+
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( self::write_methods( $handlers ) as $method ) {
+				$path   = $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $question->id );
+				$params = self::required_params( $handlers, $method, $category );
+				foreach ( $users as $who => $user_id ) {
+					wp_set_current_user( $user_id );
+					$code = $this->request( $method, $path, $params )->as_error()?->get_error_code();
+					if ( 'easyq_read_only' !== $code ) {
+						$open[] = "$who $method $route: " . (string) $code;
+					}
+					++$checked;
+				}
+
+				wp_set_current_user( $this->administrator() );
+				if ( 'easyq_read_only' === $this->request( $method, $path, $params )->as_error()?->get_error_code() ) {
+					$open[] = "administrator $method $route: refused";
+				}
+			}
+		}
+
+		// Reading stays open to everybody.
+		wp_set_current_user( 0 );
+		$read = 0;
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			foreach ( $handlers as $handler ) {
+				if ( ! empty( ( $handler['methods'] ?? array() )['GET'] ) ) {
+					$path = $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $question->id );
+					if ( 'easyq_read_only' === $this->request( 'GET', $path )->as_error()?->get_error_code() ) {
+						$open[] = "visitor GET $route: refused";
+					}
+					++$read;
+				}
+			}
+		}
+
+		$this->assertGreaterThan( 3 * 40, $checked );
+		$this->assertGreaterThan( 20, $read );
+		$this->assertSame( array(), $open );
 	}
 
 	public function test_subscribers_cannot_use_what_needs_more_rights(): void {

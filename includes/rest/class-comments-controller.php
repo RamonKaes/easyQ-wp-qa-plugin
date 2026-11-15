@@ -148,12 +148,7 @@ final class Comments_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function create_item_permissions_check( $request ): bool|WP_Error {
-		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
+		$actor  = $this->actor();
 		$parent = $this->visible_post( (int) self::int_param( $request, 'parent' ), $actor );
 		if ( $parent instanceof WP_Error ) {
 			return $parent;
@@ -214,12 +209,7 @@ final class Comments_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function update_item_permissions_check( $request ): bool|WP_Error {
-		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
+		$actor   = $this->actor();
 		$comment = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, Post::COMMENT );
 		if ( $comment instanceof WP_Error ) {
 			return $comment;

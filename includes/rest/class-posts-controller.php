@@ -284,13 +284,8 @@ final class Posts_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function vote_permissions_check( $request ): bool|WP_Error {
-		$actor    = $this->actor();
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
-		$post = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, self::TARGETS );
+		$actor = $this->actor();
+		$post  = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, self::TARGETS );
 		if ( $post instanceof WP_Error ) {
 			return $post;
 		}
@@ -343,13 +338,8 @@ final class Posts_Controller extends Controller {
 	 * @return true|WP_Error
 	 */
 	public function perform_permissions_check( $request ): bool|WP_Error {
-		$actor    = Actor::current( \EasyQ\Users\Visitor_Cookie::current() );
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
-		$post = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, self::TARGETS );
+		$actor = Actor::current( \EasyQ\Users\Visitor_Cookie::current() );
+		$post  = $this->visible_post( (int) self::int_param( $request, 'id' ), $actor, self::TARGETS );
 		if ( $post instanceof WP_Error ) {
 			return $post;
 		}

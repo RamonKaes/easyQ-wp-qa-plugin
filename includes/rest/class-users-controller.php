@@ -260,11 +260,6 @@ final class Users_Controller extends Controller {
 			return REST_Errors::permission( 'login' );
 		}
 
-		$writable = $this->check_writable( $actor );
-		if ( true !== $writable ) {
-			return $writable;
-		}
-
 		return $this->check( null, $actor, null, null === $this->avatar_file( $request ) ? null : Limits::UPLOADS );
 	}
 

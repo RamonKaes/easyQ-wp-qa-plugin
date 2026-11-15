@@ -9,6 +9,7 @@
 namespace EasyQ\Users;
 
 use EasyQ\Actor;
+use EasyQ\Capabilities;
 use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
 use EasyQ\Posts\Post;
@@ -200,6 +201,21 @@ final class Permissions {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Tells whether the read-only mode keeps a user from changing anything.
+	 *
+	 * As in the maintenance mode of Question2Answer (`qa-include/app/page.php`), only those who
+	 * manage the Q&A area may change anything while it is on; unlike there, everybody may read.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int|null $user_id User ID, null for a visitor.
+	 * @return bool
+	 */
+	public function is_read_only_for( ?int $user_id ): bool {
+		return Options::get_bool( 'general', 'read_only' ) && ( null === $user_id || ! user_can( $user_id, Capabilities::MANAGE ) );
 	}
 
 	/**

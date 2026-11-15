@@ -47,7 +47,7 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 | `easyq_userblock` | 403 | The user is blocked |
 | `easyq_ipblock` | 403 | The IP address is blocked |
 | `easyq_limit` | 429 | Rate limit reached for this hour |
-| `easyq_read_only` | 503 | The Q&A area is read-only |
+| `easyq_read_only` | 503 | The Q&A area is read-only: every request that changes something answers this before its own checks, unless the user manages easyQ; reading stays open |
 | `easyq_not_found` | 404 | Missing, or not visible to the user |
 | `easyq_invalid` | 400 | Invalid input; `data.fields` holds a message per field |
 
