@@ -17,6 +17,7 @@ use EasyQ\Events\Events;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Search\Basic_Search;
+use EasyQ\Services;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -153,6 +154,12 @@ final class Favorites {
 			return new WP_Error( 'easyq_favorite_self', __( 'You cannot add yourself to your favorites.', 'easyq' ) );
 		}
 
+		// Only a profile the user may see can be followed, as Question2Answer offers the button on the profile page only.
+		$followed = 'user' === $type && $favorite ? get_userdata( $entity ) : null;
+		if ( false === $followed || ( null !== $followed && ! Services::user_query()->is_shown( $followed, $user_id ) ) ) {
+			return new WP_Error( 'easyq_favorite_not_found', __( 'This cannot be added to favorites.', 'easyq' ) );
+		}
+
 		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'userfavorites' );
 		$sql   = $favorite
@@ -218,6 +225,33 @@ final class Favorites {
 		}
 
 		return $this->loaded[ $key ];
+	}
+
+	/**
+	 * Returns the users a user follows whose profiles that user may see, newest first.
+	 *
+	 * A followed user may leave the site or the Q&A area later; lists show only those
+	 * whose profile is still shown, as `User_Query::is_shown()` decides.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return int[] User IDs.
+	 */
+	public function shown_users( int $user_id ): array {
+		$ids = $this->ids( $user_id, 'user' );
+		cache_users( $ids );
+
+		return array_values(
+			array_filter(
+				$ids,
+				static function ( int $id ) use ( $user_id ): bool {
+					$user = get_userdata( $id );
+
+					return false !== $user && Services::user_query()->is_shown( $user, $user_id );
+				}
+			)
+		);
 	}
 
 	/**

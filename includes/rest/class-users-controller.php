@@ -190,7 +190,7 @@ final class Users_Controller extends Controller {
 
 		if ( 'favorites' === $sort ) {
 			// The users the viewer follows, as the favorites page lists them; nothing for visitors.
-			$ids   = Services::favorites()->ids( get_current_user_id(), 'user' );
+			$ids   = Services::favorites()->shown_users( get_current_user_id() );
 			$found = array(
 				'ids'   => array_slice( $ids, ( $page - 1 ) * $per_page, $per_page ),
 				'total' => count( $ids ),

@@ -93,7 +93,7 @@ final class Users_Render {
 		$per_page = max( 1, min( User_Query::MAX_PER_PAGE, $per_page ) );
 
 		if ( 'favorites' === ( $query['sort'] ?? '' ) ) {
-			$ids   = Services::favorites()->ids( (int) Block_Context::viewer()->user_id, 'user' );
+			$ids   = Services::favorites()->shown_users( (int) Block_Context::viewer()->user_id );
 			$found = array(
 				'ids'   => array_slice( $ids, ( $page - 1 ) * $per_page, $per_page ),
 				'total' => count( $ids ),

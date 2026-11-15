@@ -111,9 +111,10 @@ final class Users_REST_Test extends REST_Test_Case {
 
 	public function test_lists_the_favorite_users_of_the_current_user(): void {
 		$followed = $this->user();
+		$this->take_part( (int) $followed->user_id );
 		$this->user();
 		$fan = $this->user();
-		Services::favorites()->set( $fan, 'user', (int) $followed->user_id, true );
+		$this->assertTrue( Services::favorites()->set( $fan, 'user', (int) $followed->user_id, true ) );
 
 		wp_set_current_user( (int) $fan->user_id );
 		$response = $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) );

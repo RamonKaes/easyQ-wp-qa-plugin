@@ -31,6 +31,36 @@ final class Favorites_Test extends REST_Test_Case {
 		return do_blocks( ( new Templates( Block_Context::router() ) )->definitions()['easyq-favorites']['content'] );
 	}
 
+	public function test_follows_only_users_whose_profile_is_shown(): void {
+		global $wpdb;
+
+		$fan = (int) $this->user()->user_id;
+		wp_set_current_user( $fan );
+		$stranger = self::factory()->user->create( array( 'display_name' => 'Never took part' ) );
+		$follow   = fn ( int $id ): \WP_REST_Response => $this->request(
+			'POST',
+			'/favorites',
+			array(
+				'type' => 'user',
+				'id'   => $id,
+			)
+		);
+
+		$refused = $follow( $stranger );
+		$this->assertSame( 404, $refused->get_status() );
+		$this->assertStringNotContainsString( 'Never took part', (string) wp_json_encode( $refused->get_data() ) );
+		$this->assertFalse( Services::favorites()->has( $fan, 'user', $stranger ) );
+
+		// A user followed while their profile was shown drops out of the lists once it is not.
+		$this->take_part( $stranger );
+		$this->assertSame( 201, $follow( $stranger )->get_status() );
+		$this->assertSame( array( $stranger ), array_column( $this->data( $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) ) ), 'id' ) );
+		$wpdb->delete( $wpdb->prefix . 'easyq_userpoints', array( 'user_id' => $stranger ) );
+		$this->assertSame( array(), $this->data( $this->request( 'GET', '/favorites', array( 'type' => 'user' ) ) ) );
+		$this->assertSame( array(), $this->data( $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) ) ) );
+		$this->assertStringNotContainsString( 'Never took part', $this->page() );
+	}
+
 	public function test_adds_lists_and_removes_each_type(): void {
 		$author   = $this->user();
 		$question = $this->ask( $author, 'A question to follow', 'Text.', array( 'followed' ) );

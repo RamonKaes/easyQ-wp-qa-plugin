@@ -225,7 +225,7 @@ final class Favorites_Controller extends Controller {
 				break;
 			case 'user':
 				$user = get_userdata( (int) $id );
-				if ( false !== $user ) {
+				if ( false !== $user && Services::user_query()->is_shown( $user, $this->actor()->user_id ) ) {
 					$title = $user->display_name;
 					$link  = URLs::user( $user );
 				}
