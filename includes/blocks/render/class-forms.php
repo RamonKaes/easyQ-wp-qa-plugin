@@ -924,10 +924,13 @@ final class Forms {
 				'<p class="comment-notes"><small>%s</small></p>',
 				'' === $privacy
 					? esc_html__( 'Posting without an account stores a cookie in your browser, so you can edit your post later.', 'easyq' )
-					: sprintf(
-						/* translators: %s: link to the privacy policy. */
-						esc_html__( 'Posting without an account stores a cookie in your browser, so you can edit your post later. See the %s.', 'easyq' ),
-						sprintf( '<a href="%s">%s</a>', esc_url( $privacy ), esc_html__( 'privacy policy', 'easyq' ) )
+					: wp_kses(
+						sprintf(
+							/* translators: %s: address of the privacy policy. */
+							__( 'Posting without an account stores a cookie in your browser, so you can edit your post later. See the <a href="%s">privacy policy</a>.', 'easyq' ),
+							esc_url( $privacy )
+						),
+						array( 'a' => array( 'href' => true ) )
 					)
 			);
 		}
@@ -965,13 +968,14 @@ final class Forms {
 		$current = ( is_ssl() ? 'https://' : 'http://' ) . ( isset( $_SERVER['HTTP_HOST'] ) && is_string( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '' ) . ( isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
 
 		if ( 'login' === $reason ) {
-			$links = sprintf( '<a href="%s">%s</a>', esc_url( wp_login_url( $current ) ), esc_html__( 'Log in', 'easyq' ) );
-			if ( get_option( 'users_can_register' ) ) {
-				$links .= ' ' . esc_html__( 'or', 'easyq' ) . ' ' . sprintf( '<a href="%s">%s</a>', esc_url( wp_registration_url() ), esc_html__( 'register', 'easyq' ) );
-			}
+			// Whole sentences with their links, as the handbook asks, and as core words the comment form.
+			$sentence = get_option( 'users_can_register' )
+				/* translators: 1: address of the login page, 2: address of the registration page. */
+				? sprintf( __( '<a href="%1$s">Log in</a> or <a href="%2$s">register</a> to take part.', 'easyq' ), esc_url( wp_login_url( $current ) ), esc_url( wp_registration_url() ) )
+				/* translators: %s: address of the login page. */
+				: sprintf( __( '<a href="%s">Log in</a> to take part.', 'easyq' ), esc_url( wp_login_url( $current ) ) );
 
-			/* translators: %s: links to log in and register. */
-			return sprintf( '<p>%s</p>', sprintf( esc_html__( '%s to take part.', 'easyq' ), $links ) );
+			return sprintf( '<p>%s</p>', wp_kses( $sentence, array( 'a' => array( 'href' => true ) ) ) );
 		}
 
 		$message = match ( $reason ) {

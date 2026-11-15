@@ -361,6 +361,30 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( '>Typed reason for closing</textarea>', $this->render( $markup, new Route( 'question', $question ) ) );
 	}
 
+	public function test_the_sentences_around_links_are_translated_whole(): void {
+		// A translation of each sentence as one string, as a translator sees it.
+		$german = static fn ( string $translation, string $text ): string => match ( $text ) {
+			'<a href="%1$s">Log in</a> or <a href="%2$s">register</a> to take part.' => '<a href="%1$s">Melde dich an</a> oder <a href="%2$s">registriere dich</a>, um mitzumachen.',
+			'<a href="%s">Log in</a> to take part.' => '<a href="%s">Melde dich an</a>, um mitzumachen.',
+			'Posting without an account stores a cookie in your browser, so you can edit your post later. See the <a href="%s">privacy policy</a>.' => 'Ohne Konto speichert der Beitrag ein Cookie. Siehe die <a href="%s">Datenschutzerklärung</a>.',
+			default => $translation,
+		};
+		add_filter( 'gettext', $german, 10, 2 );
+
+		update_option( 'users_can_register', 1 );
+		$this->assertStringContainsString( '">Melde dich an</a> oder <a href="' . esc_url( wp_registration_url() ) . '">registriere dich</a>, um mitzumachen.', Forms::permission_message( 'login' ) );
+		update_option( 'users_can_register', 0 );
+		$this->assertStringContainsString( '">Melde dich an</a>, um mitzumachen.</p>', Forms::permission_message( 'login' ) );
+
+		$page = self::factory()->post->create( array( 'post_type' => 'page' ) );
+		update_option( 'wp_page_for_privacy_policy', $page );
+		Options::update( 'permissions', array( 'permit_post_q' => \EasyQ\Users\Permits::ALL ) );
+		$html = $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) );
+		remove_filter( 'gettext', $german, 10 );
+
+		$this->assertStringContainsString( 'Siehe die <a href="' . esc_url( (string) get_permalink( $page ) ) . '">Datenschutzerklärung</a>.', $html );
+	}
+
 	public function test_forms_ask_visitors_to_log_in(): void {
 		$question = $this->ask( $this->user() );
 
