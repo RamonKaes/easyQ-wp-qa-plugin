@@ -69,7 +69,23 @@ final class Site_Health_Test extends Test_Case {
 		remove_filter( 'query', $hide );
 
 		$this->assertSame( 'critical', $result['status'] );
-		$this->assertStringContainsString( '<li>Created table ' . $table . '</li>', $result['description'] );
+		// It says what is missing, not what the dry run of dbDelta() would have done.
+		$this->assertStringContainsString( '<li>Missing table: ' . $table . '</li>', $result['description'] );
+		$this->assertStringNotContainsString( 'Created table', $result['description'] );
+		$this->assertStringContainsString( esc_url( is_multisite() && is_plugin_active_for_network( plugin_basename( \EasyQ\PLUGIN_FILE ) ) ? network_admin_url( 'plugins.php' ) : admin_url( 'plugins.php' ) ), $result['actions'] );
+	}
+
+	public function test_on_a_network_the_action_leads_to_the_plugins_of_the_network(): void {
+		if ( ! is_multisite() ) {
+			$this->assertTrue( true );
+			return;
+		}
+		update_site_option( 'active_sitewide_plugins', array( plugin_basename( \EasyQ\PLUGIN_FILE ) => time() ) + (array) get_site_option( 'active_sitewide_plugins', array() ) );
+		update_option( \EasyQ\Database\Installer::DB_VERSION_OPTION, 0 );
+
+		$result = $this->health->test_database();
+
+		$this->assertStringContainsString( esc_url( network_admin_url( 'plugins.php' ) ), $result['actions'] );
 	}
 
 	public function test_permalinks_are_recommended_without_a_structure(): void {
@@ -117,6 +133,8 @@ final class Site_Health_Test extends Test_Case {
 
 		$this->assertArrayHasKey( 'easyq', $info );
 		$fields = $info['easyq']['fields'];
+		// As core marks `home_url` and `site_url`: the address is not copied with the site information.
+		$this->assertTrue( $fields['address']['private'] ?? false );
 		$this->assertSame( \EasyQ\VERSION, $fields['version']['value'] );
 		$this->assertSame( Installer::DB_VERSION . ' (' . Installer::DB_VERSION . ')', $fields['database_version']['debug'] );
 		$this->assertSame( 1, $fields['questions']['value'] );

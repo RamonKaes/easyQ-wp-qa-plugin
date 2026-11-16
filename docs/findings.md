@@ -52,10 +52,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
   reads literal first arguments only, so the events built from a prefix (votes, flags,
   favorites, moderation, `u_edit`) are documented by hand and unguarded. *Why no guard
   saw it:* the guard of the documents is this test.
-- **F-98** (Q × Guidelines). The field `address` of the Site Health information is not
-  marked `private` and is copied with "Copy site info to clipboard"; core marks
-  `home_url` and `site_url` so. *Why no guard saw it:* the test reads the labels, not
-  the flags.
 ### Low
 
 - **F-130** (P × Guidelines). `docs/hooks.md` does not name the three filters of others
@@ -63,13 +59,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
   as F-97.
 - **F-131** (P × Frequency). `easyq_default_settings` runs 356 times to render one
   question page. *Why no guard saw it:* no test counts filter calls.
-- **F-132** (Q × Multisite). On a network-wide activation the action of the database
-  test links to the plugins screen of the site, where the plugin cannot be changed.
-  *Why no guard saw it:* no Site Health test on a multisite.
-- **F-133** (Q × Error path). The list of the database test says "Created table …"
-  although the dry run of `dbDelta()` created nothing. *Why no guard saw it:* the test
-  reads the missing tables, not the wording.
-
 ## Deferred
 
 | No. | Class | Finding | Why deferred | Comes back when |

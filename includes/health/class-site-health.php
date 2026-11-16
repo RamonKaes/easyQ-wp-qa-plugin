@@ -104,9 +104,10 @@ final class Site_Health {
 			return $result;
 		}
 
+		// The dry run of dbDelta() reports what it would do; the list says what is missing instead.
 		$list = '';
 		foreach ( $changes as $change ) {
-			$list .= '<li>' . esc_html( $change ) . '</li>';
+			$list .= '<li>' . esc_html( self::describe_change( $change ) ) . '</li>';
 		}
 
 		$result['status']      = 'critical';
@@ -115,10 +116,17 @@ final class Site_Health {
 			'<p>%s</p>',
 			esc_html__( 'Some tables of easyQ are missing or differ from what this version of the plugin expects, so questions and answers may fail to show or to save.', 'easyq' )
 		) . ( '' === $list ? '' : '<ul>' . $list . '</ul>' );
-		$result['actions']     = sprintf(
+		// On a network the plugin is changed on the Plugins screen of the network.
+		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+		$network           = is_multisite() && is_plugin_active_for_network( plugin_basename( \EasyQ\PLUGIN_FILE ) );
+		$result['actions'] = sprintf(
 			'<p><a href="%1$s">%2$s</a></p>',
-			esc_url( admin_url( 'plugins.php' ) ),
-			esc_html__( 'Deactivate and activate easyQ on the Plugins screen to create or update the tables', 'easyq' )
+			esc_url( $network ? network_admin_url( 'plugins.php' ) : admin_url( 'plugins.php' ) ),
+			$network
+				? esc_html__( 'Deactivate and activate easyQ on the Plugins screen of the network to create or update the tables', 'easyq' )
+				: esc_html__( 'Deactivate and activate easyQ on the Plugins screen to create or update the tables', 'easyq' )
 		);
 
 		return $result;
@@ -249,8 +257,10 @@ final class Site_Health {
 				'value' => Counts::get( Counts::USERS_WITH_POINTS ),
 			),
 			'address'           => array(
-				'label' => __( 'Q&A address', 'easyq' ),
-				'value' => Routes::url( 'home' ),
+				'label'   => __( 'Q&A address', 'easyq' ),
+				'value'   => Routes::url( 'home' ),
+				// As core marks `home_url` and `site_url`: not copied with the site information.
+				'private' => true,
 			),
 			'search'            => array(
 				'label' => __( 'Search', 'easyq' ),
@@ -320,5 +330,33 @@ final class Site_Health {
 			},
 			'debug' => $debug,
 		);
+	}
+
+	/**
+	 * Says what a change of the dry run of `dbDelta()` means: what is missing or differs.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $change A message of `dbDelta()`, such as "Created table wp_easyq_posts".
+	 * @return string
+	 */
+	private static function describe_change( string $change ): string {
+		$patterns = array(
+			/* translators: %s: name of a database table. */
+			'/^Created table (.+)$/'            => __( 'Missing table: %s', 'easyq' ),
+			/* translators: %s: column of a database table. */
+			'/^Added column (.+)$/'             => __( 'Missing column: %s', 'easyq' ),
+			/* translators: %s: index of a database table. */
+			'/^Added index (.+)$/'              => __( 'Missing index: %s', 'easyq' ),
+			/* translators: %s: column of a database table. */
+			'/^Changed type of (.+?) from .*$/' => __( 'Column of another type: %s', 'easyq' ),
+		);
+		foreach ( $patterns as $pattern => $text ) {
+			if ( 1 === preg_match( $pattern, $change, $match ) ) {
+				return sprintf( $text, $match[1] );
+			}
+		}
+
+		return $change;
 	}
 }
