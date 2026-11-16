@@ -62,13 +62,20 @@ async function run( event ) {
 	progress.removeAttribute( 'value' );
 	status.textContent = __( 'Starting…', 'easyq' );
 
-	let state = { step: '', after: 0 };
+	let state = { step: '', after: 0, total: undefined, done: 0, run: '' };
 	try {
 		do {
 			state = await apiFetch( {
 				path: '/easyq/v1/tools/' + form.dataset.easyqTool,
 				method: 'POST',
-				data: { step: state.step, after: state.after },
+				// The total is counted once per step; the token keeps a second run out.
+				data: {
+					step: state.step,
+					after: state.after,
+					...( state.after > 0 ? { total: state.total } : {} ),
+					done: state.done,
+					run: state.run,
+				},
 			} );
 			show( form, state );
 		} while ( ! state.complete );

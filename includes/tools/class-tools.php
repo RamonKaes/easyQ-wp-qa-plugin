@@ -14,6 +14,7 @@ use EasyQ\Database\Schema;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Stats\Counts;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -88,13 +89,20 @@ final class Tools {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Actor  $actor Who runs the tool.
-	 * @param string $tool  A key of STEPS.
-	 * @param string $step  Step to run; empty for the first step.
-	 * @param int    $after Last item handled in this step; 0 to start the step.
-	 * @return array{tool: string, step: string, step_number: int, steps: int, after: int, done: int, total: int, complete: bool}|null Where to go on, or null for an unknown tool or step.
+	 * The items of a step are counted once, at its start, as Question2Answer counts once per
+	 * step; the caller passes the total and the items done back with the next batch. A run has
+	 * a token: while one runs, another is refused, so two runs never write the same items twice.
+	 *
+	 * @param Actor    $actor Who runs the tool.
+	 * @param string   $tool  A key of STEPS.
+	 * @param string   $step  Step to run; empty for the first step.
+	 * @param int      $after Last item handled in this step; 0 to start the step.
+	 * @param int|null $total Items of the step from the previous batch; null to count them.
+	 * @param int      $done  Items of the step done before this batch.
+	 * @param string   $run   Token of the run from the previous batch; empty to start a run.
+	 * @return array{tool: string, step: string, step_number: int, steps: int, after: int, done: int, total: int, complete: bool, run: string}|WP_Error|null Where to go on, an error while another run goes on, or null for an unknown tool or step.
 	 */
-	public function run( Actor $actor, string $tool, string $step = '', int $after = 0 ): ?array {
+	public function run( Actor $actor, string $tool, string $step = '', int $after = 0, ?int $total = null, int $done = 0, string $run = '' ): array|WP_Error|null {
 		$steps = self::STEPS[ $tool ] ?? null;
 		if ( null === $steps ) {
 			return null;
@@ -107,6 +115,11 @@ final class Tools {
 			return null;
 		}
 
+		$run = self::claim( $run );
+		if ( $run instanceof WP_Error ) {
+			return $run;
+		}
+
 		$ids  = $steps[ $step ] > 0 ? $this->items( $tool, $step, $after, $steps[ $step ] ) : array();
 		$last = array() === $ids ? $after : max( $ids );
 		if ( array() !== $ids || 0 === $steps[ $step ] ) {
@@ -115,9 +128,12 @@ final class Tools {
 
 		// A step ends when a batch finds nothing more; steps without items take one call.
 		$finished = 0 === $steps[ $step ] || array() === $ids;
-		$total    = $steps[ $step ] > 0 ? $this->count( $tool, $step, 0 ) : 1;
-		$done     = $steps[ $step ] > 0 ? $total - $this->count( $tool, $step, $last ) : 1;
+		$total    = $steps[ $step ] > 0 ? ( 0 === $after || null === $total ? $this->count( $tool, $step, 0 ) : $total ) : 1;
+		$done     = $steps[ $step ] > 0 ? min( $total, ( 0 === $after ? 0 : $done ) + count( $ids ) ) : 1;
 		$next     = $names[ $index + 1 ] ?? null;
+		if ( $finished && null === $next ) {
+			self::release( $run );
+		}
 
 		return array(
 			'tool'        => $tool,
@@ -128,6 +144,7 @@ final class Tools {
 			'done'        => $finished && null !== $next ? 0 : $done,
 			'total'       => $finished && null !== $next ? 0 : $total,
 			'complete'    => $finished && null === $next,
+			'run'         => $run,
 		);
 	}
 
@@ -346,6 +363,62 @@ final class Tools {
 				Post::ANSWER   => $service->delete_answer( $actor, $post, $question ),
 				default        => $service->delete_comment( $actor, $post, $question, Services::posts()->find( (int) $post->parent_id ) ?? $question ),
 			};
+		}
+	}
+
+	/**
+	 * Option that holds the token of the run that goes on and the time of its last batch.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const RUN_OPTION = 'easyq_tools_run';
+
+	/**
+	 * Takes or keeps the lock of the tools for a run, with an atomic insert as
+	 * `WP_Upgrader::create_lock()`; a run without a batch for five minutes is over.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $run Token of the run; empty to start one.
+	 * @return string|WP_Error The token, or an error while another run goes on.
+	 */
+	private static function claim( string $run ): string|WP_Error {
+		$wpdb  = DB::wpdb();
+		$token = '' === $run ? wp_generate_uuid4() : $run;
+		$value = $token . '|' . time();
+		$sql   = $wpdb->prepare( 'INSERT IGNORE INTO %i ( option_name, option_value, autoload ) VALUES ( %s, %s, %s )', $wpdb->options, self::RUN_OPTION, $value, 'off' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; an atomic insert, as WP_Upgrader::create_lock().
+		if ( null !== $sql && 1 === (int) $wpdb->query( $sql ) ) {
+			wp_cache_delete( self::RUN_OPTION, 'options' );
+			return $token;
+		}
+
+		wp_cache_delete( self::RUN_OPTION, 'options' );
+		$held           = get_option( self::RUN_OPTION );
+		[ $owner, $at ] = array_pad( explode( '|', is_string( $held ) ? $held : '' ), 2, '0' );
+		if ( $owner !== $token && (int) $at > time() - 5 * MINUTE_IN_SECONDS ) {
+			return new WP_Error( 'easyq_tools_running', __( 'The tools are running already, from another screen or the command line. Please wait until they are done.', 'easyq' ), array( 'status' => 409 ) );
+		}
+
+		update_option( self::RUN_OPTION, $value, false );
+
+		return $token;
+	}
+
+	/**
+	 * Releases the lock of the tools at the end of a run.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $run Token of the run.
+	 */
+	private static function release( string $run ): void {
+		wp_cache_delete( self::RUN_OPTION, 'options' );
+		$held = get_option( self::RUN_OPTION );
+		if ( is_string( $held ) && str_starts_with( $held, $run . '|' ) ) {
+			delete_option( self::RUN_OPTION );
 		}
 	}
 }

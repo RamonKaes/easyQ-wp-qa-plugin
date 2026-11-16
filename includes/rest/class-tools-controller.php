@@ -58,6 +58,22 @@ final class Tools_Controller extends Controller {
 							'default'     => 0,
 							'minimum'     => 0,
 						),
+						'total' => array(
+							'description' => __( 'Items of the step, from the previous response; counted again without it.', 'easyq' ),
+							'type'        => 'integer',
+							'minimum'     => 0,
+						),
+						'done'  => array(
+							'description' => __( 'Items of the step done, from the previous response.', 'easyq' ),
+							'type'        => 'integer',
+							'default'     => 0,
+							'minimum'     => 0,
+						),
+						'run'   => array(
+							'description' => __( 'Token of the run, from the previous response; empty to start one. While a run goes on, another one is refused.', 'easyq' ),
+							'type'        => 'string',
+							'default'     => '',
+						),
 					),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
@@ -96,8 +112,14 @@ final class Tools_Controller extends Controller {
 			$this->actor(),
 			(string) self::string_param( $request, 'tool' ),
 			(string) self::string_param( $request, 'step' ),
-			self::int_param( $request, 'after' ) ?? 0
+			self::int_param( $request, 'after' ) ?? 0,
+			self::int_param( $request, 'total' ),
+			self::int_param( $request, 'done' ) ?? 0,
+			(string) self::string_param( $request, 'run' )
 		);
+		if ( $result instanceof WP_Error ) {
+			return $result;
+		}
 
 		return null === $result
 			? REST_Errors::invalid( new WP_Error( 'step', __( 'The tool has no such step.', 'easyq' ) ) )

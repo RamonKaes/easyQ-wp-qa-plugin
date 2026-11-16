@@ -120,7 +120,7 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 		$this->assertStringContainsString( 'Step 1 of 1: 3 of 3 done.', $html );
 		$this->assertMatchesRegularExpression( '/data-easyq-tool="reindex".*?name="step" value="questions".*?>Continue<\/button>/s', $html );
 
-		preg_match( '/data-easyq-tool="reindex".*?name="after" value="(\d+)"/s', $html, $matches );
+		preg_match( '/data-easyq-tool="reindex".*?name="after" value="(\d+)".*?name="total" value="(\d+)".*?name="done" value="(\d+)".*?name="run" value="([a-z0-9-]*)"/s', $html, $matches );
 		$this->assertSame(
 			add_query_arg(
 				array(
@@ -134,6 +134,10 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 					'easyq_tool' => 'reindex',
 					'step'       => 'questions',
 					'after'      => $matches[1] ?? '0',
+					'total'      => $matches[2] ?? '0',
+					'done'       => $matches[3] ?? '0',
+					// The token of the run, so the next click goes on with it.
+					'run'        => $matches[4] ?? '',
 				)
 			)
 		);
@@ -157,9 +161,12 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 		do {
 			$redirect = $screen->handle( $state );
 			$html     = $this->render( array( $screen, 'render' ), 'Q&A Tools' );
-			preg_match( '/data-easyq-tool="delete_hidden".*?name="step" value="([a-z]*)".*?name="after" value="(\d+)"/s', $html, $matches );
+			preg_match( '/data-easyq-tool="delete_hidden".*?name="step" value="([a-z]*)".*?name="after" value="(\d+)".*?name="total" value="(\d+)".*?name="done" value="(\d+)".*?name="run" value="([a-z0-9-]*)"/s', $html, $matches );
 			$state['step']  = $matches[1] ?? '';
 			$state['after'] = $matches[2] ?? '0';
+			$state['total'] = $matches[3] ?? '0';
+			$state['done']  = $matches[4] ?? '0';
+			$state['run']   = $matches[5] ?? '';
 			++$calls;
 		} while ( null === $redirect && $calls < 10 );
 		$this->assertNotNull( $redirect );

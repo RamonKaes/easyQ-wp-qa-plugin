@@ -235,6 +235,7 @@ final class Schemas {
 				'done'        => self::property( __( 'Items done in the current step.', 'easyq' ), 'integer' ),
 				'total'       => self::property( __( 'Items of the current step.', 'easyq' ), 'integer' ),
 				'complete'    => self::property( __( 'Whether all steps are done.', 'easyq' ), 'boolean' ),
+				'run'         => self::property( __( 'Token of the run; pass it back with total and done to go on.', 'easyq' ), 'string' ),
 			)
 		);
 	}

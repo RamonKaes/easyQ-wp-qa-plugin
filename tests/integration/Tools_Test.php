@@ -31,10 +31,13 @@ final class Tools_Test extends Test_Case {
 		$state = array(
 			'step'  => '',
 			'after' => 0,
+			'total' => 0,
+			'done'  => 0,
+			'run'   => '',
 		);
 
 		for ( $calls = 1; $calls <= 100; $calls++ ) {
-			$state = $tools->run( Actor::user( $this->administrator() ), $tool, $state['step'], $state['after'] );
+			$state = $tools->run( Actor::user( $this->administrator() ), $tool, $state['step'], $state['after'], 0 === $state['after'] ? null : $state['total'], $state['done'], $state['run'] );
 			$this->assertIsArray( $state );
 			if ( $state['complete'] ) {
 				return $calls;
@@ -202,13 +205,69 @@ final class Tools_Test extends Test_Case {
 				'total'       => 3,
 				'complete'    => false,
 			),
-			array_diff_key( (array) $first, array( 'after' => true ) )
+			array_diff_key(
+				(array) $first,
+				array(
+					'after' => true,
+					'run'   => true,
+				)
+			)
 		);
-		$last = $tools->run( $actor, 'reindex', 'questions', (int) ( $first['after'] ?? 0 ) );
+		$last = $tools->run( $actor, 'reindex', 'questions', (int) ( $first['after'] ?? 0 ), 3, 3, (string) ( $first['run'] ?? '' ) );
 		$this->assertTrue( $last['complete'] ?? false );
 
 		$this->assertNull( $tools->run( $actor, 'no_such_tool' ) );
 		$this->assertNull( $tools->run( $actor, 'reindex', 'no_such_step' ) );
 		$this->assertSame( 'counts', $tools->run( $actor, 'recalc_points', 'users', PHP_INT_MAX )['step'] ?? null );
+	}
+
+	public function test_each_step_is_counted_once(): void {
+		global $wpdb;
+		$created = gmdate( 'Y-m-d H:i:s' );
+		$values  = array();
+		for ( $i = 0; $i < 1200; $i++ ) {
+			$values[] = $wpdb->prepare( "('C', %s, 'A comment.', '')", $created );
+		}
+		$wpdb->query( 'INSERT INTO ' . Schema::table( 'posts' ) . ' (type, created, content, format) VALUES ' . implode( ',', $values ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Values prepared above.
+		$counts = 0;
+		$record = static function ( string $query ) use ( &$counts ): string {
+			$counts += str_starts_with( $query, 'SELECT COUNT(*) FROM' ) && str_contains( $query, 'FIND_IN_SET' ) ? 1 : 0;
+			return $query;
+		};
+		add_filter( 'query', $record );
+		$calls = $this->run_tool( 'recount_posts' );
+		remove_filter( 'query', $record );
+
+		$steps = count( array_filter( Tools::STEPS['recount_posts'] ) );
+		$this->assertGreaterThan( $steps + 2, $calls, 'Several batches per step.' );
+		$this->assertLessThanOrEqual( $steps, $counts, "$counts counts in $calls batches" );
+	}
+
+	public function test_a_second_run_waits_for_the_first(): void {
+		$this->ask( $this->user(), 'A question to reindex' );
+		$tools = new Tools();
+		$actor = Actor::user( $this->administrator() );
+		$first = $tools->run( $actor, 'reindex' );
+		$this->assertIsArray( $first );
+		$this->assertFalse( $first['complete'] );
+
+		$second = $tools->run( $actor, 'refill_events' );
+		$this->assertWPError( $second );
+		$this->assertSame( 409, $second->get_error_data()['status'] ?? null );
+
+		$this->assertIsArray( $tools->run( $actor, 'reindex', 'questions', $first['after'], $first['total'], $first['done'], $first['run'] ), 'The run itself goes on.' );
+		$this->assertIsArray( $tools->run( $actor, 'refill_events' ), 'After the end of the first run another may start.' );
+
+		// A run that stopped without a batch for five minutes is over.
+		update_option( Tools::RUN_OPTION, 'gone|' . ( time() - HOUR_IN_SECONDS ), false );
+		$this->assertIsArray( $tools->run( $actor, 'reindex' ) );
+	}
+
+	public function test_the_command_line_offers_every_tool(): void {
+		$doc = (string) ( new \ReflectionMethod( \EasyQ\CLI\Command::class, 'recalc' ) )->getDocComment();
+		$this->assertSame( 1, preg_match( '/options:\s*\n((?:\s*\*\s+- [a-z-]+\n)+)/', $doc, $list ) );
+		preg_match_all( '/- ([a-z-]+)/', $list[1], $options );
+
+		$this->assertSame( array_map( static fn ( string $tool ): string => str_replace( '_', '-', $tool ), array_keys( Tools::STEPS ) ), $options[1] );
 	}
 }

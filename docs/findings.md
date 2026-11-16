@@ -31,10 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-90** (M × Volume, F × Volume). Every batch of `Tools::run()` counts the whole
-  table twice; with 3,000 posts both counts read 3,000 rows, also the count of the
-  rest, so a run grows with the square of the table. Question2Answer counts once per
-  step. *Why no guard saw it:* `Tools_Test` counts no queries.
 - **F-91** (O × Volume, O × Time, O × Guidelines). Network activation installs every
   site in one request (73 queries per site, up to 10,000 sites) and includes archived
   sites; core upgrades five sites per request and leaves out spam, deleted and archived
@@ -78,12 +74,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-124** (M × Concurrency). Two runs of `refill-events` at the same time (command
-  line and tools page) write every event twice. *Why no guard saw it:* no test
-  interleaves two runs.
-- **F-125** (M × Form). The list of tools in the synopsis of `wp easyq recalc` is a
-  copy of `Tools::STEPS` by hand; it matches today and no test compares them. *Why no
-  guard saw it:* nothing reads the docblock.
 - **F-126** (O × Multisite). A site that never had easyQ keeps the uninstall from
   deleting the meta of the whole network (`easyq_unconfirmed`). *Why no guard saw it:*
   only the case "no site agreed" runs.

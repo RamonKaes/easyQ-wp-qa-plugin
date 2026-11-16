@@ -246,7 +246,7 @@ The values users enter are part of `/users/{id}` and `/users/me`.
 
 | Method and route | Description |
 | --- | --- |
-| `POST /tools/{tool}` | Run one batch of a maintenance tool: `recount_posts` (answers, votes, flags, hotness and the counts of the site), `reindex` (search index), `recalc_points`, `recalc_categories`, `refill_events` (what the updates pages of users show) or `delete_hidden` (hidden posts without answers or comments of their own). Pass `step` and `after` from the previous response, or nothing to start; repeat until `complete` is true. Each response also has `step_number`, `steps`, `done` and `total` for the progress. Needs `easyq_manage` |
+| `POST /tools/{tool}` | Run one batch of a maintenance tool: `recount_posts` (answers, votes, flags, hotness and the counts of the site), `reindex` (search index), `recalc_points`, `recalc_categories`, `refill_events` (what the updates pages of users show) or `delete_hidden` (hidden posts without answers or comments of their own). Pass `step`, `after`, `total`, `done` and `run` from the previous response, or nothing to start; repeat until `complete` is true. The items of a step are counted once, at its start. While a run goes on, another one is refused with 409, so two runs never write the same items twice; a run without a batch for five minutes is over. Each response also has `step_number` and `steps` for the progress. Needs `easyq_manage` |
 
 ### Settings
 

@@ -127,11 +127,17 @@ final class Command {
 	private function run( Tools $runner, Actor $actor, string $tool, string $label ): void {
 		$step  = (string) array_key_first( Tools::STEPS[ $tool ] );
 		$after = 0;
+		$total = null;
+		$done  = 0;
+		$token = '';
 		$bar   = null;
 		$shown = 0;
 
 		do {
-			$result = $runner->run( $actor, $tool, $step, $after );
+			$result = $runner->run( $actor, $tool, $step, $after, $total, $done, $token );
+			if ( $result instanceof \WP_Error ) {
+				WP_CLI::error( $result->get_error_message() );
+			}
 			if ( null === $result ) {
 				WP_CLI::error( __( 'The tool has no such step.', 'easyq' ) );
 			}
@@ -161,6 +167,9 @@ final class Command {
 
 			$step  = $result['step'];
 			$after = $result['after'];
+			$total = 0 === $after ? null : $result['total'];
+			$done  = $result['done'];
+			$token = $result['run'];
 		} while ( ! $result['complete'] );
 
 		/* translators: %s: name of the tool. */

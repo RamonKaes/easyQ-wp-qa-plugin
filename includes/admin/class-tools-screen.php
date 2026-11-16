@@ -59,7 +59,7 @@ final class Tools_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @var array{tool: string, step: string, step_number: int, steps: int, after: int, done: int, total: int, complete: bool}|null
+	 * @var array{tool: string, step: string, step_number: int, steps: int, after: int, done: int, total: int, complete: bool, run: string}|null
 	 */
 	private ?array $state = null;
 
@@ -71,6 +71,15 @@ final class Tools_Screen {
 	 * @var string
 	 */
 	private string $unconfirmed = '';
+
+	/**
+	 * Error of the last batch, e.g. while another run goes on.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private string $error = '';
 
 	/**
 	 * Hooks the screen into WordPress.
@@ -175,7 +184,20 @@ final class Tools_Screen {
 			return null;
 		}
 
-		$state = ( new Tools() )->run( Actor::current(), $tool, sanitize_key( $value( 'step' ) ), Number::int_in_range( $value( 'after' ), 0 ) ?? 0 );
+		$state = ( new Tools() )->run(
+			Actor::current(),
+			$tool,
+			sanitize_key( $value( 'step' ) ),
+			Number::int_in_range( $value( 'after' ), 0 ) ?? 0,
+			Number::int_in_range( $value( 'total' ), 0 ),
+			Number::int_in_range( $value( 'done' ), 0 ) ?? 0,
+			sanitize_key( $value( 'run' ) )
+		);
+		if ( $state instanceof \WP_Error ) {
+			$this->error = $state->get_error_message();
+
+			return null;
+		}
 		if ( null !== $state && $state['complete'] ) {
 			return add_query_arg(
 				array(
@@ -212,6 +234,9 @@ final class Tools_Screen {
 				)
 			);
 		}
+		if ( '' !== $this->error ) {
+			wp_admin_notice( esc_html( $this->error ), array( 'type' => 'error' ) );
+		}
 		printf( '<p>%s</p>', esc_html__( 'These tools recalculate stored values and clean up the database. They can take a while on large sites; keep this page open until they are done.', 'easyq' ) );
 
 		echo '<table class="form-table" role="presentation"><tbody>';
@@ -246,6 +271,10 @@ final class Tools_Screen {
 		printf( '<input type="hidden" name="easyq_tool" value="%s">', esc_attr( $tool ) );
 		printf( '<input type="hidden" name="step" value="%s">', esc_attr( $state['step'] ?? '' ) );
 		printf( '<input type="hidden" name="after" value="%d">', (int) ( $state['after'] ?? 0 ) );
+		// Counted once per step and passed on, with the token of the run.
+		printf( '<input type="hidden" name="total" value="%d">', (int) ( $state['total'] ?? 0 ) );
+		printf( '<input type="hidden" name="done" value="%d">', (int) ( $state['done'] ?? 0 ) );
+		printf( '<input type="hidden" name="run" value="%s">', esc_attr( $state['run'] ?? '' ) );
 		printf( '<p class="description" id="%1$s-description">%2$s</p>', esc_attr( $id ), esc_html( $description ) );
 
 		if ( $confirm ) {
