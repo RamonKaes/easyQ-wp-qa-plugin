@@ -15,7 +15,6 @@ use EasyQ\Posts\Post;
 use EasyQ\Posts\Tags;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
-use WP_Sitemaps;
 use WP_Sitemaps_Provider;
 
 defined( 'ABSPATH' ) || exit;
@@ -42,23 +41,22 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	}
 
 	/**
-	 * Registers the provider with the core sitemaps.
+	 * Registers the provider as core asks plugins to (`wp_register_sitemap_provider()`), when the
+	 * sitemaps of core start (`wp_sitemaps_init`).
 	 *
 	 * @since 0.1.0
 	 */
 	public static function register(): void {
-		add_action( 'wp_sitemaps_init', array( self::class, 'add_to' ) );
+		add_action( 'wp_sitemaps_init', array( self::class, 'add_provider' ) );
 	}
 
 	/**
-	 * Adds the provider to the core sitemaps.
+	 * Adds the provider to the sitemaps of core.
 	 *
 	 * @since 0.1.0
-	 *
-	 * @param WP_Sitemaps $sitemaps Core sitemaps.
 	 */
-	public static function add_to( WP_Sitemaps $sitemaps ): void {
-		$sitemaps->registry->add_provider( 'easyq', new self() );
+	public static function add_provider(): void {
+		wp_register_sitemap_provider( 'easyq', new self() );
 	}
 
 	/**
@@ -100,6 +98,21 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 			return array();
 		}
 
+		/**
+		 * Filters the entries of a page of a sitemap of the Q&A area before they are loaded,
+		 * as `wp_sitemaps_posts_pre_url_list` does for posts.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array<int, array<string, string>>|null $url_list       Entries, or null to load them.
+		 * @param string                                 $object_subtype `questions`, `tags`, `categories` or `users`.
+		 * @param int                                    $page_num       Page of the sitemap.
+		 */
+		$list = apply_filters( 'easyq_sitemaps_pre_url_list', null, $object_subtype, (int) $page_num );
+		if ( is_array( $list ) ) {
+			return $list;
+		}
+
 		$max    = wp_sitemaps_get_max_urls( $this->object_type );
 		$offset = max( 0, (int) $page_num - 1 ) * $max;
 
@@ -130,9 +143,9 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 			'questions'  => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE type = %s', Schema::table( 'posts' ), Post::QUESTION ) ),
 			'tags'       => ( new Tags() )->popular( '', 1, 1 )['total'],
-			'categories' => count( Services::categories()->all() ),
+			'categories' => count( self::listed_categories() ),
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-			'users'      => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
+			'users'      => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(DISTINCT user_id) FROM %i WHERE user_id IS NOT NULL AND type IN (%s, %s, %s)', Schema::table( 'posts' ), Post::QUESTION, Post::ANSWER, Post::COMMENT ) ),
 			default      => 0,
 		};
 
@@ -166,7 +179,7 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 			if ( false !== $time ) {
 				$entry['lastmod'] = gmdate( DATE_W3C, $time );
 			}
-			$entries[] = $entry;
+			$entries[] = self::entry( $entry, 'questions', $question );
 		}
 
 		return $entries;
@@ -183,7 +196,7 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	 */
 	private function tags( int $page, int $limit ): array {
 		return array_map(
-			static fn ( array $tag ): array => array( 'loc' => URLs::tag( $tag['name'] ) ),
+			static fn ( array $tag ): array => self::entry( array( 'loc' => URLs::tag( $tag['name'] ) ), 'tags', $tag['name'] ),
 			( new Tags() )->popular( '', $page, $limit )['tags']
 		);
 	}
@@ -199,8 +212,8 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	 */
 	private function categories( int $offset, int $limit ): array {
 		$entries = array();
-		foreach ( array_slice( Services::categories()->all(), $offset, $limit ) as $category ) {
-			$entries[] = array( 'loc' => URLs::category( $category ) );
+		foreach ( array_slice( self::listed_categories(), $offset, $limit ) as $category ) {
+			$entries[] = self::entry( array( 'loc' => URLs::category( $category ) ), 'categories', $category );
 		}
 
 		return $entries;
@@ -217,18 +230,55 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 	 */
 	private function users( int $offset, int $limit ): array {
 		$wpdb = DB::wpdb();
+		// Authors of visible posts, as core lists the authors of published posts; not users who only voted.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		$ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT user_id FROM %i ORDER BY user_id LIMIT %d, %d', Schema::table( 'userpoints' ), $offset, $limit ) ) );
+		$ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT user_id FROM %i WHERE user_id IS NOT NULL AND type IN (%s, %s, %s) ORDER BY user_id LIMIT %d, %d', Schema::table( 'posts' ), Post::QUESTION, Post::ANSWER, Post::COMMENT, $offset, $limit ) ) );
 		cache_users( $ids );
 
 		$entries = array();
 		foreach ( $ids as $id ) {
 			$user = get_userdata( $id );
 			if ( false !== $user && Services::user_query()->is_member( $user ) ) {
-				$entries[] = array( 'loc' => URLs::user( $user ) );
+				$entries[] = self::entry( array( 'loc' => URLs::user( $user ) ), 'users', $user );
 			}
 		}
 
 		return $entries;
+	}
+
+	/**
+	 * Returns the categories the sitemap lists: those with questions, as core leaves out empty terms.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return list<\EasyQ\Categories\Category>
+	 */
+	private static function listed_categories(): array {
+		return array_values( array_filter( Services::categories()->all(), static fn ( $category ): bool => $category->question_count > 0 ) );
+	}
+
+	/**
+	 * Filters an entry of a sitemap of the Q&A area, as `wp_sitemaps_posts_entry` does for posts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, string> $entry          Entry with `loc` and maybe `lastmod`.
+	 * @param string                $object_subtype `questions`, `tags`, `categories` or `users`.
+	 * @param mixed                 $item           The question, tag, category or user.
+	 * @return array<string, string>
+	 */
+	private static function entry( array $entry, string $object_subtype, mixed $item ): array {
+		/**
+		 * Filters an entry of a sitemap of the Q&A area.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array<string, string> $entry          Entry with `loc` and maybe `lastmod`.
+		 * @param string                $object_subtype `questions`, `tags`, `categories` or `users`.
+		 * @param mixed                 $item           The question (`EasyQ\Posts\Post`), tag (string), category or user (`WP_User`).
+		 */
+		$filtered = apply_filters( 'easyq_sitemaps_entry', $entry, $object_subtype, $item );
+
+		return is_array( $filtered ) ? $filtered : $entry;
 	}
 }

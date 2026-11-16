@@ -120,9 +120,30 @@ final class Feeds {
 	 */
 	public function ignore_conditional_get(): void {
 		if ( 'feed' === $this->router->current()?->name ) {
+			// Kept for the comparison with the feed itself, see render().
+			self::$if_none_match     = isset( $_SERVER['HTTP_IF_NONE_MATCH'] ) && is_string( $_SERVER['HTTP_IF_NONE_MATCH'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_IF_NONE_MATCH'] ) ) : '';
+			self::$if_modified_since = isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) && is_string( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) ) : '';
 			unset( $_SERVER['HTTP_IF_NONE_MATCH'], $_SERVER['HTTP_IF_MODIFIED_SINCE'] );
 		}
 	}
+
+	/**
+	 * `If-None-Match` of the request to the feed, for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private static string $if_none_match = '';
+
+	/**
+	 * `If-Modified-Since` of the request to the feed, for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private static string $if_modified_since = '';
 
 	/**
 	 * Removes the cache headers WordPress derives from its own posts from Q&A feeds.
@@ -236,7 +257,8 @@ final class Feeds {
 			return;
 		}
 
-		$channel = $this->channel( $feed[0], $feed[1], new Actor() );
+		// The title only: the items are built when the feed is asked for.
+		$channel = $this->channel( $feed[0], $feed[1], new Actor(), false );
 		if ( null === $channel ) {
 			return;
 		}
@@ -257,10 +279,11 @@ final class Feeds {
 	 * @param string      $type     Feed type, see TYPES.
 	 * @param string|null $argument Tag, search terms or category path.
 	 * @param Actor       $viewer   Who reads the feed; feeds are built for visitors.
+	 * @param bool        $items    Whether to build the items; the discovery link needs the title only.
 	 * @return array{title: string, link: string, items: list<array{title: string, link: string, description: string|null, category: string|null, date: string}>}|null
 	 *         Null if the feed does not exist, is disabled or the viewer may not see the Q&A area.
 	 */
-	public function channel( string $type, ?string $argument, Actor $viewer ): ?array {
+	public function channel( string $type, ?string $argument, Actor $viewer, bool $items = true ): ?array {
 		$argument = null === $argument ? '' : trim( $argument );
 		$category = null;
 
@@ -284,7 +307,7 @@ final class Feeds {
 		return array(
 			'title' => $this->title( $type, $argument, $category ),
 			'link'  => $this->link( $type, $argument, $category ),
-			'items' => match ( $type ) {
+			'items' => ! $items ? array() : match ( $type ) {
 				'questions', 'hot', 'unanswered' => $this->question_items( array( 'source' => 'questions' === $type ? 'recent' : $type ), $category, $count ),
 				'tag'    => $this->question_items( array( 'tag' => $argument ), null, $count ),
 				'search' => $this->search_items( $argument, $count ),
@@ -314,10 +337,22 @@ final class Feeds {
 			return;
 		}
 
+		// As `WP::send_headers()` for the feeds of core: the time of the newest item and a tag of
+		// the feed, and 304 when the reader has them already.
+		$xml      = $this->xml( $channel );
+		$modified = self::last_modified( $channel );
+		$etag     = '"' . md5( $xml ) . '"';
 		if ( ! headers_sent() ) {
 			header( 'Content-Type: ' . feed_content_type( 'rss2' ) . '; charset=' . get_bloginfo( 'charset' ), true );
+			header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s', $modified ) . ' GMT', true );
+			header( 'ETag: ' . $etag, true );
 		}
-		echo $this->xml( $channel ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped with esc_xml() in xml().
+		$since = '' === self::$if_modified_since ? false : strtotime( self::$if_modified_since );
+		if ( ( '' !== self::$if_none_match && self::$if_none_match === $etag ) || ( '' === self::$if_none_match && false !== $since && $since >= $modified ) ) {
+			status_header( 304 );
+			return;
+		}
+		echo $xml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped with esc_xml() in xml().
 	}
 
 	/**
@@ -329,40 +364,101 @@ final class Feeds {
 	 * @return string
 	 */
 	public function xml( array $channel ): string {
-		$site  = get_bloginfo( 'name' );
+		$site = get_bloginfo( 'name' );
+		/** This filter is documented in wp-includes/feed-rss2.php */
+		$period = apply_filters( 'rss_update_period', 'hourly' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The filter of the feeds of core.
+		/** This filter is documented in wp-includes/feed-rss2.php */
+		$frequency  = apply_filters( 'rss_update_frequency', '1' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- The filter of the feeds of core.
+		$period     = is_scalar( $period ) ? (string) $period : 'hourly';
+		$frequency  = is_scalar( $frequency ) ? (string) $frequency : '1';
+		$namespaces = self::output( 'rss2_ns' );
+		// The elements and hooks of `wp-includes/feed-rss2.php`, so plugins that extend the feeds of core extend these.
 		$lines = array(
-			'<?xml version="1.0" encoding="' . esc_xml( get_bloginfo( 'charset' ) ) . '"?>',
-			'<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+			'<?xml version="1.0" encoding="' . self::xml_text( get_bloginfo( 'charset' ) ) . '"?>',
+			self::output( 'rss_tag_pre', 'rss2' ),
+			'<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"' . ( '' === $namespaces ? '' : ' ' . $namespaces ) . '>',
 			'<channel>',
-			'<title>' . esc_xml( '' === $site ? $channel['title'] : $site . ' – ' . $channel['title'] ) . '</title>',
-			'<link>' . esc_xml( $channel['link'] ) . '</link>',
-			'<atom:link href="' . esc_xml( get_self_link() ) . '" rel="self" type="application/rss+xml" />',
-			'<description>' . esc_xml( get_bloginfo( 'description' ) ) . '</description>',
-			'<language>' . esc_xml( get_bloginfo( 'language' ) ) . '</language>',
+			'<title>' . self::xml_text( '' === $site ? $channel['title'] : $site . ' – ' . $channel['title'] ) . '</title>',
+			'<link>' . self::xml_text( $channel['link'] ) . '</link>',
+			'<atom:link href="' . self::xml_text( get_self_link() ) . '" rel="self" type="application/rss+xml" />',
+			'<description>' . self::xml_text( get_bloginfo( 'description' ) ) . '</description>',
+			'<lastBuildDate>' . self::xml_text( gmdate( DATE_RSS, self::last_modified( $channel ) ) ) . '</lastBuildDate>',
+			'<language>' . self::xml_text( get_bloginfo( 'language' ) ) . '</language>',
+			'<sy:updatePeriod>' . self::xml_text( $period ) . '</sy:updatePeriod>',
+			'<sy:updateFrequency>' . self::xml_text( $frequency ) . '</sy:updateFrequency>',
+			self::output( 'rss2_head' ),
 		);
 
 		foreach ( $channel['items'] as $item ) {
 			$lines[] = '<item>';
-			$lines[] = '<title>' . esc_xml( $item['title'] ) . '</title>';
-			$lines[] = '<link>' . esc_xml( $item['link'] ) . '</link>';
+			$lines[] = '<title>' . self::xml_text( $item['title'] ) . '</title>';
+			$lines[] = '<link>' . self::xml_text( $item['link'] ) . '</link>';
 			if ( null !== $item['description'] ) {
-				$lines[] = '<description>' . esc_xml( $item['description'] ) . '</description>';
+				$lines[] = '<description>' . self::xml_text( $item['description'] ) . '</description>';
 			}
 			if ( null !== $item['category'] ) {
-				$lines[] = '<category>' . esc_xml( $item['category'] ) . '</category>';
+				$lines[] = '<category>' . self::xml_text( $item['category'] ) . '</category>';
 			}
-			$lines[] = '<guid isPermaLink="true">' . esc_xml( $item['link'] ) . '</guid>';
+			$lines[] = '<guid isPermaLink="true">' . self::xml_text( $item['link'] ) . '</guid>';
 			$time    = strtotime( $item['date'] . ' UTC' );
 			if ( false !== $time ) {
-				$lines[] = '<pubDate>' . esc_xml( gmdate( DATE_RSS, $time ) ) . '</pubDate>';
+				$lines[] = '<pubDate>' . self::xml_text( gmdate( DATE_RSS, $time ) ) . '</pubDate>';
 			}
+			$lines[] = self::output( 'rss2_item' );
 			$lines[] = '</item>';
 		}
 
 		$lines[] = '</channel>';
 		$lines[] = '</rss>';
 
-		return implode( "\n", $lines ) . "\n";
+		return implode( "\n", array_filter( $lines, static fn ( string $line ): bool => '' !== $line ) ) . "\n";
+	}
+
+	/**
+	 * Returns text for XML: escaped, and without the characters XML 1.0 forbids, such as control
+	 * characters, which would make the whole feed invalid.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	private static function xml_text( string $text ): string {
+		return esc_xml( (string) preg_replace( '/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u', '', $text ) );
+	}
+
+	/**
+	 * Returns what the callbacks of a hook of the feeds of core print.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param non-empty-string $hook Hook, e.g. `rss2_head`.
+	 * @param mixed            $arg  Argument of the hook.
+	 * @return string
+	 */
+	private static function output( string $hook, mixed $arg = null ): string {
+		ob_start();
+		if ( null === $arg ) {
+			do_action( $hook ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hooks of the feeds of core.
+		} else {
+			do_action( $hook, $arg ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- The hooks of the feeds of core.
+		}
+
+		return trim( (string) ob_get_clean() );
+	}
+
+	/**
+	 * Returns the time of the newest item of a feed, or now for a feed without items.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array{items: list<array{date: string}>} $channel Feed.
+	 * @return int
+	 */
+	private static function last_modified( array $channel ): int {
+		$times = array_filter( array_map( static fn ( array $item ): int|false => strtotime( $item['date'] . ' UTC' ), $channel['items'] ) );
+
+		return array() === $times ? time() : max( $times );
 	}
 
 	/**

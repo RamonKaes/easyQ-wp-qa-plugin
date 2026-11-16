@@ -31,19 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-83** (L × Value, L × Abuse). A control character in a title (`\x01`) is saved
-  and makes the feed invalid XML for every reader. *Why no guard saw it:*
-  `test_builds_valid_rss` uses `&` and `<script>`.
-- **F-84** (L × Frequency, L × Guidelines). The feeds send no `Last-Modified` or `ETag`
-  and ignore conditional requests, so every poll builds the whole feed; core answers
-  304 (`class-wp.php`). *Why no guard saw it:*
-  `test_does_not_send_cache_headers_of_wordpress_posts` holds the missing headers.
-- **F-85** (L × Guidelines). The sitemap provider applies none of the filters of the
-  core providers and is not registered with `wp_register_sitemap_provider()`. *Why no
-  guard saw it:* no chapter on sitemaps in the checklist.
-- **F-86** (L × Guidelines; decision). The RSS feed fires none of the hooks of
-  `feed-rss2.php` (`rss2_ns`, `rss2_head`, `rss2_item`) and has no `lastBuildDate` or
-  `sy:updatePeriod`. *Why no guard saw it:* no chapter on feeds in the checklist.
 - **F-87** (N × Volume, N × Guidelines). Messages, notices, updates and favorites are
   exported and erased without pages: 600 messages give one page of 600 and `done`.
   The checklist says 500 per page. *Why no guard saw it:* the paging test covers posts
@@ -104,17 +91,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-120** (L × Frequency, L × Volume). The `<link rel="alternate">` of every Q&A page
-  builds the whole feed with full text to find its title; the number of queries stays,
-  the time grows with the items. *Why no guard saw it:* `Query_Growth_Test` measures
-  blocks, not `wp_head`.
-- **F-121** (L × State, L × Guidelines). Empty categories are listed in the sitemap
-  although their page is `noindex`; core leaves out empty terms. The counter-check, a
-  category with a question, did not run. *Why no guard saw it:* the sitemap test has no
-  empty category.
-- **F-122** (L × Identity, L × Guidelines). The profile sitemap lists users who only
-  voted; core lists authors with published posts. *Why no guard saw it:* the test users
-  wrote posts.
 - **F-123** (N × State). Erasing the votes of a person leaves `answer_max_votes` of the
   question as it was. *Why no guard saw it:* the eraser test reads the votes table.
 - **F-124** (M × Concurrency). Two runs of `refill-events` at the same time (command

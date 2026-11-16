@@ -68,4 +68,44 @@ final class Sitemap_Provider_Test extends Test_Case {
 		$this->assertSame( array(), $provider->get_url_list( 1, 'questions' ) );
 		$this->assertSame( 0, $provider->get_max_num_pages( 'questions' ) );
 	}
+
+	public function test_leaves_out_empty_categories_and_users_who_wrote_nothing(): void {
+		$used  = Services::categories()->create( null, 'Used category' );
+		$empty = Services::categories()->create( null, 'Empty category' );
+		$this->assertIsInt( $used );
+		$this->assertIsInt( $empty );
+		$author = $this->user();
+		$this->take_part( (int) $author->user_id );
+		$question = $this->ask( $author, 'A question in a category', 'Text.', array(), $used );
+		$voter    = $this->user();
+		$this->take_part( (int) $voter->user_id );
+		Services::votes()->vote( $voter, $question, 1 );
+		Options::update( 'viewing', array( 'sitemap_users' => true ) );
+		wp_cache_flush();
+		\EasyQ\Services::reset();
+		$provider = new Sitemap_Provider();
+
+		$categories = array_column( $provider->get_url_list( 1, 'categories' ), 'loc' );
+		$this->assertContains( URLs::category( Services::categories()->find( $used ) ), $categories );
+		$this->assertNotContains( URLs::category( Services::categories()->find( $empty ) ), $categories, 'Core leaves out empty terms.' );
+		$this->assertSame( 1, $provider->get_max_num_pages( 'categories' ) );
+
+		$users = array_column( $provider->get_url_list( 1, 'users' ), 'loc' );
+		$this->assertSame( array( URLs::user( get_userdata( (int) $author->user_id ) ) ), $users, 'Core lists authors, not users who only voted.' );
+	}
+
+	public function test_applies_filters_as_the_core_providers(): void {
+		$this->ask( $this->user(), 'Sitemap question' );
+		$provider = new Sitemap_Provider();
+		add_filter(
+			'easyq_sitemaps_entry',
+			static fn ( array $entry, string $subtype ): array => $entry + array( 'priority' => 'questions' === $subtype ? '0.8' : '0.1' ),
+			10,
+			2
+		);
+		$this->assertSame( '0.8', $provider->get_url_list( 1, 'questions' )[0]['priority'] );
+
+		add_filter( 'easyq_sitemaps_pre_url_list', static fn (): array => array( array( 'loc' => 'https://example.org/custom' ) ) );
+		$this->assertSame( array( array( 'loc' => 'https://example.org/custom' ) ), $provider->get_url_list( 1, 'questions' ) );
+	}
 }

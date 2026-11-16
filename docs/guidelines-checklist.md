@@ -267,8 +267,8 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | Privacy tools: exporter and eraser through the filters, pages of a fixed size for every kind of data, addresses compared as core compares them, everything stored is exported | Form and addresses Met; F-87, F-88 | `Privacy\Privacy`, `Post_Data`, `Profile_Data` |
 | Multisite lifecycle: network activation in steps as `network/upgrade.php` (five sites, no spam, deleted or archived sites); data of a deleted site removed with the site | F-91, F-92, F-126 | `Database\Installer`, `Uninstaller` |
 | Upgrade path: the version saved only when the schema is in place; defaults not brought back | F-128, F-129 | `Database\Installer` |
-| Feeds through `add_feed()`, the hooks and fields of `feed-rss2.php`, conditional requests | `add_feed()` Met; F-84, F-86 | `Feeds\Feeds` |
-| Sitemaps: `WP_Sitemaps_Provider`, registered with `wp_register_sitemap_provider()`, the filters of the core providers, no empty terms, users with posts | Class Met; F-85, F-121, F-122 | `Frontend\Sitemap_Provider` |
+| Feeds through `add_feed()`, the hooks and fields of `feed-rss2.php`, conditional requests | Met (`Feeds_Test`): `rss_tag_pre`, `rss2_ns`, `rss2_head`, `rss2_item`, `lastBuildDate`, `sy:` with the filters of core, `ETag` and `Last-Modified` with 304, no characters XML forbids | `Feeds\Feeds` |
+| Sitemaps: `WP_Sitemaps_Provider`, registered with `wp_register_sitemap_provider()`, the filters of the core providers, no empty terms, users with posts | Met (`Sitemap_Provider_Test`): registered on `wp_sitemaps_init`, `easyq_sitemaps_pre_url_list` and `easyq_sitemaps_entry` as the filters of the core providers, `wp_sitemaps_max_urls` | `Frontend\Sitemap_Provider` |
 | Values returned by filters checked before use, as core does with `rest_ensure_response()` and friends | F-93, F-94, F-95, F-96 | `docs/hooks.md` |
 | Every hook documented, the filters of others easyQ applies included | F-97, F-130 | `docs/hooks.md` |
 

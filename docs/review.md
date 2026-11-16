@@ -160,7 +160,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | I | open | partly | partly | partly | partly | partly | — | partly | partly | ✓ | partly | partly | partly |
 | J | — | partly | partly | partly | partly | partly | partly | partly | partly | partly | partly | partly | partly |
 | K | — | — | — | partly | partly | partly | partly | partly | — | partly | — | partly | partly |
-| L | partly | F-83 | F-122 | F-84, F-120 | — | partly | partly | F-121 | F-83 | partly | partly | open | F-84, F-85, F-86 |
+| L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
 | M | F-125 | — | — | — | F-124 | F-90 | — | partly | — | partly | — | open | partly |
 | N | — | — | partly | — | open | F-87 | — | F-88, F-123 | — | partly | — | partly | F-87, F-89 |
 | O | — | — | — | — | F-127 | F-91 | F-91 | F-92, F-128 | — | F-129 | — | F-92, F-126 | F-91, F-92, F-99 |

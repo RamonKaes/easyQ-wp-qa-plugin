@@ -164,6 +164,88 @@ final class Feeds_Test extends Test_Case {
 		$this->assertNotSame( '', (string) $xml->channel->item[0]->pubDate );
 	}
 
+	public function test_control_characters_keep_the_feed_valid(): void {
+		global $wpdb;
+		$question = $this->ask( $this->user(), 'A title with a control character', 'Content' );
+		$wpdb->update( \EasyQ\Database\Schema::table( 'posts' ), array( 'title' => "Bell \x07 and \x01 here" ), array( 'id' => $question->id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		wp_cache_flush();
+
+		$xml = simplexml_load_string( $this->feeds->xml( $this->feeds->channel( 'questions', null, new Actor() ) ?? array() ) );
+
+		$this->assertNotFalse( $xml );
+		$this->assertSame( 'Bell  and  here', (string) $xml->channel->item[0]->title );
+	}
+
+	public function test_has_the_elements_and_hooks_of_the_feeds_of_core(): void {
+		$this->ask( $this->user(), 'A question for the feed', 'Content' );
+		add_action( 'rss2_ns', static fn () => print( ' xmlns:test="https://example.org/ns"' ) );
+		add_action( 'rss2_head', static fn () => print( '<test:head>1</test:head>' ) );
+		add_action( 'rss2_item', static fn () => print( '<test:item>1</test:item>' ) );
+
+		$xml = simplexml_load_string( $this->feeds->xml( $this->feeds->channel( 'questions', null, new Actor() ) ?? array() ) );
+
+		$this->assertNotFalse( $xml );
+		$this->assertNotSame( '', (string) $xml->channel->lastBuildDate );
+		$this->assertSame( 'hourly', (string) $xml->channel->children( 'http://purl.org/rss/1.0/modules/syndication/' )->updatePeriod );
+		$this->assertSame( '1', (string) $xml->channel->children( 'https://example.org/ns' )->head );
+		$this->assertSame( '1', (string) $xml->channel->item[0]->children( 'https://example.org/ns' )->item );
+	}
+
+	public function test_answers_a_reader_who_has_the_feed_with_not_modified(): void {
+		$this->ask( $this->user(), 'A question for the feed', 'Content' );
+		$statuses = array();
+		add_filter(
+			'status_header',
+			static function ( string $header, int $code ) use ( &$statuses ): string {
+				$statuses[] = $code;
+				return $header;
+			},
+			10,
+			2
+		);
+		$open = function ( string $etag = '', string $since = '' ): string {
+			$_SERVER['HTTP_IF_NONE_MATCH']     = $etag;
+			$_SERVER['HTTP_IF_MODIFIED_SINCE'] = $since;
+			// The request runs `ignore_conditional_get()` on `parse_request`.
+			$this->go_to( Feeds::url( 'questions' ) );
+			ob_start();
+			$this->feeds->render();
+			return (string) ob_get_clean();
+		};
+
+		$body = $open();
+		$this->assertStringContainsString( '<rss', $body );
+
+		$this->assertSame( '', $open( '"' . md5( $body ) . '"' ) );
+		$this->assertSame( 304, end( $statuses ) );
+		$this->assertSame( '', $open( '', gmdate( 'D, d M Y H:i:s', time() + 60 ) . ' GMT' ) );
+		$this->assertSame( 304, end( $statuses ) );
+		$this->assertStringContainsString( '<rss', $open( '"other"' ) );
+		unset( $_SERVER['HTTP_IF_NONE_MATCH'], $_SERVER['HTTP_IF_MODIFIED_SINCE'] );
+	}
+
+	public function test_the_discovery_link_builds_no_items(): void {
+		global $wpdb;
+		Options::update( 'feeds', array( 'feed_full_text' => true ) );
+		$measure = function ( int $questions ) use ( $wpdb ): int {
+			for ( $i = 0; $i < $questions; $i++ ) {
+				$this->ask( $this->user(), "Question number $i for the feed?" );
+			}
+			Block_Context::router()->set_current( new Route( 'questions' ) );
+			$before = $wpdb->num_queries;
+			ob_start();
+			$this->feeds->discovery_link();
+			$link = (string) ob_get_clean();
+			$this->assertStringContainsString( 'rel="alternate"', $link );
+
+			return $wpdb->num_queries - $before;
+		};
+
+		// A setting may be loaded once; the items are never.
+		$this->assertLessThan( 3, $measure( 2 ), 'The title needs no query of the items.' );
+		$this->assertLessThan( 3, $measure( 25 ) );
+	}
+
 	public function test_has_addresses_below_the_base_slug(): void {
 		$this->set_permalink_structure( '/%postname%/' );
 		$this->assertSame( home_url( '/questions/feed/questions/cooking/baking/' ), Feeds::url( 'questions', 'cooking/baking' ) );
