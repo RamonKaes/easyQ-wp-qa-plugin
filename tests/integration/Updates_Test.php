@@ -212,11 +212,18 @@ final class Updates_Test extends Test_Case {
 		$tools = new Tools();
 		$step  = '';
 		$after = 0;
+		$total = null;
+		$done  = 0;
+		$run   = '';
 		do {
-			$result = $tools->run( Actor::system(), 'refill_events', $step, $after );
+			// The state of the run goes back with each batch, as the tools screen sends it.
+			$result = $tools->run( Actor::system(), 'refill_events', $step, $after, $total, $done, $run );
 			$this->assertIsArray( $result );
 			$step  = $result['step'];
 			$after = $result['after'];
+			$total = 0 === $after ? null : $result['total'];
+			$done  = $result['done'];
+			$run   = $result['run'];
 		} while ( ! $result['complete'] );
 
 		$this->assertSame( $expected, array( $this->items( $asker )[0]->question_id, $this->items( $fan )[0]->question_id ) );
