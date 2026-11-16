@@ -153,17 +153,7 @@ final class User_Query {
 		}
 
 		cache_users( $user_ids );
-		$wpdb      = DB::wpdb();
-		$took_part = DB::int_col(
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-			$wpdb->get_col(
-				$wpdb->prepare(
-					'SELECT user_id FROM %i WHERE user_id IN (' . implode( ',', array_fill( 0, count( $user_ids ), '%d' ) ) . ')',
-					array_merge( array( Schema::table( 'userpoints' ) ), $user_ids )
-				)
-			)
-		);
-		$took_part = array_flip( $took_part );
+		$took_part = array_flip( Services::points()->with_row( $user_ids ) );
 
 		return array_values(
 			array_filter(

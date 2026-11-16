@@ -9,6 +9,7 @@
 namespace EasyQ\Users;
 
 use EasyQ\Settings\Options;
+use EasyQ\Util\Number;
 use WP_Comment;
 use WP_Error;
 use WP_Image_Editor;
@@ -122,7 +123,7 @@ final class Avatars {
 			return $args;
 		}
 
-		$size = isset( $args['size'] ) && is_numeric( $args['size'] ) ? (int) $args['size'] : 96;
+		$size = Number::int_in_range( $args['size'] ?? null, PHP_INT_MIN ) ?? 96;
 		$url  = wp_get_attachment_image_url( $attachment_id, array( $size, $size ) );
 
 		if ( false !== $url ) {

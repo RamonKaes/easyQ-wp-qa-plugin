@@ -19,6 +19,7 @@ use EasyQ\REST\Post_Input;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
+use EasyQ\Util\Number;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -49,7 +50,7 @@ final class Post_Fields {
 			return '';
 		}
 
-		$level = is_numeric( $attributes['level'] ?? null ) ? max( 1, min( 6, (int) $attributes['level'] ) ) : 2;
+		$level = Number::clamp( $attributes['level'] ?? null, 2, 1, 6 );
 		$title = esc_html( Services::content_renderer()->text( (string) $post->title ) );
 
 		if ( ! empty( $attributes['isLink'] ) ) {
@@ -103,7 +104,7 @@ final class Post_Fields {
 			return '';
 		}
 
-		$length = is_numeric( $attributes['length'] ?? null ) ? max( 20, (int) $attributes['length'] ) : 200;
+		$length = Number::clamp( $attributes['length'] ?? null, 200, 20 );
 
 		return sprintf(
 			'<p %s>%s</p>',
@@ -332,7 +333,7 @@ final class Post_Fields {
 
 		if ( $attributes['showAvatar'] ?? true ) {
 			// 48 pixels by default, as core's Post Author block.
-			$size  = is_numeric( $attributes['avatarSize'] ?? null ) ? max( 16, (int) $attributes['avatarSize'] ) : 48;
+			$size  = Number::clamp( $attributes['avatarSize'] ?? null, 48, 16 );
 			$html .= sprintf( '<div class="wp-block-avatar">%s</div>', Render::avatar( false === $user ? 0 : $user->ID, $size, '' ) );
 		}
 

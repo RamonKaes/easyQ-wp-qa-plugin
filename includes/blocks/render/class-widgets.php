@@ -21,6 +21,7 @@ use EasyQ\Search\Search;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
+use EasyQ\Util\Number;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -46,7 +47,7 @@ final class Widgets {
 			return '';
 		}
 
-		$level = is_numeric( $attributes['level'] ?? null ) ? max( 1, min( 6, (int) $attributes['level'] ) ) : 1;
+		$level = Number::clamp( $attributes['level'] ?? null, 1, 1, 6 );
 
 		return sprintf( '<h%1$d %2$s>%3$s</h%1$d>', $level, get_block_wrapper_attributes( array( 'class' => 'wp-block-post-title' ) ), esc_html( $title ) );
 	}
@@ -185,7 +186,7 @@ final class Widgets {
 	 * @return string
 	 */
 	public static function tags( array $attributes ): string {
-		$count  = is_numeric( $attributes['perPage'] ?? null ) && (int) $attributes['perPage'] > 0 ? (int) $attributes['perPage'] : Options::get_int( 'lists', 'page_size_tags' );
+		$count  = Number::int_in_range( $attributes['perPage'] ?? null, 1 ) ?? Options::get_int( 'lists', 'page_size_tags' );
 		$result = empty( $attributes['favorites'] )
 			? ( new Tags() )->popular( '', 1, $count )
 			: array( 'tags' => Services::favorites()->tags( (int) Block_Context::viewer()->user_id ) );
@@ -428,7 +429,7 @@ final class Widgets {
 			return '';
 		}
 
-		$count     = is_numeric( $attributes['count'] ?? null ) ? max( 1, (int) $attributes['count'] ) : 5;
+		$count     = Number::clamp( $attributes['count'] ?? null, 5, 1 );
 		$min_score = Search::min_score( Options::get_int( 'viewing', 'match_related_qs' ) );
 		$results   = array_filter(
 			Services::search()->search( (string) $question->title . ' ' . implode( ' ', $question->tag_list() ), 0, $count + 1 ),

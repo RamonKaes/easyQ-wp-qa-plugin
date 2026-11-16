@@ -12,6 +12,7 @@ use EasyQ\Frontend\Form_Handler;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Number;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -294,7 +295,7 @@ final class Render {
 			return '';
 		}
 
-		$level = is_numeric( $attributes['level'] ?? null ) ? max( 1, min( 6, (int) $attributes['level'] ) ) : $level;
+		$level = Number::clamp( $attributes['level'] ?? null, $level, 1, 6 );
 
 		return sprintf( '<h%1$d%2$s>%3$s</h%1$d>', $level, '' === $extra ? '' : ' ' . $extra, esc_html( $text ) );
 	}

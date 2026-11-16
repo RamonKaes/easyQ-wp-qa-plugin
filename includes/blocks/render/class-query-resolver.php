@@ -15,6 +15,7 @@ use EasyQ\Posts\Activity_Query;
 use EasyQ\Posts\Question_Query;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Number;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -91,7 +92,7 @@ final class Query_Resolver {
 			isset( $args['tag'] )                       => Options::get_int( 'lists', 'page_size_tag_qs' ),
 			default                                     => Options::get_int( 'lists', 'page_size_qs' ),
 		};
-		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : $default;
+		$per_page = Number::int_in_range( $query['perPage'] ?? null, 1 ) ?? $default;
 		$per_page = max( 1, min( Question_Query::MAX_PER_PAGE, $per_page ) );
 		$activity = array();
 
@@ -177,9 +178,9 @@ final class Query_Resolver {
 			};
 		}
 
-		$category = is_numeric( $query['category'] ?? null ) && (int) $query['category'] > 0 ? (int) $query['category'] : null;
+		$category = Number::int_in_range( $query['category'] ?? null, 1 );
 		$tag      = is_string( $query['tag'] ?? null ) && '' !== $query['tag'] ? $query['tag'] : null;
-		$author   = is_numeric( $query['author'] ?? null ) && (int) $query['author'] > 0 ? (int) $query['author'] : null;
+		$author   = Number::int_in_range( $query['author'] ?? null, 1 );
 
 		// The favorites of the viewer; of nobody for visitors.
 		$source       = is_string( $query['source'] ?? null ) ? $query['source'] : 'recent';
@@ -243,7 +244,7 @@ final class Query_Resolver {
 	 */
 	private static function activity( string $source, array $args, int $page, int $per_page ): array {
 		$query   = Services::activity_query();
-		$user_id = is_numeric( $args['user_id'] ?? null ) ? (int) $args['user_id'] : null;
+		$user_id = Number::int_in_range( $args['user_id'] ?? null, PHP_INT_MIN );
 
 		if ( 'recent_answers' === $source && null !== $user_id ) {
 			$found = $query->by_user( 'answers', $user_id, $page, $per_page );

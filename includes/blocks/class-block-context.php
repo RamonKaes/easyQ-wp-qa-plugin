@@ -12,6 +12,7 @@ use EasyQ\Actor;
 use EasyQ\Frontend\Router;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
+use EasyQ\Util\Number;
 use EasyQ\Users\Visitor_Cookie;
 use WP_Block;
 use WP_User;
@@ -83,7 +84,7 @@ final class Block_Context {
 	 */
 	public static function post( WP_Block $block ): ?Post {
 		$id   = $block->context['easyq/postId'] ?? null;
-		$post = is_numeric( $id ) ? Services::posts()->find( (int) $id ) : self::router()->current()?->question();
+		$post = is_numeric( $id ) ? Services::posts()->find( Number::id( $id ) ) : self::router()->current()?->question();
 
 		if ( null === $post || ! Services::permissions()->shows( $post, self::viewer() ) ) {
 			return null;
@@ -106,7 +107,7 @@ final class Block_Context {
 			return self::router()->current()?->user();
 		}
 
-		$user = get_userdata( (int) $id );
+		$user = get_userdata( Number::id( $id ) );
 
 		// A user whose profile is not shown is shown nowhere, as the REST API and the profile page refuse them.
 		return false === $user || ! Services::user_query()->is_shown( $user, self::viewer()->user_id ) ? null : $user;

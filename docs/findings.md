@@ -27,12 +27,6 @@ decides whether it is fixed or kept with a reason.
 
 ### Blocker
 
-- **F-62** (D × Value, D × Form). Block attributes beyond the integer range
-  (`{"userId":1e20}`, `perPage`, `category`, `author`, `questionId`, `length`) give the
-  warning "not representable as an int" on PHP 8.5 in `class-users-render.php`,
-  `class-lists-render.php`, `class-query-resolver.php` and `class-post-fields.php`;
-  PHP 8.4 says nothing. *Why no guard saw it:* the test environment runs PHP 8.4, and
-  no test renders such attributes.
 - **F-63** (N × Identity, N × State, N × Error path). The eraser compares the email
   address with case: for posts saved with `Pat@Example.org` and a request for
   `pat@example.org` it reports `items_removed: true` and `done: true` and changes nothing

@@ -17,6 +17,7 @@ use EasyQ\Points\Points;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\User_Query;
+use EasyQ\Util\Number;
 use WP_Block;
 use WP_User;
 
@@ -43,7 +44,7 @@ final class Users_Render {
 	 * @return string
 	 */
 	public static function user( array $attributes, string $content, WP_Block $block ): string {
-		$id   = is_numeric( $attributes['userId'] ?? null ) ? (int) $attributes['userId'] : 0;
+		$id   = Number::id( $attributes['userId'] ?? null );
 		$user = 0 < $id ? get_userdata( $id ) : Block_Context::router()->current()?->user();
 
 		// The router shows only profiles that are shown; a user chosen in the block is checked the same way.
@@ -90,7 +91,7 @@ final class Users_Render {
 		$sort     = self::sort( $query );
 		$page_var = ! empty( $query['inherit'] ) ? Lists::MAIN_PAGE_VAR : 'easyq_page_' . $list_id;
 		$page     = Lists::requested_page( $page_var );
-		$per_page = is_numeric( $query['perPage'] ?? null ) && (int) $query['perPage'] > 0 ? (int) $query['perPage'] : Options::get_int( 'lists', 'page_size_users' );
+		$per_page = Number::int_in_range( $query['perPage'] ?? null, 1 ) ?? Options::get_int( 'lists', 'page_size_users' );
 		$per_page = max( 1, min( User_Query::MAX_PER_PAGE, $per_page ) );
 
 		if ( 'favorites' === ( $query['sort'] ?? '' ) ) {
@@ -165,7 +166,7 @@ final class Users_Render {
 			return '';
 		}
 
-		$size    = is_numeric( $attributes['avatarSize'] ?? null ) ? max( 16, (int) $attributes['avatarSize'] ) : 96;
+		$size    = Number::clamp( $attributes['avatarSize'] ?? null, 96, 16 );
 		$is_link = (bool) ( $attributes['isLink'] ?? false );
 
 		// A linked avatar needs a text alternative; otherwise the name is shown next to it.

@@ -56,6 +56,7 @@ final class Favorites_Test extends REST_Test_Case {
 		$this->assertSame( 201, $follow( $stranger )->get_status() );
 		$this->assertSame( array( $stranger ), array_column( $this->data( $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) ) ), 'id' ) );
 		$wpdb->delete( $wpdb->prefix . 'easyq_userpoints', array( 'user_id' => $stranger ) );
+		Services::points()->forget( $stranger );
 		$this->assertSame( array(), $this->data( $this->request( 'GET', '/favorites', array( 'type' => 'user' ) ) ) );
 		$this->assertSame( array(), $this->data( $this->request( 'GET', '/users', array( 'sort' => 'favorites' ) ) ) );
 		$this->assertStringNotContainsString( 'Never took part', $this->page() );

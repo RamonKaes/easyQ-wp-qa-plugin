@@ -12,6 +12,7 @@ use EasyQ\Categories\Categories;
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Search\Basic_Search;
+use EasyQ\Util\Number;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -125,10 +126,10 @@ final class Question_Query {
 	 */
 	public function find( array $args ): array {
 		$source   = is_string( $args['source'] ?? null ) && in_array( $args['source'], self::sources(), true ) ? $args['source'] : 'recent';
-		$per_page = max( 1, min( self::MAX_PER_PAGE, is_numeric( $args['per_page'] ?? null ) ? (int) $args['per_page'] : 20 ) );
-		$page     = max( 1, is_numeric( $args['page'] ?? null ) ? (int) $args['page'] : 1 );
+		$per_page = Number::clamp( $args['per_page'] ?? null, 20, 1, self::MAX_PER_PAGE );
+		$page     = Number::clamp( $args['page'] ?? null, 1, 1, Number::MAX_PAGE );
 
-		$category_id = is_numeric( $args['category_id'] ?? null ) ? (int) $args['category_id'] : 0;
+		$category_id = Number::int_in_range( $args['category_id'] ?? null, PHP_INT_MIN ) ?? 0;
 		$column      = 'category_id';
 		if ( 0 !== $category_id ) {
 			$column = self::category_column( $this->categories, $category_id );
@@ -153,8 +154,8 @@ final class Question_Query {
 			$word_id = $word_ids[ $tag ];
 		}
 
-		$user_id      = is_numeric( $args['user_id'] ?? null ) ? (int) $args['user_id'] : 0;
-		$favorites_of = is_numeric( $args['favorites_of'] ?? null ) ? (int) $args['favorites_of'] : 0;
+		$user_id      = Number::int_in_range( $args['user_id'] ?? null, PHP_INT_MIN ) ?? 0;
+		$favorites_of = Number::int_in_range( $args['favorites_of'] ?? null, PHP_INT_MIN ) ?? 0;
 
 		// One fixed statement for every list: each filter only applies when its value is set,
 		// i.e. a source of UNANSWERED, or a category, tag or user ID other than 0.

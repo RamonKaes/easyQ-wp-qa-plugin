@@ -9,6 +9,7 @@
 namespace EasyQ\Posts;
 
 use EasyQ\Updates\Updates;
+use EasyQ\Util\Number;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -77,11 +78,11 @@ final class Activity_Item {
 
 		return new self(
 			$question_id,
-			(int) $context['postId'],
+			Number::id( $context['postId'] ),
 			$context['baseType'],
 			$context['time'],
 			is_string( $context['updateType'] ?? null ) ? $context['updateType'] : null,
-			is_numeric( $context['userId'] ?? null ) ? (int) $context['userId'] : null,
+			Number::int_in_range( $context['userId'] ?? null, PHP_INT_MIN ),
 			! empty( $context['personal'] )
 		);
 	}

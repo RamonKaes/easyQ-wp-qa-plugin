@@ -44,6 +44,16 @@ final class Number_Test extends TestCase {
 		$this->assertNull( Number::int_in_range( -11.0, -10, 10 ) );
 	}
 
+	public function test_clamps_attributes(): void {
+		$this->assertSame( 6, Number::clamp( 9, 2, 1, 6 ) );
+		$this->assertSame( 1, Number::clamp( -9, 2, 1, 6 ) );
+		$this->assertSame( 4, Number::clamp( 4.0, 2, 1, 6 ) );
+		$this->assertSame( 2, Number::clamp( 1e20, 2, 1, 6 ), 'Beyond the integer range: the fallback.' );
+		$this->assertSame( 2, Number::clamp( 2.5, 2, 1, 6 ) );
+		$this->assertSame( 2, Number::clamp( null, 2, 1, 6 ) );
+		$this->assertSame( 2, Number::clamp( '99999999999999999999', 2, 1, 6 ), 'A string beyond the range is not a number either.' );
+	}
+
 	public function test_reads_pages(): void {
 		$this->assertSame( 3, Number::page( '3' ) );
 		$this->assertSame( 1, Number::page( null ) );

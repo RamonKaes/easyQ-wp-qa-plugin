@@ -63,6 +63,17 @@ final class Points {
 	private array $loaded = array();
 
 	/**
+	 * Whether the users loaded during the current request have a row of points, keyed by user ID.
+	 *
+	 * Only an action in the Q&A area writes the row; see `User_Query::shown_ids()`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<int, bool>
+	 */
+	private array $has_row = array();
+
+	/**
 	 * Statistic column: questions the user asked.
 	 *
 	 * @since 0.1.0
@@ -345,7 +356,8 @@ final class Points {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
 			$wpdb->query( $sql );
 		}
-		$this->loaded = array();
+		$this->loaded  = array();
+		$this->has_row = array();
 	}
 
 	/**
@@ -387,7 +399,8 @@ final class Points {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
 			$wpdb->query( $sql );
 		}
-		$this->loaded = array();
+		$this->loaded  = array();
+		$this->has_row = array();
 	}
 
 	/**
@@ -494,7 +507,8 @@ final class Points {
 				$wpdb->prepare( 'SELECT points FROM %i WHERE user_id = %d', Schema::table( 'userpoints' ), $user_id )
 			);
 
-			$this->loaded[ $user_id ] = null === $points ? Options::get_int( 'points', 'points_base' ) : (int) $points;
+			$this->loaded[ $user_id ]  = null === $points ? Options::get_int( 'points', 'points_base' ) : (int) $points;
+			$this->has_row[ $user_id ] = null !== $points;
 		}
 
 		return $this->loaded[ $user_id ];
@@ -514,7 +528,8 @@ final class Points {
 			return;
 		}
 
-		$this->loaded += array_fill_keys( $missing, Options::get_int( 'points', 'points_base' ) );
+		$this->loaded  += array_fill_keys( $missing, Options::get_int( 'points', 'points_base' ) );
+		$this->has_row += array_fill_keys( $missing, false );
 
 		$rows = DB::rows(
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
@@ -526,8 +541,26 @@ final class Points {
 			)
 		);
 		foreach ( $rows as $row ) {
-			$this->loaded[ Row::int( $row, 'user_id' ) ] = Row::int( $row, 'points' );
+			$this->loaded[ Row::int( $row, 'user_id' ) ]  = Row::int( $row, 'points' );
+			$this->has_row[ Row::int( $row, 'user_id' ) ] = true;
 		}
+	}
+
+	/**
+	 * Returns the users who have a row of points, that is who took part in the Q&A area.
+	 *
+	 * Loads what it does not know yet at once, and remembers it for the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $user_ids User IDs.
+	 * @return int[]
+	 */
+	public function with_row( array $user_ids ): array {
+		$user_ids = array_values( array_unique( array_map( 'intval', $user_ids ) ) );
+		$this->prime( $user_ids );
+
+		return array_values( array_filter( $user_ids, fn ( int $id ): bool => $this->has_row[ $id ] ?? false ) );
 	}
 
 	/**
@@ -540,7 +573,7 @@ final class Points {
 	 * @param int $user_id User ID.
 	 */
 	public function forget( int $user_id ): void {
-		unset( $this->loaded[ $user_id ] );
+		unset( $this->loaded[ $user_id ], $this->has_row[ $user_id ] );
 	}
 
 	/**

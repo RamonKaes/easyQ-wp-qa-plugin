@@ -62,6 +62,26 @@ final class Number {
 	}
 
 	/**
+	 * Returns a whole number limited to a range, or the default for anything else.
+	 *
+	 * For block attributes and arguments: a value beyond the integer range, or no number at
+	 * all, gives the default; a number outside `$min` to `$max` is moved to the nearest end.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $value   Value to read.
+	 * @param int   $fallback Value for anything that is not a whole number.
+	 * @param int   $min     Smallest value.
+	 * @param int   $max     Largest value.
+	 * @return int
+	 */
+	public static function clamp( mixed $value, int $fallback, int $min = PHP_INT_MIN, int $max = PHP_INT_MAX ): int {
+		$number = self::int_in_range( $value, PHP_INT_MIN );
+
+		return null === $number ? $fallback : max( $min, min( $max, $number ) );
+	}
+
+	/**
 	 * Returns a positive ID, or 0.
 	 *
 	 * @since 0.1.0

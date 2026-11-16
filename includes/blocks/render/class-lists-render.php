@@ -143,7 +143,7 @@ final class Lists_Render {
 					'current'   => $result['page'],
 					'total'     => $pages,
 					'prev_next' => false,
-					'mid_size'  => is_numeric( $attributes['midSize'] ?? null ) ? max( 0, (int) $attributes['midSize'] ) : 2,
+					'mid_size'  => Number::clamp( $attributes['midSize'] ?? null, 2, 0 ),
 					'type'      => 'plain',
 				)
 			);
@@ -192,7 +192,7 @@ final class Lists_Render {
 	 * @return string
 	 */
 	public static function question( array $attributes, string $content, WP_Block $block ): string {
-		$id       = is_numeric( $attributes['questionId'] ?? null ) ? (int) $attributes['questionId'] : 0;
+		$id       = Number::id( $attributes['questionId'] ?? null );
 		$question = 0 < $id ? Services::posts()->find( $id ) : Block_Context::router()->current()?->question();
 
 		// The block shows a question; another post ID, e.g. of an answer, shows nothing.
@@ -436,6 +436,6 @@ final class Lists_Render {
 	 * @return int|null The number, or null if the setting is empty, 0 or invalid.
 	 */
 	private static function positive_int( mixed $value ): ?int {
-		return is_numeric( $value ) && (int) $value > 0 ? (int) $value : null;
+		return Number::int_in_range( $value, 1 );
 	}
 }
