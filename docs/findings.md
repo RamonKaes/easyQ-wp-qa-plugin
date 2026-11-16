@@ -31,17 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-64** (C × Guidelines). Page 2 of the answers has the canonical address of page 1,
-  and the lists have none. Core adds `cpage` in `wp_get_canonical_url()`. *Why no guard
-  saw it:* `Page_Meta_Test` checks that a canonical address is there.
-- **F-65** (C × State, C × Guidelines). Pages behind the last one answer 200:
-  `?easyq_page=99` with `noindex`, `?easyq_answers=99` without (an indexable copy of the
-  question without answers), an unknown tag with 200. Core answers 404;
-  Question2Answer also answers 200. *Why no guard saw it:* no test loads a page out of
-  range.
-- **F-66** (C × Value). `URLs::slug()` cuts a slug of non-Latin titles inside a
-  percent sequence (`…%e5%a`), and the address does not decode as UTF-8. *Why no guard
-  saw it:* the slug test uses ASCII only.
 - **F-67** (D × Identity, P × Identity). With another search provider, the
   `related-questions` block shows hidden questions the provider returns; the search
   page filters them. *Why no guard saw it:* no test uses a second provider.
@@ -49,9 +38,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
   `rel="nofollow ugc"` and do not follow `links_in_new_window`; the text format does
   both. Core runs `wp_rel_ugc()`. *Why no guard saw it:* the test covers the text
   format only.
-- **F-69** (E × Value, E × Abuse). Censored words stay in the slug of the address
-  (`…/darn-widgets-do-not-work/` under a title `**** widgets …`). *Why no guard saw it:*
-  the test checks the title text only.
 - **F-70** (E × Guidelines, E × Value). The JSON-LD is printed without `JSON_HEX_TAG`:
   a title `</script><script>…` that comes in without the REST API (a service call, an
   import) closes the script element. The REST API refuses such a title, which is
@@ -175,13 +161,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-100** (C × Value). `sanitize_text_field()` on values from the address removes
-  `%xx`: a search for `50%ab 0x%41` becomes `50 0x`, and the tag `50%41` leads to the tag
-  `50`. *Why no guard saw it:* no test searches for `%`.
-- **F-101** (C × Frequency, C × Volume, C × Abuse). Each view by a new address adds two
-  rows to `wp_options` (the transient and its timeout), also for crawlers and
-  prefetches; Question2Answer counts only `qa_is_human_probably()`. *Why no guard saw
-  it:* no test counts rows of the options table.
 - **F-102** (E × Value). Censoring breaks entities (`&amp;` becomes `&***;` for the word
   `amp`) and misses a word split by tags (`da<b></b>rn`). *Why no guard saw it:* no test
   with entities or tags in a word.

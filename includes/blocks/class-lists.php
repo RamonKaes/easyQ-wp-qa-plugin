@@ -33,6 +33,15 @@ final class Lists {
 	public const MAIN_PAGE_VAR = 'easyq_page';
 
 	/**
+	 * Query parameter of the page of the answers of a question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ANSWERS_PAGE_VAR = 'easyq_answers';
+
+	/**
 	 * Results keyed by list ID.
 	 *
 	 * @since 0.1.0
@@ -70,6 +79,17 @@ final class Lists {
 			'per_page' => $per_page,
 			'page_var' => $page_var,
 		);
+
+		// A page behind the last one of the page's own list is not found, as in core
+		// (`WP::handle_404()`); the blocks render before anything is sent.
+		if ( $page > 1 && array() === $ids && in_array( $page_var, array( self::MAIN_PAGE_VAR, self::ANSWERS_PAGE_VAR ), true ) ) {
+			global $wp_query;
+			if ( $wp_query instanceof \WP_Query ) {
+				$wp_query->set_404();
+			}
+			status_header( 404 );
+			nocache_headers();
+		}
 	}
 
 	/**

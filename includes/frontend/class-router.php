@@ -11,7 +11,9 @@ namespace EasyQ\Frontend;
 use EasyQ\Actor;
 use EasyQ\Feeds\Feeds;
 use EasyQ\Posts\Post;
+use EasyQ\Posts\Tags;
 use EasyQ\Services;
+use EasyQ\Util\Text;
 use WP;
 use WP_Query;
 
@@ -129,7 +131,7 @@ final class Router {
 
 		$arg           = $wp->query_vars[ Routes::ARG_VAR ] ?? null;
 		$section       = $wp->query_vars[ Routes::SECTION_VAR ] ?? null;
-		$this->current = $this->resolve( $name, is_string( $arg ) ? $arg : null, is_string( $section ) ? $section : null );
+		$this->current = $this->resolve( $name, is_string( $arg ) ? self::decode( $arg ) : null, is_string( $section ) ? self::decode( $section ) : null );
 	}
 
 	/**
@@ -211,17 +213,18 @@ final class Router {
 				return null !== $post && Post::QUESTION === $post->base_type() && Services::permissions()->post_rules( $post, Actor::current() )['viewable'] ? new Route( 'question', $post ) : Route::not_found();
 
 			case 'tag':
-				$tag = null === $arg ? '' : sanitize_text_field( rawurldecode( $arg ) );
-				return '' === $tag ? Route::not_found() : new Route( 'tag', $tag );
+				$tag = null === $arg ? '' : Text::query_text( wp_strip_all_tags( $arg, true ) );
+				// A tag no visible question uses is not found, as core answers a term that does not exist.
+				return '' === $tag || ! ( new Tags() )->exists( $tag ) ? Route::not_found() : new Route( 'tag', $tag );
 
 			case 'category':
-				$slugs    = array_map( 'rawurldecode', explode( '/', (string) $arg ) );
+				$slugs    = explode( '/', (string) $arg );
 				$category = Services::categories()->find_by_slugs( array_map( 'sanitize_title', $slugs ) );
 				return null === $category ? Route::not_found() : new Route( 'category', $category );
 
 			case 'user':
 			case 'message':
-				$user   = null === $arg ? false : get_user_by( 'slug', sanitize_title( rawurldecode( $arg ) ) );
+				$user   = null === $arg ? false : get_user_by( 'slug', sanitize_title( $arg ) );
 				$viewer = get_current_user_id();
 				if ( false === $user || ! Services::user_query()->is_shown( $user, 0 === $viewer ? null : $viewer ) ) {
 					return Route::not_found();
@@ -231,7 +234,7 @@ final class Router {
 
 			case 'feed':
 				// The feed checks its argument itself; see Feeds::channel().
-				return null !== $arg && isset( Feeds::TYPES[ $arg ] ) ? new Route( 'feed', $arg, null === $section || '' === $section ? null : rawurldecode( $section ) ) : Route::not_found();
+				return null !== $arg && isset( Feeds::TYPES[ $arg ] ) ? new Route( 'feed', $arg, null === $section || '' === $section ? null : $section ) : Route::not_found();
 
 			case 'home':
 				return new Route( 'home' );
@@ -239,5 +242,18 @@ final class Router {
 			default:
 				return isset( Routes::SIMPLE[ $name ] ) ? new Route( $name ) : Route::not_found();
 		}
+	}
+
+	/**
+	 * Decodes a part of the address once: pretty addresses reach the router as they were
+	 * sent, query parameters already decoded by PHP. `resolve()` gets decoded parts.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $part Part of the address.
+	 * @return string
+	 */
+	public static function decode( string $part ): string {
+		return Routes::pretty() ? rawurldecode( $part ) : $part;
 	}
 }

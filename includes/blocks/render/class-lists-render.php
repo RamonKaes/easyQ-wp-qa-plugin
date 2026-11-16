@@ -298,7 +298,7 @@ final class Lists_Render {
 		);
 
 		$per_page = self::positive_int( $block->context['easyq/answersPerPage'] ?? null ) ?? max( 1, Options::get_int( 'viewing', 'page_size_q_as' ) );
-		$page_var = 'easyq_answers';
+		$page_var = Lists::ANSWERS_PAGE_VAR;
 		$page     = Lists::requested_page( $page_var );
 		$ids      = array_map( static fn ( Post $answer ): int => $answer->id, array_slice( $answers, ( $page - 1 ) * $per_page, $per_page ) );
 

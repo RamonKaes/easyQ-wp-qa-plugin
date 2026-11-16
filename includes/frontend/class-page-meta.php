@@ -102,7 +102,9 @@ final class Page_Meta {
 			return;
 		}
 
-		printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( URLs::question( $question ) ) );
+		// The page of the answers belongs to the address, as core adds `cpage` (`wp_get_canonical_url()`).
+		$page = Lists::requested_page( Lists::ANSWERS_PAGE_VAR );
+		printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( $page > 1 ? add_query_arg( Lists::ANSWERS_PAGE_VAR, $page, URLs::question( $question ) ) : URLs::question( $question ) ) );
 
 		if ( Post::QUESTION === $question->type ) {
 			printf( '<script type="application/ld+json">%s</script>' . "\n", wp_json_encode( $this->structured_data( $question ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
@@ -149,12 +151,19 @@ final class Page_Meta {
 			return;
 		}
 
-		$key = 'easyq_view_' . substr( hash_hmac( 'sha256', $question->id . '|' . (string) IP::current(), wp_salt( 'nonce' ) ), 0, 32 );
-		if ( false !== get_transient( $key ) ) {
+		if ( ! self::human_probably() ) {
 			return;
 		}
 
-		set_transient( $key, 1, HOUR_IN_SECONDS );
+		// As `qa_db_increment_views()`: a view counts unless the last one of the question came
+		// from the same address. One value per question, holding a hash instead of the address.
+		$key    = 'easyq_view_' . $question->id;
+		$viewer = substr( hash_hmac( 'sha256', (string) IP::current(), wp_salt( 'nonce' ) ), 0, 32 );
+		if ( get_transient( $key ) === $viewer ) {
+			return;
+		}
+
+		set_transient( $key, $viewer, HOUR_IN_SECONDS );
 		Services::post_service()->record_view( $question );
 	}
 
@@ -209,5 +218,36 @@ final class Page_Meta {
 			'@type'      => 'QAPage',
 			'mainEntity' => $main,
 		);
+	}
+
+	/**
+	 * Tells whether the request probably comes from a person, as `qa_is_human_probably()`:
+	 * a browser by its user agent, and no prefetch or prerender.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return bool
+	 */
+	private static function human_probably(): bool {
+		$purpose = '';
+		foreach ( array( 'HTTP_SEC_PURPOSE', 'HTTP_PURPOSE', 'HTTP_X_PURPOSE', 'HTTP_X_MOZ' ) as $header ) {
+			$purpose .= isset( $_SERVER[ $header ] ) && is_string( $_SERVER[ $header ] ) ? ' ' . sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ) : '';
+		}
+		if ( 1 === preg_match( '/prefetch|prerender|preview/i', $purpose ) ) {
+			return false;
+		}
+
+		$agent = isset( $_SERVER['HTTP_USER_AGENT'] ) && is_string( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+		if ( '' === $agent ) {
+			return true;
+		}
+
+		foreach ( array( 'MSIE', 'Firefox', 'Chrome', 'Safari', 'Opera', 'Gecko', 'MIDP', 'PLAYSTATION', 'Teleca', 'BlackBerry', 'UP.Browser', 'Polaris', 'MAUI_WAP_Browser', 'iPad', 'iPhone', 'iPod' ) as $browser ) {
+			if ( str_contains( $agent, $browser ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -22,6 +22,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Util\Number;
+use EasyQ\Util\Text;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -68,7 +69,7 @@ final class Widgets {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Reading list filters for the title.
 		$sort = isset( $_GET['sort'] ) && is_string( $_GET['sort'] ) ? sanitize_key( $_GET['sort'] ) : '';
 		$by   = isset( $_GET['by'] ) && is_string( $_GET['by'] ) ? sanitize_key( $_GET['by'] ) : '';
-		$q    = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+		$q    = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? Text::query_text( wp_strip_all_tags( wp_unslash( $_GET['q'] ), true ) ) : '';
 		$show = isset( $_GET['show'] ) && is_string( $_GET['show'] ) ? sanitize_key( $_GET['show'] ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 

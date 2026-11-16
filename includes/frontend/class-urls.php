@@ -103,13 +103,18 @@ final class URLs {
 	 * @return string
 	 */
 	public static function slug( string $title ): string {
-		$slug   = sanitize_title( $title );
+		// Block words are censored in the address too, as in the title (`qa_q_request()`).
+		$slug   = sanitize_title( Services::content_renderer()->text( $title ) );
 		$length = max( 1, Options::get_int( 'viewing', 'q_urls_title_length' ) );
 
-		if ( Text::length( $slug ) > $length ) {
-			$slug = rtrim( (string) mb_substr( $slug, 0, $length ), '-' );
-			$cut  = strrpos( $slug, '-' );
-			$slug = false === $cut ? $slug : substr( $slug, 0, $cut );
+		// `sanitize_title()` encodes other scripts as `%xx`; the length counts characters and
+		// the cut never falls inside one.
+		$text = rawurldecode( $slug );
+		if ( Text::length( $text ) > $length ) {
+			$text = rtrim( (string) mb_substr( $text, 0, $length ), '-' );
+			$cut  = strrpos( $text, '-' );
+			$text = false === $cut ? $text : substr( $text, 0, $cut );
+			$slug = strtolower( utf8_uri_encode( $text ) );
 		}
 
 		return '' === $slug ? 'question' : $slug;

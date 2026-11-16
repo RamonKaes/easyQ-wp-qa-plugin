@@ -243,8 +243,8 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | --- | --- | --- |
 | Rewrite API: rules on `init`, flushed only when they change, public query variables | Met | `Frontend\Router` (hash of the rules) |
 | Robots through `wp_robots`, `wp_robots_no_robots()` for pages that open a form | Met | `Frontend\Page_Meta` |
-| Canonical address with the comment page, as `wp_get_canonical_url()` adds `cpage` | F-64 | `Frontend\Page_Meta` |
-| A page out of range or of a hidden post answers 404 | F-57, F-65 | `Frontend\Router`, `Frontend\Templates` |
+| Canonical address with the comment page, as `wp_get_canonical_url()` adds `cpage` | Met (`Page_State_Test`) | `Frontend\Page_Meta` |
+| A page out of range or of a hidden post answers 404 | Met (`Page_State_Test`, `Visibility_Test`) | `Frontend\Router`, `Frontend\Templates` |
 | Login redirect as `auth_redirect()` | Met | `Frontend\Templates::require_login()` |
 | Block metadata: `$schema`, `apiVersion` 3, namespaced name, text domain, category, keywords; `parent` and `ancestor` for child blocks; block supports instead of own options | Met | `blocks/*/block.json` |
 | `supports.interactivity` on blocks that print directives | F-104 | `blocks/ask-form/block.json` |

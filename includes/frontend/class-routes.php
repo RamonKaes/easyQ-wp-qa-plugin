@@ -154,11 +154,13 @@ final class Routes {
 		if ( ! self::pretty() ) {
 			$params = 'feed' === $route ? array( 'feed' => Feeds::FEED ) : array();
 			$params = $params + array( self::ROUTE_VAR => $route );
+			// Encoded as in a pretty address: PHP decodes the query once, as WordPress decodes the path.
+			$encode = static fn ( string $value ): string => implode( '/', array_map( 'rawurlencode', explode( '/', $value ) ) );
 			if ( null !== $arg ) {
-				$params[ self::ARG_VAR ] = (string) $arg;
+				$params[ self::ARG_VAR ] = 'question' === $route ? (string) $arg : $encode( (string) $arg );
 			}
 			if ( null !== $section ) {
-				$params[ self::SECTION_VAR ] = $section;
+				$params[ self::SECTION_VAR ] = 'feed' === $route ? $encode( $section ) : $section;
 			}
 
 			return add_query_arg( array_merge( $params, $query ), home_url( '/' ) );

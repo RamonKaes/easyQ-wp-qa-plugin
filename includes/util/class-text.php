@@ -437,4 +437,19 @@ final class Text {
 	public static function lowercase( string $text ): string {
 		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $text, 'UTF-8' ) : strtolower( $text );
 	}
+
+	/**
+	 * Cleans a search or a tag from an address, as `sanitize_text_field()` does but keeping `%xx`.
+	 *
+	 * `sanitize_text_field()` removes percent sequences, so a search for `50%ab` became `50`;
+	 * core keeps the search query as typed and escapes it on output.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $text Text without tags (`wp_strip_all_tags()`).
+	 * @return string
+	 */
+	public static function query_text( string $text ): string {
+		return trim( (string) preg_replace( '/[\r\n\t ]+/', ' ', wp_check_invalid_utf8( $text ) ) );
+	}
 }

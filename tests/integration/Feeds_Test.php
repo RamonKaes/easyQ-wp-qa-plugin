@@ -174,7 +174,7 @@ final class Feeds_Test extends Test_Case {
 	}
 
 	public function test_resolves_feed_requests(): void {
-		$route = Block_Context::router()->resolve( 'feed', 'questions', 'cooking%2Fbaking' );
+		$route = Block_Context::router()->resolve( 'feed', 'questions', 'cooking/baking' );
 		$this->assertSame( 'feed', $route->name );
 		$this->assertSame( 'questions', $route->subject );
 		$this->assertSame( 'cooking/baking', $route->section );

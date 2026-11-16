@@ -64,4 +64,19 @@ final class Tags {
 			'total' => $total,
 		);
 	}
+
+	/**
+	 * Tells whether a tag is used by a visible question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $tag Tag.
+	 * @return bool
+	 */
+	public function exists( string $tag ): bool {
+		$wpdb = DB::wpdb();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return null !== $wpdb->get_var( $wpdb->prepare( 'SELECT 1 FROM %i WHERE word = %s AND tag_count > 0 LIMIT 1', Schema::table( 'words' ), Text::lowercase( $tag ) ) );
+	}
 }

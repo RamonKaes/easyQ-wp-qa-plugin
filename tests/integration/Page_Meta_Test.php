@@ -76,17 +76,6 @@ final class Page_Meta_Test extends Test_Case {
 		$this->assertCount( 1, $data['mainEntity']['suggestedAnswer'] );
 	}
 
-	public function test_counts_each_visitor_once_per_hour(): void {
-		$question = $this->ask( $this->user() );
-		$meta     = new Page_Meta( Block_Context::router() );
-		Block_Context::router()->set_current( new Route( 'question', $question ) );
-
-		$meta->count_view();
-		$meta->count_view();
-
-		$this->assertSame( 1, $this->post( $question->id )->views );
-	}
-
 	public function test_prints_canonical_address_and_structured_data(): void {
 		$question = $this->ask( $this->user() );
 		Block_Context::router()->set_current( new Route( 'question', $question ) );

@@ -26,6 +26,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
 use EasyQ\Users\User_Fields;
 use EasyQ\Util\Number;
+use EasyQ\Util\Text;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -564,7 +565,7 @@ final class Forms {
 	public static function search( array $attributes ): string {
 		$placeholder = is_string( $attributes['placeholder'] ?? null ) ? $attributes['placeholder'] : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Shows the current search terms.
-		$value = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+		$value = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? Text::query_text( wp_strip_all_tags( wp_unslash( $_GET['q'] ), true ) ) : '';
 
 		return self::single_field_form( Routes::url( 'search' ), 'q', $attributes, __( 'Search questions', 'easyq' ), $placeholder, __( 'Search', 'easyq' ), $value, 'search' );
 	}

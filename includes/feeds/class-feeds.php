@@ -18,6 +18,7 @@ use EasyQ\Posts\Activity_Item;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Text;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -227,7 +228,7 @@ final class Feeds {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading the search terms of the page.
-		$query = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+		$query = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? Text::query_text( wp_strip_all_tags( wp_unslash( $_GET['q'] ), true ) ) : '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading the sort order of the page.
 		$sort = isset( $_GET['sort'] ) && is_string( $_GET['sort'] ) ? sanitize_key( $_GET['sort'] ) : '';
 		$feed = self::for_route( $route, $query, $sort );

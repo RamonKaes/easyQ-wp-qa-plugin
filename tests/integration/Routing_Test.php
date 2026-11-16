@@ -71,7 +71,8 @@ final class Routing_Test extends Test_Case {
 
 		$this->assertSame( $question->id, $router->resolve( 'question', (string) $question->id, null )->question()?->id );
 		$this->assertSame( 'not_found', $router->resolve( 'question', '999999', null )->name );
-		$this->assertSame( 'block themes', $router->resolve( 'tag', 'block%20themes', null )->tag() );
+		$this->assertSame( 'widgets', $router->resolve( 'tag', 'widgets', null )->tag() );
+		$this->assertSame( 'not_found', $router->resolve( 'tag', 'block themes', null )->name, 'No question uses the tag.' );
 		$this->assertSame( $child, $router->resolve( 'category', 'software/plugins', null )->category()?->id );
 		$this->assertSame( 'not_found', $router->resolve( 'category', 'plugins', null )->name );
 		$this->assertSame( $user->ID, $router->resolve( 'user', 'ada', 'wall' )->user()?->ID );

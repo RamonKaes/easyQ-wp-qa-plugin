@@ -16,6 +16,7 @@ use EasyQ\Posts\Question_Query;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Number;
+use EasyQ\Util\Text;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -145,7 +146,7 @@ final class Query_Resolver {
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Reading list filters.
 			$sort = isset( $_GET['sort'] ) && is_string( $_GET['sort'] ) ? sanitize_key( $_GET['sort'] ) : '';
 			$by   = isset( $_GET['by'] ) && is_string( $_GET['by'] ) ? sanitize_key( $_GET['by'] ) : '';
-			$q    = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+			$q    = isset( $_GET['q'] ) && is_string( $_GET['q'] ) ? Text::query_text( wp_strip_all_tags( wp_unslash( $_GET['q'] ), true ) ) : '';
 			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 			return match ( $route->name ) {
