@@ -232,8 +232,8 @@ final class Posts_REST_Test extends REST_Test_Case {
 
 		$this->assertSame( 403, $this->request( 'POST', '/posts/' . $question->id . '/actions/claim' )->get_status() );
 
-		$_COOKIE['easyq_visitor'] = '4242';
-		$data                     = $this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/claim' ) );
+		$_COOKIE[ \EasyQ\Util\Cookies::name( \EasyQ\Users\Visitor_Cookie::NAME ) ] = '4242';
+		$data = $this->data( $this->request( 'POST', '/posts/' . $question->id . '/actions/claim' ) );
 
 		$this->assertSame( $user_id, $data['author']['id'] );
 	}

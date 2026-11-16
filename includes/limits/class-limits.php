@@ -231,7 +231,7 @@ final class Limits {
 		$period = self::period();
 		$wpdb   = DB::wpdb();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		$ip_row    = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT period, count FROM %i WHERE ip = %s AND action = %s', Schema::table( 'iplimits' ), (string) $actor->stored_ip(), $action ) ) );
+		$ip_row    = DB::row( $wpdb->get_row( $wpdb->prepare( 'SELECT period, count FROM %i WHERE ip = %s AND action = %s', Schema::table( 'iplimits' ), self::ip_key( $actor ), $action ) ) );
 		$remaining = array( Options::get_int( 'spam', $ip_setting ) - $this->used( $ip_row, $period ) );
 
 		if ( null !== $user_setting ) {
@@ -274,8 +274,8 @@ final class Limits {
 			}
 		}
 
-		$ip = $actor->stored_ip();
-		if ( null !== $ip ) {
+		$ip = self::ip_key( $actor );
+		if ( '' !== $ip ) {
 			$sql = $wpdb->prepare(
 				'INSERT INTO %i (ip, action, period, count) VALUES (%s, %s, %d, 1) ON DUPLICATE KEY UPDATE count = IF(period = %d, count + 1, 1), period = %d',
 				Schema::table( 'iplimits' ),
@@ -326,5 +326,20 @@ final class Limits {
 	 */
 	private function used( ?object $row, int $period ): int {
 		return null !== $row && Row::int( $row, 'period' ) === $period ? Row::int( $row, 'count' ) : 0;
+	}
+
+	/**
+	 * Returns the stored address a limit per IP counts under.
+	 *
+	 * Requests without a valid address share one limit, the unspecified address `::`, so they
+	 * are not free of limits.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Actor $actor Actor.
+	 * @return string
+	 */
+	private static function ip_key( Actor $actor ): string {
+		return $actor->stored_ip() ?? (string) IP::to_binary( '::' );
 	}
 }

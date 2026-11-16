@@ -14,6 +14,7 @@ use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Cookies;
 use EasyQ\Users\Site_Meta;
 
 defined( 'ABSPATH' ) || exit;
@@ -93,7 +94,7 @@ final class Notices {
 	 * @since 0.1.0
 	 */
 	public static function remember_logged_in(): void {
-		if ( is_user_logged_in() && null !== Block_Context::router()->current() && ! isset( $_COOKIE[ self::COOKIE ] ) ) {
+		if ( is_user_logged_in() && null !== Block_Context::router()->current() && '' === Cookies::get( self::COOKIE ) ) {
 			self::remember_visitor();
 		}
 	}
@@ -137,7 +138,7 @@ final class Notices {
 	public function for_actor( Actor $actor ): array {
 		$notices = array();
 		if ( null === $actor->user_id ) {
-			if ( Options::get_bool( 'users', 'show_notice_visitor' ) && ! isset( $_COOKIE[ self::COOKIE ] ) ) {
+			if ( Options::get_bool( 'users', 'show_notice_visitor' ) && '' === Cookies::get( self::COOKIE ) ) {
 				$notices[] = array(
 					'id'      => self::VISITOR,
 					'content' => wp_kses_post( Options::get_string( 'users', 'notice_visitor' ) ),
@@ -212,21 +213,6 @@ final class Notices {
 	 * @since 0.1.0
 	 */
 	private static function remember_visitor(): void {
-		if ( ! headers_sent() ) {
-			setcookie(
-				self::COOKIE,
-				'1',
-				array(
-					'expires'  => time() + 10 * YEAR_IN_SECONDS,
-					'path'     => (string) COOKIEPATH,
-					'domain'   => (string) COOKIE_DOMAIN,
-					'secure'   => is_ssl(),
-					'httponly' => true,
-					'samesite' => 'Lax',
-				)
-			);
-		}
-
-		$_COOKIE[ self::COOKIE ] = '1';
+		Cookies::set( self::COOKIE, '1', 10 * YEAR_IN_SECONDS );
 	}
 }

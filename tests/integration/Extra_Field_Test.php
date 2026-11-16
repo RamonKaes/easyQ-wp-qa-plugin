@@ -95,6 +95,8 @@ final class Extra_Field_Test extends REST_Test_Case {
 
 		// A field always needs a label, also without a prompt.
 		Options::update( 'posting', array( 'extra_field_prompt' => '' ) );
+		// A page of its own.
+		\EasyQ\Blocks\Render::reset_ids();
 		$this->assertStringContainsString( '<label for="easyq-ask-extra">Extra information</label>', do_blocks( '<!-- wp:easyq/ask-form /-->' ) );
 	}
 

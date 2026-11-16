@@ -99,7 +99,9 @@ final class Policy_Text {
 
 		$strings[] = '<h3 class="wp-block-heading">' . __( 'Cookies on the question and answer pages', 'easyq' ) . '</h3>';
 		if ( $anonymous ) {
-			$strings[] = '<p>' . $suggested . __( 'If you post without an account, we set a cookie that lets you edit your posts later. It contains a random number and lasts for one year.', 'easyq' ) . '</p>';
+			$strings[] = '<p>' . $suggested . ( get_option( 'show_comments_cookies_opt_in' )
+				? __( 'If you post without an account and agree to it, we set a cookie that lets you edit your posts later. It contains a random number and lasts for one year from your last post.', 'easyq' )
+				: __( 'If you post without an account, we set a cookie that lets you edit your posts later. It contains a random number and lasts for one year from your last post.', 'easyq' ) ) . '</p>';
 		}
 		$strings[] = '<p>' . ( $anonymous ? '' : $suggested ) . __( 'If you log in on a question and answer page or close the notice for new visitors, we set a cookie so that the notice is not shown again. It contains no personal data and lasts for ten years.', 'easyq' ) . '</p>';
 		$strings[] = '<p>' . __( 'Views of questions are counted without cookies and without storing your IP address.', 'easyq' ) . '</p>';

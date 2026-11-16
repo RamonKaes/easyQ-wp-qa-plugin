@@ -21,7 +21,7 @@ use EasyQ\Users\Site_Meta;
 final class Notices_Test extends REST_Test_Case {
 
 	public function tear_down(): void {
-		unset( $_COOKIE[ Notices::COOKIE ] );
+		unset( $_COOKIE[ \EasyQ\Util\Cookies::name( Notices::COOKIE ) ] );
 		parent::tear_down();
 	}
 

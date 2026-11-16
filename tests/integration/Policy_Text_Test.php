@@ -67,7 +67,7 @@ final class Policy_Text_Test extends Test_Case {
 		foreach ( array( Notices::class, Visitor_Cookie::class ) as $class ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file in a test.
 			$source = (string) file_get_contents( (string) ( new \ReflectionClass( $class ) )->getFileName() );
-			$this->assertMatchesRegularExpression( Notices::class === $class ? "/'expires'\s*=> time\(\) \+ 10 \* YEAR_IN_SECONDS/" : "/'expires'\s*=> time\(\) \+ YEAR_IN_SECONDS/", $source );
+			$this->assertMatchesRegularExpression( Notices::class === $class ? "/Cookies::set\( self::COOKIE, '1', 10 \* YEAR_IN_SECONDS \)/" : '/Cookies::set\( self::NAME, \(string\) \$id, YEAR_IN_SECONDS \)/', $source );
 		}
 	}
 

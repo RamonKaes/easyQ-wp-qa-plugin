@@ -236,9 +236,11 @@ final class Questions_REST_Test extends REST_Test_Case {
 			'POST',
 			'/questions',
 			array(
-				'title'   => 'A question from a visitor',
-				'content' => 'x',
-				'name'    => 'Grace',
+				'title'    => 'A question from a visitor',
+				'content'  => 'x',
+				'name'     => 'Grace',
+				// The visitor agrees to the cookie, as the site asks (`show_comments_cookies_opt_in`).
+				'remember' => true,
 			)
 		);
 		$data     = $this->data( $response );
@@ -342,9 +344,10 @@ final class Questions_REST_Test extends REST_Test_Case {
 			'POST',
 			'/questions',
 			array(
-				'title'   => 'A question from a visitor',
-				'content' => 'x',
-				'email'   => 'grace@example.org',
+				'title'    => 'A question from a visitor',
+				'content'  => 'x',
+				'email'    => 'grace@example.org',
+				'remember' => true,
 			)
 		);
 		$this->assertSame( 201, $created->get_status() );

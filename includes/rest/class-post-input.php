@@ -36,29 +36,33 @@ final class Post_Input {
 	 */
 	public static function content_args( bool $required ): array {
 		return array(
-			'content' => array(
+			'content'  => array(
 				'description' => __( 'Content of the post.', 'easyq' ),
 				'type'        => 'string',
 				'required'    => $required,
 			),
-			'format'  => array(
+			'format'   => array(
 				'description' => __( 'Content format: empty for plain text, or html.', 'easyq' ),
 				'type'        => 'string',
 				'enum'        => array( '', 'html' ),
 				'default'     => '',
 			),
-			'notify'  => array(
+			'notify'   => array(
 				'description' => __( 'Whether the author wants to be notified about responses.', 'easyq' ),
 				'type'        => 'boolean',
 			),
-			'email'   => array(
+			'email'    => array(
 				'description' => __( 'Email address for notifications of anonymous authors.', 'easyq' ),
 				'type'        => 'string',
 				'format'      => 'email',
 			),
-			'name'    => array(
+			'name'     => array(
 				'description' => __( 'Name of an anonymous author.', 'easyq' ),
 				'type'        => 'string',
+			),
+			'remember' => array(
+				'description' => __( 'Whether an anonymous author may be remembered in this browser with a cookie, to edit the post later. Needed when the site asks before it sets the comment cookies (show_comments_cookies_opt_in).', 'easyq' ),
+				'type'        => 'boolean',
 			),
 		);
 	}
@@ -75,7 +79,7 @@ final class Post_Input {
 		$args = self::content_args( required: false );
 		// As core builds the arguments of an update (`get_endpoint_args_for_item_schema()` with
 		// `EDITABLE`): no defaults, so a field left out keeps its stored value.
-		unset( $args['name'], $args['format']['default'] );
+		unset( $args['name'], $args['remember'], $args['format']['default'] );
 
 		return $args;
 	}
@@ -220,9 +224,10 @@ final class Post_Input {
 			);
 		}
 
-		$actor = new Actor( null, Visitor_Cookie::ensure( $actor ), $actor->ip );
-		$name  = $request->get_param( 'name' );
-		$name  = is_string( $name ) && Options::get_bool( 'posting', 'allow_anonymous_naming' ) ? sanitize_text_field( $name ) : '';
+		$remember = $request->get_param( 'remember' );
+		$actor    = new Actor( null, Visitor_Cookie::ensure( $actor, is_bool( $remember ) || is_int( $remember ) || is_string( $remember ) ? rest_sanitize_boolean( $remember ) : false ), $actor->ip );
+		$name     = $request->get_param( 'name' );
+		$name     = is_string( $name ) && Options::get_bool( 'posting', 'allow_anonymous_naming' ) ? sanitize_text_field( $name ) : '';
 
 		return array(
 			'actor'  => $actor,

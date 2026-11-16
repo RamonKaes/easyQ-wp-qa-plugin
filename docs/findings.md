@@ -31,17 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-73** (H × Abuse, H × Error path). Without a valid IP address (none, or a filter
-  that returns a list such as `X-Forwarded-For`) nothing is counted: no limit per IP,
-  no limit of failed logins, no blocked range. *Why no guard saw it:* every test sets
-  a valid address.
-- **F-74** (H × Multisite, H × State). The visitor cookie and the notice cookie use
-  the path of the network for tables of one site: a visit to site 2 replaces the
-  cookie, and site 1 no longer knows the visitor (anonymous posts cannot be edited).
-  *Why no guard saw it:* no test sets a cookie across `switch_to_blog()`.
-- **F-75** (H × Guidelines; decision). Both cookies are set without asking, although
-  core asks before it sets the comment cookies (`show_comments_cookies_opt_in`).
-  *Why no guard saw it:* no chapter on cookies in the checklist.
 - **F-76** (J × Guidelines). The newsletter and its confirmation are sent in the
   language of the site, not of the recipient; the checklist says "Met" for the
   language per recipient, which holds for `Mailer` only. *Why no guard saw it:* the
@@ -141,21 +130,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-108** (H × Time). The visitor cookie is set once and never renewed; core sets
-  the comment cookies again with every comment. *Why no guard saw it:* cookies were
-  not observable under the command line until this review.
-- **F-109** (H × Guidelines). `secure` of both cookies follows `is_ssl()` of the
-  request, not the scheme of `home_url()` as in core. *Why no guard saw it:* as F-108.
-- **F-110** (H × Guidelines). The login link of the permission message is built from
-  `HTTP_HOST`; core uses the permalink. `wp_safe_redirect()` stops the redirect, so only
-  the link is wrong. *Why no guard saw it:* no test forges the host.
-- **F-111** (H × Value). IPv4 rules and limits miss IPv4-mapped IPv6 addresses
-  (`::ffff:203.0.113.7`); Question2Answer does the same. *Why no guard saw it:* the data
-  of `IP_Test` has no mapped address.
-- **F-112** (H × Abuse; decision). Without `ip_anonymize` each IPv6 address has its own
-  limit, so a visitor with a /64 network has as many as they like; core and
-  Question2Answer count exact addresses too. *Why no guard saw it:* no test with two
-  addresses of one network.
 - **F-113** (J × Presentation). Display names are HTML-encoded in plain-text emails
   (`Tom &amp; Jerry,`). *Why no guard saw it:* the test names have no `&`.
 - **F-114** (K × Volume). Starting the newsletter loads every subscriber as a user to
@@ -229,6 +203,7 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 | No. | Finding | Why rejected |
 | --- | --- | --- |
+| F-112 | Without `ip_anonymize` each IPv6 address has its own limit, so a visitor with a /64 network has as many as they like. | Kept with the owner's word (2026-11-16): core and Question2Answer count exact addresses, and easyQ stays as close to core as it can; with `ip_anonymize` the addresses of a network share a limit already. |
 | F-36, part | The whole `$_POST` is handed to four handlers of the admin screens. | Each handler reads the fields it needs one by one and checks their type, after the nonce and the capability; core's own handlers read `$_POST` directly. Handing over the unslashed copy changes no check; the other parts of F-36 are fixed with F-35. |
 
 ## Refuted suspicions

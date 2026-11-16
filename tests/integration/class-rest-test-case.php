@@ -32,7 +32,7 @@ abstract class REST_Test_Case extends Test_Case {
 	public function tear_down(): void {
 		global $wp_rest_server;
 		$wp_rest_server = null;
-		unset( $_COOKIE['easyq_visitor'] );
+		unset( $_COOKIE[ \EasyQ\Util\Cookies::name( \EasyQ\Users\Visitor_Cookie::NAME ) ] );
 
 		parent::tear_down();
 	}

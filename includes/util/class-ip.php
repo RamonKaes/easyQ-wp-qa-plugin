@@ -41,7 +41,28 @@ final class IP {
 		 */
 		$ip = apply_filters( 'easyq_client_ip', $ip );
 
-		return is_string( $ip ) && false !== filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : null;
+		// A filter may return a header with a list of addresses, as `X-Forwarded-For`: the first is the client.
+		foreach ( is_string( $ip ) ? explode( ',', $ip ) : array() as $part ) {
+			$part = self::normalize( trim( $part ) );
+			if ( false !== filter_var( $part, FILTER_VALIDATE_IP ) ) {
+				return $part;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns an IPv4 address mapped into IPv6 (`::ffff:203.0.113.7`) as the IPv4 address, so
+	 * the rules and limits of IPv4 apply to it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $ip IP address.
+	 * @return string
+	 */
+	public static function normalize( string $ip ): string {
+		return 1 === preg_match( '/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i', $ip, $mapped ) && false !== filter_var( $mapped[1], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ? $mapped[1] : $ip;
 	}
 
 	/**
@@ -145,6 +166,7 @@ final class IP {
 	 * @return bool
 	 */
 	public static function matches( string $ip, string $rule ): bool {
+		$ip         = self::normalize( $ip );
 		$ip_is_v4   = false !== filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 );
 		$rule_is_v4 = false !== filter_var( $rule, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 );
 

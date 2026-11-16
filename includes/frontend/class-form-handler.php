@@ -44,9 +44,9 @@ final class Form_Handler {
 	 * @var array<string, string[]>
 	 */
 	private const FIELDS = array(
-		'ask'                => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'extra', 'follow' ),
-		'answer'             => array( 'content', 'notify', 'email', 'name' ),
-		'comment'            => array( 'content', 'notify', 'email', 'name' ),
+		'ask'                => array( 'title', 'content', 'tags', 'category', 'notify', 'email', 'name', 'remember', 'extra', 'follow' ),
+		'answer'             => array( 'content', 'notify', 'email', 'name', 'remember' ),
+		'comment'            => array( 'content', 'notify', 'email', 'name', 'remember' ),
 		'edit'               => array( 'title', 'content', 'tags', 'category', 'extra', 'silent' ),
 		'vote'               => array( 'vote' ),
 		'action'             => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),

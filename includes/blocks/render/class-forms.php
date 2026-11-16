@@ -946,6 +946,17 @@ final class Forms {
 						array( 'a' => array( 'href' => true ) )
 					)
 			);
+
+			// As the comment form of core asks before it sets the comment cookies.
+			if ( get_option( 'show_comments_cookies_opt_in' ) ) {
+				$id    = Render::unique_id( ( '' === $id_prefix ? 'easyq-' . $form : $id_prefix ) . '-remember' );
+				$html .= sprintf(
+					'<p class="comment-form-cookies-consent"><input type="checkbox" id="%1$s" name="remember" value="1"%2$s /> <label for="%1$s">%3$s</label></p>',
+					esc_attr( $id ),
+					checked( '' !== (string) Flash::kept( $form, 'remember', $target ), true, false ),
+					esc_html__( 'Remember me in this browser, so I can edit my post later.', 'easyq' )
+				);
+			}
 		}
 
 		return $html;
@@ -978,7 +989,9 @@ final class Forms {
 	 * @return string
 	 */
 	public static function permission_message( string $reason ): string {
-		$current = ( is_ssl() ? 'https://' : 'http://' ) . ( isset( $_SERVER['HTTP_HOST'] ) && is_string( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '' ) . ( isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '' );
+		// The page asked for, on the host of the site, as core links the permalink (not `HTTP_HOST`).
+		$origin  = (string) preg_replace( '~^(https?://[^/]+).*$~', '$1', home_url() );
+		$current = $origin . ( isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/' );
 
 		if ( 'login' === $reason ) {
 			// Whole sentences with their links, as the handbook asks, and as core words the comment form.
