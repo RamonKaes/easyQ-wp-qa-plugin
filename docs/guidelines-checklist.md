@@ -106,7 +106,7 @@ code, and known vulnerabilities of the dependencies.
 | `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met (`Mailer`, and the newsletter and its confirmation: `Newsletter_Run_Test`) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
 | Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
-| Stop emails with one click | Met for the emails about posts and the newsletter; F-93, F-117 | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
+| Stop emails with one click | Met for the emails about posts and the newsletter; emails about messages and the wall link the account page (`List-Unsubscribe`, RFC 2369), core sends no such emails; F-93 | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
 | `Reply-To` of the author, as core's comment emails | Kept | Addresses stay private on a Q&A site; Q2A sets none there either |
 
 ## HTTP API

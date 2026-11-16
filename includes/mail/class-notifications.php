@@ -18,6 +18,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Levels;
 use EasyQ\Users\Site_Meta;
+use EasyQ\Util\Number;
 use WP_User;
 
 defined( 'ABSPATH' ) || exit;
@@ -159,7 +160,7 @@ final class Notifications {
 	public function answer_posted( array $params, Actor $actor ): void {
 		$answer   = $this->post( $params['post_id'] ?? null );
 		$question = null === $answer ? null : Services::post_service()->question_of( $answer );
-		if ( null === $answer || null === $question ) {
+		if ( null === $answer || null === $question || ! $question->is_visible() ) {
 			return;
 		}
 
@@ -190,9 +191,11 @@ final class Notifications {
 	 * @param Actor                $actor  Author of the comment.
 	 */
 	public function comment_posted( array $params, Actor $actor ): void {
-		$comment = $this->post( $params['post_id'] ?? null );
-		$parent  = null === $comment || null === $comment->parent_id ? null : Services::posts()->find( $comment->parent_id );
-		if ( null === $comment || null === $parent ) {
+		$comment  = $this->post( $params['post_id'] ?? null );
+		$parent   = null === $comment || null === $comment->parent_id ? null : Services::posts()->find( $comment->parent_id );
+		$question = null === $parent ? null : Services::post_service()->question_of( $parent );
+		// Below a hidden or queued post nobody is told: the email would show what they may not read.
+		if ( null === $comment || null === $parent || null === $question || ! $parent->is_visible() || ! $question->is_visible() ) {
 			return;
 		}
 
@@ -211,10 +214,15 @@ final class Notifications {
 			$this->mailer->send( $is_question ? 'q_commented' : 'a_commented', array( $recipient ), $placeholders );
 		}
 
-		$thread = is_array( $params['thread'] ?? null ) ? $params['thread'] : array();
+		$thread = is_array( $params['thread'] ?? null ) ? array_map( array( Number::class, 'id' ), $params['thread'] ) : array();
+		// The posts of the thread and their authors are loaded at once, as core primes lists.
+		$earlier_posts = Services::posts()->find_many( $thread );
+		$authors       = array_values( array_filter( array_map( static fn ( Post $post ): ?int => $post->user_id, $earlier_posts ) ) );
+		cache_users( $authors );
+		update_meta_cache( 'user', $authors );
 		foreach ( $thread as $id ) {
-			$earlier   = $this->post( $id );
-			$recipient = null === $earlier ? null : $this->author_of( $earlier, $actor );
+			$earlier   = $earlier_posts[ $id ] ?? null;
+			$recipient = null === $earlier || ! $earlier->is_visible() ? null : $this->author_of( $earlier, $actor );
 			if ( null === $recipient || isset( $notified[ strtolower( $recipient->email ) ] ) ) {
 				continue;
 			}
@@ -473,7 +481,7 @@ final class Notifications {
 			'private_message',
 			array( new Recipient( $to->user_email, $to->ID, $to->display_name ) ),
 			fn (): array => array(
-				'###AUTHOR###'  => $from->display_name,
+				'###AUTHOR###'  => wp_specialchars_decode( $from->display_name, ENT_QUOTES ),
 				'###MESSAGE###' => $this->censored( is_string( $params['message'] ?? null ) ? $params['message'] : '' ),
 				'###URL###'     => $url,
 			)
@@ -575,7 +583,7 @@ final class Notifications {
 	private function name_of( Actor $actor, ?Post $post = null ): string {
 		$user = null === $actor->user_id ? false : get_userdata( $actor->user_id );
 		if ( false !== $user ) {
-			return $user->display_name;
+			return wp_specialchars_decode( $user->display_name, ENT_QUOTES );
 		}
 
 		return null === $post ? __( 'anonymous', 'easyq' ) : $this->name_of_author( $post );
@@ -592,7 +600,7 @@ final class Notifications {
 	private function name_of_author( Post $post ): string {
 		$user = null === $post->user_id ? false : get_userdata( $post->user_id );
 		if ( false !== $user ) {
-			return $user->display_name;
+			return wp_specialchars_decode( $user->display_name, ENT_QUOTES );
 		}
 
 		return null === $post->author_name || '' === $post->author_name ? __( 'anonymous', 'easyq' ) : $post->author_name;

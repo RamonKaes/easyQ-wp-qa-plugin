@@ -220,6 +220,81 @@ final class Notifications_Test extends Test_Case {
 		$this->assertStringContainsString( 'Your question on', $this->sent()[0]['body'] );
 	}
 
+	public function test_nobody_hears_about_comments_below_hidden_posts(): void {
+		$asker    = $this->member( 'asker' );
+		$question = $this->question_with_emails( $asker );
+		$answer   = $this->answer_with_emails( $this->member( 'helper' ), $question, 'The hidden answer text.' );
+		$this->comment_with_emails( $this->member( 'first' ), $question, $answer );
+		Services::post_service()->set_answer_status( Actor::system(), $answer, $question, Post::STATUS_HIDDEN );
+		reset_phpmailer_instance();
+
+		$this->comment_with_emails( $this->member( 'late' ), $question, $this->post( $answer->id ) );
+
+		$this->assertSame( array(), $this->addresses() );
+	}
+
+	public function test_names_in_emails_are_plain_text(): void {
+		$asker    = new Actor(
+			self::factory()->user->create(
+				array(
+					'display_name' => 'Tom & Jerry',
+					'user_email'   => 'tom@example.com',
+				)
+			)
+		);
+		$question = $this->question_with_emails( $asker );
+		$helper   = new Actor( self::factory()->user->create( array( 'display_name' => 'Ben & Co' ) ) );
+		reset_phpmailer_instance();
+
+		$this->answer_with_emails( $helper, $question );
+
+		$this->assertStringContainsString( 'Tom & Jerry,', $this->sent()[0]['body'] );
+		$this->assertStringContainsString( 'Ben & Co', $this->sent()[0]['body'] );
+		$this->assertStringNotContainsString( '&amp;', $this->sent()[0]['body'] );
+	}
+
+	public function test_a_long_thread_costs_no_query_per_person(): void {
+		$question = $this->question_with_emails( $this->member( 'asker' ) );
+		$answer   = $this->answer_with_emails( $this->member( 'helper' ), $question );
+		$measure  = function ( int $people ) use ( $question, $answer ): int {
+			for ( $i = 0; $i < $people; $i++ ) {
+				$this->comment_with_emails( $this->member( 'p' . $people . 'x' . $i ), $question, $this->post( $answer->id ) );
+			}
+			$last = $this->member( 'last' . $people );
+			wp_cache_flush();
+			Services::reset();
+			$count  = 0;
+			$record = static function ( string $query ) use ( &$count ): string {
+				// The streams of updates get a row per person, as in Question2Answer; the emails count.
+				$count += str_contains( $query, 'userevents' ) ? 0 : 1;
+				return $query;
+			};
+			add_filter( 'query', $record );
+			$this->comment_with_emails( $last, $question, $this->post( $answer->id ) );
+			remove_filter( 'query', $record );
+
+			return $count;
+		};
+
+		$few  = $measure( 3 );
+		$many = $measure( 20 );
+
+		$this->assertLessThan( 10, $many - $few, "$few statements for 3 people, $many for 23" );
+	}
+
+	public function test_emails_about_messages_and_the_wall_say_how_to_stop_them(): void {
+		$to   = $this->member( 'reader' );
+		$from = $this->member( 'writer' );
+		reset_phpmailer_instance();
+
+		Services::messages()->send( $from, get_userdata( (int) $to->user_id ), 'Hello there.' );
+
+		$mail = end( tests_retrieve_phpmailer_instance()->mock_sent );
+		$this->assertIsArray( $mail );
+		$this->assertStringContainsString( Routes::url( 'account' ), $mail['body'] );
+		$this->assertStringContainsString( 'List-Unsubscribe: <' . Routes::url( 'account' ) . '>', $mail['header'] );
+	}
+
 	public function test_a_selected_answer_and_a_related_question_notify_the_author_of_the_answer(): void {
 		$asker    = $this->member( 'asker' );
 		$helper   = $this->member( 'helper' );

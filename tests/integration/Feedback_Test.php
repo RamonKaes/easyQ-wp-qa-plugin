@@ -63,6 +63,21 @@ final class Feedback_Test extends REST_Test_Case {
 		$this->assertContains( 'feedback', $this->event_names() );
 	}
 
+	public function test_the_address_in_the_email_is_shortened_as_stored_addresses_are(): void {
+		Options::update( 'emails', array( 'feedback_email' => 'owner@example.org' ) );
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.77';
+		wp_set_current_user( 0 );
+
+		$this->request( 'POST', '/feedback', array( 'message' => 'With the full address.' ) );
+		Options::update( 'spam', array( 'ip_anonymize' => true ) );
+		$this->request( 'POST', '/feedback', array( 'message' => 'With the shortened address.' ) );
+		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+
+		$this->assertStringContainsString( '203.0.113.77', tests_retrieve_phpmailer_instance()->get_sent( 0 )->body );
+		$this->assertStringNotContainsString( '203.0.113.77', tests_retrieve_phpmailer_instance()->get_sent( 1 )->body );
+		$this->assertStringContainsString( '203.0.113.0', tests_retrieve_phpmailer_instance()->get_sent( 1 )->body );
+	}
+
 	public function test_checks_the_fields(): void {
 		$empty = $this->request( 'POST', '/feedback', array( 'message' => '  ' ) );
 		$this->assertSame( 400, $empty->get_status() );

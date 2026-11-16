@@ -145,18 +145,20 @@ final class Mailer {
 		$user            = null === $recipient->user_id ? get_user_by( 'email', $recipient->email ) : get_userdata( $recipient->user_id );
 		$switched_locale = false === $user ? switch_to_locale( get_locale() ) : switch_to_user_locale( $user->ID );
 
-		$content = self::content(
+		// Display names are stored escaped; plain text shows them as typed, as core decodes the site name.
+		$recipient_name = wp_specialchars_decode( (string) $recipient->name, ENT_QUOTES );
+		$content        = self::content(
 			$name,
 			$placeholders() + array(
-				'###USERNAME###' => (string) $recipient->name,
+				'###USERNAME###' => $recipient_name,
 				'###EMAIL###'    => $recipient->email,
 			)
 		);
 
-		$salutation = null === $recipient->name || '' === $recipient->name
+		$salutation = '' === $recipient_name
 			? ''
 			/* translators: %s: name of the recipient. */
-			: sprintf( __( '%s,', 'easyq' ), $recipient->name ) . "\n\n";
+			: sprintf( __( '%s,', 'easyq' ), $recipient_name ) . "\n\n";
 
 		$email = self::filter_email(
 			$name,
@@ -192,7 +194,11 @@ final class Mailer {
 	 */
 	private function footer( Recipient $recipient ): string {
 		if ( null === $recipient->post ) {
-			return '';
+			// Emails about messages and the wall: the account turns them off.
+			return null === $recipient->user_id
+				? ''
+				/* translators: %s: address of the account page. */
+				: "\n\n-- \n" . sprintf( __( 'To stop these emails, change the settings of your account: %s', 'easyq' ), Routes::url( 'account' ) );
 		}
 
 		/* translators: %s: address of the page. */
@@ -229,6 +235,9 @@ final class Mailer {
 		if ( null !== $recipient->post ) {
 			$headers .= 'List-Unsubscribe: <' . Unsubscribe::one_click_url( $recipient->post->id ) . ">\n";
 			$headers .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\n";
+		} elseif ( null !== $recipient->user_id ) {
+			// RFC 2369: the page where the user stops them.
+			$headers .= 'List-Unsubscribe: <' . Routes::url( 'account' ) . ">\n";
 		}
 
 		return $headers;

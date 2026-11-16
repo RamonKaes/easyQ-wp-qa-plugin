@@ -128,7 +128,8 @@ final class Feedback {
 				'###EMAIL###'    => '' === $email ? '-' : $email,
 				'###PREVIOUS###' => '' === $previous ? '-' : $previous,
 				'###URL###'      => false === $user ? '-' : URLs::user( $user ),
-				'###IP###'       => (string) IP::current(),
+				// Shortened as stored addresses are, while the site asks for it.
+				'###IP###'       => null === IP::current() ? '-' : ( Options::get_bool( 'spam', 'ip_anonymize' ) ? IP::anonymize( (string) IP::current() ) : (string) IP::current() ),
 			)
 		);
 

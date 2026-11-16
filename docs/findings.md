@@ -31,9 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-80** (J × State). Approving a comment below a hidden answer emails the text of
-  the hidden answer to its author and to earlier commenters. *Why no guard saw it:*
-  the notification tests use visible parents.
 - **F-81** (J × Abuse; decision). An anonymous author can give any address for
   notifications, which then gets the answers of others without confirming; core does
   not mail comment authors about replies, Question2Answer does as easyQ. *Why no guard
@@ -111,17 +108,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-113** (J × Presentation). Display names are HTML-encoded in plain-text emails
-  (`Tom &amp; Jerry,`). *Why no guard saw it:* the test names have no `&`.
-- **F-115** (J × Volume). Notifications of a thread load each recipient one by one and
-  send synchronously in the request of the commenter (25 commenters: 205 queries and
-  26 emails). *Why no guard saw it:* no growth test for writes.
-- **F-116** (J × Value). The feedback email holds the full IP address although
-  `ip_anonymize` is on; decision whether the setting covers emails. *Why no guard saw
-  it:* the feedback test does not set it.
-- **F-117** (J × Presentation, J × Guidelines). Emails about private messages and wall
-  posts have no link or header to stop them. *Why no guard saw it:* the footer tests
-  cover emails about posts.
 - **F-120** (L × Frequency, L × Volume). The `<link rel="alternate">` of every Q&A page
   builds the whole feed with full text to find its title; the number of queries stays,
   the time grows with the items. *Why no guard saw it:* `Query_Growth_Test` measures
