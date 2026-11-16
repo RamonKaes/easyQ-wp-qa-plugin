@@ -66,6 +66,9 @@ final class Notifications {
 		add_action( 'easyq_u_wall_post', array( $this, 'wall_posted' ), 10, 2 );
 
 		foreach ( array( 'q', 'a', 'c' ) as $type ) {
+			// Authors without an account confirm their address before any email goes to it.
+			add_action( "easyq_{$type}_post", array( $this, 'confirm_address' ) );
+			add_action( "easyq_{$type}_queue", array( $this, 'confirm_address' ) );
 			add_action( "easyq_{$type}_queue", array( $this, 'post_queued' ), 10, 2 );
 			add_action( "easyq_{$type}_requeue", array( $this, 'post_requeued' ), 10, 2 );
 			add_action( "easyq_{$type}_flag", array( $this, 'post_flagged' ) );
@@ -75,6 +78,20 @@ final class Notifications {
 		add_filter( 'wp_send_new_user_notification_to_admin', array( $this, 'send_registration_to_admin' ) );
 		add_filter( 'wp_new_user_notification_email_admin', array( $this, 'registration_email_to_admin' ), 10, 2 );
 		add_filter( 'wp_new_user_notification_email', array( $this, 'welcome_email' ), 10, 2 );
+	}
+
+	/**
+	 * Asks the author of a new post without an account to confirm the address for notifications.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, mixed> $params Event parameters.
+	 */
+	public function confirm_address( array $params ): void {
+		$post = $this->post( $params['post_id'] ?? null );
+		if ( null !== $post ) {
+			Unsubscribe::ask_for_confirmation( $post );
+		}
 	}
 
 	/**
@@ -527,9 +544,9 @@ final class Notifications {
 			return null;
 		}
 
-		// Anonymous authors leave an address; users only a mark that they want emails.
+		// Anonymous authors leave an address, which gets emails once they confirmed it; users only a mark that they want emails.
 		if ( null === $post->user_id ) {
-			return is_email( $post->notify ) ? new Recipient( $post->notify, null, null, $post ) : null;
+			return is_email( $post->notify ) && Unsubscribe::is_confirmed( $post ) ? new Recipient( $post->notify, null, null, $post ) : null;
 		}
 
 		$user = get_userdata( $post->user_id );

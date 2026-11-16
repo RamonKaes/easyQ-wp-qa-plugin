@@ -251,7 +251,7 @@ final class Schemas {
 			'easyq-unsubscribe',
 			array(
 				'post'       => self::WRITABLE + self::property( __( 'The post.', 'easyq' ), 'integer' ),
-				'emails'     => self::property( __( 'Whether emails about the post are sent; always false after this request.', 'easyq' ), 'boolean' ),
+				'emails'     => self::property( __( 'Whether emails about the post are sent: false after stopping them, true after confirming the address.', 'easyq' ), 'boolean' ),
 				'user'       => self::WRITABLE + self::property( __( 'The user who stops the newsletter.', 'easyq' ), 'integer' ),
 				'newsletter' => self::property( __( 'Whether the user gets the newsletter; always false after this request.', 'easyq' ), 'boolean' ),
 			)

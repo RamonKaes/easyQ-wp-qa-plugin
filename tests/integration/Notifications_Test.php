@@ -220,6 +220,50 @@ final class Notifications_Test extends Test_Case {
 		$this->assertStringContainsString( 'Your question on', $this->sent()[0]['body'] );
 	}
 
+	public function test_addresses_of_authors_without_an_account_get_emails_once_confirmed(): void {
+		Options::update( 'permissions', array( 'permit_post_q' => \EasyQ\Users\Permits::ALL ) );
+		$visitor  = new Actor( null, 4711, '192.0.2.9' );
+		$question = $this->post( Services::post_service()->create_question( $visitor, 'A question without an account', 'Text.', '', array(), null, 'someone@example.com' ) );
+
+		// The address gets one email: the question to confirm it.
+		$this->assertSame( array( 'someone@example.com' ), $this->addresses() );
+		$this->assertStringContainsString( 'notify=confirm', $this->sent()[0]['body'] );
+		reset_phpmailer_instance();
+
+		$this->answer_with_emails( $this->member( 'helper' ), $question );
+		$this->assertSame( array(), $this->addresses(), 'No notification before the confirmation.' );
+
+		// The page asks; only the form (and the REST API) confirms, as opening a link changes nothing.
+		$_GET = array(
+			'notify' => 'confirm',
+			'post'   => (string) $question->id,
+			'token'  => Unsubscribe::token( $question->id ),
+		);
+		$this->assertStringContainsString( 'name="notify" value="confirm"', \EasyQ\Blocks\Render\Forms::unsubscribe() );
+		$this->assertFalse( Unsubscribe::is_confirmed( $question ) );
+		$_GET = array();
+
+		$request = new \WP_REST_Request( 'POST', '/easyq/v1/unsubscribe' );
+		$request->set_param( 'post', $question->id );
+		$request->set_param( 'token', Unsubscribe::token( $question->id ) );
+		$request->set_param( 'notify', 'confirm' );
+		$this->assertSame( 200, rest_do_request( $request )->get_status() );
+
+		$this->answer_with_emails( $this->member( 'second' ), $question );
+		$this->assertSame( array( 'someone@example.com' ), $this->addresses() );
+
+		reset_phpmailer_instance();
+		Services::post_service()->create_question( $visitor, 'Another question without an account', 'Text.', '', array(), null, 'someone@example.com' );
+		Services::post_service()->create_question( $visitor, 'A third question without an account', 'Text.', '', array(), null, '' );
+		$this->assertCount( 1, $this->addresses(), 'Each post asks once, a post without an address never.' );
+
+		// A queued post asks when it is queued, not again when it is approved.
+		reset_phpmailer_instance();
+		$queued = $this->post( Services::post_service()->create_question( $visitor, 'A queued question without an account', 'Text.', '', array(), null, 'someone@example.com', null, null, true ) );
+		Services::post_service()->set_question_status( Actor::system(), $queued, Post::STATUS_NORMAL );
+		$this->assertSame( array( 'someone@example.com' ), array_values( array_intersect( $this->addresses(), array( 'someone@example.com' ) ) ), 'The moderators hear about the queue; the author is asked once.' );
+	}
+
 	public function test_nobody_hears_about_comments_below_hidden_posts(): void {
 		$asker    = $this->member( 'asker' );
 		$question = $this->question_with_emails( $asker );
@@ -504,6 +548,9 @@ final class Notifications_Test extends Test_Case {
 
 	public function test_anonymous_authors_get_emails_at_their_address(): void {
 		$question = $this->post( Services::post_service()->create_question( new Actor( null, null, '192.0.2.9' ), 'An anonymous question', 'Text.', '', array(), null, 'guest@example.com', 'Guest' ) );
+		// The author confirmed the address (F-81).
+		Unsubscribe::confirm( $question );
+		reset_phpmailer_instance();
 
 		$this->answer_with_emails( $this->member( 'helper' ), $question );
 

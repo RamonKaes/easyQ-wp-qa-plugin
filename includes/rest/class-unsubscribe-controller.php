@@ -24,7 +24,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * Routes:
  *
- * - `POST /easyq/v1/unsubscribe` with `post` and `token`, or `user` and `token` for the newsletter
+ * - `POST /easyq/v1/unsubscribe` with `post` and `token`, or `user` and `token` for the newsletter;
+ *   with `notify=confirm` the author of the post without an account confirms the address
  *
  * @since 0.1.0
  */
@@ -54,18 +55,23 @@ final class Unsubscribe_Controller extends Controller {
 					'callback'            => array( $this, 'create_item' ),
 					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => array(
-						'post'  => array(
+						'post'   => array(
 							'description' => __( 'Post to stop the emails about.', 'easyq' ),
 							'type'        => 'integer',
 						),
-						'user'  => array(
+						'user'   => array(
 							'description' => __( 'User who stops the newsletter, instead of a post.', 'easyq' ),
 							'type'        => 'integer',
 						),
-						'token' => array(
+						'token'  => array(
 							'description' => __( 'Token from the email.', 'easyq' ),
 							'type'        => 'string',
 							'required'    => true,
+						),
+						'notify' => array(
+							'description' => __( 'confirm: the author of the post without an account confirms the address for the emails, instead of stopping them.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array( 'confirm' ),
 						),
 					),
 				),
@@ -120,6 +126,19 @@ final class Unsubscribe_Controller extends Controller {
 		$post = Services::posts()->find( $id );
 		if ( null === $post ) {
 			return new WP_Error( 'easyq_invalid_token', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
+		}
+
+		// The link of the confirmation email: the author without an account asks for the emails.
+		if ( 'confirm' === self::string_param( $request, 'notify' ) ) {
+			Unsubscribe::confirm( $post );
+
+			return $this->respond_with(
+				array(
+					'post'   => $id,
+					'emails' => null !== $post->notify,
+				),
+				$request
+			);
 		}
 
 		Unsubscribe::stop( $post );

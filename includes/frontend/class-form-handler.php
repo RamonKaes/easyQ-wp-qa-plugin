@@ -51,7 +51,7 @@ final class Form_Handler {
 		'vote'               => array( 'vote' ),
 		'action'             => array( 'answer', 'duplicate_of', 'note', 'parent', 'category' ),
 		'account'            => array( 'remove_avatar', 'notifications', 'messages', 'wall', 'newsletter' ),
-		'unsubscribe'        => array( 'post', 'token', 'user' ),
+		'unsubscribe'        => array( 'post', 'token', 'user', 'notify' ),
 		'newsletter_confirm' => array( 'user', 'key' ),
 		'favorite'           => array( 'type', 'id', 'favorite' ),
 		'notice'             => array(),

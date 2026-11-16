@@ -31,10 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-81** (J × Abuse; decision). An anonymous author can give any address for
-  notifications, which then gets the answers of others without confirming; core does
-  not mail comment authors about replies, Question2Answer does as easyQ. *Why no guard
-  saw it:* no test looks at the address of an anonymous author as a third party.
 - **F-83** (L × Value, L × Abuse). A control character in a title (`\x01`) is saved
   and makes the feed invalid XML for every reader. *Why no guard saw it:*
   `test_builds_valid_rss` uses `&` and `<script>`.

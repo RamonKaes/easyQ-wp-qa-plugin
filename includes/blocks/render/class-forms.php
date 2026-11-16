@@ -314,6 +314,21 @@ final class Forms {
 			return sprintf( '<p %s>%s</p>', get_block_wrapper_attributes(), esc_html__( 'This link is not valid.', 'easyq' ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- The token in the address is checked above.
+		if ( isset( $_GET['notify'] ) && 'confirm' === $_GET['notify'] ) {
+			return self::form(
+				'unsubscribe',
+				0,
+				sprintf( '<p>%s</p>', esc_html__( 'Do you want emails about the answers and comments to this post?', 'easyq' ) ),
+				__( 'Confirm the emails', 'easyq' ),
+				array(
+					'post'   => $id,
+					'token'  => $token,
+					'notify' => 'confirm',
+				)
+			);
+		}
+
 		return self::form(
 			'unsubscribe',
 			0,
