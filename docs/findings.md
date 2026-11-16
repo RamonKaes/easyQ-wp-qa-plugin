@@ -31,26 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-67** (D × Identity, P × Identity). With another search provider, the
-  `related-questions` block shows hidden questions the provider returns; the search
-  page filters them. *Why no guard saw it:* no test uses a second provider.
-- **F-68** (E × Abuse, E × Guidelines). Links in the HTML format get no
-  `rel="nofollow ugc"` and do not follow `links_in_new_window`; the text format does
-  both. Core runs `wp_rel_ugc()`. *Why no guard saw it:* the test covers the text
-  format only.
-- **F-70** (E × Guidelines, E × Value). The JSON-LD is printed without `JSON_HEX_TAG`:
-  a title `</script><script>…` that comes in without the REST API (a service call, an
-  import) closes the script element. The REST API refuses such a title, which is
-  today's only protection. Core prints inline JSON with `wp_print_inline_script_tag()`
-  and hex flags. *Why no guard saw it:* PHPCS accepts `wp_json_encode()` as escaping;
-  no test writes `</script>` into a title.
-- **F-71** (D × Value). With `showFewerFrom` below `showFewerCount` the comments block
-  says "Show -2 previous comments" (also reachable through the settings). *Why no guard
-  saw it:* the test uses 2 and 1.
-- **F-72** (D × Presentation, D × Guidelines). The server drops `aria-pressed` of the
-  vote buttons, because `state.isPressed` exists only in JavaScript; until the page is
-  hydrated, and without JavaScript, a screen reader does not hear the state. *Why no
-  guard saw it:* the end-to-end tests check after hydration.
 - **F-73** (H × Abuse, H × Error path). Without a valid IP address (none, or a filter
   that returns a list such as `X-Forwarded-For`) nothing is counted: no limit per IP,
   no limit of failed logins, no blocked range. *Why no guard saw it:* every test sets
@@ -161,26 +141,10 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-102** (E × Value). Censoring breaks entities (`&amp;` becomes `&***;` for the word
-  `amp`) and misses a word split by tags (`da<b></b>rn`). *Why no guard saw it:* no test
-  with entities or tags in a word.
-- **F-103** (E × Presentation). The JSON-LD holds HTML entities (`&#039;`, `&amp;`)
-  instead of plain text. *Why no guard saw it:* `Page_Meta_Test` checks that JSON-LD is
-  there.
-- **F-104** (D × Guidelines). `ask-form` prints its own interactive region but does
-  not declare `supports.interactivity`, so the server does not process its directives.
-  *Why no guard saw it:* the registry test reads keywords and previews only.
-- **F-105** (D × Guidelines). `Layouts::json()` escapes block attributes in its own
-  way instead of `serialize_block_attributes()`; it parses back the same today. *Why
-  no guard saw it:* the round trip test passes either way.
 - **F-106** (D × Volume, D × Presentation). The pickers of the editor load the first
   100 questions and users, and `/questions` has no `search` argument to find others.
   The editor part was read, not run. *Why no guard saw it:* the editor tests use few
   items.
-- **F-107** (D × Presentation). Two blocks of the same question or two ask forms on
-  one page give duplicate IDs (`easyq-post-N`, `easyq-ask-title` and the others), and
-  `label for` points to the first. *Why no guard saw it:* axe runs on pages with one
-  of each.
 - **F-108** (H × Time). The visitor cookie is set once and never renewed; core sets
   the comment cookies again with every comment. *Why no guard saw it:* cookies were
   not observable under the command line until this review.

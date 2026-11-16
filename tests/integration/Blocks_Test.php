@@ -57,6 +57,8 @@ final class Blocks_Test extends Test_Case {
 	 */
 	private function render( string $markup, ?Route $route = null ): string {
 		Block_Context::router()->set_current( $route );
+		// Each call is a page of its own.
+		\EasyQ\Blocks\Render::reset_ids();
 
 		return do_blocks( $markup );
 	}

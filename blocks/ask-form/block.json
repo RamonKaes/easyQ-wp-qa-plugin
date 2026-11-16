@@ -12,6 +12,7 @@
 	],
 	"textdomain": "easyq",
 	"supports": {
+		"interactivity": true,
 		"anchor": true,
 		"html": false,
 		"color": {

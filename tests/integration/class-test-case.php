@@ -29,6 +29,7 @@ abstract class Test_Case extends WP_UnitTestCase {
 	 */
 	public function set_up(): void {
 		parent::set_up();
+		\EasyQ\Blocks\Render::reset_ids();
 
 		wp_cache_flush();
 		Services::reset();

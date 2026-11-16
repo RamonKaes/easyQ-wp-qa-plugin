@@ -8,7 +8,9 @@
 
 namespace EasyQ\Search;
 
+use EasyQ\Actor;
 use EasyQ\Posts\Post;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 
 defined( 'ABSPATH' ) || exit;
@@ -181,7 +183,10 @@ final class Search {
 	}
 
 	/**
-	 * Searches questions with the selected provider.
+	 * Searches questions with the selected provider, and keeps those the user may see.
+	 *
+	 * A provider of another plugin may return hidden or queued questions; each list that
+	 * searches gets only what the REST API would show the user.
 	 *
 	 * @since 0.1.0
 	 *
@@ -192,6 +197,17 @@ final class Search {
 	 * @return Search_Result[]
 	 */
 	public function search( string $query, int $start, int $count, ?int $user_id = null ): array {
-		return $this->provider()->search( $query, $start, $count, $user_id );
+		$results = $this->provider()->search( $query, $start, $count, $user_id );
+		$posts   = Services::posts()->find_many( array_map( static fn ( Search_Result $result ): int => $result->question_id, $results ) );
+		$viewer  = new Actor( $user_id );
+
+		return array_values(
+			array_filter(
+				$results,
+				static fn ( Search_Result $result ): bool => isset( $posts[ $result->question_id ] )
+					&& Post::QUESTION === $posts[ $result->question_id ]->base_type()
+					&& Services::permissions()->shows( $posts[ $result->question_id ], $viewer )
+			)
+		);
 	}
 }

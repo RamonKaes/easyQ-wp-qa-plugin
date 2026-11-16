@@ -247,17 +247,17 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | A page out of range or of a hidden post answers 404 | Met (`Page_State_Test`, `Visibility_Test`) | `Frontend\Router`, `Frontend\Templates` |
 | Login redirect as `auth_redirect()` | Met | `Frontend\Templates::require_login()` |
 | Block metadata: `$schema`, `apiVersion` 3, namespaced name, text domain, category, keywords; `parent` and `ancestor` for child blocks; block supports instead of own options | Met | `blocks/*/block.json` |
-| `supports.interactivity` on blocks that print directives | F-104 | `blocks/ask-form/block.json` |
+| `supports.interactivity` on blocks that print directives | Met (`Rendering_Test` reads the registry) | `blocks/ask-form/block.json` |
 | Block context instead of globals | Met | `providesContext` and `usesContext`; the router is the fallback where core falls back to the global post |
 | Block bindings: label, `get_value_callback`, `uses_context`, values escaped as core; only what the viewer may read | Form Met; F-61 | `Blocks\Blocks` |
 | Patterns: `register_block_pattern()` on `init`, category, translated titles | Met | `Blocks\Patterns` |
 | Block templates through `register_block_template()` and `locate_block_template()` | Met | `Frontend\Templates` |
-| Attributes serialized with `serialize_block_attributes()` | F-105 | `Blocks\Layouts::json()` |
-| State the server renders matches the state after hydration (`aria-pressed`) | F-72 | `includes/blocks/render/` |
-| Unique IDs on a page | F-107 | `includes/blocks/render/` |
+| Attributes serialized with `serialize_block_attributes()` | Met (`Rendering_Test`) | `Blocks\Layouts::json()` |
+| State the server renders matches the state after hydration (`aria-pressed`) | Met, derived state on the server (`Rendering_Test`) | `includes/blocks/render/` |
+| Unique IDs on a page | Met (`Rendering_Test`: every block twice) | `includes/blocks/render/` |
 | Editor controls accessible, pickers that search | Read, not checked by axe; F-106 | `src/editor/` |
-| HTML of users: comments with the allow-list core gives commenters, questions and answers with the post filter without `data-wp-*`; `wp_rel_ugc()` on links | Filter Met (`User_HTML_Test`); F-68 | `Posts\Content_Renderer` |
-| JSON in a `<script>` element with `JSON_HEX_TAG` (`wp_print_inline_script_tag()`) | F-70 | `Frontend\Page_Meta` |
+| HTML of users: comments with the allow-list core gives commenters, questions and answers with the post filter without `data-wp-*`; `wp_rel_ugc()` on links | Met (`User_HTML_Test`, `Rendering_Test`) | `Posts\Content_Renderer` |
+| JSON in a `<script>` element with `JSON_HEX_TAG` (`wp_print_inline_script_tag()`) | Met (`Rendering_Test`) | `Frontend\Page_Meta` |
 | Cookies: prefixed name, `COOKIEPATH` and `COOKIE_DOMAIN`, `secure` from the scheme of `home_url()`, renewed when used, asked for as `show_comments_cookies_opt_in` asks | Prefix Met; F-74, F-75, F-108, F-109 | `Users\Visitor_Cookie`, `Notices\Notices` |
 | Client IP from `REMOTE_ADDR`, a proxy only through a filter; shortened as `wp_privacy_anonymize_ip()` | Met; F-73 for an invalid filter value | `Util\IP` |
 | Links built from `home_url()` or the permalink, not from `HTTP_HOST` | F-110 | `includes/blocks/render/class-forms.php` |

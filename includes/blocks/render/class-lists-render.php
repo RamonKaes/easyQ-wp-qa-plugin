@@ -224,7 +224,7 @@ final class Lists_Render {
 		// A router region: answering and loading comments update it in place, see src/view.
 		return sprintf(
 			'<article %s data-wp-interactive="easyq" data-wp-router-region="%s">%s</article>',
-			get_block_wrapper_attributes( array( 'id' => 'easyq-post-' . $question->id ) ),
+			get_block_wrapper_attributes( array( 'id' => Render::unique_id( 'easyq-post-' . $question->id ) ) ),
 			esc_attr( 'easyq/question-' . $question->id ),
 			Render::inner_blocks( $block, array( 'easyq/postId' => $question->id ) )
 		);
@@ -320,7 +320,7 @@ final class Lists_Render {
 	public static function comment_list( array $attributes, string $content, WP_Block $block ): string {
 		$post = Block_Context::post( $block );
 
-		return null === $post ? '' : sprintf( '<div %s>%s</div>', get_block_wrapper_attributes( array( 'id' => 'easyq-comments-' . $post->id ) ), $content );
+		return null === $post ? '' : sprintf( '<div %s>%s</div>', get_block_wrapper_attributes( array( 'id' => Render::unique_id( 'easyq-comments-' . $post->id ) ) ), $content );
 	}
 
 	/**
@@ -357,7 +357,8 @@ final class Lists_Render {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading which comments to show.
 		$show_all = Number::id( isset( $_GET[ self::SHOW_COMMENTS_VAR ] ) && is_string( $_GET[ self::SHOW_COMMENTS_VAR ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::SHOW_COMMENTS_VAR ] ) ) : null ) === $parent->id;
 
-		if ( count( $ids ) > $from && ! $show_all ) {
+		// Nothing is left out when the shortened list would keep all comments.
+		if ( count( $ids ) > $from && count( $ids ) > $keep && ! $show_all ) {
 			$hidden = count( $ids ) - $keep;
 			$ids    = array_slice( $ids, -$keep );
 			// The link is the first item of the list, so the block wrapper and its layout classes stay on the list.
@@ -417,9 +418,9 @@ final class Lists_Render {
 		$html = $before;
 		foreach ( $items as $item ) {
 			$html .= sprintf(
-				'<%1$s id="easyq-post-%2$d">%3$s</%1$s>',
+				'<%1$s id="%2$s">%3$s</%1$s>',
 				tag_escape( $tag ),
-				$item['id'],
+				esc_attr( Render::unique_id( 'easyq-post-' . $item['id'] ) ),
 				Render::inner_blocks( $block, $item['context'] )
 			);
 		}

@@ -283,6 +283,8 @@ final class Block_Settings_Test extends Test_Case {
 	 */
 	private function answer_form( Post $question ): string {
 		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		// Each call is a page of its own.
+		\EasyQ\Blocks\Render::reset_ids();
 
 		return do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- /wp:easyq/question -->' );
 	}
@@ -330,8 +332,13 @@ final class Block_Settings_Test extends Test_Case {
 		$answer   = $this->answer( $this->user(), $question );
 		wp_set_current_user( (int) $this->user()->user_id );
 		Block_Context::router()->set_current( new Route( 'question', $question ) );
-		$forms = static fn (): string => do_blocks( '<!-- wp:easyq/ask-form /-->' )
-			. do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->' );
+		$forms = static function (): string {
+			// Each call is a page of its own.
+			\EasyQ\Blocks\Render::reset_ids();
+
+			return do_blocks( '<!-- wp:easyq/ask-form /-->' )
+				. do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->' );
+		};
 
 		Options::update(
 			'posting',

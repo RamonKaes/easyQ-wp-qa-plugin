@@ -352,6 +352,6 @@ final class Layouts {
 	 * @return string
 	 */
 	public static function json( array $attributes ): string {
-		return (string) wp_json_encode( $attributes, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+		return serialize_block_attributes( $attributes );
 	}
 }

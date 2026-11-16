@@ -25,6 +25,15 @@ defined( 'ABSPATH' ) || exit;
 final class Content_Renderer {
 
 	/**
+	 * Tags that end a line or a paragraph; words do not continue across them.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private const BLOCK_TAGS = 'address|article|aside|blockquote|br|dd|div|dl|dt|figcaption|figure|footer|h[1-6]|header|hr|li|main|nav|ol|p|pre|section|table|tbody|td|tfoot|th|thead|tr|ul';
+
+	/**
 	 * Returns the HTML of post content.
 	 *
 	 * @since 0.1.0
@@ -36,7 +45,7 @@ final class Content_Renderer {
 	 */
 	public function html( string $content, string $format, string $type = Post::QUESTION ): string {
 		if ( 'html' === $format ) {
-			$html = self::kses( $content, $type );
+			$html = $this->html_link_attributes( self::kses( $content, $type ) );
 		} else {
 			$html = wpautop( esc_html( $content ) );
 
@@ -93,7 +102,11 @@ final class Content_Renderer {
 	}
 
 	/**
-	 * Censors block words in the text between HTML tags.
+	 * Censors block words in the text of HTML, as the basic viewer of Question2Answer does.
+	 *
+	 * The words are found in the text without tags, so a word split by inline tags
+	 * (`da<b></b>rn`) is found; block tags and entities separate words, so `&amp;` is never
+	 * taken for the word `amp`. Each character of a word becomes one `*`; tags stay.
 	 *
 	 * @since 0.1.0
 	 *
@@ -106,18 +119,39 @@ final class Content_Renderer {
 			return $html;
 		}
 
-		$parts = preg_split( '/(<[^>]*>)/', $html, -1, PREG_SPLIT_DELIM_CAPTURE );
-		if ( false === $parts ) {
-			return $html;
+		// The text without tags, and for each of its bytes the offset in the HTML (-1: a separator).
+		preg_match_all( '/<[^>]*>|&(?:#[0-9]+|#x[0-9a-f]+|[a-z][a-z0-9]*);/i', $html, $tokens, PREG_OFFSET_CAPTURE );
+		$text = '';
+		$map  = array();
+		$from = 0;
+		foreach ( array_merge( $tokens[0], array( array( '', strlen( $html ) ) ) ) as [ $token, $offset ] ) {
+			for ( $byte = $from; $byte < $offset; $byte++ ) {
+				$text .= $html[ $byte ];
+				$map[] = $byte;
+			}
+			if ( '' !== $token && ( '&' === $token[0] || 1 === preg_match( '/^<\/?(' . self::BLOCK_TAGS . ')\b/i', $token ) ) ) {
+				$text .= ' ';
+				$map[] = -1;
+			}
+			$from = $offset + strlen( $token );
 		}
 
-		foreach ( $parts as $index => $part ) {
-			if ( '' !== $part && '<' !== $part[0] ) {
-				$parts[ $index ] = Text::block_words_replace( $part, $regex );
+		$matches = Text::block_words_match_all( $text, $regex );
+		krsort( $matches, SORT_NUMERIC );
+		foreach ( $matches as $start => $length ) {
+			// From the last character, so the offsets before it stay valid.
+			$characters = preg_split( '//u', substr( $text, $start, $length ), -1, PREG_SPLIT_NO_EMPTY );
+			$byte       = $start + $length;
+			foreach ( array_reverse( false === $characters ? array() : $characters ) as $character ) {
+				$byte -= strlen( $character );
+				if ( $map[ $byte ] < 0 ) {
+					continue;
+				}
+				$html = substr_replace( $html, '*', $map[ $byte ], strlen( $character ) );
 			}
 		}
 
-		return implode( '', $parts );
+		return $html;
 	}
 
 	/**
@@ -132,6 +166,33 @@ final class Content_Renderer {
 		$attributes = Options::get_bool( 'viewing', 'links_in_new_window' ) ? ' target="_blank" rel="nofollow ugc noopener"' : ' rel="nofollow ugc"';
 
 		return (string) preg_replace( '/<a href="([^"]*)" rel="nofollow">/', '<a href="$1"' . $attributes . '>', $html );
+	}
+
+	/**
+	 * Marks the links of HTML users wrote as `wp_rel_ugc()` does, and opens them in a new
+	 * window as the links of plain text when the site wants it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $html HTML.
+	 * @return string
+	 */
+	private function html_link_attributes( string $html ): string {
+		$new_window = Options::get_bool( 'viewing', 'links_in_new_window' );
+		$tags       = new \WP_HTML_Tag_Processor( $html );
+		while ( $tags->next_tag( array( 'tag_name' => 'a' ) ) ) {
+			if ( null === $tags->get_attribute( 'href' ) ) {
+				continue;
+			}
+			$rel = preg_split( '/\s+/', strtolower( (string) $tags->get_attribute( 'rel' ) ), -1, PREG_SPLIT_NO_EMPTY );
+			$rel = array_merge( is_array( $rel ) ? $rel : array(), array( 'nofollow', 'ugc' ), $new_window ? array( 'noopener' ) : array() );
+			$tags->set_attribute( 'rel', implode( ' ', array_unique( $rel ) ) );
+			if ( $new_window ) {
+				$tags->set_attribute( 'target', '_blank' );
+			}
+		}
+
+		return $tags->get_updated_html();
 	}
 
 	/**

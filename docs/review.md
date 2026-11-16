@@ -152,8 +152,8 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | A | partly | partly | ✓ | ✓ | open | ✓ | partly | ✓ | open | partly | — | partly | partly |
 | B | partly | ✓ | partly | partly | partly | — | partly | partly | partly | ✓ | partly | partly | partly |
 | C | open | partly | partly | partly | — | partly | — | partly | partly | partly | partly | partly | partly |
-| D | open | F-71 | F-67 | — | — | F-106 | — | partly | partly | open | F-72, F-107 | partly | F-72, F-104, F-105 |
-| E | — | F-70, F-102 | partly | — | — | open | — | partly | F-68 | — | F-103 | partly | F-68, F-70 |
+| D | open | partly | partly | — | — | F-106 | — | partly | partly | open | partly | partly | partly |
+| E | — | partly | partly | — | — | open | — | partly | partly | — | partly | partly | partly |
 | F | open | partly | partly | open | partly | partly | open | partly | open | partly | partly | partly | partly |
 | G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |
 | H | open | F-111 | — | partly | open | — | F-108 | F-74 | F-73, F-112 | F-73 | — | F-74 | F-75, F-109, F-110 |
@@ -164,7 +164,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | M | F-125 | — | — | — | F-124 | F-90 | — | partly | — | partly | — | open | partly |
 | N | — | — | partly | — | open | F-87 | — | F-88, F-123 | — | partly | — | partly | F-87, F-89 |
 | O | — | — | — | — | F-127 | F-91 | F-91 | F-92, F-128 | — | F-129 | — | F-92, F-126 | F-91, F-92, F-99 |
-| P | F-93, F-94 | F-95, F-96 | F-67 | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-99, F-130 |
+| P | F-93, F-94 | F-95, F-96 | partly | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-99, F-130 |
 | Q | — | — | — | — | — | partly | — | partly | — | F-133 | partly | F-132 | F-98 |
 
 The release gate after the second round:

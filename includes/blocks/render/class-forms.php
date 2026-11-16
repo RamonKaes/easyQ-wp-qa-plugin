@@ -388,9 +388,11 @@ final class Forms {
 			: self::permission_message( $reason );
 
 		$heading = Render::heading( $attributes, __( 'Your answer', 'easyq' ) );
+		$id      = Render::unique_id( 'easyq-answer-form' );
 		if ( null !== $reason || self::answer_form_open( $question ) ) {
-			return sprintf( '<section %s id="easyq-answer-form">%s%s</section>', get_block_wrapper_attributes(), $heading, $body );
+			return sprintf( '<section %s id="%s">%s%s</section>', get_block_wrapper_attributes(), esc_attr( $id ), $heading, $body );
 		}
+		$body_id = Render::unique_id( 'easyq-answer-body' );
 
 		// An Answer button opens the form: without JavaScript as a link to the page with the form, with
 		// JavaScript in place, see src/view. The heading belongs to the form and appears with it.
@@ -398,15 +400,17 @@ final class Forms {
 			add_query_arg( self::ANSWER_VAR, $question->id, URLs::question( $question ) ) . '#easyq-answer-form',
 			__( 'Answer', 'easyq' ),
 			true,
-			'aria-controls="easyq-answer-body" aria-expanded="false" data-wp-on--click="actions.openAnswer" data-wp-bind--aria-expanded="context.answerOpen"'
+			'aria-controls="' . esc_attr( $body_id ) . '" aria-expanded="false" data-wp-on--click="actions.openAnswer" data-wp-bind--aria-expanded="context.answerOpen"'
 		);
 
 		return sprintf(
-			'<section %s id="easyq-answer-form" data-wp-interactive="easyq" %s>%s<div id="easyq-answer-body" hidden data-wp-bind--hidden="!context.answerOpen" data-wp-watch="callbacks.focusAnswer">%s%s</div></section>',
+			'<section %s id="%s" data-wp-interactive="easyq" %s>%s<div id="%s" hidden data-wp-bind--hidden="!context.answerOpen" data-wp-watch="callbacks.focusAnswer">%s%s</div></section>',
 			get_block_wrapper_attributes(),
+			esc_attr( $id ),
 			wp_interactivity_data_wp_context( array( 'answerOpen' => false ) ),
 			// A plain wrapper, as the flex layout of the buttons block would override `hidden`.
 			'<div data-wp-bind--hidden="context.answerOpen">' . Render::buttons( $button ) . '</div>',
+			esc_attr( $body_id ),
 			$heading,
 			$body
 		);
@@ -765,7 +769,7 @@ final class Forms {
 	 * @return string
 	 */
 	public static function field( string $form, string $name, string $label, string $type, string $value, array $attributes = array(), string $hint = '', string $id_prefix = '', ?int $target = null ): string {
-		$id    = ( '' === $id_prefix ? 'easyq-' . $form : $id_prefix ) . '-' . $name;
+		$id    = Render::unique_id( ( '' === $id_prefix ? 'easyq-' . $form : $id_prefix ) . '-' . $name );
 		$error = Flash::error( $form, $name, $target );
 		$attrs = '';
 
@@ -831,7 +835,7 @@ final class Forms {
 		}
 
 		Render::rest_state();
-		$list = 'easyq-' . $form . '-tags-list';
+		$list = Render::unique_id( 'easyq-' . $form . '-tags-list' );
 		$html = self::field(
 			$form,
 			'tags',
@@ -887,15 +891,17 @@ final class Forms {
 		}
 
 		$error = Flash::error( 'ask', 'category' );
+		$id    = Render::unique_id( 'easyq-ask-category' );
 
 		// Core does not style selects, unlike text fields, so the select keeps its own line here.
 		return sprintf(
-			'<p><label for="easyq-ask-category">%s</label><br /><select id="easyq-ask-category" name="category"%s%s>%s</select>%s</p>',
+			'<p><label for="%6$s">%1$s</label><br /><select id="%6$s" name="category"%2$s%3$s>%4$s</select>%5$s</p>',
 			esc_html__( 'Category', 'easyq' ),
 			Options::get_bool( 'posting', 'allow_no_category' ) ? '' : ' required',
-			'' === $error ? '' : ' aria-invalid="true" aria-describedby="easyq-ask-category-error"',
+			'' === $error ? '' : ' aria-invalid="true" aria-describedby="' . esc_attr( $id ) . '-error"',
 			$options,
-			'' === $error ? '' : sprintf( '<br /><strong id="easyq-ask-category-error" role="alert">%s</strong>', esc_html( $error ) )
+			'' === $error ? '' : sprintf( '<br /><strong id="%s-error" role="alert">%s</strong>', esc_attr( $id ), esc_html( $error ) ),
+			esc_attr( $id )
 		);
 	}
 

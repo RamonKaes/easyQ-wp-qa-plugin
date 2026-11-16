@@ -638,6 +638,19 @@ final class Post_Fields {
 	 * @return string
 	 */
 	private static function vote_button( int $post_id, int $direction, bool $pressed, string $label, string $symbol ): string {
+		// The server evaluates `state.isPressed` too, as a derived state (since WordPress 6.6), so the
+		// button keeps `aria-pressed` before the page is hydrated and without JavaScript.
+		wp_interactivity_state(
+			'easyq',
+			array(
+				'isPressed' => static function (): bool {
+					$context = wp_interactivity_get_context();
+
+					return isset( $context['vote'], $context['direction'] ) && $context['vote'] === $context['direction'];
+				},
+			)
+		);
+
 		return Render::action_button(
 			'vote',
 			$post_id,

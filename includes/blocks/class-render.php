@@ -106,6 +106,40 @@ final class Render {
 	}
 
 	/**
+	 * Element IDs handed out during the request.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, int>
+	 */
+	private static array $ids = array();
+
+	/**
+	 * Returns an element ID that is unique on the page: the ID itself the first time, with a
+	 * number after it when a block or form appears again, as core numbers form fields
+	 * (`wp_unique_id()`). The first stays as it was, so addresses with `#` keep working.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $id Element ID.
+	 * @return string
+	 */
+	public static function unique_id( string $id ): string {
+		self::$ids[ $id ] = ( self::$ids[ $id ] ?? 0 ) + 1;
+
+		return 1 === self::$ids[ $id ] ? $id : $id . '-' . self::$ids[ $id ];
+	}
+
+	/**
+	 * Forgets the element IDs handed out, for a new page.
+	 *
+	 * @since 0.1.0
+	 */
+	public static function reset_ids(): void {
+		self::$ids = array();
+	}
+
+	/**
 	 * Tells the script how to reach the REST API, for blocks that send requests from the browser.
 	 *
 	 * @since 0.1.0

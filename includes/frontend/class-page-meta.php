@@ -107,7 +107,8 @@ final class Page_Meta {
 		printf( '<link rel="canonical" href="%s" />' . "\n", esc_url( $page > 1 ? add_query_arg( Lists::ANSWERS_PAGE_VAR, $page, URLs::question( $question ) ) : URLs::question( $question ) ) );
 
 		if ( Post::QUESTION === $question->type ) {
-			printf( '<script type="application/ld+json">%s</script>' . "\n", wp_json_encode( $this->structured_data( $question ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) );
+			// As core prints inline JSON (`wp_print_speculation_rules()`): with hex flags, so no text closes the element.
+			wp_print_inline_script_tag( (string) wp_json_encode( $this->structured_data( $question ), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ), array( 'type' => 'application/ld+json' ) );
 		}
 	}
 
@@ -181,7 +182,7 @@ final class Page_Meta {
 
 		$answer_data = static fn ( Post $answer ): array => array(
 			'@type'       => 'Answer',
-			'text'        => wp_strip_all_tags( $renderer->html( (string) $answer->content, $answer->format, $answer->base_type() ) ),
+			'text'        => self::plain_text( $renderer->html( (string) $answer->content, $answer->format, $answer->base_type() ) ),
 			'dateCreated' => mysql_to_rfc3339( $answer->created ),
 			'upvoteCount' => $answer->net_votes,
 			'url'         => URLs::post( $answer ),
@@ -194,7 +195,7 @@ final class Page_Meta {
 		$main = array(
 			'@type'       => 'Question',
 			'name'        => $renderer->text( (string) $question->title ),
-			'text'        => wp_strip_all_tags( $renderer->html( (string) $question->content, $question->format, $question->base_type() ) ),
+			'text'        => self::plain_text( $renderer->html( (string) $question->content, $question->format, $question->base_type() ) ),
 			'answerCount' => $question->answer_count,
 			'upvoteCount' => $question->net_votes,
 			'dateCreated' => mysql_to_rfc3339( $question->created ),
@@ -249,5 +250,17 @@ final class Page_Meta {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Returns HTML as plain text for structured data: without tags and entities.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $html HTML.
+	 * @return string
+	 */
+	private static function plain_text( string $html ): string {
+		return html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 	}
 }

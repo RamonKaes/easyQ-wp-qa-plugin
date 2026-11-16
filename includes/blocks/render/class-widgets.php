@@ -433,7 +433,7 @@ final class Widgets {
 		$count     = Number::clamp( $attributes['count'] ?? null, 5, 1 );
 		$min_score = Search::min_score( Options::get_int( 'viewing', 'match_related_qs' ) );
 		$results   = array_filter(
-			Services::search()->search( (string) $question->title . ' ' . implode( ' ', $question->tag_list() ), 0, $count + 1 ),
+			Services::search()->search( (string) $question->title . ' ' . implode( ' ', $question->tag_list() ), 0, $count + 1, Block_Context::viewer()->user_id ),
 			static fn ( $result ): bool => $result->score >= $min_score
 		);
 		$ids       = array_slice( array_values( array_diff( array_map( static fn ( $result ): int => $result->question_id, $results ), array( $question->id ) ) ), 0, $count );
