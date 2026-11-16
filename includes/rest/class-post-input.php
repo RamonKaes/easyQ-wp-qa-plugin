@@ -9,6 +9,7 @@
 namespace EasyQ\REST;
 
 use EasyQ\Actor;
+use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\Settings\Options;
@@ -85,16 +86,17 @@ final class Post_Input {
 	 * @since 0.1.0
 	 *
 	 * @param WP_REST_Request $request Request.
+	 * @param string          $type    Base type of the new post, see `Post::base_type()`.
 	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
 	 * @return array{content: string, format: string}
 	 */
-	public static function content( WP_REST_Request $request ): array {
+	public static function content( WP_REST_Request $request, string $type ): array {
 		$format  = 'html' === $request->get_param( 'format' ) ? 'html' : '';
 		$content = $request->get_param( 'content' );
 		$content = is_string( $content ) ? wp_check_invalid_utf8( $content ) : '';
 
 		return array(
-			'content' => 'html' === $format ? wp_kses_post( $content ) : $content,
+			'content' => 'html' === $format ? Content_Renderer::kses( $content, $type ) : $content,
 			'format'  => $format,
 		);
 	}
@@ -111,12 +113,13 @@ final class Post_Input {
 	 * @return array{content: string, format: string}
 	 */
 	public static function edited( WP_REST_Request $request, Post $post ): array {
+		$type    = $post->base_type();
 		$format  = $request->has_param( 'format' ) ? ( 'html' === $request->get_param( 'format' ) ? 'html' : '' ) : $post->format;
 		$content = $request->has_param( 'content' ) ? $request->get_param( 'content' ) : (string) $post->content;
 		$content = is_string( $content ) ? wp_check_invalid_utf8( $content ) : '';
 
 		return array(
-			'content' => 'html' === $format ? wp_kses_post( $content ) : $content,
+			'content' => 'html' === $format ? Content_Renderer::kses( $content, $type ) : $content,
 			'format'  => $format,
 		);
 	}

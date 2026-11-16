@@ -509,7 +509,7 @@ final class Feeds {
 		return array(
 			'title'       => $title,
 			'link'        => $post->id === $question->id ? URLs::question( $question ) : URLs::post( $post ),
-			'description' => Options::get_bool( 'feeds', 'feed_full_text' ) ? $renderer->html( (string) $post->content, $post->format ) : null,
+			'description' => Options::get_bool( 'feeds', 'feed_full_text' ) ? $renderer->html( (string) $post->content, $post->format, $post->base_type() ) : null,
 			'category'    => $category?->title,
 			'date'        => null === $activity ? $question->created : $activity->time,
 		);

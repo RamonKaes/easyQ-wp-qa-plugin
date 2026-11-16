@@ -192,7 +192,7 @@ final class Comments_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$input  = Post_Input::content( $request );
+		$input  = Post_Input::content( $request, Post::COMMENT );
 		$errors = Services::validator()->validate_comment( Post_Input::validation_fields( $request, $input ) );
 		if ( $errors->has_errors() ) {
 			return REST_Errors::invalid( $errors );

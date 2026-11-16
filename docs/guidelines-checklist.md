@@ -256,7 +256,7 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | State the server renders matches the state after hydration (`aria-pressed`) | F-72 | `includes/blocks/render/` |
 | Unique IDs on a page | F-107 | `includes/blocks/render/` |
 | Editor controls accessible, pickers that search | Read, not checked by axe; F-106 | `src/editor/` |
-| Text of users without `unfiltered_html` with the allow-list core gives commenters; `wp_rel_ugc()` on links | F-60, F-68 | `Posts\Content_Renderer` |
+| HTML of users: comments with the allow-list core gives commenters, questions and answers with the post filter without `data-wp-*`; `wp_rel_ugc()` on links | Filter Met (`User_HTML_Test`); F-68 | `Posts\Content_Renderer` |
 | JSON in a `<script>` element with `JSON_HEX_TAG` (`wp_print_inline_script_tag()`) | F-70 | `Frontend\Page_Meta` |
 | Cookies: prefixed name, `COOKIEPATH` and `COOKIE_DOMAIN`, `secure` from the scheme of `home_url()`, renewed when used, asked for as `show_comments_cookies_opt_in` asks | Prefix Met; F-74, F-75, F-108, F-109 | `Users\Visitor_Cookie`, `Notices\Notices` |
 | Client IP from `REMOTE_ADDR`, a proxy only through a filter; shortened as `wp_privacy_anonymize_ip()` | Met; F-73 for an invalid filter value | `Util\IP` |

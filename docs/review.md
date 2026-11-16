@@ -153,7 +153,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | B | partly | ✓ | partly | partly | partly | — | partly | partly | partly | ✓ | partly | partly | partly |
 | C | open | F-66, F-100 | partly | F-101 | — | partly | — | F-65 | F-101 | partly | partly | partly | F-64, F-65 |
 | D | open | F-62, F-71 | F-67 | — | — | F-106 | — | partly | partly | open | F-72, F-107 | partly | F-72, F-104, F-105 |
-| E | — | F-60, F-69, F-70, F-102 | partly | — | — | open | — | partly | F-60, F-68 | — | F-103 | partly | F-60, F-68, F-70 |
+| E | — | F-69, F-70, F-102 | partly | — | — | open | — | partly | F-68 | — | F-103 | partly | F-68, F-70 |
 | F | open | partly | partly | open | partly | partly | open | partly | open | partly | partly | partly | partly |
 | G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |
 | H | open | F-111 | — | partly | open | — | F-108 | F-74 | F-73, F-112 | F-73 | — | F-74 | F-75, F-109, F-110 |

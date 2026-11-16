@@ -172,7 +172,7 @@ final class Page_Meta {
 
 		$answer_data = static fn ( Post $answer ): array => array(
 			'@type'       => 'Answer',
-			'text'        => wp_strip_all_tags( $renderer->html( (string) $answer->content, $answer->format ) ),
+			'text'        => wp_strip_all_tags( $renderer->html( (string) $answer->content, $answer->format, $answer->base_type() ) ),
 			'dateCreated' => mysql_to_rfc3339( $answer->created ),
 			'upvoteCount' => $answer->net_votes,
 			'url'         => URLs::post( $answer ),
@@ -185,7 +185,7 @@ final class Page_Meta {
 		$main = array(
 			'@type'       => 'Question',
 			'name'        => $renderer->text( (string) $question->title ),
-			'text'        => wp_strip_all_tags( $renderer->html( (string) $question->content, $question->format ) ),
+			'text'        => wp_strip_all_tags( $renderer->html( (string) $question->content, $question->format, $question->base_type() ) ),
 			'answerCount' => $question->answer_count,
 			'upvoteCount' => $question->net_votes,
 			'dateCreated' => mysql_to_rfc3339( $question->created ),

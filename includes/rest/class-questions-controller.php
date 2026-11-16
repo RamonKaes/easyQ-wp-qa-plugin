@@ -208,7 +208,7 @@ final class Questions_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ): WP_REST_Response|WP_Error {
-		$input       = Post_Input::content( $request );
+		$input       = Post_Input::content( $request, Post::QUESTION );
 		$title       = sanitize_text_field( (string) self::string_param( $request, 'title' ) );
 		$tags        = Post_Input::uses_tags() ? Post_Input::tags( $request->get_param( 'tags' ) ) : array();
 		$category_id = Post_Input::uses_categories() ? self::int_param( $request, 'category' ) : null;

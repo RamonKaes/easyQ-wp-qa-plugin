@@ -27,15 +27,6 @@ decides whether it is fixed or kept with a reason.
 
 ### Blocker
 
-- **F-60** (E × Value, E × Abuse, E × Guidelines). A subscriber who writes in the HTML
-  format keeps `data-wp-*` directives, `style` and `id` through `wp_kses_post()`, and they
-  end up inside `data-wp-interactive="easyq"` of the question block, for visitors and
-  users. The server evaluates them: `data-wp-text="state.restUrl"` prints the REST
-  address, `data-wp-bind--hidden` removes `hidden`. Core gives commenters without
-  `unfiltered_html` the much shorter `$allowedtags`. Whether a browser casts a vote for
-  the reader with a scroll was not run (it needs an end-to-end test). *Why no guard saw
-  it:* `Content_Renderer_Test` checks `onclick` and `<script>` only; PHPCS takes
-  `wp_kses_post()` as enough.
 - **F-62** (D × Value, D × Form). Block attributes beyond the integer range
   (`{"userId":1e20}`, `perPage`, `category`, `author`, `questionId`, `length`) give the
   warning "not representable as an int" on PHP 8.5 in `class-users-render.php`,

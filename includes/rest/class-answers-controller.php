@@ -204,7 +204,7 @@ final class Answers_Controller extends Controller {
 			return REST_Errors::not_found();
 		}
 
-		$input  = Post_Input::content( $request );
+		$input  = Post_Input::content( $request, Post::ANSWER );
 		$errors = Services::validator()->validate_answer( Post_Input::validation_fields( $request, $input ) );
 		if ( $errors->has_errors() ) {
 			return REST_Errors::invalid( $errors );

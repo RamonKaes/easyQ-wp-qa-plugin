@@ -151,7 +151,7 @@ final class Blocks {
 
 		return match ( $source_args['key'] ?? '' ) {
 			'title'   => esc_html( $renderer->text( (string) $post->title ) ),
-			'content' => $renderer->html( (string) $post->content, $post->format ),
+			'content' => $renderer->html( (string) $post->content, $post->format, $post->base_type() ),
 			'excerpt' => esc_html( $renderer->text( \EasyQ\Util\Text::shorten_line( $post->text(), 200 ) ) ),
 			'url'     => esc_url( \EasyQ\Frontend\URLs::post( $post ) ),
 			'author'  => esc_html( Render::author_name( $post ) ),

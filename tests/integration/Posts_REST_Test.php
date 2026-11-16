@@ -172,7 +172,8 @@ final class Posts_REST_Test extends REST_Test_Case {
 			$route = '/' . $base . '/' . $post->id;
 			$this->assertSame( 200, $this->request( 'PUT', $route, array( 'content' => '<p>New <strong>text of the post</strong></p><script>x</script>' ) )->get_status(), $base );
 			$this->assertSame( 'html', $this->post( $post->id )->format, $base );
-			$this->assertSame( '<p>New <strong>text of the post</strong></p>x', $this->post( $post->id )->content, $base );
+			// Comments keep the tags core allows in comments, without paragraphs.
+			$this->assertSame( 'comments' === $base ? 'New <strong>text of the post</strong>x' : '<p>New <strong>text of the post</strong></p>x', $this->post( $post->id )->content, $base );
 
 			// Sending a format changes it; HTML is filtered also when only the format is sent.
 			$this->assertSame(

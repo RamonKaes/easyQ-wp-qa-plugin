@@ -82,7 +82,7 @@ final class Post_Fields {
 		return sprintf(
 			'<div %s>%s%s</div>',
 			get_block_wrapper_attributes(),
-			Services::content_renderer()->html( (string) $post->content, $post->format ),
+			Services::content_renderer()->html( (string) $post->content, $post->format, $post->base_type() ),
 			Forms::closing( $post ) && Render::rules( $post )['closeable'] ? Forms::close_form( $post ) : ''
 		);
 	}

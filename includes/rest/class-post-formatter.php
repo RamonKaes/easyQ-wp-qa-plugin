@@ -92,7 +92,7 @@ final class Post_Formatter {
 			'modified_gmt' => null === $post->updated ? null : mysql_to_rfc3339( $post->updated ),
 			'author'       => $this->author( $post ),
 			'content'      => array(
-				'rendered' => $this->renderer->html( (string) $post->content, $post->format ),
+				'rendered' => $this->renderer->html( (string) $post->content, $post->format, $post->base_type() ),
 				'format'   => $post->format,
 			),
 			'excerpt'      => $this->renderer->text( Text::shorten_line( $post->text(), 200 ) ),
