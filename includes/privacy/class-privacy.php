@@ -211,9 +211,10 @@ final class Privacy {
 	 * @since 0.1.0
 	 *
 	 * @param string $email Email address.
+	 * @param int    $page  Page of the export, as core asks for them.
 	 * @return array{data: list<array<string, mixed>>, done: bool}
 	 */
-	public static function export_messages( string $email ): array {
+	public static function export_messages( string $email, int $page = 1 ): array {
 		$user = get_user_by( 'email', $email );
 		$data = array();
 		if ( false !== $user ) {
@@ -246,10 +247,7 @@ final class Privacy {
 			}
 		}
 
-		return array(
-			'data' => $data,
-			'done' => true,
-		);
+		return self::page( $data, $page );
 	}
 
 	/**
@@ -277,9 +275,10 @@ final class Privacy {
 	 * @since 0.1.0
 	 *
 	 * @param string $email Email address.
+	 * @param int    $page  Page of the export, as core asks for them.
 	 * @return array{data: list<array<string, mixed>>, done: bool}
 	 */
-	public static function export_notices( string $email ): array {
+	public static function export_notices( string $email, int $page = 1 ): array {
 		$user = get_user_by( 'email', $email );
 		$data = array();
 		if ( false !== $user ) {
@@ -300,10 +299,7 @@ final class Privacy {
 			}
 		}
 
-		return array(
-			'data' => $data,
-			'done' => true,
-		);
+		return self::page( $data, $page );
 	}
 
 	/**
@@ -341,9 +337,10 @@ final class Privacy {
 	 * @since 0.1.0
 	 *
 	 * @param string $email Email address.
+	 * @param int    $page  Page of the export, as core asks for them.
 	 * @return array{data: list<array<string, mixed>>, done: bool}
 	 */
-	public static function export_updates( string $email ): array {
+	public static function export_updates( string $email, int $page = 1 ): array {
 		$user = get_user_by( 'email', $email );
 		$data = array();
 		if ( false !== $user ) {
@@ -377,10 +374,7 @@ final class Privacy {
 			}
 		}
 
-		return array(
-			'data' => $data,
-			'done' => true,
-		);
+		return self::page( $data, $page );
 	}
 
 	/**
@@ -408,9 +402,10 @@ final class Privacy {
 	 * @since 0.1.0
 	 *
 	 * @param string $email Email address.
+	 * @param int    $page  Page of the export, as core asks for them.
 	 * @return array{data: list<array<string, mixed>>, done: bool}
 	 */
-	public static function export_favorites( string $email ): array {
+	public static function export_favorites( string $email, int $page = 1 ): array {
 		$user = get_user_by( 'email', $email );
 		$data = array();
 		if ( false === $user ) {
@@ -426,6 +421,10 @@ final class Privacy {
 			$question = Services::posts()->find( $id );
 			if ( null !== $question && $question->is_visible() ) {
 				$rows[] = array( 'question-' . $id, __( 'Question', 'easyq' ), Services::content_renderer()->text( (string) $question->title ), URLs::question( $question ) );
+			} else {
+				// Stored and erased as the others; the title of a question the person may not see stays out.
+				/* translators: %d: question number. */
+				$rows[] = array( 'question-' . $id, __( 'Question', 'easyq' ), sprintf( __( 'A question that is not shown (number %d)', 'easyq' ), $id ), '' );
 			}
 		}
 		foreach ( $favorites->ids( $user->ID, 'user' ) as $id ) {
@@ -463,10 +462,7 @@ final class Privacy {
 			);
 		}
 
-		return array(
-			'data' => $data,
-			'done' => true,
-		);
+		return self::page( $data, $page );
 	}
 
 	/**
@@ -494,6 +490,25 @@ final class Privacy {
 			'items_retained' => false,
 			'messages'       => array(),
 			'done'           => true,
+		);
+	}
+
+	/**
+	 * Returns a page of export items, as core pages the export of comments
+	 * (`wp_comments_personal_data_exporter()`), 500 at a time.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param list<array<string, mixed>> $data All items.
+	 * @param int                        $page Page, starting at 1.
+	 * @return array{data: list<array<string, mixed>>, done: bool}
+	 */
+	private static function page( array $data, int $page ): array {
+		$offset = ( max( 1, $page ) - 1 ) * Post_Data::PER_PAGE;
+
+		return array(
+			'data' => array_slice( $data, $offset, Post_Data::PER_PAGE ),
+			'done' => count( $data ) <= $offset + Post_Data::PER_PAGE,
 		);
 	}
 }

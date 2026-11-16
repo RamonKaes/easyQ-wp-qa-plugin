@@ -162,7 +162,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | K | — | — | — | partly | partly | partly | partly | partly | — | partly | — | partly | partly |
 | L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
 | M | F-125 | — | — | — | F-124 | F-90 | — | partly | — | partly | — | open | partly |
-| N | — | — | partly | — | open | F-87 | — | F-88, F-123 | — | partly | — | partly | F-87, F-89 |
+| N | — | — | partly | — | open | partly | — | partly | — | partly | — | partly | partly |
 | O | — | — | — | — | F-127 | F-91 | F-91 | F-92, F-128 | — | F-129 | — | F-92, F-126 | F-91, F-92, F-99 |
 | P | F-93, F-94 | F-95, F-96 | partly | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-99, F-130 |
 | Q | — | — | — | — | — | partly | — | partly | — | F-133 | partly | F-132 | F-98 |

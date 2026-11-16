@@ -31,19 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-87** (N × Volume, N × Guidelines). Messages, notices, updates and favorites are
-  exported and erased without pages: 600 messages give one page of 600 and `done`.
-  The checklist says 500 per page. *Why no guard saw it:* the paging test covers posts
-  only.
-- **F-88** (N × State, N × Guidelines). The export leaves out stored data: the extra
-  profile fields, the category levels, favorites of hidden questions (which erasing
-  then reports as removed). *Why no guard saw it:* no test compares what is stored with
-  what is exported.
-- **F-89** (N × Guidelines). The suggested policy text promises more than the code
-  does: rate-limit rows "after one hour" stay until the daily run, and views are
-  counted "without storing your IP address" in a transient keyed by a hash of question
-  and address. Wording is for the owner. *Why no guard saw it:* `Policy_Text_Test`
-  reads names and periods, not promises.
 - **F-90** (M × Volume, F × Volume). Every batch of `Tools::run()` counts the whole
   table twice; with 3,000 posts both counts read 3,000 rows, also the count of the
   rest, so a run grows with the square of the table. Question2Answer counts once per
@@ -91,8 +78,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-123** (N × State). Erasing the votes of a person leaves `answer_max_votes` of the
-  question as it was. *Why no guard saw it:* the eraser test reads the votes table.
 - **F-124** (M × Concurrency). Two runs of `refill-events` at the same time (command
   line and tools page) write every event twice. *Why no guard saw it:* no test
   interleaves two runs.

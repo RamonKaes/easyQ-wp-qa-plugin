@@ -104,14 +104,14 @@ final class Policy_Text {
 				: __( 'If you post without an account, we set a cookie that lets you edit your posts later. It contains a random number and lasts for one year from your last post.', 'easyq' ) ) . '</p>';
 		}
 		$strings[] = '<p>' . ( $anonymous ? '' : $suggested ) . __( 'If you log in on a question and answer page or close the notice for new visitors, we set a cookie so that the notice is not shown again. It contains no personal data and lasts for ten years.', 'easyq' ) . '</p>';
-		$strings[] = '<p>' . __( 'Views of questions are counted without cookies and without storing your IP address.', 'easyq' ) . '</p>';
+		$strings[] = '<p>' . __( 'Views of questions are counted without cookies. So that a second view in a row does not count, a hash of your IP address is kept with the question for at most one hour; the address itself is not stored.', 'easyq' ) . '</p>';
 
 		$strings[] = '<h3 class="wp-block-heading">' . __( 'How long we keep the data of the question and answer pages', 'easyq' ) . '</h3>';
 		$strings[] = '<p>' . $suggested . sprintf(
 			/* translators: %d: Number of days. */
 			_n(
-				'Questions, answers, comments, votes and profiles are kept until they are deleted. IP addresses are deleted after %d day; those counted to limit how often an action can be performed, after one hour.',
-				'Questions, answers, comments, votes and profiles are kept until they are deleted. IP addresses are deleted after %d days; those counted to limit how often an action can be performed, after one hour.',
+				'Questions, answers, comments, votes and profiles are kept until they are deleted. IP addresses are deleted after %d day; those counted to limit how often an action can be performed, by the daily clean-up after the hour they count for.',
+				'Questions, answers, comments, votes and profiles are kept until they are deleted. IP addresses are deleted after %d days; those counted to limit how often an action can be performed, by the daily clean-up after the hour they count for.',
 				$days,
 				'easyq'
 			),

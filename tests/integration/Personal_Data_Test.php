@@ -310,6 +310,73 @@ final class Personal_Data_Test extends Test_Case {
 		$this->assertNull( $this->post( $question->id )->notify );
 	}
 
+	public function test_every_kind_of_data_is_exported_page_by_page(): void {
+		global $wpdb;
+		$person  = $this->user();
+		$email   = $this->email( $person );
+		$other   = (int) $this->user()->user_id;
+		$created = gmdate( 'Y-m-d H:i:s' );
+		$values  = array();
+		for ( $i = 0; $i < Post_Data::PER_PAGE + 100; $i++ ) {
+			$values[] = $wpdb->prepare( "('private', %d, %d, 'A message.', '', %s)", $person->user_id, $other, $created );
+		}
+		$wpdb->query( 'INSERT INTO ' . Schema::table( 'messages' ) . ' (type, from_user_id, to_user_id, content, format, created) VALUES ' . implode( ',', $values ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Values prepared above.
+		$values = array();
+		for ( $i = 1; $i <= Post_Data::PER_PAGE + 1; $i++ ) {
+			$values[] = $wpdb->prepare( "(%d, 'Q', %d)", $person->user_id, $i );
+		}
+		$wpdb->query( 'INSERT INTO ' . Schema::table( 'userfavorites' ) . ' (user_id, entity_type, entity_id) VALUES ' . implode( ',', $values ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Values prepared above.
+		$exporters = apply_filters( 'wp_privacy_personal_data_exporters', array() );
+
+		foreach ( array(
+			'easyq-messages'  => 100,
+			'easyq-favorites' => 1,
+		) as $key => $rest ) {
+			$first = call_user_func( $exporters[ $key ]['callback'], $email, 1 );
+			$this->assertCount( Post_Data::PER_PAGE, $first['data'], $key );
+			$this->assertFalse( $first['done'], $key );
+			$second = call_user_func( $exporters[ $key ]['callback'], $email, 2 );
+			$this->assertCount( $rest, $second['data'], $key );
+			$this->assertTrue( $second['done'], $key );
+		}
+	}
+
+	public function test_exports_what_is_stored_of_the_person(): void {
+		Options::update( 'posting', array( 'extra_field_active' => true ) );
+		$person   = $this->user();
+		$email    = $this->email( $person );
+		$question = $this->post( (int) Services::post_service()->create_question( $person, 'A question with extra information', 'Text.', '', array(), null, null, null, null, false, 'Debian 13' ) );
+		$category = Services::categories()->create( null, 'Software' );
+		$this->assertIsInt( $category );
+		Services::user_levels()->set_category_level( Actor::system(), (int) $person->user_id, $category, \EasyQ\Users\Levels::EXPERT );
+		$hidden = $this->ask( $this->user(), 'A followed question that is hidden later' );
+		Services::favorites()->set( $person, 'question', $hidden->id, true );
+		Services::post_service()->set_question_status( Actor::system(), $hidden, \EasyQ\Posts\Post::STATUS_HIDDEN );
+		$exporters = apply_filters( 'wp_privacy_personal_data_exporters', array() );
+
+		$posts = (string) wp_json_encode( call_user_func( $exporters['easyq-posts']['callback'], $email, 1 ) );
+		$this->assertStringContainsString( 'Debian 13', $posts, 'The extra field of the question.' );
+		$profile = (string) wp_json_encode( call_user_func( $exporters['easyq-profile']['callback'], $email, 1 ) );
+		$this->assertStringContainsString( 'Software', $profile, 'The level in a category.' );
+		$favorites = call_user_func( $exporters['easyq-favorites']['callback'], $email, 1 );
+		$this->assertCount( 1, $favorites['data'], 'A favorite of a hidden question is stored, so it is exported.' );
+		$this->assertStringNotContainsString( 'hidden later', (string) wp_json_encode( $favorites ) );
+		unset( $question );
+	}
+
+	public function test_erasing_votes_recounts_the_best_vote_of_the_answers(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$voter    = $this->user();
+		Services::votes()->vote( $voter, $answer, 1 );
+		$this->assertSame( 1, $this->post( $question->id )->answer_max_votes );
+
+		$erasers = apply_filters( 'wp_privacy_personal_data_erasers', array() );
+		call_user_func( $erasers['easyq-votes']['callback'], $this->email( $voter ), 1 );
+
+		$this->assertSame( 0, $this->post( $question->id )->answer_max_votes );
+	}
+
 	/**
 	 * Returns the email address of the account of an actor.
 	 *

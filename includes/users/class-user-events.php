@@ -17,6 +17,7 @@ use EasyQ\Points\Points;
 use EasyQ\Stats\Counts;
 use WP_User;
 use EasyQ\Votes\Votes;
+use EasyQ\Posts\Post;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -305,6 +306,10 @@ final class User_Events {
 			$post = $this->posts->find( $post_id );
 			if ( null !== $post && null !== $post->user_id ) {
 				$authors[ $post->user_id ] = true;
+			}
+			// The highest vote of the answers of the question follows, as a vote does.
+			if ( null !== $post && Post::ANSWER === $post->base_type() && null !== $post->parent_id ) {
+				$this->posts->recount_answers( $post->parent_id );
 			}
 		}
 

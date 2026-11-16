@@ -85,6 +85,15 @@ final class Profile_Data {
 			);
 		}
 
+		foreach ( Services::user_levels()->category_levels( $user->ID ) as $category_id => $category_level ) {
+			$category = Services::categories()->find( $category_id );
+			$fields[] = array(
+				/* translators: %s: category. */
+				'name'  => sprintf( __( 'Q&A level in %s', 'easyq' ), null === $category ? '#' . $category_id : $category->title ),
+				'value' => Levels::labels()[ $category_level ] ?? (string) $category_level,
+			);
+		}
+
 		$status = match ( true ) {
 			User_Status::is_blocked( $user->ID )       => __( 'Blocked', 'easyq' ),
 			User_Status::awaits_approval( $user->ID )  => __( 'Awaiting approval', 'easyq' ),

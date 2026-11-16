@@ -19,6 +19,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use EasyQ\Users\User_Events;
 use EasyQ\Util\IP;
+use EasyQ\Posts\Post_Service;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -86,6 +87,13 @@ final class Post_Data {
 					$fields[] = array(
 						'name'  => __( 'Name', 'easyq' ),
 						'value' => $post->author_name,
+					);
+				}
+				$extra = Post::QUESTION === $post->base_type() ? Post_Service::extra( $post ) : '';
+				if ( '' !== $extra ) {
+					$fields[] = array(
+						'name'  => __( 'Extra information', 'easyq' ),
+						'value' => $extra,
 					);
 				}
 				if ( null !== $post->notify && '@' !== $post->notify ) {

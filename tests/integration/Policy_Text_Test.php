@@ -71,6 +71,17 @@ final class Policy_Text_Test extends Test_Case {
 		}
 	}
 
+	public function test_promises_only_what_the_code_does(): void {
+		$text = Policy_Text::content();
+
+		// The rate limits are removed by the daily run of IP_Retention, not after exactly one hour.
+		$this->assertStringContainsString( 'by the daily clean-up after the hour they count for', $text );
+		$this->assertStringNotContainsString( 'after one hour.', $text );
+		// Page_Meta::count_view() keeps a hash of the address for an hour.
+		$this->assertStringContainsString( 'a hash of your IP address is kept with the question for at most one hour', $text );
+		$this->assertStringNotContainsString( 'without storing your IP address', $text );
+	}
+
 	public function test_describes_posting_without_an_account_only_when_it_is_allowed(): void {
 		$this->assertStringNotContainsString( 'without an account', Policy_Text::content() );
 
