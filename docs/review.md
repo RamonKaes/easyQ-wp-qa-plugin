@@ -162,15 +162,16 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | K | — | — | — | partly | F-77 | F-114 | partly | F-78, F-118 | — | F-78 | — | partly | F-119 |
 | L | partly | F-83 | F-122 | F-84, F-120 | — | partly | partly | F-121 | F-83 | partly | partly | open | F-84, F-85, F-86 |
 | M | F-125 | — | — | — | F-124 | F-90 | — | partly | — | partly | — | open | partly |
-| N | — | — | F-63 | — | open | F-87 | — | F-63, F-88, F-123 | — | F-63 | — | partly | F-87, F-89 |
+| N | — | — | partly | — | open | F-87 | — | F-88, F-123 | — | partly | — | partly | F-87, F-89 |
 | O | — | — | — | — | F-127 | F-91 | F-91 | F-92, F-128 | — | F-129 | — | F-92, F-126 | F-91, F-92, F-99 |
 | P | F-93, F-94 | F-95, F-96 | F-67 | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-99, F-130 |
 | Q | — | — | — | — | — | partly | — | partly | — | F-133 | partly | F-132 | F-98 |
 
 The release gate after the second round:
 
-1. Holds: eight findings classed blocker are open (F-56 to F-63), and F-25 is
-   deferred to phase 9.
+1. Holds: F-25, classed blocker, is deferred to phase 9. The eight blockers of the
+   second round (F-56 to F-63) were fixed on 2026-11-16, each with a guard and a
+   counter-check in its commit.
 2. Does not hold: no cell of Identity, Value or Error path is `open` in A, B, F, G
    or I; the second round did not touch these rows.
 3. Holds: every cell of every row has now been looked at, but these cells stay

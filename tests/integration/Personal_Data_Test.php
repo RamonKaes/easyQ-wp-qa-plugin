@@ -264,6 +264,52 @@ final class Personal_Data_Test extends Test_Case {
 		$this->assertSame( array(), Post_Data::export_posts( $email )['data'] );
 	}
 
+	public function test_every_tool_finds_the_person_whatever_the_case_of_the_address(): void {
+		global $wpdb;
+
+		// An author without an account, and many posts of theirs: more than a page.
+		$anonymous = new Actor( null, null, '192.0.2.10' );
+		$question  = $this->post( (int) Services::post_service()->create_question( $anonymous, 'A question without an account', 'Text.', '', array(), null, 'Pat@Example.org', 'Pat' ) );
+		$created   = gmdate( 'Y-m-d H:i:s' );
+		$values    = array();
+		for ( $i = 0; $i <= Post_Data::PER_PAGE; $i++ ) {
+			$values[] = $wpdb->prepare( "('C', NULL, %s, 'A comment.', '', 'Pat@Example.org', 'Pat')", $created );
+		}
+		$wpdb->query( 'INSERT INTO ' . Schema::table( 'posts' ) . ' (type, user_id, created, content, format, notify, author_name) VALUES ' . implode( ',', $values ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Values prepared above.
+		// An account, asked for in another case.
+		$person = $this->user();
+		wp_update_user(
+			array(
+				'ID'         => (int) $person->user_id,
+				'user_email' => 'Kim@Example.org',
+			)
+		);
+		$this->ask( $person );
+
+		$exporters = array_filter( apply_filters( 'wp_privacy_personal_data_exporters', array() ), static fn ( string $key ): bool => str_starts_with( $key, 'easyq-' ), ARRAY_FILTER_USE_KEY );
+		$erasers   = array_filter( apply_filters( 'wp_privacy_personal_data_erasers', array() ), static fn ( string $key ): bool => str_starts_with( $key, 'easyq-' ), ARRAY_FILTER_USE_KEY );
+		$this->assertNotEmpty( $exporters );
+		$this->assertNotEmpty( $erasers );
+
+		foreach ( array( 'pat@example.org', 'KIM@EXAMPLE.ORG' ) as $email ) {
+			$this->assertNotSame( array(), call_user_func( $exporters['easyq-posts']['callback'], $email, 1 )['data'], $email );
+			foreach ( $erasers as $key => $eraser ) {
+				$page = 1;
+				do {
+					$result = call_user_func( $eraser['callback'], $email, $page++ );
+				} while ( ! $result['done'] && $page < 5 );
+				$this->assertTrue( $result['done'], "$key ends for $email" );
+			}
+			// The account stays, as with core, and so does its profile with the base points.
+			foreach ( array_diff_key( $exporters, array( 'easyq-profile' => true ) ) as $key => $exporter ) {
+				$this->assertSame( array(), call_user_func( $exporter['callback'], $email, 1 )['data'], "$key after erasing $email" );
+			}
+		}
+
+		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE notify = %s OR author_name = %s', Schema::table( 'posts' ), 'Pat@Example.org', 'Pat' ) ) );
+		$this->assertNull( $this->post( $question->id )->notify );
+	}
+
 	/**
 	 * Returns the email address of the account of an actor.
 	 *

@@ -27,13 +27,7 @@ decides whether it is fixed or kept with a reason.
 
 ### Blocker
 
-- **F-63** (N × Identity, N × State, N × Error path). The eraser compares the email
-  address with case: for posts saved with `Pat@Example.org` and a request for
-  `pat@example.org` it reports `items_removed: true` and `done: true` and changes nothing
-  (name, address for notifications and the full IP stay). With more than 500 such posts
-  every page reports `done: false` and the next page starts again, so erasing in the
-  admin never ends. Core compares comment authors without case. *Why no guard saw it:*
-  every test writes the post and the request with the same spelling.
+None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 

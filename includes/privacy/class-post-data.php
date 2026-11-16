@@ -336,7 +336,8 @@ final class Post_Data {
 	 * @return bool
 	 */
 	private static function is_author( Post $post, int $user_id, string $email ): bool {
-		return null === $post->user_id ? $email === $post->notify : $user_id > 0 && $post->user_id === $user_id;
+		// Without case, as the database finds the posts and as core compares comment authors.
+		return null === $post->user_id ? null !== $post->notify && 0 === strcasecmp( $email, $post->notify ) : $user_id > 0 && $post->user_id === $user_id;
 	}
 
 	/**
