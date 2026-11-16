@@ -106,7 +106,9 @@ final class Registration_Test extends Test_Case {
 		);
 		$this->assertNotContains( 'easyq_terms', wpmu_validate_user_signup( 'signupuser', 'signup@example.org' )['errors']->get_error_codes() );
 
-		// Kept in the sign-up, saved when the account is activated.
+		// Kept in the sign-up, saved when the account is activated. The confirmation of the
+		// newsletter needs a sender PHPMailer accepts on localhost; a failed email asks nothing (F-82).
+		add_filter( 'wp_mail_from', static fn (): string => 'wordpress@example.org' );
 		wpmu_signup_user( 'signupuser', 'signup@example.org', apply_filters( 'add_signup_meta', array() ) );
 		$_POST = array();
 		$key   = (string) $wpdb->get_var( $wpdb->prepare( "SELECT activation_key FROM {$wpdb->signups} WHERE user_login = %s", 'signupuser' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The key core mails, in a test.
