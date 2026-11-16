@@ -8,10 +8,12 @@
 
 namespace EasyQ\REST;
 
+use EasyQ\Blocks\Render\Query_Resolver;
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Question_Query;
 use EasyQ\Search\Search;
+use EasyQ\Search\Search_Result;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use WP_Error;
@@ -144,7 +146,18 @@ final class Questions_Controller extends Controller {
 	 */
 	public function get_items( $request ): WP_REST_Response|WP_Error {
 		$per_page = self::int_param( $request, 'per_page' ) ?? 20;
-		$source   = self::string_param( $request, 'source' );
+		$search   = trim( (string) self::string_param( $request, 'search' ) );
+		if ( '' !== $search ) {
+			// As the search page: the results up to the page shown, and the search stops at `MAX_SEARCH_START`.
+			$start   = min( ( max( 1, self::int_param( $request, 'page' ) ?? 1 ) - 1 ) * $per_page, Query_Resolver::MAX_SEARCH_START );
+			$results = Services::search()->search( $search, $start, $per_page + 1, get_current_user_id() > 0 ? get_current_user_id() : null );
+			$ids     = array_slice( array_map( static fn ( Search_Result $result ): int => $result->question_id, $results ), 0, $per_page );
+			$found   = Services::posts()->find_many( $ids );
+			$posts   = array_values( array_filter( array_map( static fn ( int $id ): ?Post => $found[ $id ] ?? null, $ids ) ) );
+
+			return $this->paginated( $this->collection( $posts, $request ), $start + count( $results ), $per_page, $request );
+		}
+		$source = self::string_param( $request, 'source' );
 		// The favorites of the current user, as the favorites page lists them; of nobody for visitors.
 		$favorites = 'favorites' === $source;
 		$result    = Services::question_query()->find(
@@ -434,6 +447,10 @@ final class Questions_Controller extends Controller {
 			'author'   => array(
 				'description' => __( 'Only questions by this user.', 'easyq' ),
 				'type'        => 'integer',
+			),
+			'search'   => array(
+				'description' => __( 'Only questions that match these words, best match first, as the search page finds them.', 'easyq' ),
+				'type'        => 'string',
 			),
 		) + $this->pagination_args( Options::get_int( 'lists', 'page_size_qs' ) );
 	}

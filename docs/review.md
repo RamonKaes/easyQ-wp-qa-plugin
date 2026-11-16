@@ -152,7 +152,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | A | partly | partly | ✓ | ✓ | open | ✓ | partly | ✓ | open | partly | — | partly | partly |
 | B | partly | ✓ | partly | partly | partly | — | partly | partly | partly | ✓ | partly | partly | partly |
 | C | open | partly | partly | partly | — | partly | — | partly | partly | partly | partly | partly | partly |
-| D | open | partly | partly | — | — | F-106 | — | partly | partly | open | partly | partly | partly |
+| D | open | partly | partly | — | — | partly | — | partly | partly | open | partly | partly | partly |
 | E | — | partly | partly | — | — | open | — | partly | partly | — | partly | partly | partly |
 | F | open | partly | partly | open | partly | partly | open | partly | open | partly | partly | partly | partly |
 | G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |

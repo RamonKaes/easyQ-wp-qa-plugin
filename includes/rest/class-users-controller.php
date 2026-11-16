@@ -78,7 +78,11 @@ final class Users_Controller extends Controller {
 					'callback'            => array( $this, 'get_items' ),
 					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 					'args'                => array(
-						'sort' => array(
+						'search' => array(
+							'description' => __( 'Only users whose name contains this text, as core searches users for those who may not list them.', 'easyq' ),
+							'type'        => 'string',
+						),
+						'sort'   => array(
 							'description' => __( 'Users by points, the newest users, users with special levels, or the favorites of the current user.', 'easyq' ),
 							'type'        => 'string',
 							'enum'        => array_merge( array_keys( User_Query::SORTS ), array( 'favorites' ) ),
@@ -188,7 +192,24 @@ final class Users_Controller extends Controller {
 		$page     = max( 1, (int) self::int_param( $request, 'page' ) );
 		$sort     = (string) self::string_param( $request, 'sort' );
 
-		if ( 'favorites' === $sort ) {
+		$search = trim( (string) self::string_param( $request, 'search' ) );
+		if ( '' !== $search ) {
+			// The columns core searches for those who may not list users (`WP_REST_Users_Controller::get_items()`).
+			$matches = get_users(
+				array(
+					'search'         => '*' . $search . '*',
+					'search_columns' => array( 'ID', 'user_nicename', 'display_name' ),
+					'fields'         => 'ID',
+					'orderby'        => 'display_name',
+					'number'         => 200,
+				)
+			);
+			$ids     = Services::user_query()->shown_ids( array_map( array( \EasyQ\Util\Number::class, 'id' ), $matches ), get_current_user_id() > 0 ? get_current_user_id() : null );
+			$found   = array(
+				'ids'   => array_slice( $ids, ( $page - 1 ) * $per_page, $per_page ),
+				'total' => count( $ids ),
+			);
+		} elseif ( 'favorites' === $sort ) {
 			// The users the viewer follows, as the favorites page lists them; nothing for visitors.
 			$ids   = Services::favorites()->shown_users( get_current_user_id() );
 			$found = array(

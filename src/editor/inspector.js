@@ -20,7 +20,10 @@ import {
 	ToggleControl,
 } from '@wordpress/components';
 
+import { useDebounce } from '@wordpress/compose';
 import { getSettings as getDateSettings } from '@wordpress/date';
+import { useState } from '@wordpress/element';
+import { addQueryArgs } from '@wordpress/url';
 
 import { useEasyQ } from './data';
 
@@ -297,7 +300,15 @@ const OPTIONS = {
  * @return {Element} Control.
  */
 function QuestionPicker( { label, help, value, onChange } ) {
-	const questions = useEasyQ( 'questions?per_page=100' );
+	// Searches as the user types, as core's pickers do; without input the latest questions.
+	const [ search, setSearch ] = useState( '' );
+	const onFilter = useDebounce( setSearch, 300 );
+	const questions = useEasyQ(
+		addQueryArgs( 'questions', {
+			per_page: 20,
+			...( search ? { search } : {} ),
+		} )
+	);
 	const chosen = useEasyQ( value ? `questions/${ value }` : null );
 	const options = ( Array.isArray( questions ) ? questions : [] ).map(
 		( question ) => ( {
@@ -323,6 +334,7 @@ function QuestionPicker( { label, help, value, onChange } ) {
 			help={ help }
 			value={ value ? String( value ) : null }
 			options={ options }
+			onFilterValueChange={ onFilter }
 			onChange={ ( next ) => onChange( next ? Number( next ) : 0 ) }
 		/>
 	);
@@ -341,7 +353,14 @@ function QuestionPicker( { label, help, value, onChange } ) {
  * @return {Element} Control.
  */
 export function UserPicker( { label, help, value, onChange } ) {
-	const users = useEasyQ( 'users?per_page=100' );
+	const [ search, setSearch ] = useState( '' );
+	const onFilter = useDebounce( setSearch, 300 );
+	const users = useEasyQ(
+		addQueryArgs( 'users', {
+			per_page: 20,
+			...( search ? { search } : {} ),
+		} )
+	);
 	const chosen = useEasyQ( value ? `users/${ value }` : null );
 	const options = ( Array.isArray( users ) ? users : [] ).map( ( user ) => ( {
 		value: String( user.id ),
@@ -362,6 +381,7 @@ export function UserPicker( { label, help, value, onChange } ) {
 			help={ help }
 			value={ value ? String( value ) : null }
 			options={ options }
+			onFilterValueChange={ onFilter }
 			onChange={ ( next ) => onChange( next ? Number( next ) : 0 ) }
 		/>
 	);

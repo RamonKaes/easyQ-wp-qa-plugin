@@ -141,10 +141,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Low
 
-- **F-106** (D × Volume, D × Presentation). The pickers of the editor load the first
-  100 questions and users, and `/questions` has no `search` argument to find others.
-  The editor part was read, not run. *Why no guard saw it:* the editor tests use few
-  items.
 - **F-108** (H × Time). The visitor cookie is set once and never renewed; core sets
   the comment cookies again with every comment. *Why no guard saw it:* cookies were
   not observable under the command line until this review.

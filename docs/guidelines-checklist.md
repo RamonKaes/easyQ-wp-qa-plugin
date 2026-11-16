@@ -255,7 +255,7 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | Attributes serialized with `serialize_block_attributes()` | Met (`Rendering_Test`) | `Blocks\Layouts::json()` |
 | State the server renders matches the state after hydration (`aria-pressed`) | Met, derived state on the server (`Rendering_Test`) | `includes/blocks/render/` |
 | Unique IDs on a page | Met (`Rendering_Test`: every block twice) | `includes/blocks/render/` |
-| Editor controls accessible, pickers that search | Read, not checked by axe; F-106 | `src/editor/` |
+| Editor controls accessible, pickers that search | Pickers search (`Search_Args_REST_Test`, `editor.spec.js`); accessibility read, not checked by axe | `src/editor/` |
 | HTML of users: comments with the allow-list core gives commenters, questions and answers with the post filter without `data-wp-*`; `wp_rel_ugc()` on links | Met (`User_HTML_Test`, `Rendering_Test`) | `Posts\Content_Renderer` |
 | JSON in a `<script>` element with `JSON_HEX_TAG` (`wp_print_inline_script_tag()`) | Met (`Rendering_Test`) | `Frontend\Page_Meta` |
 | Cookies: prefixed name, `COOKIEPATH` and `COOKIE_DOMAIN`, `secure` from the scheme of `home_url()`, renewed when used, asked for as `show_comments_cookies_opt_in` asks | Prefix Met; F-74, F-75, F-108, F-109 | `Users\Visitor_Cookie`, `Notices\Notices` |

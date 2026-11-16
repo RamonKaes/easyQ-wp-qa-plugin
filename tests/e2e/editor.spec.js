@@ -95,6 +95,47 @@ test.describe( 'Block editor', () => {
 		expect( withoutIcon ).toEqual( [] );
 	} );
 
+	test( 'searches questions in the picker', async ( {
+		admin,
+		editor,
+		page,
+		requestUtils,
+	} ) => {
+		const title = `Needle in the haystack ${ Date.now() }`;
+		await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/questions',
+			data: { title, content: 'Found by the picker.' },
+		} );
+		await admin.createNewPost();
+		await editor.insertBlock( { name: 'easyq/question' } );
+		await editor.openDocumentSettingsSidebar();
+
+		// The picker asks the REST API with the typed text, not only the first page.
+		const searched = page.waitForRequest(
+			( request ) =>
+				/easyq(%2F|\/)v1(%2F|\/)questions/.test( request.url() ) &&
+				request.url().includes( 'search=Needle' )
+		);
+		const picker = page
+			.getByRole( 'region', { name: 'Editor settings' } )
+			.getByRole( 'combobox', { name: 'Question' } );
+		await picker.fill( 'Needle' );
+		await searched;
+		await page.getByRole( 'option', { name: title } ).click();
+
+		await expect
+			.poll( () =>
+				page.evaluate(
+					() =>
+						window.wp.data
+							.select( 'core/block-editor' )
+							.getSelectedBlock()?.attributes.questionId
+				)
+			)
+			.toBeGreaterThan( 0 );
+	} );
+
 	test( 'changes block settings in the sidebar', async ( {
 		admin,
 		editor,
