@@ -78,11 +78,15 @@ final class Uninstaller {
 			self::clear_scheduled_events();
 			if ( self::site_opted_in() ) {
 				self::uninstall_site();
-			} else {
+			} elseif ( Installer::installed_version() > 0 ) {
+				// A site that never had easyQ keeps nothing, so it does not keep the meta of the network.
 				$all_opted_in = false;
 			}
 			restore_current_blog();
 		}
+
+		// Sites deleted before keep no data of their own; their meta goes in any case.
+		self::delete_meta_of_deleted_sites( array_map( 'intval', $site_ids ) );
 
 		// User meta is shared by all sites of a network; keep it while any site keeps its data.
 		if ( $all_opted_in ) {
@@ -181,7 +185,7 @@ final class Uninstaller {
 	 *
 	 * @param string $prefix Meta key prefix.
 	 */
-	private static function delete_meta_with_prefix( string $prefix ): void {
+	public static function delete_meta_with_prefix( string $prefix ): void {
 		$wpdb = DB::wpdb();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup on uninstall; no API deletes meta by key prefix.
@@ -195,6 +199,24 @@ final class Uninstaller {
 
 		foreach ( array_filter( $keys, 'is_string' ) as $key ) {
 			delete_metadata( 'user', 0, $key, '', true );
+		}
+	}
+
+	/**
+	 * Deletes the user meta of sites of the network that no longer exist.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $site_ids Sites that exist.
+	 */
+	private static function delete_meta_of_deleted_sites( array $site_ids ): void {
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup on uninstall; no API lists meta keys.
+		$keys = $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT meta_key FROM %i WHERE meta_key LIKE %s', $wpdb->usermeta, $wpdb->esc_like( $wpdb->base_prefix ) . '%' . $wpdb->esc_like( '_' . self::USER_META_PREFIX ) . '%' ) );
+		foreach ( array_filter( $keys, 'is_string' ) as $key ) {
+			if ( 1 === preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+)_' . preg_quote( self::USER_META_PREFIX, '/' ) . '/', $key, $site ) && ! in_array( (int) $site[1], $site_ids, true ) ) {
+				delete_metadata( 'user', 0, $key, '', true );
+			}
 		}
 	}
 }

@@ -31,16 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-91** (O × Volume, O × Time, O × Guidelines). Network activation installs every
-  site in one request (73 queries per site, up to 10,000 sites) and includes archived
-  sites; core upgrades five sites per request and leaves out spam, deleted and archived
-  sites. A request that hits the time limit leaves the plugin inactive with part of the
-  sites installed. *Why no guard saw it:* no test calls `Installer::activate( true )`;
-  `Multisite_Installer_Test` sets `active_sitewide_plugins` by hand.
-- **F-92** (O × Multisite, O × State, O × Guidelines). The user meta of a deleted site
-  (`wp_N_easyq_level` and the others) stays, after deleting the site and after the
-  uninstall; the checklist says uninstall removes the data "on every site". *Why no
-  guard saw it:* `test_deleting_a_site_drops_its_tables` checks tables only.
 - **F-93** (P × Form). When `easyq_email_headers` returns the headers as an array of
   lines, the newsletter goes out without `List-Unsubscribe` and
   `List-Unsubscribe-Post`. *Why no guard saw it:* no test returns another shape.
@@ -66,25 +56,8 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
   marked `private` and is copied with "Copy site info to clipboard"; core marks
   `home_url` and `site_url` so. *Why no guard saw it:* the test reads the labels, not
   the flags.
-- **F-99** (P × Guidelines, O × Guidelines). Two commands of the inventory in
-  `docs/review.md` miss entries: P finds 8 of the 15 calls (not the dynamic names in
-  double quotes, nor the filters of others easyQ applies), O misses
-  `wpmu_drop_tables`. *Why no guard saw it:* a command that prints a line counts as
-  working.
-
 ### Low
 
-- **F-126** (O × Multisite). A site that never had easyQ keeps the uninstall from
-  deleting the meta of the whole network (`easyq_unconfirmed`). *Why no guard saw it:*
-  only the case "no site agreed" runs.
-- **F-127** (O × Concurrency). `userfields.name` has no unique key, so two installs at
-  the same time add the default field twice. *Why no guard saw it:* no test interleaves
-  two installs.
-- **F-128** (O × State). An upgrade brings back the default field the site owner
-  deleted. *Why no guard saw it:* the upgrade test checks tables and version.
-- **F-129** (O × Error path). The version is saved although a table could not be
-  created, and no later upgrade creates it. *Why no guard saw it:* no test breaks a
-  `CREATE TABLE`.
 - **F-130** (P × Guidelines). `docs/hooks.md` does not name the three filters of others
   easyQ applies, nor the strings it passes to WPML and Polylang. *Why no guard saw it:*
   as F-97.

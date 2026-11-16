@@ -28,7 +28,7 @@ final class Installer {
 	 *
 	 * @var int
 	 */
-	public const DB_VERSION = 1;
+	public const DB_VERSION = 2;
 
 	/**
 	 * Option that stores the installed schema version of a site.
@@ -47,6 +47,7 @@ final class Installer {
 	public function register(): void {
 		add_action( 'wp_initialize_site', array( self::class, 'initialize_site' ), 200 );
 		add_filter( 'wpmu_drop_tables', array( self::class, 'filter_drop_tables' ), 10, 2 );
+		add_action( 'wp_uninitialize_site', array( self::class, 'uninitialize_site' ) );
 
 		self::maybe_upgrade();
 	}
@@ -54,8 +55,10 @@ final class Installer {
 	/**
 	 * Runs on plugin activation.
 	 *
-	 * On network activation the sites are installed right away unless the network
-	 * is large; remaining sites are installed on their next request by maybe_upgrade().
+	 * On network activation only the current site is installed in the request; each other
+	 * site installs itself on its next request (maybe_upgrade()), as core upgrades the sites
+	 * of a network one by one instead of in one request (`network/upgrade.php`), and spam,
+	 * deleted and archived sites, which serve no requests, are left alone.
 	 *
 	 * @since 0.1.0
 	 *
@@ -67,22 +70,7 @@ final class Installer {
 			return;
 		}
 
-		if ( wp_is_large_network() ) {
-			return;
-		}
-
-		$site_ids = get_sites(
-			array(
-				'fields' => 'ids',
-				'number' => 0,
-			)
-		);
-
-		foreach ( $site_ids as $site_id ) {
-			switch_to_blog( (int) $site_id );
-			self::install_site();
-			restore_current_blog();
-		}
+		self::install_site();
 	}
 
 	/**
@@ -140,10 +128,20 @@ final class Installer {
 	 * @since 0.1.0
 	 */
 	public static function install_site(): void {
+		$first = 0 === self::installed_version();
 		Schema::install();
 		Schema::register_meta_tables();
+
+		// The version is saved only when every table is in place, so a later request tries again.
+		if ( array() !== Schema::missing_tables() ) {
+			return;
+		}
+
 		Options::install();
-		( new User_Fields() )->install_defaults();
+		// The default field comes with the first install only; an upgrade keeps the owner's choice.
+		if ( $first ) {
+			( new User_Fields() )->install_defaults();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
 
@@ -205,6 +203,17 @@ final class Installer {
 		$wpdb = DB::wpdb();
 
 		return array_merge( $tables, Schema::table_names( $wpdb->get_blog_prefix( $site_id ) ) );
+	}
+
+	/**
+	 * Removes the user meta of a site that is deleted, with its tables.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_Site $site The deleted site.
+	 */
+	public static function uninitialize_site( WP_Site $site ): void {
+		\EasyQ\Uninstaller::delete_meta_with_prefix( DB::wpdb()->get_blog_prefix( (int) $site->blog_id ) . \EasyQ\Uninstaller::USER_META_PREFIX );
 	}
 
 	/**

@@ -241,6 +241,7 @@ position smallint(5) unsigned NOT NULL default '0',
 flags tinyint(3) unsigned NOT NULL default '0',
 permit tinyint(3) unsigned default NULL,
 PRIMARY KEY  (id),
+UNIQUE KEY name (name),
 KEY position (position)",
 
 			'userfavorites' => "user_id bigint(20) unsigned NOT NULL,
@@ -353,6 +354,29 @@ KEY meta_key (meta_key(191))";
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		return dbDelta( array_values( self::definitions( $wpdb->prefix, $wpdb->get_charset_collate() ) ) );
+	}
+
+	/**
+	 * Returns the tables of the current site that do not exist.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return string[]
+	 */
+	public static function missing_tables(): array {
+		$wpdb     = DB::wpdb();
+		$missing  = array();
+		$suppress = $wpdb->suppress_errors();
+		foreach ( self::table_names( $wpdb->prefix ) as $table ) {
+			$sql = $wpdb->prepare( 'DESCRIBE %i', $table );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Prepared above; checks the schema right after installing it.
+			if ( null === $sql || false === $wpdb->query( $sql ) ) {
+				$missing[] = $table;
+			}
+		}
+		$wpdb->suppress_errors( $suppress );
+
+		return $missing;
 	}
 
 	/**

@@ -80,8 +80,8 @@ grep -rnF -e 'wp_schedule_' includes                                            
 grep -rnF -e 'add_feed(' -e 'wp_sitemaps' includes                                   # L
 grep -rnF -e 'WP_CLI::add_command' includes                                          # M
 grep -rnF -e 'wp_privacy_personal_data_' includes                                    # N
-grep -rnF -e 'register_activation_hook' -e 'register_deactivation_hook' -e 'wp_initialize_site' -e 'wp_uninitialize_site' easyq.php includes   # O
-grep -rhnF -e 'apply_filters(' -e 'do_action(' includes | grep -F -e "'easyq_"       # P
+grep -rnF -e 'register_activation_hook' -e 'register_deactivation_hook' -e 'wp_initialize_site' -e 'wp_uninitialize_site' -e 'wpmu_drop_tables' easyq.php uninstall.php includes   # O
+grep -rnF -e 'apply_filters(' -e 'apply_filters_ref_array(' -e 'do_action(' -e 'do_action_ref_array(' includes   # P: own hooks, dynamic names and the filters of others easyQ applies
 grep -rnF -e 'site_status_tests' -e 'debug_information' includes                     # Q
 grep -rnF -e 'wp_remote_' -e 'wp_safe_remote_' includes                              # must stay empty
 ```
@@ -163,8 +163,8 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
 | M | partly | — | — | — | partly | partly | — | partly | — | partly | — | open | partly |
 | N | — | — | partly | — | open | partly | — | partly | — | partly | — | partly | partly |
-| O | — | — | — | — | F-127 | F-91 | F-91 | F-92, F-128 | — | F-129 | — | F-92, F-126 | F-91, F-92, F-99 |
-| P | F-93, F-94 | F-95, F-96 | partly | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-99, F-130 |
+| O | — | — | — | — | partly | partly | partly | partly | — | partly | — | partly | partly |
+| P | F-93, F-94 | F-95, F-96 | partly | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-130 |
 | Q | — | — | — | — | — | partly | — | partly | — | F-133 | partly | F-132 | F-98 |
 
 The release gate after the second round:
