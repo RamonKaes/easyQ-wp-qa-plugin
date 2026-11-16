@@ -91,10 +91,15 @@ final class Router {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $vars Public query variables.
-	 * @return string[]
+	 * @param mixed $vars Public query variables.
+	 * @return mixed
 	 */
-	public function query_vars( array $vars ): array {
+	public function query_vars( mixed $vars ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $vars ) ) {
+			return $vars;
+		}
+
 		return array_merge( $vars, array( Routes::ROUTE_VAR, Routes::ARG_VAR, Routes::SECTION_VAR ) );
 	}
 
@@ -139,11 +144,16 @@ final class Router {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<mixed>|null $posts Posts, or null to run the query.
-	 * @param WP_Query          $query Query.
-	 * @return array<mixed>|null
+	 * @param mixed    $posts Posts, or null to run the query.
+	 * @param WP_Query $query Query.
+	 * @return mixed
 	 */
-	public function skip_posts_query( ?array $posts, WP_Query $query ): ?array {
+	public function skip_posts_query( mixed $posts, WP_Query $query ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! ( null === $posts || is_array( $posts ) ) ) {
+			return $posts;
+		}
+
 		if ( null === $this->current || ! $query->is_main_query() ) {
 			return $posts;
 		}
@@ -160,10 +170,15 @@ final class Router {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param bool $handled Whether the 404 handling was already done.
-	 * @return bool
+	 * @param mixed $handled Whether the 404 handling was already done.
+	 * @return mixed
 	 */
-	public function handle_404( bool $handled ): bool {
+	public function handle_404( mixed $handled ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_bool( $handled ) ) {
+			return $handled;
+		}
+
 		if ( null === $this->current || 'not_found' === $this->current->name ) {
 			return $handled;
 		}

@@ -66,10 +66,15 @@ final class Users_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $args Query arguments to remove.
-	 * @return string[]
+	 * @param mixed $args Query arguments to remove.
+	 * @return mixed
 	 */
-	public function removable_query_args( array $args ): array {
+	public function removable_query_args( mixed $args ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $args ) ) {
+			return $args;
+		}
+
 		return array_merge( $args, array( 'easyq_done', 'easyq_count' ) );
 	}
 
@@ -78,10 +83,15 @@ final class Users_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, string> $columns Columns.
-	 * @return array<string, string>
+	 * @param mixed $columns Columns.
+	 * @return mixed string>
 	 */
-	public function columns( array $columns ): array {
+	public function columns( mixed $columns ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $columns ) ) {
+			return $columns;
+		}
+
 		// Core prints column labels as HTML.
 		$columns['easyq_level']  = esc_html__( 'Q&A level', 'easyq' );
 		$columns['easyq_points'] = esc_html__( 'Points', 'easyq' );
@@ -94,12 +104,17 @@ final class Users_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $output  Output so far.
+	 * @param mixed  $output  Output so far.
 	 * @param string $column  Column name.
 	 * @param int    $user_id User ID.
-	 * @return string
+	 * @return mixed
 	 */
-	public function column_value( string $output, string $column, int $user_id ): string {
+	public function column_value( mixed $output, string $column, int $user_id ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_string( $output ) ) {
+			return $output;
+		}
+
 		if ( 'easyq_points' === $column ) {
 			return esc_html( number_format_i18n( Services::points()->get( $user_id ) ) );
 		}
@@ -126,10 +141,15 @@ final class Users_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, string> $views Views as HTML links.
-	 * @return array<string, string>
+	 * @param mixed $views Views as HTML links.
+	 * @return mixed string>
 	 */
-	public function views( array $views ): array {
+	public function views( mixed $views ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $views ) ) {
+			return $views;
+		}
+
 		if ( ! current_user_can( Capabilities::MODERATE ) ) {
 			return $views;
 		}
@@ -166,10 +186,15 @@ final class Users_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $args Arguments of the `WP_User_Query` of the users list table.
-	 * @return array<string, mixed>
+	 * @param mixed $args Arguments of the `WP_User_Query` of the users list table.
+	 * @return mixed mixed>
 	 */
-	public function list_query_args( array $args ): array {
+	public function list_query_args( mixed $args ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $args ) ) {
+			return $args;
+		}
+
 		if ( ! current_user_can( Capabilities::MODERATE ) ) {
 			return $args;
 		}
@@ -197,10 +222,15 @@ final class Users_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, string> $actions Bulk actions.
-	 * @return array<string, string>
+	 * @param mixed $actions Bulk actions.
+	 * @return mixed string>
 	 */
-	public function bulk_actions( array $actions ): array {
+	public function bulk_actions( mixed $actions ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $actions ) ) {
+			return $actions;
+		}
+
 		if ( current_user_can( Capabilities::MODERATE ) ) {
 			$actions['easyq_approve'] = __( 'Approve for Q&A', 'easyq' );
 			$actions['easyq_block']   = __( 'Block in Q&A', 'easyq' );

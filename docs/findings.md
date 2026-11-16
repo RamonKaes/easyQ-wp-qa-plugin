@@ -19,46 +19,10 @@ The next free number is F-134.
 
 ## Open
 
-Found by the review of the rows C, D, E, H and J to Q on 2026-11-15. Each was
-reproduced by a test in the test environment (PHP 8.4, single site and multisite) or,
-where it needs PHP 8.5, with `wp eval-file` on the PHP of the local site; the tests are
-not part of the suite. A finding that says "decision" deviates from core, and the owner
-decides whether it is fixed or kept with a reason.
+None. The 78 findings of the review of the rows C, D, E, H and J to Q of 2026-11-15
+(F-56 to F-133) were fixed on 2026-11-16, each with a guard and a counter-check in its
+commit, except F-112, which is kept (see Rejected).
 
-### Blocker
-
-None open; F-56 to F-63 were fixed on 2026-11-16.
-
-### Should
-
-- **F-93** (P × Form). When `easyq_email_headers` returns the headers as an array of
-  lines, the newsletter goes out without `List-Unsubscribe` and
-  `List-Unsubscribe-Post`. *Why no guard saw it:* no test returns another shape.
-- **F-94** (P × Form, P × Error path; decision on the class). A filter that returns
-  the wrong type ends in a `TypeError` in `Users_Screen::column_value()`,
-  `Templates::classic_content()` and, on a multisite, `Installer::filter_drop_tables()`.
-  By the letter of the gate a fatal error is a blocker; it needs a broken plugin of a
-  third party, which is why the owner decides the class. *Why no guard saw it:* no
-  test sends a wrong type through a filter.
-- **F-95** (P × Value). When `easyq_default_settings` loses a key, the stored value of
-  that key is no longer read (`base_slug` becomes null although `fragen` is stored),
-  and the uninstall then keeps the options of the missing sections. *Why no guard saw
-  it:* no test removes a default.
-- **F-96** (P × Value, P × Error path). A search provider that returns numbers instead
-  of rows gives a warning on `GET /questions/similar`, and a provider with the ID
-  `basic` replaces the built-in search, which `docs/hooks.md` does not say. *Why no
-  guard saw it:* the provider tests return valid rows under a new ID.
-- **F-97** (P × Guidelines). `Docs_Test` finds 39 of the 84 documented events: it
-  reads literal first arguments only, so the events built from a prefix (votes, flags,
-  favorites, moderation, `u_edit`) are documented by hand and unguarded. *Why no guard
-  saw it:* the guard of the documents is this test.
-### Low
-
-- **F-130** (P × Guidelines). `docs/hooks.md` does not name the three filters of others
-  easyQ applies, nor the strings it passes to WPML and Polylang. *Why no guard saw it:*
-  as F-97.
-- **F-131** (P × Frequency). `easyq_default_settings` runs 356 times to render one
-  question page. *Why no guard saw it:* no test counts filter calls.
 ## Deferred
 
 | No. | Class | Finding | Why deferred | Comes back when |

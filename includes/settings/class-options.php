@@ -54,6 +54,66 @@ final class Options {
 	 * @return array<string, array<string, mixed>>
 	 */
 	public static function defaults(): array {
+		// Filtered once per request, as long as the callbacks of the filter stay the same.
+		global $wp_filter;
+		$hook = is_array( $wp_filter ) ? ( $wp_filter['easyq_default_settings'] ?? null ) : null;
+		$key  = $hook instanceof \WP_Hook ? spl_object_id( $hook ) . ':' . count( $hook->callbacks, COUNT_RECURSIVE ) : '';
+		if ( null !== self::$defaults && $key === self::$defaults_key ) {
+			return self::$defaults;
+		}
+
+		$builtin = self::builtin_defaults();
+
+		/**
+		 * Filters the default settings.
+		 *
+		 * A filter may change values and add settings; a setting it leaves out keeps the default
+		 * of the plugin, so stored values are still read and removed.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param array<string, array<string, mixed>> $defaults Default values keyed by section and setting.
+		 */
+		$filtered = apply_filters( 'easyq_default_settings', $builtin );
+		$defaults = $builtin;
+		foreach ( is_array( $filtered ) ? $filtered : array() as $section => $values ) {
+			if ( is_string( $section ) && is_array( $values ) ) {
+				$defaults[ $section ] = array_merge( $defaults[ $section ] ?? array(), $values );
+			}
+		}
+
+		self::$defaults     = $defaults;
+		self::$defaults_key = $key;
+
+		return $defaults;
+	}
+
+	/**
+	 * Default values filtered during the request, see defaults().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, array<string, mixed>>|null
+	 */
+	private static ?array $defaults = null;
+
+	/**
+	 * The callbacks of the filter the defaults were filtered with.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	private static string $defaults_key = '';
+
+	/**
+	 * Returns the default values of the plugin, before the filter.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private static function builtin_defaults(): array {
 		$defaults = array(
 			'general'     => array(
 				'base_slug'                => 'questions',
@@ -313,14 +373,7 @@ final class Options {
 			),
 		);
 
-		/**
-		 * Filters the default settings.
-		 *
-		 * @since 0.1.0
-		 *
-		 * @param array<string, array<string, mixed>> $defaults Default values keyed by section and setting.
-		 */
-		return (array) apply_filters( 'easyq_default_settings', $defaults );
+		return $defaults;
 	}
 
 	/**
@@ -331,7 +384,8 @@ final class Options {
 	 * @return string[]
 	 */
 	public static function sections(): array {
-		return array_keys( self::defaults() );
+		// Every section of the plugin, also one a filter left out, so the uninstall removes it.
+		return array_values( array_unique( array_merge( array_keys( self::builtin_defaults() ), array_keys( self::defaults() ) ) ) );
 	}
 
 	/**

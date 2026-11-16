@@ -58,10 +58,15 @@ final class Account_Limits {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_Error $errors Errors of the registration.
-	 * @return WP_Error
+	 * @param mixed $errors Errors of the registration.
+	 * @return mixed
 	 */
-	public function check_registration( WP_Error $errors ): WP_Error {
+	public function check_registration( mixed $errors ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! $errors instanceof WP_Error ) {
+			return $errors;
+		}
+
 		$actor = self::actor();
 
 		if ( Services::limits()->is_ip_blocked( $actor ) ) {

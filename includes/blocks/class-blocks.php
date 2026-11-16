@@ -57,10 +57,15 @@ final class Blocks {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $parsed_block Parsed block.
-	 * @return array<string, mixed>
+	 * @param mixed $parsed_block Parsed block.
+	 * @return mixed mixed>
 	 */
-	public function give_list_an_id( array $parsed_block ): array {
+	public function give_list_an_id( mixed $parsed_block ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $parsed_block ) ) {
+			return $parsed_block;
+		}
+
 		if ( ! in_array( $parsed_block['blockName'] ?? '', array( 'easyq/question-query', 'easyq/answer-list', 'easyq/user-query' ), true ) ) {
 			return $parsed_block;
 		}
@@ -116,10 +121,15 @@ final class Blocks {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<int, array<string, mixed>> $categories Block categories.
-	 * @return array<int, array<string, mixed>>
+	 * @param mixed $categories Block categories.
+	 * @return mixed array<string, mixed>>
 	 */
-	public function add_category( array $categories ): array {
+	public function add_category( mixed $categories ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $categories ) ) {
+			return $categories;
+		}
+
 		$categories[] = array(
 			'slug'  => 'easyq',
 			'title' => __( 'Questions & Answers', 'easyq' ),

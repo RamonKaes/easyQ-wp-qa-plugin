@@ -103,13 +103,18 @@ final class Capabilities {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $caps    Primitive capabilities required so far.
-	 * @param string   $cap     Capability being checked.
-	 * @param int      $user_id User ID; 0 for visitors.
-	 * @param mixed[]  $args    Further arguments, e.g. a post ID.
-	 * @return string[]
+	 * @param mixed   $caps    Primitive capabilities required so far.
+	 * @param string  $cap     Capability being checked.
+	 * @param int     $user_id User ID; 0 for visitors.
+	 * @param mixed[] $args    Further arguments, e.g. a post ID.
+	 * @return mixed
 	 */
-	public function map_meta_cap( array $caps, string $cap, int $user_id, array $args ): array {
+	public function map_meta_cap( mixed $caps, string $cap, int $user_id, array $args ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $caps ) ) {
+			return $caps;
+		}
+
 		if ( ! str_starts_with( $cap, 'easyq_' ) ) {
 			return $caps;
 		}

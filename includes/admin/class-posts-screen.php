@@ -97,10 +97,15 @@ final class Posts_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $args Query arguments.
-	 * @return string[]
+	 * @param mixed $args Query arguments.
+	 * @return mixed
 	 */
-	public function removable_query_args( array $args ): array {
+	public function removable_query_args( mixed $args ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $args ) ) {
+			return $args;
+		}
+
 		return array_merge( $args, array( 'easyq_did', 'easyq_done', 'easyq_failed' ) );
 	}
 

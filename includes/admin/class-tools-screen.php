@@ -96,10 +96,15 @@ final class Tools_Screen {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $args Query arguments to remove.
-	 * @return string[]
+	 * @param mixed $args Query arguments to remove.
+	 * @return mixed
 	 */
-	public function removable_query_args( array $args ): array {
+	public function removable_query_args( mixed $args ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $args ) ) {
+			return $args;
+		}
+
 		return array_merge( $args, array( 'easyq_done' ) );
 	}
 

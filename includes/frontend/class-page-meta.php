@@ -55,10 +55,15 @@ final class Page_Meta {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, string> $parts Title parts.
-	 * @return array<string, string>
+	 * @param mixed $parts Title parts.
+	 * @return mixed string>
 	 */
-	public function title( array $parts ): array {
+	public function title( mixed $parts ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $parts ) ) {
+			return $parts;
+		}
+
 		if ( null !== $this->router->current() ) {
 			$parts['title'] = Widgets::title_of_page();
 		}
@@ -119,10 +124,15 @@ final class Page_Meta {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, bool|string> $robots Robots directives.
-	 * @return array<string, bool|string>
+	 * @param mixed $robots Robots directives.
+	 * @return mixed bool|string>
 	 */
-	public function robots( array $robots ): array {
+	public function robots( mixed $robots ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $robots ) ) {
+			return $robots;
+		}
+
 		$route = $this->router->current();
 		if ( null === $route ) {
 			return $robots;
@@ -135,7 +145,7 @@ final class Page_Meta {
 
 		// Addresses that open a form in place, as core handles `replytocom`.
 		if ( Forms::opens_a_form() ) {
-			$robots = wp_robots_no_robots( $robots );
+			$robots = wp_robots_no_robots( $robots ); // @phpstan-ignore argument.type (Other filters of wp_robots may hand on any keys; core's function only sets two of them.)
 		}
 
 		return $robots;

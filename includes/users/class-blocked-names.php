@@ -76,11 +76,16 @@ final class Blocked_Names {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_Error $errors Errors of the registration.
-	 * @param mixed    $login  Sanitized username.
-	 * @return WP_Error
+	 * @param mixed $errors Errors of the registration.
+	 * @param mixed $login  Sanitized username.
+	 * @return mixed
 	 */
-	public function check_registration( WP_Error $errors, mixed $login ): WP_Error {
+	public function check_registration( mixed $errors, mixed $login ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! $errors instanceof WP_Error ) {
+			return $errors;
+		}
+
 		if ( is_string( $login ) && self::is_blocked( $login ) ) {
 			$errors->add( 'easyq_blocked_username', __( '<strong>Error:</strong> Sorry, that username is not allowed. Please choose another one.', 'easyq' ) );
 		}

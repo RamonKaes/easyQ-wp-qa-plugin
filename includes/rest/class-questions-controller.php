@@ -373,8 +373,9 @@ final class Questions_Controller extends Controller {
 		$tags         = array();
 
 		if ( ( $check || $example_tags ) && '' !== trim( $title ) ) {
-			$count   = max( $example_tags ? 500 : 0, $check ? Options::get_int( 'posting', 'page_size_ask_check_qs' ) : 0 );
-			$results = Services::search()->provider()->search( $title, 0, $count, $this->actor()->user_id );
+			$count = max( $example_tags ? 500 : 0, $check ? Options::get_int( 'posting', 'page_size_ask_check_qs' ) : 0 );
+			// Through the search service: only results, and only questions the user may see.
+			$results = Services::search()->search( $title, 0, $count, $this->actor()->user_id );
 			$posts   = Services::posts()->find_many( array_map( static fn ( $result ): int => $result->question_id, $results ) );
 
 			if ( $example_tags ) {

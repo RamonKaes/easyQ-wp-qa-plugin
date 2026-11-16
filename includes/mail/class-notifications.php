@@ -361,10 +361,15 @@ final class Notifications {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param bool $send Whether to send the email.
-	 * @return bool
+	 * @param mixed $send Whether to send the email.
+	 * @return mixed
 	 */
-	public function send_registration_to_admin( bool $send ): bool {
+	public function send_registration_to_admin( mixed $send ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_bool( $send ) ) {
+			return $send;
+		}
+
 		return $send && Options::get_bool( 'emails', 'register_notify_admin' );
 	}
 
@@ -373,11 +378,16 @@ final class Notifications {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $email Core's email.
-	 * @param WP_User              $user  New user.
-	 * @return array<string, mixed>
+	 * @param mixed   $email Core's email.
+	 * @param WP_User $user  New user.
+	 * @return mixed mixed>
 	 */
-	public function registration_email_to_admin( array $email, WP_User $user ): array {
+	public function registration_email_to_admin( mixed $email, WP_User $user ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $email ) ) {
+			return $email;
+		}
+
 		$to_approve = Options::get_bool( 'spam', 'moderate_users' );
 		$name       = $to_approve ? 'u_to_approve' : 'u_registered';
 		$content    = Mailer::content(
@@ -404,11 +414,16 @@ final class Notifications {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $email Core's email.
-	 * @param WP_User              $user  New user.
-	 * @return array<string, mixed>
+	 * @param mixed   $email Core's email.
+	 * @param WP_User $user  New user.
+	 * @return mixed mixed>
 	 */
-	public function welcome_email( array $email, WP_User $user ): array {
+	public function welcome_email( mixed $email, WP_User $user ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $email ) ) {
+			return $email;
+		}
+
 		$custom  = Options::get_bool( 'users', 'show_custom_welcome' ) ? trim( Options::get_string( 'users', 'custom_welcome' ) ) : '';
 		$link    = trim( is_string( $email['message'] ?? null ) ? $email['message'] : '' );
 		$content = Mailer::content(
@@ -438,9 +453,9 @@ final class Notifications {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string               $name  Template name.
-	 * @param array<string, mixed> $email The email.
-	 * @return array<string, mixed>
+	 * @param string       $name  Template name.
+	 * @param array<mixed> $email The email, as filters of core and others hand it on.
+	 * @return array<mixed>
 	 */
 	private function core_email( string $name, array $email ): array {
 		$email = Mailer::filter_email( $name, $email );

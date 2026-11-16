@@ -195,11 +195,16 @@ final class Installer {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $tables  Tables WordPress drops.
-	 * @param int      $site_id ID of the deleted site.
-	 * @return string[]
+	 * @param mixed $tables  Tables WordPress drops.
+	 * @param int   $site_id ID of the deleted site.
+	 * @return mixed
 	 */
-	public static function filter_drop_tables( array $tables, int $site_id ): array {
+	public static function filter_drop_tables( mixed $tables, int $site_id ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $tables ) ) {
+			return $tables;
+		}
+
 		$wpdb = DB::wpdb();
 
 		return array_merge( $tables, Schema::table_names( $wpdb->get_blog_prefix( $site_id ) ) );

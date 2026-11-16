@@ -95,10 +95,15 @@ final class Templates {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $template Template file chosen by WordPress.
-	 * @return string
+	 * @param mixed $template Template file chosen by WordPress.
+	 * @return mixed
 	 */
-	public function template_include( string $template ): string {
+	public function template_include( mixed $template ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_string( $template ) ) {
+			return $template;
+		}
+
 		$route = $this->router->current();
 		if ( null === $route ) {
 			return $template;
@@ -263,11 +268,16 @@ final class Templates {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string               $html  Rendered block.
+	 * @param mixed                $html  Rendered block.
 	 * @param array<string, mixed> $block Parsed block.
-	 * @return string
+	 * @return mixed
 	 */
-	public static function without_main_heading( string $html, array $block ): string {
+	public static function without_main_heading( mixed $html, array $block ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_string( $html ) ) {
+			return $html;
+		}
+
 		$attributes = is_array( $block['attrs'] ?? null ) ? $block['attrs'] : array();
 		$type       = \WP_Block_Type_Registry::get_instance()->get_registered( is_string( $block['blockName'] ?? null ) ? $block['blockName'] : '' );
 		$schema     = $type?->attributes['level'] ?? null;
@@ -282,10 +292,15 @@ final class Templates {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $content Content after the content filters.
-	 * @return string
+	 * @param mixed $content Content after the content filters.
+	 * @return mixed
 	 */
-	public static function classic_content( string $content ): string {
+	public static function classic_content( mixed $content ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_string( $content ) ) {
+			return $content;
+		}
+
 		return self::is_classic_page( get_post() ) ? self::$classic_html : $content;
 	}
 
@@ -297,10 +312,15 @@ final class Templates {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $template Comments template file.
-	 * @return string
+	 * @param mixed $template Comments template file.
+	 * @return mixed
 	 */
-	public static function classic_comments( string $template ): string {
+	public static function classic_comments( mixed $template ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_string( $template ) ) {
+			return $template;
+		}
+
 		return self::is_classic_page( get_post() ) ? \EasyQ\PLUGIN_DIR . '/includes/frontend/views/no-comments.php' : $template;
 	}
 
@@ -312,10 +332,15 @@ final class Templates {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $args Comment query arguments.
-	 * @return array<string, mixed>
+	 * @param mixed $args Comment query arguments.
+	 * @return mixed mixed>
 	 */
-	public static function classic_comment_query( array $args ): array {
+	public static function classic_comment_query( mixed $args ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $args ) ) {
+			return $args;
+		}
+
 		if ( self::is_classic_page( get_post() ) ) {
 			$args['easyq_classic_page'] = true;
 		}
@@ -348,11 +373,16 @@ final class Templates {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|null $link    Edit link.
-	 * @param int         $post_id Post ID.
-	 * @return string|null
+	 * @param mixed $link    Edit link.
+	 * @param int   $post_id Post ID.
+	 * @return mixed
 	 */
-	public static function classic_edit_link( ?string $link, int $post_id ): ?string {
+	public static function classic_edit_link( mixed $link, int $post_id ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! ( null === $link || is_string( $link ) ) ) {
+			return $link;
+		}
+
 		return 0 === $post_id && self::is_classic_page( get_post() ) ? '' : $link;
 	}
 

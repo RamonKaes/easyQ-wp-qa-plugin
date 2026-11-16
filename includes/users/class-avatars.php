@@ -103,11 +103,16 @@ final class Avatars {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $args        Avatar arguments.
-	 * @param mixed                $id_or_email User ID, email, user, post or comment.
-	 * @return array<string, mixed>
+	 * @param mixed $args        Avatar arguments.
+	 * @param mixed $id_or_email User ID, email, user, post or comment.
+	 * @return mixed mixed>
 	 */
-	public function avatar_data( array $args, mixed $id_or_email ): array {
+	public function avatar_data( mixed $args, mixed $id_or_email ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $args ) ) {
+			return $args;
+		}
+
 		if ( ! Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
 			return $args;
 		}
@@ -298,10 +303,15 @@ final class Avatars {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string[] $editors Class names of the image editors, in the order core tries them.
-	 * @return string[]
+	 * @param mixed $editors Class names of the image editors, in the order core tries them.
+	 * @return mixed
 	 */
-	public static function image_editors( array $editors ): array {
+	public static function image_editors( mixed $editors ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $editors ) ) {
+			return $editors;
+		}
+
 		$position = array_search( 'WP_Image_Editor_Imagick', $editors, true );
 		if ( false !== $position ) {
 			array_splice( $editors, (int) $position, 0, array( Avatar_Editor_Imagick::class ) );

@@ -75,7 +75,8 @@ final class Search {
 
 			$this->providers = array();
 			foreach ( is_array( $filtered ) ? $filtered : array() as $provider ) {
-				if ( $provider instanceof Search_Provider ) {
+				// The built-in search keeps its ID; another provider takes an ID of its own.
+				if ( $provider instanceof Search_Provider && ( 'basic' !== $provider->id() || $provider instanceof Basic_Search ) ) {
 					$this->providers[ $provider->id() ] = $provider;
 				}
 			}
@@ -197,9 +198,14 @@ final class Search {
 	 * @return Search_Result[]
 	 */
 	public function search( string $query, int $start, int $count, ?int $user_id = null ): array {
-		$results = $this->provider()->search( $query, $start, $count, $user_id );
+		// A provider of another plugin may return anything; only results count.
+		$results = array_values( array_filter( (array) $this->provider()->search( $query, $start, $count, $user_id ), static fn ( mixed $result ): bool => $result instanceof Search_Result ) );
 		$posts   = Services::posts()->find_many( array_map( static fn ( Search_Result $result ): int => $result->question_id, $results ) );
 		$viewer  = new Actor( $user_id );
+		// The rules of each post read the votes of the user; they are loaded at once, as the lists do.
+		if ( null !== $user_id ) {
+			Services::votes()->prime( array_keys( $posts ), $user_id );
+		}
 
 		return array_values(
 			array_filter(

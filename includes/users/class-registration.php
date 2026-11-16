@@ -163,10 +163,15 @@ final class Registration {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_Error $errors Errors of the registration.
-	 * @return WP_Error
+	 * @param mixed $errors Errors of the registration.
+	 * @return mixed
 	 */
-	public function validate( WP_Error $errors ): WP_Error {
+	public function validate( mixed $errors ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! $errors instanceof WP_Error ) {
+			return $errors;
+		}
+
 		if ( self::asks_for_terms() && ! $this->ticked( 'easyq_terms' ) ) {
 			$errors->add( 'easyq_terms', __( '<strong>Error:</strong> Please accept the terms.', 'easyq' ) );
 		}

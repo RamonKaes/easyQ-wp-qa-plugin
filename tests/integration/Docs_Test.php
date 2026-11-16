@@ -146,7 +146,8 @@ final class Docs_Test extends Test_Case {
 	 * @return string[]
 	 */
 	private function applied_filters( string $source ): array {
-		preg_match_all( '/\bapply_filters\(\s*[\'"](easyq_[^\'"]+)[\'"]/', $source, $matches );
+		// Every filter easyQ applies: its own, and those of core and others it applies too.
+		preg_match_all( '/\bapply_filters\(\s*[\'"]([a-z][^\'"]+)[\'"]/', $source, $matches );
 
 		return array_map( static fn ( string $name ): string => (string) preg_replace( '/\{\$(\w+)\}/', '{$1}', $name ), $matches[1] );
 	}
@@ -231,12 +232,22 @@ final class Docs_Test extends Test_Case {
 		$filters = substr( $hooks, (int) strpos( $hooks, '## Filters' ) );
 		$filters = substr( $filters, 0, (int) strpos( $filters, "\n## ", 1 ) );
 		preg_match_all( '/^\| `(easyq_[^`]+)` \|/m', $filters, $documented );
+		preg_match_all( '/\bdo_action\(\s*[\'"]([a-z][^\'"]+)[\'"]/', $source, $actions );
+		$this->assertSame( array(), array_values( array_filter( array_unique( $actions[1] ), static fn ( string $name ): bool => ! str_starts_with( $name, 'easyq_' ) && ! str_contains( $hooks, "`$name`" ) ) ), 'Hooks of others easyQ fires without documentation.' );
 		$this->assertNotSame( array(), $documented[1] );
 		$this->assertSame( array(), array_values( array_diff( $documented[1], $applied ) ), 'Documented filters that do not exist.' );
 
+		// The events of the plugin are one list, which dispatch() holds every event to.
 		preg_match_all( '/Events::dispatch\(\s*\'(\w+)\'/', $source, $events );
-		$this->assertNotSame( array(), $events[1] );
-		$this->assertSame( array(), array_values( array_filter( array_unique( $events[1] ), static fn ( string $event ): bool => ! str_contains( $hooks, "`$event`" ) && ! str_contains( $hooks, "`easyq_$event`" ) ) ), 'Events without documentation.' );
+		$this->assertSame( array(), array_values( array_diff( array_unique( $events[1] ), \EasyQ\Events\Events::NAMES ) ), 'Events missing from Events::NAMES.' );
+		$section = substr( $hooks, (int) strpos( $hooks, '## Events' ) );
+		$section = substr( $section, 0, (int) strpos( $section, "\n## ", 1 ) );
+		preg_match_all( '/^\| ([^|]+) \|/m', $section, $cells );
+		preg_match_all( '/`([a-z_]+)`/', implode( ' ', $cells[1] ), $documented );
+		$documented = array_values( array_diff( $documented[1], array( 'easyq_event' ) ) );
+		$this->assertSame( array(), array_values( array_diff( \EasyQ\Events\Events::NAMES, $documented ) ), 'Events without documentation.' );
+		$this->assertSame( array(), array_values( array_diff( $documented, \EasyQ\Events\Events::NAMES ) ), 'Documented events that do not exist.' );
+		$this->assertGreaterThan( 80, count( \EasyQ\Events\Events::NAMES ) );
 	}
 
 	public function test_routes_match_the_rest_api_document(): void {
@@ -333,7 +344,7 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array( 'EasyQ\\Not\\There' ), $this->missing_classes( '`EasyQ\\Not\\There` and `EasyQ\\Posts\\Post` and `EasyQ\\REST\\Controller::context()`' ) );
 		$log = "## 14. Decisions log\n| 1 | a |\n| 2 | b |\n";
 		$this->assertSame( array( '9' ), $this->missing_decisions( 'decision 1, decisions 2 and 9', $log ) );
-		$this->assertSame( array( 'easyq_email_{name}', 'easyq_a' ), $this->applied_filters( 'apply_filters( "easyq_email_{$name}", $a ); apply_filters( \'easyq_a\', 1 ); apply_filters( \'other\', 1 );' ) );
+		$this->assertSame( array( 'easyq_email_{name}', 'easyq_a', 'other' ), $this->applied_filters( 'apply_filters( "easyq_email_{$name}", $a ); apply_filters( \'easyq_a\', 1 ); apply_filters( \'other\', 1 );' ), 'Filters of others count too.' );
 		$this->assertSame( '/posts/{}/actions/{}', $this->normal_route( '/posts/(?P<id>[\d]+)/actions/(?P<action>[a-z_]+)' ) );
 		$this->assertSame( '/posts/{}', $this->normal_route( '/posts/{id}' ) );
 	}

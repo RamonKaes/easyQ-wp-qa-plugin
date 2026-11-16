@@ -28,7 +28,8 @@ final class Activity_Tracker_Test extends Test_Case {
 	public function test_ignores_events_that_are_not_writes(): void {
 		$actor = $this->user();
 
-		Events::dispatch( 'search', array(), $actor );
+		// Logging in is an event, not a write.
+		Events::dispatch( 'u_login', array( 'user_id' => $actor->user_id ), $actor );
 
 		$this->assertSame( '', Site_Meta::get( (int) $actor->user_id, Activity_Tracker::LAST_WRITE_META ) );
 	}

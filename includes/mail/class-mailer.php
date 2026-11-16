@@ -104,9 +104,9 @@ final class Mailer {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string               $name  Template name.
-	 * @param array<string, mixed> $email The email with `to`, `subject`, `message` and `headers`.
-	 * @return array<string, mixed>
+	 * @param string       $name  Template name.
+	 * @param array<mixed> $email The email with `to`, `subject`, `message` and `headers`.
+	 * @return array<mixed>
 	 */
 	public static function filter_email( string $name, array $email ): array {
 		/**
@@ -116,13 +116,13 @@ final class Mailer {
 		 *
 		 * @since 0.1.0
 		 *
-		 * @param array<string, mixed> $email {
+		 * @param array<mixed> $email {
 		 *     Used to build wp_mail().
 		 *
 		 *     @type string $to      Email address of the recipient.
 		 *     @type string $subject Subject.
 		 *     @type string $message Text.
-		 *     @type string $headers Headers.
+		 *     @type string|string[] $headers Headers, as text or as an array of lines, as wp_mail() takes them.
 		 * }
 		 */
 		$filtered = apply_filters( "easyq_email_{$name}", $email );
@@ -174,7 +174,8 @@ final class Mailer {
 			is_string( $email['to'] ?? null ) ? $email['to'] : $recipient->email,
 			wp_specialchars_decode( is_string( $email['subject'] ?? null ) ? $email['subject'] : '' ),
 			is_string( $email['message'] ?? null ) ? $email['message'] : '',
-			is_string( $email['headers'] ?? null ) ? $email['headers'] : ''
+			// wp_mail() takes the headers as text or as an array of lines; a filter may return either.
+			is_array( $email['headers'] ?? null ) ? array_values( array_filter( $email['headers'], 'is_string' ) ) : ( is_string( $email['headers'] ?? null ) ? $email['headers'] : '' )
 		);
 
 		if ( $switched_locale ) {

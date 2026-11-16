@@ -88,11 +88,16 @@ final class Navigation {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<int, array<string, mixed>> $variations Variations.
-	 * @param WP_Block_Type                    $block_type Block type.
-	 * @return array<int, array<string, mixed>>
+	 * @param mixed         $variations Variations.
+	 * @param WP_Block_Type $block_type Block type.
+	 * @return mixed array<string, mixed>>
 	 */
-	public function variations( array $variations, WP_Block_Type $block_type ): array {
+	public function variations( mixed $variations, WP_Block_Type $block_type ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $variations ) ) {
+			return $variations;
+		}
+
 		if ( 'core/navigation-link' !== $block_type->name ) {
 			return $variations;
 		}
@@ -123,11 +128,16 @@ final class Navigation {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string       $content      Rendered link.
+	 * @param mixed        $content      Rendered link.
 	 * @param array<mixed> $parsed_block Parsed block with its attributes.
-	 * @return string
+	 * @return mixed
 	 */
-	public function render( string $content, array $parsed_block ): string {
+	public function render( mixed $content, array $parsed_block ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_string( $content ) ) {
+			return $content;
+		}
+
 		$attributes = is_array( $parsed_block['attrs'] ?? null ) ? $parsed_block['attrs'] : array();
 		$route      = is_string( $attributes['type'] ?? null ) ? $attributes['type'] : '';
 

@@ -130,8 +130,8 @@ logs carry over.
 
 | Filter | Arguments | Purpose |
 | --- | --- | --- |
-| `easyq_default_settings` | `array $defaults` | Default values of all settings, keyed by section and setting |
-| `easyq_search_providers` | `EasyQ\Search\Search_Provider[] $providers` | Add search engines; the built-in search is always kept |
+| `easyq_default_settings` | `array $defaults` | Default values of all settings, keyed by section and setting. A setting the filter leaves out keeps the default of easyQ; the result is kept for the request while the callbacks of the filter stay the same |
+| `easyq_search_providers` | `EasyQ\Search\Search_Provider[] $providers` | Add search engines; the built-in search is always kept under the ID `basic`, which no other provider can take. What a provider returns that is not an `EasyQ\Search\Search_Result`, and questions the user may not see, are left out |
 | `easyq_classic_template_content` | `string $content`, `string $slug` | Block markup of a Q&A page in classic themes, e.g. `easyq-question`; block themes edit the templates in the Site Editor instead |
 | `easyq_print_seo_meta` | `bool $print` | Whether easyQ prints the canonical address and the JSON-LD `QAPage` data of Q&A pages; false by default when Yoast SEO (`WPSEO_VERSION`) or Rank Math (`RANK_MATH_VERSION`) is active |
 | `easyq_send_email` | `bool $send`, `string $name`, `EasyQ\Mail\Recipient $recipient` | Whether an email is sent |
@@ -141,6 +141,19 @@ logs carry over.
 | `easyq_sitemaps_entry` | `array $entry`, `string $object_subtype`, `mixed $item` | An entry of a Q&A sitemap, as core's `wp_sitemaps_posts_entry`; `$item` is the question, the tag, the category or the user |
 | `easyq_client_ip` | `string $ip` | IP address of the current request; easyQ trusts only `REMOTE_ADDR` by default. Sites behind a proxy return the client address from a trusted header here; a list such as `X-Forwarded-For` gives its first address |
 | `easyq_rest_prepare_{object}` | `WP_REST_Response $response`, `mixed $item`, `WP_REST_Request $request` | The response of an item of the REST API, as core's `rest_prepare_{$post_type}`; `{object}` is the object type without `easyq-`, e.g. `question` or `user`, and `$item` the item, such as an `EasyQ\Posts\Post`, or its data where it is no object |
+
+
+### Filters of others easyQ applies
+
+easyQ applies these filters of core and of string translation plugins where it does the same as they do; callbacks get the same arguments as there.
+
+| Filter | Where | Arguments |
+| --- | --- | --- |
+| `rss_update_period`, `rss_update_frequency` | The feeds, as `wp-includes/feed-rss2.php` | `string $duration`, `string $frequency` |
+| `user_request_key_expiration` | The key of the newsletter confirmation, as the requests of the privacy tools | `int $expiration` in seconds |
+| `wpml_translate_single_string` | Edited email templates, in the language of the recipient (WPML and Polylang) | `string $text`, `string $domain` (`easyq`), `string $name` |
+
+easyQ registers the edited email templates with `wpml_register_single_string` (domain `easyq`, names `email_{name}_subject` and `email_{name}_body`), which WPML and Polylang read, and fires the hooks of the feeds of core: `rss_tag_pre`, `rss2_ns`, `rss2_head`, `rss2_item`.
 
 ## Capabilities
 

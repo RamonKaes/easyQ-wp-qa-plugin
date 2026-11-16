@@ -150,10 +150,15 @@ final class Feeds {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, string|false> $headers HTTP headers.
-	 * @return array<string, string|false>
+	 * @param mixed $headers HTTP headers.
+	 * @return mixed string|false>
 	 */
-	public function headers( array $headers ): array {
+	public function headers( mixed $headers ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $headers ) ) {
+			return $headers;
+		}
+
 		if ( 'feed' === $this->router->current()?->name ) {
 			unset( $headers['ETag'] );
 			$headers['Last-Modified'] = false;

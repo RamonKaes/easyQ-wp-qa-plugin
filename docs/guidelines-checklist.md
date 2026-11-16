@@ -58,7 +58,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Own hooks prefixed and documented | Prefix Met; F-97, F-130 | `easyq_*`, [hooks.md](hooks.md), doc blocks at each hook |
+| Own hooks prefixed and documented | Met (`Docs_Test`: every filter applied and every hook of others fired, and `Events::NAMES` against the document) | `easyq_*`, [hooks.md](hooks.md), doc blocks at each hook |
 
 ## Privacy
 
@@ -106,7 +106,7 @@ code, and known vulnerabilities of the dependencies.
 | `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met (`Mailer`, and the newsletter and its confirmation: `Newsletter_Run_Test`) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
 | Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
-| Stop emails with one click | Met for the emails about posts and the newsletter; emails about messages and the wall link the account page (`List-Unsubscribe`, RFC 2369), core sends no such emails; F-93 | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
+| Stop emails with one click | Met for the emails about posts and the newsletter; emails about messages and the wall link the account page (`List-Unsubscribe`, RFC 2369), core sends no such emails; headers a filter returns as lines keep `List-Unsubscribe` (`Filter_Values_Test`) | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
 | `Reply-To` of the author, as core's comment emails | Kept | Addresses stay private on a Q&A site; Q2A sets none there either |
 
 ## HTTP API
@@ -269,8 +269,8 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | Upgrade path: the version saved only when the schema is in place; defaults not brought back | Met (`Lifecycle_Test`) | `Database\Installer` |
 | Feeds through `add_feed()`, the hooks and fields of `feed-rss2.php`, conditional requests | Met (`Feeds_Test`): `rss_tag_pre`, `rss2_ns`, `rss2_head`, `rss2_item`, `lastBuildDate`, `sy:` with the filters of core, `ETag` and `Last-Modified` with 304, no characters XML forbids | `Feeds\Feeds` |
 | Sitemaps: `WP_Sitemaps_Provider`, registered with `wp_register_sitemap_provider()`, the filters of the core providers, no empty terms, users with posts | Met (`Sitemap_Provider_Test`): registered on `wp_sitemaps_init`, `easyq_sitemaps_pre_url_list` and `easyq_sitemaps_entry` as the filters of the core providers, `wp_sitemaps_max_urls` | `Frontend\Sitemap_Provider` |
-| Values returned by filters checked before use, as core does with `rest_ensure_response()` and friends | F-93, F-94, F-95, F-96 | `docs/hooks.md` |
-| Every hook documented, the filters of others easyQ applies included | F-97, F-130 | `docs/hooks.md` |
+| Values returned by filters checked before use, as core does with `rest_ensure_response()` and friends | Met (`Filter_Values_Test`: every filter callback of the plugin hands on a value of another type unchanged; headers as lines, defaults left out, results of search providers) | `docs/hooks.md` |
+| Every hook documented, the filters of others easyQ applies included | Met (`Docs_Test`) | `docs/hooks.md` |
 
 ## Evidence of 2026-11-15
 

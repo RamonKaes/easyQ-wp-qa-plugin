@@ -44,10 +44,15 @@ final class Privacy {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $exporters Exporters.
-	 * @return array<string, mixed>
+	 * @param mixed $exporters Exporters.
+	 * @return mixed mixed>
 	 */
-	public function add_exporters( array $exporters ): array {
+	public function add_exporters( mixed $exporters ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $exporters ) ) {
+			return $exporters;
+		}
+
 		$exporters['easyq-posts'] = array(
 			'exporter_friendly_name' => __( 'Q&A posts', 'easyq' ),
 			'callback'               => array( Post_Data::class, 'export_posts' ),
@@ -96,10 +101,15 @@ final class Privacy {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array<string, mixed> $erasers Erasers.
-	 * @return array<string, mixed>
+	 * @param mixed $erasers Erasers.
+	 * @return mixed mixed>
 	 */
-	public function add_erasers( array $erasers ): array {
+	public function add_erasers( mixed $erasers ): mixed {
+		// Another filter may hand on any type; it is passed on unchanged, as core does.
+		if ( ! is_array( $erasers ) ) {
+			return $erasers;
+		}
+
 		$erasers['easyq-posts'] = array(
 			'eraser_friendly_name' => __( 'Q&A posts', 'easyq' ),
 			'callback'             => array( Post_Data::class, 'erase_posts' ),

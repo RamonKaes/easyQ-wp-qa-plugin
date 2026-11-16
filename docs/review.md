@@ -164,7 +164,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | M | partly | — | — | — | partly | partly | — | partly | — | partly | — | open | partly |
 | N | — | — | partly | — | open | partly | — | partly | — | partly | — | partly | partly |
 | O | — | — | — | — | partly | partly | partly | partly | — | partly | — | partly | partly |
-| P | F-93, F-94 | F-95, F-96 | partly | F-131 | — | — | — | — | — | F-94, F-96 | — | — | F-97, F-130 |
+| P | partly | partly | partly | partly | — | — | — | — | — | partly | — | — | partly |
 | Q | — | — | — | — | — | partly | — | partly | — | partly | partly | partly | partly |
 
 The release gate after the second round:
