@@ -46,7 +46,8 @@ final class Users_Render {
 		$id   = is_numeric( $attributes['userId'] ?? null ) ? (int) $attributes['userId'] : 0;
 		$user = 0 < $id ? get_userdata( $id ) : Block_Context::router()->current()?->user();
 
-		if ( ! $user instanceof WP_User ) {
+		// The router shows only profiles that are shown; a user chosen in the block is checked the same way.
+		if ( ! $user instanceof WP_User || ! Services::user_query()->is_shown( $user, Block_Context::viewer()->user_id ) ) {
 			return '';
 		}
 

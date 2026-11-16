@@ -200,6 +200,12 @@ final class Lists_Render {
 			return '';
 		}
 
+		// Without the permission to view questions the block gives the reason, as the REST API does.
+		$reason = Services::permissions()->view_error( $question, Block_Context::viewer() );
+		if ( null !== $reason ) {
+			return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), Forms::permission_message( $reason ) );
+		}
+
 		// The blocks of the question, its answers and comments ask for their children, the authors
 		// and the votes and flags of the viewer; load them at once.
 		$posts = Services::posts();

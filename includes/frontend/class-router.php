@@ -8,6 +8,7 @@
 
 namespace EasyQ\Frontend;
 
+use EasyQ\Actor;
 use EasyQ\Feeds\Feeds;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
@@ -93,6 +94,22 @@ final class Router {
 	 */
 	public function query_vars( array $vars ): array {
 		return array_merge( $vars, array( Routes::ROUTE_VAR, Routes::ARG_VAR, Routes::SECTION_VAR ) );
+	}
+
+	/**
+	 * Returns the question of the page if the viewer may see it.
+	 *
+	 * Without the permission to view questions the page stays, with the reason in the question
+	 * block, but its title, address and data are not printed.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Post|null
+	 */
+	public function shown_question(): ?Post {
+		$question = $this->current?->question();
+
+		return null !== $question && Services::permissions()->shows( $question, Actor::current() ) ? $question : null;
 	}
 
 	/**
@@ -190,7 +207,8 @@ final class Router {
 		switch ( $name ) {
 			case 'question':
 				$post = is_numeric( $arg ) ? Services::posts()->find( (int) $arg ) : null;
-				return null !== $post && Post::QUESTION === $post->base_type() ? new Route( 'question', $post ) : Route::not_found();
+				// A hidden or queued question is not found for those who may not see it, as in the REST API and core.
+				return null !== $post && Post::QUESTION === $post->base_type() && Services::permissions()->post_rules( $post, Actor::current() )['viewable'] ? new Route( 'question', $post ) : Route::not_found();
 
 			case 'tag':
 				$tag = null === $arg ? '' : sanitize_text_field( rawurldecode( $arg ) );

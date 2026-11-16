@@ -508,7 +508,7 @@ final class Post_Fields {
 
 		if ( Post::QUESTION === $post->base_type() && Post_Service::is_closed( $post ) ) {
 			$closer = null === $post->closed_by_id ? null : Services::posts()->find( $post->closed_by_id );
-			if ( null !== $closer && Post::QUESTION === $closer->base_type() ) {
+			if ( null !== $closer && Post::QUESTION === $closer->base_type() && Services::permissions()->shows( $closer, Block_Context::viewer() ) ) {
 				$notes[] = sprintf(
 					/* translators: %s: link to the original question. */
 					esc_html__( 'Closed as a duplicate of %s', 'easyq' ),

@@ -27,19 +27,6 @@ decides whether it is fixed or kept with a reason.
 
 ### Blocker
 
-- **F-57** (C × Identity, C × State, C × Abuse). A hidden or queued question answers
-  visitors with 200 and names its title in `<title>`, in the `<h1>` of a classic theme
-  and in the slug of the canonical address; the blocks themselves print nothing.
-  Question2Answer and core answer 404. *Why no guard saw it:*
-  `test_hidden_questions_render_nothing_for_visitors` renders the block only, never the
-  page around it.
-- **F-58** (D × Identity, C × Identity). `permit_view_q_page` holds the REST API (401)
-  but not the question page (200 with the text) nor the `easyq/question` block, for
-  visitors. *Why no guard saw it:* every test of this permission goes through the REST
-  API, the feed, the sitemap or the settings.
-- **F-59** (E × State). "Closed as a duplicate of …" names a hidden original to
-  visitors, with its title and a link. *Why no guard saw it:*
-  `test_duplicate_notes_censor_the_original_title` uses a visible original.
 - **F-60** (E × Value, E × Abuse, E × Guidelines). A subscriber who writes in the HTML
   format keeps `data-wp-*` directives, `style` and `id` through `wp_kses_post()`, and they
   end up inside `data-wp-interactive="easyq"` of the question block, for visitors and
@@ -49,13 +36,6 @@ decides whether it is fixed or kept with a reason.
   the reader with a scroll was not run (it needs an end-to-end test). *Why no guard saw
   it:* `Content_Renderer_Test` checks `onclick` and `<script>` only; PHPCS takes
   `wp_kses_post()` as enough.
-- **F-61** (D × Identity, D × Abuse, D × Multisite). The `easyq/user` block with a
-  `userId` shows the name and, through the binding `easyq/user`, the biography of a
-  user whose profile route and REST response are 404: users who never took part, on a
-  multisite also members of other sites only and super admins who are no member. An
-  author can publish such a block. *Why no guard saw it:*
-  `User_Blocks_Test::test_user_bindings` uses a user without `take_part()` and holds the
-  leak as expected behavior.
 - **F-62** (D × Value, D × Form). Block attributes beyond the integer range
   (`{"userId":1e20}`, `perPage`, `category`, `author`, `questionId`, `length`) give the
   warning "not representable as an int" on PHP 8.5 in `class-users-render.php`,

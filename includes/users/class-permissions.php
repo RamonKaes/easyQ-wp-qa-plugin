@@ -236,6 +236,34 @@ final class Permissions {
 	}
 
 	/**
+	 * Returns why a viewer may not view a post, as the REST API refuses it: the permission to
+	 * view questions, checked against the category of the post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post  $post  Post.
+	 * @param Actor $actor Viewer.
+	 * @return string|null Reason code, or null if allowed.
+	 */
+	public function view_error( Post $post, Actor $actor ): ?string {
+		return $this->error( 'permit_view_q_page', $actor, $post, check_blocks: false );
+	}
+
+	/**
+	 * Tells whether a viewer may see a post anywhere outside the editing screens: on its page,
+	 * in a block, a title or a link, as the REST API would return it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post  $post  Post.
+	 * @param Actor $actor Viewer.
+	 * @return bool
+	 */
+	public function shows( Post $post, Actor $actor ): bool {
+		return $this->post_rules( $post, $actor )['viewable'] && null === $this->view_error( $post, $actor );
+	}
+
+	/**
 	 * Determines which actions an actor may perform on a post.
 	 *
 	 * Rules ending in `button` mean the action is offered, possibly with a hint

@@ -97,7 +97,7 @@ final class Page_Meta {
 			return;
 		}
 
-		$question = $route->question();
+		$question = $this->router->shown_question();
 		if ( null === $question ) {
 			return;
 		}
@@ -126,7 +126,7 @@ final class Page_Meta {
 		}
 
 		$question = $route->question();
-		if ( in_array( $route->name, array( 'search', 'ask', 'account', 'unsubscribe' ), true ) || ( null !== $question && ! $question->is_visible() ) || Lists::main_list_is_empty() ) {
+		if ( in_array( $route->name, array( 'search', 'ask', 'account', 'unsubscribe' ), true ) || ( null !== $question && ( ! $question->is_visible() || null === $this->router->shown_question() ) ) || Lists::main_list_is_empty() ) {
 			$robots['noindex'] = true;
 		}
 
@@ -144,7 +144,7 @@ final class Page_Meta {
 	 * @since 0.1.0
 	 */
 	public function count_view(): void {
-		$question = $this->router->current()?->question();
+		$question = $this->router->shown_question();
 		if ( null === $question || ! $question->is_visible() || ( is_user_logged_in() && get_current_user_id() === $question->user_id ) ) {
 			return;
 		}

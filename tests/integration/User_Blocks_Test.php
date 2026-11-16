@@ -185,6 +185,7 @@ final class User_Blocks_Test extends Test_Case {
 
 	public function test_user_titles_and_avatars(): void {
 		$user = $this->named_user( 'Hedy' );
+		$this->take_part( $user->ID );
 		Services::user_levels()->set_level( Actor::system(), $user->ID, Levels::EXPERT );
 
 		Block_Context::router()->set_current( new Route( 'user', $user ) );
@@ -199,6 +200,7 @@ final class User_Blocks_Test extends Test_Case {
 
 	public function test_user_bindings(): void {
 		$user = $this->named_user( 'Radia' );
+		$this->take_part( $user->ID );
 
 		$html = do_blocks( '<!-- wp:easyq/user {"userId":' . $user->ID . '} --><!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"easyq/user","args":{"key":"name"}}}}} --><p></p><!-- /wp:paragraph --><!-- /wp:easyq/user -->' );
 
