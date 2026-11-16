@@ -100,7 +100,9 @@ final class Installer {
 			return;
 		}
 
+		// Core skips large networks in network-wide actions; the current site is cleaned at least.
 		if ( wp_is_large_network() ) {
+			self::deactivate_site();
 			return;
 		}
 
@@ -127,7 +129,8 @@ final class Installer {
 		// WordPress rebuilds the rewrite rules without the Q&A routes on the next request.
 		delete_option( 'rewrite_rules' );
 		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
-		wp_clear_scheduled_hook( \EasyQ\Newsletter\Newsletter::CRON_HOOK );
+		// A sending stops with its event, so the admin shows no sending that never moves.
+		\EasyQ\Newsletter\Newsletter::cancel();
 		wp_clear_scheduled_hook( \EasyQ\Privacy\IP_Retention::CRON_HOOK );
 	}
 

@@ -31,20 +31,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 ### Should
 
-- **F-76** (J × Guidelines). The newsletter and its confirmation are sent in the
-  language of the site, not of the recipient; the checklist says "Met" for the
-  language per recipient, which holds for `Mailer` only. *Why no guard saw it:* the
-  language test checks `Mailer`.
-- **F-77** (J × Concurrency, K × Concurrency). The newsletter: cancelling during a
-  batch is undone when the batch writes its state, and starting during a batch
-  schedules a second one from the same position, so every recipient of the batch gets
-  it twice. *Why no guard saw it:* `Newsletter_Test` runs the batches one after the
-  other.
-- **F-78** (K × State, K × Error path). A batch that dies (time limit, fatal error)
-  leaves the newsletter `running` without an event, for good; starting again sends it
-  twice to the recipients before the break. *Why no guard saw it:* as F-77.
-- **F-79** (J × Multisite). Users removed from a site still get its newsletter. *Why
-  no guard saw it:* the newsletter tests run on one site.
 - **F-80** (J × State). Approving a comment below a hidden answer emails the text of
   the hidden answer to its author and to earlier commenters. *Why no guard saw it:*
   the notification tests use visible parents.
@@ -52,11 +38,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
   notifications, which then gets the answers of others without confirming; core does
   not mail comment authors about replies, Question2Answer does as easyQ. *Why no guard
   saw it:* no test looks at the address of an anonymous author as a third party.
-- **F-82** (J × Error path, J × State). After a failed confirmation email the
-  subscription stays `pending`, and every further request answers 200 without sending
-  anything, also after the pause of ten minutes; only turning the newsletter off and
-  on sends again. *Why no guard saw it:*
-  `test_a_refused_subscription_saves_nothing_of_the_profile` checks the first 500 only.
 - **F-83** (L × Value, L × Abuse). A control character in a title (`\x01`) is saved
   and makes the feed invalid XML for every reader. *Why no guard saw it:*
   `test_builds_valid_rss` uses `&` and `<script>`.
@@ -132,9 +113,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 
 - **F-113** (J × Presentation). Display names are HTML-encoded in plain-text emails
   (`Tom &amp; Jerry,`). *Why no guard saw it:* the test names have no `&`.
-- **F-114** (K × Volume). Starting the newsletter loads every subscriber as a user to
-  count them (about two queries each), and the batches do not prime the user cache.
-  *Why no guard saw it:* the growth tests measure lists.
 - **F-115** (J × Volume). Notifications of a thread load each recipient one by one and
   send synchronously in the request of the commenter (25 commenters: 205 queries and
   26 emails). *Why no guard saw it:* no growth test for writes.
@@ -144,12 +122,6 @@ None open; F-56 to F-63 were fixed on 2026-11-16.
 - **F-117** (J × Presentation, J × Guidelines). Emails about private messages and wall
   posts have no link or header to stop them. *Why no guard saw it:* the footer tests
   cover emails about posts.
-- **F-118** (K × State). Deactivation clears the event of the newsletter but leaves it
-  `running`; after activation the admin shows a sending that never moves. *Why no
-  guard saw it:* the test checks the hook only.
-- **F-119** (K × Guidelines, K × Multisite). The checklist says the events are cleared
-  "on every site of a network"; on a large network the deactivation skips every site,
-  the main site too. *Why no guard saw it:* `Docs_Test` does not read sentences.
 - **F-120** (L × Frequency, L × Volume). The `<link rel="alternate">` of every Q&A page
   builds the whole feed with full text to find its title; the number of queries stays,
   the time grows with the items. *Why no guard saw it:* `Query_Growth_Test` measures

@@ -193,15 +193,26 @@ final class Newsletter {
 			)
 		);
 
+		// In the language of the recipient, as core writes emails to users (`wp_new_user_notification()`).
+		switch_to_user_locale( $user->ID );
 		$site = self::site_name();
 		/* translators: %s: site name. */
 		$subject = sprintf( __( '[%s] Confirm the newsletter', 'easyq' ), $site );
 		/* translators: 1: site name, 2: confirmation address. */
 		$body = sprintf( __( "Hello,\n\nyou asked for the newsletter of %1\$s. Please confirm it here:\n\n%2\$s\n\nIf you did not ask for it, ignore this email; you will get no newsletter.\n\n%1\$s", 'easyq' ), $site, $url );
 
-		return wp_mail( $user->user_email, $subject, $body )
-			? true
-			: new WP_Error( 'easyq_email_error', __( 'The confirmation could not be sent. Please try again later.', 'easyq' ), array( 'status' => 500 ) );
+		$sent = wp_mail( $user->user_email, $subject, $body );
+		restore_previous_locale();
+		if ( $sent ) {
+			return true;
+		}
+
+		// Nothing was sent, so nothing waits for a confirmation, and the next request sends again.
+		Site_Meta::delete( $user->ID, self::SENT_META );
+		Site_Meta::delete( $user->ID, self::KEY_META );
+		Site_Meta::delete( $user->ID, self::STATE_META );
+
+		return new WP_Error( 'easyq_email_error', __( 'The confirmation could not be sent. Please try again later.', 'easyq' ), array( 'status' => 500 ) );
 	}
 
 	/**
@@ -334,7 +345,7 @@ final class Newsletter {
 				array(
 					'last_user_id' => 0,
 					'done'         => 0,
-					'total'        => count( self::subscribers( 0, PHP_INT_MAX )['users'] ),
+					'total'        => self::count_subscribers(),
 				),
 				false
 			);
@@ -365,38 +376,114 @@ final class Newsletter {
 	 * @return int Number of emails sent.
 	 */
 	public function send_batch(): int {
-		$run = get_option( self::RUN_OPTION );
-		if ( ! is_array( $run ) || self::ready() instanceof WP_Error ) {
-			self::cancel();
-
+		// One batch at a time, as `WP_Upgrader::create_lock()` locks: a second one that starts
+		// while the first sends returns at once; a lock older than five minutes is stale.
+		if ( ! self::lock() ) {
 			return 0;
 		}
 
-		$per_minute = max( 1, Options::get_int( 'newsletter', 'mailing_per_minute' ) );
-		$batch      = self::subscribers( is_int( $run['last_user_id'] ?? null ) ? $run['last_user_id'] : 0, $per_minute );
-		if ( null === $batch['last'] ) {
-			self::cancel();
+		try {
+			$run = get_option( self::RUN_OPTION );
+			if ( ! is_array( $run ) || self::ready() instanceof WP_Error ) {
+				self::cancel();
 
-			return 0;
+				return 0;
+			}
+
+			$per_minute = max( 1, Options::get_int( 'newsletter', 'mailing_per_minute' ) );
+			$batch      = self::subscribers( is_int( $run['last_user_id'] ?? null ) ? $run['last_user_id'] : 0, $per_minute );
+			if ( null === $batch['last'] ) {
+				self::cancel();
+
+				return 0;
+			}
+
+			// The position and the next event are written before sending: a batch that dies sends
+			// nobody twice, and the sending goes on with the next one.
+			update_option(
+				self::RUN_OPTION,
+				array(
+					'last_user_id' => $batch['last'],
+					'done'         => ( is_int( $run['done'] ?? null ) ? $run['done'] : 0 ) + count( $batch['users'] ),
+					'total'        => is_int( $run['total'] ?? null ) ? $run['total'] : 0,
+				),
+				false
+			);
+			if ( false === wp_next_scheduled( self::CRON_HOOK ) ) {
+				wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::CRON_HOOK );
+			}
+
+			$sent = 0;
+			foreach ( $batch['users'] as $user ) {
+				// Cancelled while this batch sends: the rest of the batch gets nothing.
+				wp_cache_delete( self::RUN_OPTION, 'options' );
+				if ( false === get_option( self::RUN_OPTION ) ) {
+					break;
+				}
+				$sent += $this->send_to( $user ) ? 1 : 0;
+			}
+
+			return $sent;
+		} finally {
+			self::unlock();
+		}
+	}
+
+	/**
+	 * Takes the lock of the batches, as `WP_Upgrader::create_lock()` does.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return bool Whether this request holds the lock now.
+	 */
+	private static function lock(): bool {
+		$wpdb = DB::wpdb();
+		$name = self::RUN_OPTION . '_lock';
+		$sql  = $wpdb->prepare( 'INSERT IGNORE INTO %i ( option_name, option_value, autoload ) VALUES ( %s, %s, %s )', $wpdb->options, $name, (string) time(), 'off' );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; an atomic insert, as WP_Upgrader::create_lock().
+		if ( null !== $sql && 1 === (int) $wpdb->query( $sql ) ) {
+			return true;
 		}
 
-		$sent = 0;
-		foreach ( $batch['users'] as $user ) {
-			$sent += $this->send_to( $user ) ? 1 : 0;
+		wp_cache_delete( $name, 'options' );
+		$since = get_option( $name );
+		if ( is_numeric( $since ) && (int) $since > time() - 5 * MINUTE_IN_SECONDS ) {
+			return false;
 		}
 
-		update_option(
-			self::RUN_OPTION,
-			array(
-				'last_user_id' => $batch['last'],
-				'done'         => ( is_int( $run['done'] ?? null ) ? $run['done'] : 0 ) + count( $batch['users'] ),
-				'total'        => is_int( $run['total'] ?? null ) ? $run['total'] : 0,
-			),
-			false
-		);
-		wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::CRON_HOOK );
+		// The lock of a batch that died.
+		update_option( $name, (string) time(), false );
 
-		return $sent;
+		return true;
+	}
+
+	/**
+	 * Releases the lock of the batches.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function unlock(): void {
+		delete_option( self::RUN_OPTION . '_lock' );
+	}
+
+	/**
+	 * Returns the number of users who will get the newsletter, counted in batches of 500 users
+	 * whose data is loaded at once.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	private static function count_subscribers(): int {
+		$count = 0;
+		$after = 0;
+		do {
+			$batch  = self::subscribers( $after, 500 );
+			$count += count( $batch['users'] );
+			$after  = (int) $batch['last'];
+		} while ( null !== $batch['last'] );
+
+		return $count;
 	}
 
 	/**
@@ -435,12 +522,17 @@ final class Newsletter {
 			. 'List-Unsubscribe: <' . $click . ">\n"
 			. "List-Unsubscribe-Post: List-Unsubscribe=One-Click\n";
 
-		return wp_mail(
+		// The text is the site owner's; what the plugin adds is in the language of the recipient.
+		switch_to_user_locale( $user->ID );
+		$sent = wp_mail(
 			$user->user_email,
 			Options::get_string( 'newsletter', 'mailing_subject' ),
 			trim( Options::get_string( 'newsletter', 'mailing_body' ) ) . "\n\n\n" . __( 'To stop the newsletter:', 'easyq' ) . ' ' . $page,
 			$headers
 		);
+		restore_previous_locale();
+
+		return $sent;
 	}
 
 	/**
@@ -501,10 +593,13 @@ final class Newsletter {
 			)
 		);
 
+		// The users of a batch are loaded at once, as `cache_users()` does for lists of core.
+		cache_users( $ids );
 		$users = array();
 		foreach ( $ids as $id ) {
 			$user = get_userdata( $id );
-			if ( false === $user || User_Status::is_blocked( $id ) || ( Options::get_bool( 'spam', 'moderate_users' ) && ! User_Status::is_approved( $id ) ) ) {
+			// On a network, only members of the site get its newsletter.
+			if ( false === $user || ( is_multisite() && ! is_user_member_of_blog( $id ) ) || User_Status::is_blocked( $id ) || ( Options::get_bool( 'spam', 'moderate_users' ) && ! User_Status::is_approved( $id ) ) ) {
 				continue;
 			}
 			$users[] = $user;

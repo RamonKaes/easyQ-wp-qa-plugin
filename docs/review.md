@@ -158,8 +158,8 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |
 | H | open | partly | — | partly | open | — | partly | partly | partly | partly | — | partly | partly |
 | I | open | partly | partly | partly | partly | partly | — | partly | partly | ✓ | partly | partly | partly |
-| J | — | F-116 | partly | partly | F-77 | F-115 | partly | F-80 | F-81 | F-82 | F-113, F-117 | F-79 | F-76, F-117 |
-| K | — | — | — | partly | F-77 | F-114 | partly | F-78, F-118 | — | F-78 | — | partly | F-119 |
+| J | — | F-116 | partly | partly | partly | F-115 | partly | F-80 | F-81 | partly | F-113, F-117 | partly | F-117 |
+| K | — | — | — | partly | partly | partly | partly | partly | — | partly | — | partly | partly |
 | L | partly | F-83 | F-122 | F-84, F-120 | — | partly | partly | F-121 | F-83 | partly | partly | open | F-84, F-85, F-86 |
 | M | F-125 | — | — | — | F-124 | F-90 | — | partly | — | partly | — | open | partly |
 | N | — | — | partly | — | open | F-87 | — | F-88, F-123 | — | partly | — | partly | F-87, F-89 |

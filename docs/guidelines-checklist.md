@@ -103,7 +103,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met for `Mail\Mailer`; F-76 | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
+| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met (`Mailer`, and the newsletter and its confirmation: `Newsletter_Run_Test`) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
 | Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
 | Stop emails with one click | Met for the emails about posts and the newsletter; F-93, F-117 | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
@@ -128,7 +128,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Schedule on activation, clear on deactivation | Met on one site; F-118, F-119 | Newsletter batches as single events (`wp_schedule_single_event()`), and the daily removal of IP addresses (`wp_schedule_event()` on `init`, like `wp_schedule_delete_old_privacy_export_files()`), cleared on deactivation and uninstall, on every site of a network; `IP_Retention_Test` finds every `CRON_HOOK` and checks both |
+| Schedule on activation, clear on deactivation | Met (`Newsletter_Run_Test`, `IP_Retention_Test`); a large network cleans the current site only, as core skips large networks | Newsletter batches as single events (`wp_schedule_single_event()`), and the daily removal of IP addresses (`wp_schedule_event()` on `init`, like `wp_schedule_delete_old_privacy_export_files()`), cleared on deactivation and uninstall, on every site of a network that is not large, and a sending is ended with its event; `IP_Retention_Test` finds every `CRON_HOOK` and checks both |
 
 ## Internationalization
 
@@ -261,7 +261,7 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | Cookies: prefixed name, `COOKIEPATH` and `COOKIE_DOMAIN`, `secure` from the scheme of `home_url()`, renewed when used, asked for as `show_comments_cookies_opt_in` asks | Met (`Cookies_IP_Test`): a name per site of a network, `secure` as `wp_set_comment_cookies()`, renewed with every post, the visitor cookie only with consent while the site asks; the notice cookie, set when a visitor dismisses the notice or for logged-in users, holds no identifier and asks no consent | `Users\Visitor_Cookie`, `Notices\Notices` |
 | Client IP from `REMOTE_ADDR`, a proxy only through a filter; shortened as `wp_privacy_anonymize_ip()` | Met (`Cookies_IP_Test`): a list from the filter gives its first address, mapped IPv4 addresses are IPv4, requests without an address share one limit | `Util\IP` |
 | Links built from `home_url()` or the permalink, not from `HTTP_HOST` | Met (`Cookies_IP_Test`) | `includes/blocks/render/class-forms.php` |
-| Mass mailing: language per recipient, batches that survive a broken request, recipients still members | F-76, F-77, F-78, F-79 | `Newsletter\Newsletter` |
+| Mass mailing: language per recipient, batches that survive a broken request, recipients still members | Met (`Newsletter_Run_Test`: one batch at a time, position written before sending) | `Newsletter\Newsletter` |
 | WP-CLI: synopsis with options and examples, `WP_CLI::confirm()` with `--yes`, `WP_CLI::error()`, progress bar, `wp_clear_object_cache()`, registered only under `WP_CLI` | Met; F-125 | `CLI\Command` |
 | Site Health: result as core builds it, direct tests, private fields marked `private`, actions that work on a network | Form Met; F-98, F-132, F-133 | `Health\Site_Health` |
 | Privacy tools: exporter and eraser through the filters, pages of a fixed size for every kind of data, addresses compared as core compares them, everything stored is exported | Form and addresses Met; F-87, F-88 | `Privacy\Privacy`, `Post_Data`, `Profile_Data` |
