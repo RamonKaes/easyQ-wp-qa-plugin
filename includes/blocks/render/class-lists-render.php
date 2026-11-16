@@ -14,6 +14,7 @@ use EasyQ\Blocks\Render;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Number;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -348,7 +349,7 @@ final class Lists_Render {
 		$keep    = self::positive_int( $block->context['easyq/commentsFewerCount'] ?? null ) ?? max( 1, Options::get_int( 'viewing', 'show_fewer_cs_count' ) );
 		$earlier = '';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading which comments to show.
-		$show_all = isset( $_GET[ self::SHOW_COMMENTS_VAR ] ) && is_string( $_GET[ self::SHOW_COMMENTS_VAR ] ) && absint( $_GET[ self::SHOW_COMMENTS_VAR ] ) === $parent->id;
+		$show_all = Number::id( isset( $_GET[ self::SHOW_COMMENTS_VAR ] ) && is_string( $_GET[ self::SHOW_COMMENTS_VAR ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::SHOW_COMMENTS_VAR ] ) ) : null ) === $parent->id;
 
 		if ( count( $ids ) > $from && ! $show_all ) {
 			$hidden = count( $ids ) - $keep;

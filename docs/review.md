@@ -151,7 +151,7 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | A | partly | partly | ✓ | ✓ | open | ✓ | partly | ✓ | open | partly | — | partly | partly |
 | B | partly | ✓ | partly | partly | partly | — | partly | partly | partly | ✓ | partly | partly | partly |
-| C | open | F-56, F-66, F-100 | F-57, F-58 | F-101 | — | partly | — | F-57, F-65 | F-57, F-101 | F-56 | partly | partly | F-64, F-65 |
+| C | open | F-66, F-100 | F-57, F-58 | F-101 | — | partly | — | F-57, F-65 | F-57, F-101 | partly | partly | partly | F-64, F-65 |
 | D | open | F-62, F-71 | F-58, F-61, F-67 | — | — | F-106 | — | partly | F-61 | open | F-72, F-107 | F-61 | F-72, F-104, F-105 |
 | E | — | F-60, F-69, F-70, F-102 | partly | — | — | open | — | F-59 | F-60, F-68 | — | F-103 | partly | F-60, F-68, F-70 |
 | F | open | partly | partly | open | partly | partly | open | partly | open | partly | partly | partly | partly |

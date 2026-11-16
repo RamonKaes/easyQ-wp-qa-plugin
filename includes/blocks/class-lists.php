@@ -8,6 +8,8 @@
 
 namespace EasyQ\Blocks;
 
+use EasyQ\Util\Number;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -111,9 +113,7 @@ final class Lists {
 	 */
 	public static function requested_page( string $page_var ): int {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading the page number of a list.
-		$page = isset( $_GET[ $page_var ] ) && is_string( $_GET[ $page_var ] ) ? absint( $_GET[ $page_var ] ) : 1;
-
-		return max( 1, $page );
+		return Number::page( isset( $_GET[ $page_var ] ) && is_string( $_GET[ $page_var ] ) ? sanitize_text_field( wp_unslash( $_GET[ $page_var ] ) ) : null );
 	}
 
 	/**

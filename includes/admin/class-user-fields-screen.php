@@ -14,6 +14,7 @@ use EasyQ\Services;
 use EasyQ\Users\Permits;
 use EasyQ\Users\User_Field;
 use EasyQ\Users\User_Fields;
+use EasyQ\Util\Number;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -229,7 +230,7 @@ final class User_Fields_Screen {
 	public function render(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Only selects what to show; changes are posted with a nonce.
 		$action  = isset( $_GET['action'] ) && is_string( $_GET['action'] ) ? sanitize_key( $_GET['action'] ) : '';
-		$id      = isset( $_GET['field'] ) && is_numeric( $_GET['field'] ) ? (int) $_GET['field'] : 0;
+		$id      = isset( $_GET['field'] ) && is_string( $_GET['field'] ) ? Number::id( sanitize_text_field( wp_unslash( $_GET['field'] ) ) ) : 0;
 		$message = isset( $_GET['message'] ) && is_string( $_GET['message'] ) ? sanitize_key( $_GET['message'] ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$field = Services::user_fields()->find( $id );

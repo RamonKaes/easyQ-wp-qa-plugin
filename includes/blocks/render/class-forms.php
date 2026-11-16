@@ -25,6 +25,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
 use EasyQ\Users\User_Fields;
+use EasyQ\Util\Number;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -142,7 +143,7 @@ final class Forms {
 		$fields .= self::author_fields( 'ask', __( 'Email me if my question is answered or commented on', 'easyq' ) );
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- The answer a new question follows on from.
-		$follow = isset( $_GET['follow'] ) && is_string( $_GET['follow'] ) ? absint( $_GET['follow'] ) : 0;
+		$follow = Number::id( isset( $_GET['follow'] ) && is_string( $_GET['follow'] ) ? sanitize_text_field( wp_unslash( $_GET['follow'] ) ) : null );
 
 		return self::form( 'ask', 0, $fields, __( 'Ask the question', 'easyq' ), $follow > 0 ? array( 'follow' => $follow ) : array() );
 	}
@@ -269,7 +270,7 @@ final class Forms {
 	public static function unsubscribe(): string {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- The token or key in the address is checked instead.
 		$newsletter = isset( $_GET['newsletter'] ) && is_string( $_GET['newsletter'] ) ? sanitize_key( $_GET['newsletter'] ) : '';
-		$user       = isset( $_GET['user'] ) && is_string( $_GET['user'] ) ? absint( $_GET['user'] ) : 0;
+		$user       = Number::id( isset( $_GET['user'] ) && is_string( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : null );
 		$secret     = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : ( isset( $_GET['key'] ) && is_string( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '' );
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -304,7 +305,7 @@ final class Forms {
 		}
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- The token in the address is checked instead.
-		$id    = isset( $_GET['post'] ) && is_string( $_GET['post'] ) ? absint( $_GET['post'] ) : 0;
+		$id    = Number::id( isset( $_GET['post'] ) && is_string( $_GET['post'] ) ? sanitize_text_field( wp_unslash( $_GET['post'] ) ) : null );
 		$token = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -698,7 +699,7 @@ final class Forms {
 	 */
 	private static function requested( string $name ): ?int {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only selects which post shows a form.
-		$value = isset( $_GET[ $name ] ) && is_string( $_GET[ $name ] ) ? absint( $_GET[ $name ] ) : 0;
+		$value = Number::id( isset( $_GET[ $name ] ) && is_string( $_GET[ $name ] ) ? sanitize_text_field( wp_unslash( $_GET[ $name ] ) ) : null );
 
 		return $value > 0 ? $value : null;
 	}

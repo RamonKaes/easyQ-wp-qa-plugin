@@ -12,6 +12,7 @@ use EasyQ\Actor;
 use EasyQ\Capabilities;
 use EasyQ\Tools\Tools;
 use EasyQ\Util\Assets;
+use EasyQ\Util\Number;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -174,7 +175,7 @@ final class Tools_Screen {
 			return null;
 		}
 
-		$state = ( new Tools() )->run( Actor::current(), $tool, sanitize_key( $value( 'step' ) ), absint( $value( 'after' ) ) );
+		$state = ( new Tools() )->run( Actor::current(), $tool, sanitize_key( $value( 'step' ) ), Number::int_in_range( $value( 'after' ), 0 ) ?? 0 );
 		if ( null !== $state && $state['complete'] ) {
 			return add_query_arg(
 				array(

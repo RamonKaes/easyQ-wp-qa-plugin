@@ -11,6 +11,7 @@ namespace EasyQ\Frontend;
 use EasyQ\REST\Controller;
 use EasyQ\Services;
 use EasyQ\Users\Avatars;
+use EasyQ\Util\Number;
 use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
@@ -238,7 +239,7 @@ final class Form_Handler {
 	 */
 	private function message_id(): int {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Called after the nonce of the form was verified.
-		return isset( $_POST['easyq_message'] ) && is_numeric( $_POST['easyq_message'] ) ? absint( $_POST['easyq_message'] ) : 0;
+		return Number::id( isset( $_POST['easyq_message'] ) && is_string( $_POST['easyq_message'] ) ? sanitize_text_field( wp_unslash( $_POST['easyq_message'] ) ) : null );
 	}
 
 	/**
@@ -306,7 +307,7 @@ final class Form_Handler {
 	 */
 	private function target(): int {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in process().
-		return isset( $_POST['easyq_post'] ) && is_string( $_POST['easyq_post'] ) ? absint( $_POST['easyq_post'] ) : 0;
+		return Number::id( isset( $_POST['easyq_post'] ) && is_string( $_POST['easyq_post'] ) ? sanitize_text_field( wp_unslash( $_POST['easyq_post'] ) ) : null );
 	}
 
 	/**

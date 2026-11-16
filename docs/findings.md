@@ -27,20 +27,6 @@ decides whether it is fixed or kept with a reason.
 
 ### Blocker
 
-- **F-56** (C × Value, C × Error path). Page numbers and post IDs out of range end in a
-  `TypeError` on PHP 8.4: `?easyq_edit=-9223372036854775808` on any Q&A address
-  (`Page_Meta::robots()` calls `Forms::requested()`, whose `absint()` returns a float),
-  `easyq_page` with the smallest or the largest integer on the search, users and
-  activity pages (`Search::search()`, `User_Query::by_points()`,
-  `Activity_Query::select()`), `easyq_answers` beyond the integer range on every
-  question (`array_slice()` in `class-lists-render.php`), and the same in
-  `Messages_Render::page()`, `Newsletter::verify()` and `Unsubscribe::verify()`. PHP 8.5
-  adds the warning "not representable as an int" from `wpdb::prepare()`. *Why no guard
-  saw it:* no test sends limits; PHPStan trusts the stub `absint(): int`, but
-  `abs( PHP_INT_MIN )` is a float; the test environment runs PHP 8.4. A guard has to run
-  last or in its own process: a `TypeError` inside a block render leaves
-  `WP_Block::render()` believing it is inside an interactive root, and no directive is
-  processed for the rest of the process.
 - **F-57** (C × Identity, C × State, C × Abuse). A hidden or queued question answers
   visitors with 200 and names its title in `<title>`, in the `<h1>` of a classic theme
   and in the slug of the canonical address; the blocks themselves print nothing.

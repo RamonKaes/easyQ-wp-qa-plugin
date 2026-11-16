@@ -18,6 +18,7 @@ use EasyQ\Messages\Message;
 use EasyQ\Messages\Messages;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Number;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -303,7 +304,7 @@ final class Messages_Render {
 	 */
 	private static function page(): int {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Reading the page of a list.
-		return isset( $_GET[ self::PAGE_VAR ] ) && is_numeric( $_GET[ self::PAGE_VAR ] ) ? max( 1, absint( $_GET[ self::PAGE_VAR ] ) ) : 1;
+		return Number::page( isset( $_GET[ self::PAGE_VAR ] ) && is_string( $_GET[ self::PAGE_VAR ] ) ? sanitize_text_field( wp_unslash( $_GET[ self::PAGE_VAR ] ) ) : null );
 	}
 
 	/**

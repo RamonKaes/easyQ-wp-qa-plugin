@@ -26,6 +26,15 @@ defined( 'ABSPATH' ) || exit;
 final class Query_Resolver {
 
 	/**
+	 * Offset of the last search result a page may start with, as `QA_MAX_LIMIT_START`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MAX_SEARCH_START = 19999;
+
+	/**
 	 * Sort orders of the questions page, selected with the `sort` parameter.
 	 *
 	 * @since 0.1.0
@@ -93,6 +102,9 @@ final class Query_Resolver {
 			$page     = 1;
 			$per_page = max( 1, $total );
 		} elseif ( isset( $args['search'] ) && is_string( $args['search'] ) ) {
+			// A search counts its results only up to the page shown, so its last page is as far as
+			// it may go; Question2Answer stops at `QA_MAX_LIMIT_START`.
+			$page    = min( $page, intdiv( self::MAX_SEARCH_START, $per_page ) + 1 );
 			$start   = ( $page - 1 ) * $per_page;
 			$results = Services::search()->search( $args['search'], $start, $per_page + 1, Block_Context::viewer()->user_id );
 			$ids     = array_slice( array_map( static fn ( $result ): int => $result->question_id, $results ), 0, $per_page );

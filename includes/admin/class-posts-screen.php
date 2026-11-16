@@ -15,6 +15,7 @@ use EasyQ\REST\Controller;
 use EasyQ\REST\IPs_Controller;
 use EasyQ\Services;
 use EasyQ\Limits\IP_Blocks;
+use EasyQ\Util\Number;
 use WP_Admin_Bar;
 use WP_REST_Request;
 
@@ -387,8 +388,8 @@ final class Posts_Screen {
 	private function render_notice(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Only shows the result of an action that was checked before.
 		$did    = isset( $_GET['easyq_did'] ) && is_string( $_GET['easyq_did'] ) ? sanitize_key( $_GET['easyq_did'] ) : '';
-		$done   = isset( $_GET['easyq_done'] ) && is_numeric( $_GET['easyq_done'] ) ? (int) $_GET['easyq_done'] : 0;
-		$failed = isset( $_GET['easyq_failed'] ) && is_numeric( $_GET['easyq_failed'] ) ? (int) $_GET['easyq_failed'] : 0;
+		$done   = isset( $_GET['easyq_done'] ) && is_string( $_GET['easyq_done'] ) ? Number::int_in_range( sanitize_text_field( wp_unslash( $_GET['easyq_done'] ) ), 0 ) ?? 0 : 0;
+		$failed = isset( $_GET['easyq_failed'] ) && is_string( $_GET['easyq_failed'] ) ? Number::int_in_range( sanitize_text_field( wp_unslash( $_GET['easyq_failed'] ) ), 0 ) ?? 0 : 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$text = match ( $did ) {
@@ -506,8 +507,8 @@ final class Posts_Screen {
 		return array(
 			'view'        => in_array( $view, Moderation_Query::VIEWS, true ) ? $view : 'all',
 			'type'        => isset( Moderation_Query::TYPES[ $type ] ) ? $type : '',
-			'category_id' => absint( $get( 'category' ) ) > 0 ? absint( $get( 'category' ) ) : null,
-			'user_id'     => absint( $get( 'author' ) ) > 0 ? absint( $get( 'author' ) ) : null,
+			'category_id' => Number::int_in_range( $get( 'category' ), 1 ),
+			'user_id'     => Number::int_in_range( $get( 'author' ), 1 ),
 			'ip'          => false !== filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : null,
 			'search'      => $get( 's' ),
 			'month'       => 1 === preg_match( '/^\d{6}$/', $get( 'month' ) ) ? $get( 'month' ) : '',

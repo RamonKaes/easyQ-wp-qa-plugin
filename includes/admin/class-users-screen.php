@@ -15,6 +15,7 @@ use EasyQ\Users\Levels;
 use EasyQ\Users\User_Status;
 use WP_User_Query;
 use EasyQ\Users\Site_Meta;
+use EasyQ\Util\Number;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -225,7 +226,7 @@ final class Users_Screen {
 		if ( '' === $action && isset( $_REQUEST['action2'] ) && is_string( $_REQUEST['action2'] ) ) {
 			$action = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
 		}
-		$user_ids = isset( $_REQUEST['users'] ) && is_array( $_REQUEST['users'] ) ? array_map( static fn ( mixed $id ): int => is_numeric( $id ) ? (int) $id : 0, (array) wp_unslash( $_REQUEST['users'] ) ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each ID is cast to an integer.
+		$user_ids = isset( $_REQUEST['users'] ) && is_array( $_REQUEST['users'] ) ? array_map( array( Number::class, 'id' ), (array) wp_unslash( $_REQUEST['users'] ) ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each ID is read by Number::id().
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		if ( ! in_array( $action, self::BULK_ACTIONS, true ) ) {
 			return;
@@ -286,7 +287,7 @@ final class Users_Screen {
 	public function notice(): void {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Only displays the result of a verified action.
 		$action = isset( $_GET['easyq_done'] ) && is_string( $_GET['easyq_done'] ) ? sanitize_key( wp_unslash( $_GET['easyq_done'] ) ) : '';
-		$count  = isset( $_GET['easyq_count'] ) && is_numeric( $_GET['easyq_count'] ) ? absint( $_GET['easyq_count'] ) : 0;
+		$count  = Number::int_in_range( isset( $_GET['easyq_count'] ) && is_string( $_GET['easyq_count'] ) ? sanitize_text_field( wp_unslash( $_GET['easyq_count'] ) ) : null, 0 ) ?? 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		$messages = array(
