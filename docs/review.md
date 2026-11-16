@@ -180,7 +180,10 @@ are `partly`, not ✓: a ✓ waits for the cross-check in a fresh context.
 
 The release gate after the fixes:
 
-1. Holds: F-25, classed blocker, is deferred to phase 9. No other blocker is open.
+1. Holds: F-25, classed blocker, is deferred to phase 9. No other blocker finding
+   is open, but one open suspicion is classed blocker by its worst outcome (a
+   `data-wp-` directive in a visitor's answer, `docs/findings.md`, "Open
+   suspicions").
 2. Does not hold: no cell of Identity, Value or Error path is `open` in A, B, F, G
    or I; the second round did not touch these rows.
 3. Holds: every cell of every row has now been looked at, but these cells stay
@@ -532,7 +535,8 @@ holds.
 
 Version 0.1.0 is not released while one of these holds:
 
-1. A finding classed **blocker** is open.
+1. A finding classed **blocker** is open, or an open suspicion whose worst plausible
+   outcome is a blocker (`docs/findings.md`, "Open suspicions").
 2. A cell of the columns Identity, Value or Error path is `open` in the rows A, B, F,
    G or I.
 3. A cell that applies has never been looked at by a review: `open` is allowed
@@ -554,6 +558,30 @@ else is **should** (fixed before the release unless deferred with a reason) or
 - After a finding a guard should have seen: every cell that guard carries.
 - Before the release: the whole matrix, then a cross-check in a fresh context that
   does not get the reasons of the review and tries to refute the ✓ cells first.
+
+### What counts as a round
+
+Only a review that looked can report that it found nothing (decided on 2026-11-16):
+
+- **Only a run over the whole matrix**: `/big-review` without rows as argument, or a
+  cross-check. A run over chosen rows reads those rows, not the others, so it counts
+  neither for nor against the release. The first round of 2026-11-14 ran over A, B,
+  F, G and I and reported no open finding; the other twelve rows carried eight
+  blockers (F-56 to F-63). The two rounds of 2026-11-14 and 2026-11-15 were both
+  run over chosen rows, so no round over the whole matrix has run yet.
+- **Only a complete run.** If a mandatory part did not run (a tool of
+  `/big-review` step 1, the multisite suite, the browser tests, coverage, a part
+  auditor of the cross-check), because a permission, the time or the usage limit
+  stopped it, the round counts once that part has been made up. The report names it
+  under "What did not run", with the reason.
+- **A state per row in every report**: checked (with the evidence) or not. "No
+  finding" holds only for the rows the report lists as checked.
+- **A suspicion that could not be reproduced is not "no finding".** It is classed by
+  its worst plausible outcome, not by the failed attempt, and stays under "Open
+  suspicions" in `docs/findings.md` until it is reproduced or its opposite measured.
+  It counts in the release gate like a finding of its class.
+- **Every report names the model of each session** that took part, read from the
+  session, not assumed.
 
 A review never reports "no errors". It reports the state of the release gate and
 every cell that is not ✓.

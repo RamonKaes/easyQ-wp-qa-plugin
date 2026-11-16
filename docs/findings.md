@@ -12,8 +12,14 @@ for good. The rules of the reviews and the matrix the findings refer to are in
 - **Deferred** findings stay with the reason and with the condition that brings them
   back. A deferred finding is no free pass: the next review checks whether the
   reason still holds.
+- **Open suspicions** could not be reproduced yet. Each is classed by its worst
+  plausible outcome, not by the failed attempt, names what reproducing it needs, and
+  counts in the release gate like a finding of its class until it is reproduced (then
+  it becomes a finding) or its opposite is measured (then it is refuted).
 - **Rejected** findings and **refuted suspicions** stay as well, so that the next
-  review does not spend its time on them again.
+  review does not spend its time on them again. A suspicion is refuted only by a
+  measurement or a reading that shows the opposite, never because an attempt to
+  reproduce it failed.
 
 The next free number is F-134.
 
@@ -22,6 +28,19 @@ The next free number is F-134.
 None. The 78 findings of the review of the rows C, D, E, H and J to Q of 2026-11-15
 (F-56 to F-133) were fixed on 2026-11-16, each with a guard and a counter-check in its
 commit, except F-112, which is kept (see Rejected).
+
+## Open suspicions
+
+Read on 2026-11-15 in the rows C, D, E, H and J to Q and not reproduced, because each
+needs a browser or the editor end to end. Until 2026-11-16 they stood under the
+refuted suspicions; they are open, and the next review runs them first.
+
+| Class | Suspicion | Worst plausible outcome | Reproducing needs |
+| --- | --- | --- | --- |
+| blocker | A `data-wp-` directive in the text of a visitor's answer drives a vote button or another action of the store (the server side is F-60). | Content of a visitor makes the browser of a reader act as the reader: a vote, a favorite, a dismissal they never chose. | A browser test that posts such an answer as a visitor and opens it as a user, with the store loaded. |
+| should | The vote, dismiss and favorite actions of the store have no `try`, so a failed request leaves the button pressed. | The button shows a state the server does not hold (`aria-pressed` true after a refused vote), and a screen reader announces it. | A browser test with the REST route answering an error (offline, 403, 429). |
+| should | The user and question pickers of the editor with more than 100 entries (the server side is F-106). | An author cannot find the user or question to pick, so the block cannot be set up on a larger site. | The editor end to end with more than 100 users and questions. |
+| should | The tag feed with a tag of the same name in two languages. | The feed lists the questions of the other tag, or none. | Two tags whose names differ only by script or accents, and the feed read in a feed reader or with `curl`. |
 
 ## Deferred
 
@@ -91,14 +110,3 @@ Read or measured on 2026-11-15 in the rows C, D, E, H and J to Q:
   rows that are listed; no empty page came out.
 - `Templates::require_login()` differs from `auth_redirect()`: read, it builds the
   same login address with the same return address.
-
-Not reproduced in this round, because it needs a browser or the editor end to end
-(each stays a suspicion, not a finding, and the next round runs it first):
-
-- The vote, dismiss and favorite actions of the store have no `try`, so a failed
-  request leaves the button pressed.
-- A vote button driven by a `data-wp-` directive in an answer of a visitor (the
-  server side is F-60).
-- The user and question pickers of the editor with more than 100 entries (the
-  server side is F-106).
-- The tag feed with a tag of the same name in two languages.
