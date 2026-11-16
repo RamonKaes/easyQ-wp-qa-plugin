@@ -239,7 +239,8 @@ final class Notifications_Test extends Test_Case {
 			'post'   => (string) $question->id,
 			'token'  => Unsubscribe::token( $question->id ),
 		);
-		$this->assertStringContainsString( 'name="notify" value="confirm"', \EasyQ\Blocks\Render\Forms::unsubscribe() );
+		// Rendered as a block, as the page does; WordPress 6.7 has no block supports outside one.
+		$this->assertStringContainsString( 'name="notify" value="confirm"', do_blocks( '<!-- wp:easyq/unsubscribe /-->' ) );
 		$this->assertFalse( Unsubscribe::is_confirmed( $question ) );
 		$_GET = array();
 
