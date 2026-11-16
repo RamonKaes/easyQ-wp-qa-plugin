@@ -167,11 +167,20 @@ is ✓: no guard reads its class from the plugin with both sides and was seen re
 | P | partly | partly | partly | partly | — | — | — | — | — | partly | — | — | partly |
 | Q | — | — | — | — | — | partly | — | partly | — | partly | partly | partly | partly |
 
-The release gate after the second round:
+On 2026-11-16 the findings of the second round were fixed, F-112 kept with the
+owner's word: each commit names its findings, the guard that holds them and the
+counter-check (the fix taken back, the guard seen red). The guards read their class
+from the plugin where they can: `Request_Bounds_Test` (the query parameters of the
+frontend from the source, every page of the router), `Visibility_Test` and
+`Rendering_Test` (every block of the registry), `User_HTML_Test` and
+`Search_Args_REST_Test` (routes of the server), `Block_Attributes_Test`,
+`Filter_Values_Test` (every filter callback of the plugin), `Page_State_Test`,
+`Cookies_IP_Test`, `Newsletter_Run_Test` and `Lifecycle_Test`. The cells they changed
+are `partly`, not ✓: a ✓ waits for the cross-check in a fresh context.
 
-1. Holds: F-25, classed blocker, is deferred to phase 9. The eight blockers of the
-   second round (F-56 to F-63) were fixed on 2026-11-16, each with a guard and a
-   counter-check in its commit.
+The release gate after the fixes:
+
+1. Holds: F-25, classed blocker, is deferred to phase 9. No other blocker is open.
 2. Does not hold: no cell of Identity, Value or Error path is `open` in A, B, F, G
    or I; the second round did not touch these rows.
 3. Holds: every cell of every row has now been looked at, but these cells stay
