@@ -198,4 +198,33 @@ final class Filter_Values_Test extends REST_Test_Case {
 		$this->assertSame( 200, $response->get_status() );
 		unset( $question );
 	}
+
+	public function test_the_filters_of_easyq_take_any_value_back(): void {
+		// A net over the source: the value a filter of easyQ returns is checked, never cast.
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( dirname( __DIR__, 2 ) . '/includes', \FilesystemIterator::SKIP_DOTS ) );
+		$read  = 0;
+		foreach ( $files as $file ) {
+			if ( 'php' !== $file->getExtension() ) {
+				continue;
+			}
+			++$read;
+			$source = (string) file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$this->assertSame( 0, preg_match( '/\(\s*(string|int|bool|array|float)\s*\)\s*apply_filters(_ref_array)?\s*\(/', $source ), $file->getFilename() );
+		}
+		$this->assertGreaterThan( 100, $read );
+
+		// The markup of a classic page with a filter that returns no string: the page as without the filter.
+		switch_theme( 'twentytwentyone' );
+		$this->go_to( \EasyQ\Frontend\Routes::url( 'questions' ) );
+		$router = \EasyQ\Blocks\Block_Context::router();
+		foreach ( array( array( 'markup' ), new \stdClass() ) as $value ) {
+			$filter = static fn () => $value;
+			add_filter( 'easyq_classic_template_content', $filter );
+			( new \EasyQ\Frontend\Templates( $router ) )->template_include( 'index.php' );
+			remove_filter( 'easyq_classic_template_content', $filter );
+			$this->assertStringContainsString( 'wp-block-easyq-', \EasyQ\Frontend\Templates::classic_html() );
+		}
+		remove_all_filters( 'render_block_easyq/page-title' );
+		remove_all_filters( 'render_block_easyq/post-title' );
+	}
 }

@@ -177,7 +177,9 @@ final class Templates {
 		 * @param string $content Block markup.
 		 * @param string $slug    Template slug, e.g. `easyq-question`.
 		 */
-		$content = (string) apply_filters( 'easyq_classic_template_content', $content, $slug );
+		$filtered = apply_filters( 'easyq_classic_template_content', $content, $slug );
+		// Another filter may hand on any type; the markup stays as it was, as core keeps a value it cannot use.
+		$content = is_string( $filtered ) ? $filtered : $content;
 
 		$theme_file = locate_template( array( 'easyq/classic.php' ) );
 		if ( '' !== $theme_file ) {
