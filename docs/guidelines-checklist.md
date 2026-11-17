@@ -5,7 +5,8 @@ on 2026-10-29 against WordPress 7.1.4. Checked again on 2026-11-14 for the REST 
 the forms, the admin screens, the settings and the uploads (rows A, B, F, G and I of
 [review.md](review.md)), against the handbooks and against core; the evidence is in
 the evidence section of that day. Checked on 2026-11-15 for the rows C, D, E, H and
-J to Q; their chapter and evidence follow at the end. A **Met** without evidence
+J to Q; their chapter and evidence follow at the end. Checked on 2026-11-17 for the
+whole matrix: the rows that changed name their findings. A **Met** without evidence
 there counts as not checked.
 
 Sources:
@@ -103,7 +104,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met (`Mailer`, and the newsletter and its confirmation: `Newsletter_Run_Test`) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
+| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Open (F-182: the newsletter and the confirmations pass no filter of easyQ; F-179: two templates leave offered placeholders raw) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
 | Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
 | Stop emails with one click | Met for the emails about posts and the newsletter; emails about messages and the wall link the account page (`List-Unsubscribe`, RFC 2369), core sends no such emails; headers a filter returns as lines keep `List-Unsubscribe` (`Filter_Values_Test`) | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
@@ -149,7 +150,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Namespace `vendor/v1`, routes on `rest_api_init` | Met | `easyq/v1`, `REST\REST_API` |
-| `permission_callback` on every route | Met | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see; the unsubscribe and newsletter confirmation routes check the signed token or key of the email in theirs. `REST_Roles_Test` fails on a writing route with `__return_true` |
+| `permission_callback` on every route | Open (F-149, F-150: messages and favorites check in the handler) | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see; the unsubscribe and newsletter confirmation routes check the signed token or key of the email in theirs. `REST_Roles_Test` fails on a writing route with `__return_true` |
 | Arguments with types and validation; `WP_Error` with a status | Met; F-30 | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
 | Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()`; a test checks real responses of all routes against them, both types and undocumented properties |
@@ -247,7 +248,7 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | A page out of range or of a hidden post answers 404 | Met (`Page_State_Test`, `Visibility_Test`) | `Frontend\Router`, `Frontend\Templates` |
 | Login redirect as `auth_redirect()` | Met | `Frontend\Templates::require_login()` |
 | Block metadata: `$schema`, `apiVersion` 3, namespaced name, text domain, category, keywords; `parent` and `ancestor` for child blocks; block supports instead of own options | Met | `blocks/*/block.json` |
-| `supports.interactivity` on blocks that print directives | Met (`Rendering_Test` reads the registry) | `blocks/ask-form/block.json` |
+| `supports.interactivity` on blocks that print directives | Open (F-192: four blocks print directives without the flag; `Rendering_Test` looks for `data-wp-interactive` only) | `blocks/ask-form/block.json` |
 | Block context instead of globals | Met | `providesContext` and `usesContext`; the router is the fallback where core falls back to the global post |
 | Block bindings: label, `get_value_callback`, `uses_context`, values escaped as core; only what the viewer may read | Form Met; F-61 | `Blocks\Blocks` |
 | Patterns: `register_block_pattern()` on `init`, category, translated titles | Met | `Blocks\Patterns` |
