@@ -583,5 +583,30 @@ Only a review that looked can report that it found nothing (decided on 2026-11-1
 - **Every report names the model of each session** that took part, read from the
   session, not assumed.
 
+### When the reviews have settled
+
+The owner decided on 2026-11-17: rounds and fixes go on until the reviews have
+settled, and only then does work go on with phase 9 (translation and release) and
+phase 10 (extensions). New phases bring new code and new rows, and translations and
+screenshots made before the fixes would be made twice.
+
+- **Settled means two rounds in a row without a finding of class should or blocker
+  in old code.** A round is a run as defined above: over the whole matrix and
+  complete. One round without such a finding can be luck, and a round nearly always
+  finds something; two in a row cannot be luck.
+- **Old code** is code that has been through a round over its row unchanged: the
+  finding names the commit since which the place is unchanged. A finding in code a
+  fix of the last round wrote is a gap of that fix: it is fixed like any other, but
+  it neither resets the count nor keeps it going, or the rounds would never end,
+  since every fix writes new code.
+- **An open suspicion of class should or blocker** in old code counts like a
+  finding until it is reproduced or refuted.
+- **Low findings** are entered and fixed or decided like any other, and do not
+  reset the count.
+- **The rounds alternate**: a `/big-review` that fixes, then a `/cross-check-review`
+  in a fresh context, which does not know the reasons of the review and finds other
+  things. Every report ends with the count: how many rounds in a row now stand
+  without a finding of class should or blocker in old code.
+
 A review never reports "no errors". It reports the state of the release gate and
 every cell that is not ✓.
