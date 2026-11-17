@@ -13,6 +13,7 @@ use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
 use EasyQ\Search\Basic_Search;
 use EasyQ\Util\Number;
+use EasyQ\Util\Text;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -141,7 +142,8 @@ final class Question_Query {
 			}
 		}
 
-		$tag     = is_string( $args['tag'] ?? null ) ? (string) $args['tag'] : '';
+		// Tags are stored in lower case; Question2Answer finds the tag of a page in lower case as well.
+		$tag     = is_string( $args['tag'] ?? null ) ? Text::lowercase( $args['tag'] ) : '';
 		$word_id = 0;
 		if ( '' !== $tag ) {
 			$word_ids = ( new Basic_Search() )->word_ids( array( $tag ), create: false );

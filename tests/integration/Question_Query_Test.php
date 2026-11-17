@@ -61,6 +61,16 @@ final class Question_Query_Test extends Test_Case {
 		$this->assertSame( array(), $this->ids( array( 'category_id' => 999999 ) ) );
 	}
 
+	public function test_finds_a_tag_whatever_its_case(): void {
+		$question = $this->ask( $this->user(), 'A question with a tag', 'Text.', array( 'café' ) );
+
+		// As Question2Answer finds the tag of a page in lower case (`qa_db_tag_recent_qs_selectspec()`).
+		foreach ( array( 'café', 'CAFÉ', 'Café' ) as $tag ) {
+			$this->assertSame( array( $question->id ), $this->ids( array( 'tag' => $tag ) ), $tag );
+		}
+		$this->assertSame( array(), $this->ids( array( 'tag' => 'cafe' ) ) );
+	}
+
 	public function test_sorts_by_hotness_and_views(): void {
 		$author = $this->user();
 		$first  = $this->ask( $author, 'First question asked' );
