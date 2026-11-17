@@ -89,7 +89,7 @@ In the admin menu under easyQ → Categories, once the site uses categories (eas
 
 = Does easyQ delete my data when I delete the plugin? =
 
-No. Your questions, answers and users stay in the database when you delete the plugin.
+Only if you ask for it: with "Delete all Q&A data when the plugin is deleted" under easyQ → Settings → General, deleting the plugin removes the questions, answers, comments, votes, settings and user data of easyQ. Without it, they stay in the database. On a network, each site decides for its own data.
 
 == Changelog ==
 

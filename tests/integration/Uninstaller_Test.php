@@ -129,4 +129,13 @@ final class Uninstaller_Test extends Test_Case {
 			$this->assertFalse( $this->table_exists( $table ), "Table $table was not dropped." );
 		}
 	}
+
+	public function test_the_readme_names_the_setting_that_removes_the_data(): void {
+		// The FAQ answers whether deleting the plugin deletes the data; the answer is this setting.
+		$label  = \EasyQ\Settings\Fields::section( 'general' )['delete_data_on_uninstall']['label'] ?? '';
+		$readme = (string) file_get_contents( dirname( __DIR__, 2 ) . '/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$this->assertNotSame( '', $label );
+		$this->assertStringContainsString( '"' . html_entity_decode( $label ) . '"', $readme );
+		$this->assertStringNotContainsString( 'stay in the database when you delete the plugin.', $readme );
+	}
 }
