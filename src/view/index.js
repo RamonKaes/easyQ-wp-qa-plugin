@@ -9,6 +9,30 @@
 import { store, getContext, getElement } from '@wordpress/interactivity';
 
 /**
+ * Sends the request of a button in the background and returns its JSON, or null when
+ * there is no usable answer: refused, not JSON, or no connection. The caller then
+ * submits the form normally, as `submit` does, so the server says why, as without
+ * JavaScript; nothing on the page changes before the server has answered.
+ *
+ * @since 0.1.0
+ *
+ * @param {string} url     Address of the REST route.
+ * @param {Object} options Options of `fetch()`.
+ * @return {Object|null} Data of the response, or null.
+ */
+function* requestJson( url, options ) {
+	try {
+		const response = yield fetch( url, {
+			credentials: 'same-origin',
+			...options,
+		} );
+		return response.ok ? yield response.json() : null;
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Loads a Q&A address with the Interactivity Router: the Q&A regions of the
  * page (the question and the notices) are replaced, the rest of the page stays.
  * Afterwards the element of the address's anchor gets the focus, and a notice
@@ -321,9 +345,9 @@ const { state } = store( 'easyq', {
 		},
 
 		/**
-		 * Sends a vote and updates the count. If the vote is refused, for
-		 * example because the visitor must log in, the form is submitted
-		 * normally so the page explains why.
+		 * Sends a vote and updates the count. Without a usable answer, for
+		 * example because the visitor must log in or the connection is gone,
+		 * the form is submitted normally so the page explains why.
 		 *
 		 * @since 0.1.0
 		 *
@@ -336,11 +360,10 @@ const { state } = store( 'easyq', {
 			const vote =
 				context.vote === context.direction ? 0 : context.direction;
 
-			const response = yield fetch(
+			const post = yield* requestJson(
 				`${ state.restUrl }posts/${ context.postId }/vote`,
 				{
 					method: 'POST',
-					credentials: 'same-origin',
 					headers: {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': state.nonce,
@@ -349,12 +372,11 @@ const { state } = store( 'easyq', {
 				}
 			);
 
-			if ( ! response.ok ) {
+			if ( ! post?.votes ) {
 				form.submit();
 				return;
 			}
 
-			const post = yield response.json();
 			context.net = post.votes.net;
 			context.up = post.votes.up;
 			context.down = post.votes.down;
@@ -362,7 +384,7 @@ const { state } = store( 'easyq', {
 		},
 
 		/**
-		 * Dismisses a notice. If that is refused, the form is submitted normally.
+		 * Dismisses a notice. Without a usable answer the form is submitted normally.
 		 *
 		 * @since 0.1.0
 		 *
@@ -373,16 +395,15 @@ const { state } = store( 'easyq', {
 			const form = event.target;
 			const context = getContext();
 
-			const response = yield fetch(
+			const result = yield* requestJson(
 				`${ state.restUrl }notices/${ context.noticeId }`,
 				{
 					method: 'DELETE',
-					credentials: 'same-origin',
 					headers: { 'X-WP-Nonce': state.nonce },
 				}
 			);
 
-			if ( ! response.ok ) {
+			if ( ! result ) {
 				form.submit();
 				return;
 			}
@@ -391,8 +412,8 @@ const { state } = store( 'easyq', {
 		},
 
 		/**
-		 * Adds or removes a favorite. If that is refused, the form is submitted
-		 * normally so the page explains why.
+		 * Adds or removes a favorite. Without a usable answer the form is
+		 * submitted normally so the page explains why.
 		 *
 		 * @since 0.1.0
 		 *
@@ -403,9 +424,8 @@ const { state } = store( 'easyq', {
 			const form = event.target;
 			const context = getContext();
 
-			const response = yield fetch( `${ state.restUrl }favorites`, {
+			const result = yield* requestJson( `${ state.restUrl }favorites`, {
 				method: context.favorite ? 'DELETE' : 'POST',
-				credentials: 'same-origin',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': state.nonce,
@@ -416,7 +436,7 @@ const { state } = store( 'easyq', {
 				} ),
 			} );
 
-			if ( ! response.ok ) {
+			if ( ! result ) {
 				form.submit();
 				return;
 			}
