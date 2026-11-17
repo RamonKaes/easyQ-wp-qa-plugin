@@ -529,7 +529,8 @@ function categoryOptions( categories, parent = null, depth = 0 ) {
  */
 function QueryInspector( { attributes, setAttributes } ) {
 	const query = attributes.query ?? {};
-	const categories = useEasyQ( 'categories?per_page=100' );
+	// Every category, page by page, as core's selector of hierarchical terms loads them.
+	const categories = useEasyQ( 'categories?per_page=-1' );
 	const update = ( change ) =>
 		setAttributes( { query: { ...query, ...change } } );
 
