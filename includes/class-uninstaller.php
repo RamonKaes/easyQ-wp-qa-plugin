@@ -131,10 +131,27 @@ final class Uninstaller {
 		delete_option( Router::RULES_OPTION );
 		delete_option( Updates::THRESHOLD_OPTION );
 		Newsletter::cancel();
+		self::delete_options();
 		self::delete_transients();
 		self::delete_site_user_meta();
 		// The mark of uploaded avatars; the images stay in the Media Library, like other uploads.
 		delete_post_meta_by_key( Avatars::ATTACHMENT_META );
+	}
+
+	/**
+	 * Removes every other option of the current site whose name starts with the prefix of the
+	 * plugin, such as the locks a stopped run of the tools or of the newsletter leaves behind.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function delete_options(): void {
+		$wpdb = DB::wpdb();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup on uninstall; no API lists options by prefix.
+		$names = $wpdb->get_col( $wpdb->prepare( 'SELECT option_name FROM %i WHERE option_name LIKE %s', $wpdb->options, $wpdb->esc_like( self::TRANSIENT_PREFIX ) . '%' ) );
+		foreach ( $names as $name ) {
+			delete_option( (string) $name );
+		}
 	}
 
 	/**

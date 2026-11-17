@@ -102,6 +102,9 @@ final class Uninstaller_Test extends Test_Case {
 		$flash = Flash::store( 'success', 'Saved.' );
 		set_transient( 'easyq_view_' . str_repeat( 'b', 32 ), 1, HOUR_IN_SECONDS );
 		Counts::get( Counts::QUESTIONS );
+		// Locks of runs that were stopped halfway: the tools in another tab, a batch of the newsletter.
+		update_option( \EasyQ\Tools\Tools::RUN_OPTION, array( 'started' => time() ), false );
+		add_option( 'easyq_newsletter_run_lock', (string) time(), '', false );
 		$names   = fn (): array => $wpdb->get_col( $wpdb->prepare( 'SELECT option_name FROM %i WHERE option_name LIKE %s', $wpdb->options, '%easyq%' ) );
 		$options = $names();
 		Uninstaller::uninstall_site();
@@ -116,6 +119,8 @@ final class Uninstaller_Test extends Test_Case {
 		$this->assertContains( '_transient_easyq_flash_' . $flash, $options );
 		$this->assertContains( '_transient_timeout_easyq_view_' . str_repeat( 'b', 32 ), $options );
 		$this->assertContains( Counts::OPTION, $options );
+		$this->assertContains( \EasyQ\Tools\Tools::RUN_OPTION, $options );
+		$this->assertContains( 'easyq_newsletter_run_lock', $options );
 		$this->assertSame( array(), $left );
 		$this->assertFalse( $version );
 		$this->assertFalse( $settings );
