@@ -147,6 +147,34 @@ final class Capabilities_Test extends Test_Case {
 		$this->assertFalse( user_can( $admin, Capabilities::MODERATE ) );
 	}
 
+	public function test_only_the_level_of_the_whole_site_manages_the_q_and_a_area(): void {
+		$category = Services::categories()->create( null, 'Managed topic' );
+		$this->assertIsInt( $category );
+		$category_admin = (int) $this->user()->user_id;
+		Services::user_levels()->set_category_level( Actor::system(), $category_admin, $category, Levels::ADMIN );
+		$site_admin = (int) $this->user()->user_id;
+		Services::user_levels()->set_level( Actor::system(), $site_admin, Levels::ADMIN );
+
+		// As Question2Answer lets only the global level into the administration (`qa_admin_check_privileges()`);
+		// a level in a category counts for the posts of that category.
+		$this->assertFalse( user_can( $category_admin, Capabilities::MANAGE ) );
+		$this->assertTrue( user_can( $site_admin, Capabilities::MANAGE ) );
+
+		// Every route of the server that manages refuses the category administrator and lets the site's in.
+		$managing = 0;
+		foreach ( array( '/easyq/v1/email-templates', '/easyq/v1/user-fields', '/easyq/v1/newsletter' ) as $route ) {
+			if ( ! isset( rest_get_server()->get_routes()[ $route ] ) ) {
+				continue;
+			}
+			++$managing;
+			wp_set_current_user( $category_admin );
+			$this->assertContains( rest_do_request( new \WP_REST_Request( 'GET', $route ) )->get_status(), array( 401, 403 ), $route );
+			wp_set_current_user( $site_admin );
+			$this->assertSame( 200, rest_do_request( new \WP_REST_Request( 'GET', $route ) )->get_status(), $route );
+		}
+		$this->assertGreaterThan( 0, $managing );
+	}
+
 	public function test_leaves_other_capabilities_untouched(): void {
 		$this->assertSame(
 			array( 'edit_posts' ),

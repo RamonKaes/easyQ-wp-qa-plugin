@@ -142,9 +142,11 @@ final class Capabilities {
 		$permissions = Services::permissions();
 
 		if ( self::MANAGE === $cap ) {
+			// Only the level of the whole site, as Question2Answer lets only the global level into its
+			// administration (`qa_admin_check_privileges()`); a level in a category counts for its posts.
 			// A blocked user loses the Q&A level, as every permission of Question2Answer refuses them (`qa_permit_value_error()`).
 			return user_can( $user_id, 'manage_options' )
-				|| ( ( Services::user_levels()->maximum_level( $actor->user_id ) ?? -1 ) >= Levels::ADMIN && ! User_Status::is_blocked( $user_id ) );
+				|| ( ( Services::user_levels()->level( $actor->user_id ) ?? -1 ) >= Levels::ADMIN && ! User_Status::is_blocked( $user_id ) );
 		}
 
 		if ( self::MODERATE === $cap ) {
