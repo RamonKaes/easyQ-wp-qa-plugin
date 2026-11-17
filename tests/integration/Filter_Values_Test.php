@@ -224,7 +224,10 @@ final class Filter_Values_Test extends REST_Test_Case {
 			remove_filter( 'easyq_classic_template_content', $filter );
 			$this->assertStringContainsString( 'wp-block-easyq-', \EasyQ\Frontend\Templates::classic_html() );
 		}
+		// What the page left behind, as `Visibility_Test` cleans up after a page.
 		remove_all_filters( 'render_block_easyq/page-title' );
 		remove_all_filters( 'render_block_easyq/post-title' );
+		\EasyQ\Blocks\Lists::reset();
+		$router->set_current( null );
 	}
 }
