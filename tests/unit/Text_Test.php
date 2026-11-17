@@ -91,6 +91,18 @@ final class Text_Test extends TestCase {
 		$this->assertSame( array(), Text::block_words_match_all( 'spammer', $regex ) );
 	}
 
+	public function test_long_lists_of_block_words_are_found_without_a_message(): void {
+		// Public lists of bad words have thousands of entries; one expression of them does not compile.
+		$words = array();
+		for ( $index = 0; $index < 5000; $index++ ) {
+			$words[] = sprintf( 'badword%04d', $index );
+		}
+		$regex = Text::block_words_to_regex( implode( ', ', $words ) . ', h*ll' );
+
+		$this->assertSame( 'A *********** and *********** and **** here', Text::block_words_replace( 'A badword0000 and BADWORD4999 and hell here', $regex ) );
+		$this->assertSame( array( 2 => 11 ), Text::block_words_match_all( 'A badword2500.', $regex ) );
+	}
+
 	public function test_block_words_are_found_where_lower_case_changes_the_byte_length(): void {
 		$regex = Text::block_words_to_regex( 'darn' );
 

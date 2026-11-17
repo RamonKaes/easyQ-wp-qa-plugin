@@ -40,6 +40,15 @@ final class Text {
 	private const BLOCK_WORD_SEPARATOR = '[\n\r\t\ \!\"\\\'\(\)\+\,\.\/\:\;\<\=\>\?\[\\\\\]\^\`\{\|\}\~\$\&\-\_\#\%\@]';
 
 	/**
+	 * Largest part of an expression of block words, in bytes, that PCRE compiles with room to spare.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	private const MAX_REGEX_PART = 8000;
+
+	/**
 	 * Thai, Chinese, Japanese and Korean ideographs in UTF-8; each one is treated as a word.
 	 *
 	 * @since 0.1.0
@@ -337,14 +346,84 @@ final class Text {
 		$text = strtr( self::lowercase_same_length( $text ), $same_length );
 		$text = (string) preg_replace( '/' . self::BLOCK_WORD_SEPARATOR . '/', ' ', $text );
 
-		preg_match_all( '/' . $regex . '/', ' ' . $text . ' ', $matches, PREG_OFFSET_CAPTURE );
-
 		$found = array();
-		foreach ( $matches[0] as $match ) {
-			$found[ $match[1] - 1 ] = strlen( $match[0] );
+		foreach ( self::regex_parts( $regex ) as $part ) {
+			if ( false === preg_match_all( '/' . $part . '/', ' ' . $text . ' ', $matches, PREG_OFFSET_CAPTURE ) ) {
+				continue;
+			}
+			foreach ( $matches[0] as $match ) {
+				$found[ $match[1] - 1 ] = max( $found[ $match[1] - 1 ] ?? 0, strlen( $match[0] ) );
+			}
 		}
 
-		return $found;
+		// Matches of different parts may overlap (words with ideographs have no boundaries): one span each.
+		ksort( $found, SORT_NUMERIC );
+		$spans = array();
+		$last  = null;
+		foreach ( $found as $start => $length ) {
+			if ( null !== $last && $start < $last + $spans[ $last ] ) {
+				$spans[ $last ] = max( $spans[ $last ], $start + $length - $last );
+				continue;
+			}
+			$spans[ $start ] = $length;
+			$last            = $start;
+		}
+
+		return $spans;
+	}
+
+	/**
+	 * Splits a fragment of block words into parts that each compile.
+	 *
+	 * PCRE refuses an expression of a few thousand words ("regular expression is too large",
+	 * "lookbehind is too complicated"), and lists of bad words are that long; Question2Answer
+	 * builds one expression and stops censoring silently. The alternatives are split at the
+	 * top level, outside escapes and groups, into parts of at most `MAX_REGEX_PART` bytes.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $regex Fragment from block_words_to_regex().
+	 * @return string[]
+	 */
+	private static function regex_parts( string $regex ): array {
+		if ( strlen( $regex ) <= self::MAX_REGEX_PART ) {
+			return array( $regex );
+		}
+
+		$alternatives = array();
+		$current      = '';
+		$depth        = 0;
+		$length       = strlen( $regex );
+		for ( $index = 0; $index < $length; $index++ ) {
+			$character = $regex[ $index ];
+			if ( '\\' === $character && $index + 1 < $length ) {
+				$current .= $character . $regex[ ++$index ];
+				continue;
+			}
+			if ( '(' === $character ) {
+				++$depth;
+			} elseif ( ')' === $character ) {
+				--$depth;
+			} elseif ( '|' === $character && 0 === $depth ) {
+				$alternatives[] = $current;
+				$current        = '';
+				continue;
+			}
+			$current .= $character;
+		}
+		$alternatives[] = $current;
+
+		$parts = array( '' );
+		foreach ( $alternatives as $alternative ) {
+			$last = count( $parts ) - 1;
+			if ( '' !== $parts[ $last ] && strlen( $parts[ $last ] ) + strlen( $alternative ) + 1 > self::MAX_REGEX_PART ) {
+				$parts[] = $alternative;
+			} else {
+				$parts[ $last ] .= ( '' === $parts[ $last ] ? '' : '|' ) . $alternative;
+			}
+		}
+
+		return $parts;
 	}
 
 	/**
