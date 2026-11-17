@@ -91,6 +91,20 @@ final class Text_Test extends TestCase {
 		$this->assertSame( array(), Text::block_words_match_all( 'spammer', $regex ) );
 	}
 
+	public function test_block_words_are_found_where_lower_case_changes_the_byte_length(): void {
+		$regex = Text::block_words_to_regex( 'darn' );
+
+		// `İ` and `Ⱥ` get longer in lower case, the Kelvin sign shorter: the offsets are those of the text.
+		foreach ( array( 'İİİ', 'ȺȺȺȺ', "\u{212A}\u{212A}", 'İ Ⱥ K' ) as $prefix ) {
+			$text = $prefix . ' darn ok';
+			$this->assertSame( array( strlen( $prefix ) + 1 => 4 ), Text::block_words_match_all( $text, $regex ), $prefix );
+			$this->assertSame( $prefix . ' **** ok', Text::block_words_replace( $text, $regex ), $prefix );
+		}
+		$this->assertSame( '**** İstanbul', Text::block_words_replace( 'DARN İstanbul', $regex ) );
+		// Invalid UTF-8 keeps its offsets, too.
+		$this->assertSame( "\xC3 ****", Text::block_words_replace( "\xC3 Darn", $regex ) );
+	}
+
 	public function test_block_word_replacement_keeps_multibyte_text_intact(): void {
 		$regex = Text::block_words_to_regex( 'mist' );
 

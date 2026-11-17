@@ -334,7 +334,7 @@ final class Text {
 			$same_length[ $character ] = str_repeat( ' ', strlen( $character ) );
 		}
 
-		$text = strtr( self::lowercase( $text ), $same_length );
+		$text = strtr( self::lowercase_same_length( $text ), $same_length );
 		$text = (string) preg_replace( '/' . self::BLOCK_WORD_SEPARATOR . '/', ' ', $text );
 
 		preg_match_all( '/' . $regex . '/', ' ' . $text . ' ', $matches, PREG_OFFSET_CAPTURE );
@@ -436,6 +436,38 @@ final class Text {
 	 */
 	public static function lowercase( string $text ): string {
 		return function_exists( 'mb_strtolower' ) ? mb_strtolower( $text, 'UTF-8' ) : strtolower( $text );
+	}
+
+	/**
+	 * Returns a text in lower case with the byte length of each character kept.
+	 *
+	 * Offsets found in the result are offsets in the text. A character whose lower case has
+	 * another byte length (`İ`, `Ⱥ`, the Kelvin sign) stays as it is; Question2Answer assumes
+	 * that lower case never changes the length (`qa_block_words_match_all()`), and with such a
+	 * character the stars of block words landed beside the word or past the end of the text.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $text Text.
+	 * @return string
+	 */
+	private static function lowercase_same_length( string $text ): string {
+		if ( 1 !== preg_match( '/[^\x00-\x7F]/', $text ) ) {
+			return strtolower( $text );
+		}
+
+		$lower = preg_replace_callback(
+			'/./us',
+			static function ( array $character ): string {
+				$lower = self::lowercase( $character[0] );
+
+				return strlen( $lower ) === strlen( $character[0] ) ? $lower : $character[0];
+			},
+			$text
+		);
+
+		// Text that is not valid UTF-8: only ASCII letters, byte for byte.
+		return $lower ?? strtolower( $text );
 	}
 
 	/**

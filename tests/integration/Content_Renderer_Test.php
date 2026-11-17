@@ -45,4 +45,15 @@ final class Content_Renderer_Test extends Test_Case {
 		$this->assertSame( '<p class="x">**** it</p>', $renderer->html( '<p class="x">Darn it</p>', 'html' ) );
 		$this->assertSame( 'A **** title', $renderer->text( 'A darn title' ) );
 	}
+
+	public function test_censors_block_words_where_lower_case_changes_the_byte_length(): void {
+		Options::update( 'posting', array( 'block_bad_words' => 'darn' ) );
+		$renderer = new Content_Renderer();
+
+		// Turkish `İ` and `Ⱥ` get longer in lower case: the word is found, its neighbors stay.
+		$this->assertSame( '<p>ȺȺȺȺ **** ok</p>', $renderer->html( '<p>ȺȺȺȺ darn ok</p>', 'html' ) );
+		$this->assertSame( '<p>İİİ <b>****</b> ok</p>', $renderer->html( '<p>İİİ <b>darn</b> ok</p>', 'html' ) );
+		$this->assertSame( "<p>İİİİİİ ****</p>\n", $renderer->html( 'İİİİİİ darn', '' ) );
+		$this->assertSame( 'İstanbul ****', $renderer->text( 'İstanbul darn' ) );
+	}
 }
