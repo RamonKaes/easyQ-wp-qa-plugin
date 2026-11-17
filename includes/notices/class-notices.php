@@ -13,6 +13,7 @@ use EasyQ\Blocks\Block_Context;
 use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
+use EasyQ\Posts\Content_Renderer;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Cookies;
 use EasyQ\Users\Site_Meta;
@@ -141,7 +142,7 @@ final class Notices {
 			if ( Options::get_bool( 'users', 'show_notice_visitor' ) && '' === Cookies::get( self::COOKIE ) ) {
 				$notices[] = array(
 					'id'      => self::VISITOR,
-					'content' => wp_kses_post( Options::get_string( 'users', 'notice_visitor' ) ),
+					'content' => Content_Renderer::kses_post( Options::get_string( 'users', 'notice_visitor' ) ),
 				);
 			}
 
@@ -159,14 +160,14 @@ final class Notices {
 			$content   = Row::string( $row, 'content' );
 			$notices[] = array(
 				'id'      => (string) Row::int( $row, 'id' ),
-				'content' => 'html' === Row::string( $row, 'format' ) ? wp_kses_post( $content ) : nl2br( esc_html( $content ) ),
+				'content' => 'html' === Row::string( $row, 'format' ) ? Content_Renderer::kses_post( $content ) : nl2br( esc_html( $content ) ),
 			);
 		}
 
 		if ( Options::get_bool( 'users', 'show_notice_welcome' ) && '' !== Site_Meta::get( $actor->user_id, self::WELCOME_META ) ) {
 			$notices[] = array(
 				'id'      => self::WELCOME,
-				'content' => wp_kses_post( Options::get_string( 'users', 'notice_welcome' ) ),
+				'content' => Content_Renderer::kses_post( Options::get_string( 'users', 'notice_welcome' ) ),
 			);
 		}
 

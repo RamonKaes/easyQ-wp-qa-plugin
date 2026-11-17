@@ -13,6 +13,7 @@ use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\URLs;
 use EasyQ\Posts\Activity_Item;
+use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\REST\Post_Input;
@@ -678,8 +679,8 @@ final class Post_Fields {
 		$prefix = is_string( $attributes['prefix'] ?? null ) ? $attributes['prefix'] : '';
 		$suffix = is_string( $attributes['suffix'] ?? null ) ? $attributes['suffix'] : '';
 
-		return ( '' === $prefix ? '' : sprintf( '<span class="wp-block-post-terms__prefix">%s</span>', wp_kses_post( $prefix ) ) )
+		return ( '' === $prefix ? '' : sprintf( '<span class="wp-block-post-terms__prefix">%s</span>', Content_Renderer::kses_post( $prefix ) ) )
 			. $html
-			. ( '' === $suffix ? '' : sprintf( '<span class="wp-block-post-terms__suffix">%s</span>', wp_kses_post( $suffix ) ) );
+			. ( '' === $suffix ? '' : sprintf( '<span class="wp-block-post-terms__suffix">%s</span>', Content_Renderer::kses_post( $suffix ) ) );
 	}
 }

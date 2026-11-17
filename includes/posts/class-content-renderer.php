@@ -62,9 +62,8 @@ final class Content_Renderer {
 	 * Filters HTML a user wrote, on saving and on showing it.
 	 *
 	 * Comments get the tags core allows in comments (`$allowedtags`); questions and answers
-	 * get the post filter core applies to contributors, without the directives of the
-	 * Interactivity API: easyQ shows them inside its own interactive region, where a
-	 * `data-wp-*` attribute would act on its store, e.g. cast a vote for the reader.
+	 * get the post filter core applies to contributors. Both lose the directives of the
+	 * Interactivity API, see `kses_post()`.
 	 *
 	 * @since 0.1.0
 	 *
@@ -73,11 +72,37 @@ final class Content_Renderer {
 	 * @return string
 	 */
 	public static function kses( string $content, string $type ): string {
-		if ( Post::COMMENT === $type ) {
-			return wp_kses( $content, 'data' );
-		}
+		return Post::COMMENT === $type ? self::without_directives( wp_kses( $content, 'data' ) ) : self::kses_post( $content );
+	}
 
-		$tags = new \WP_HTML_Tag_Processor( wp_kses_post( $content ) );
+	/**
+	 * Filters HTML that easyQ shows inside its own interactive region with the post filter
+	 * of core, without the directives of the Interactivity API.
+	 *
+	 * Inside the region a `data-wp-*` attribute would act on the store of easyQ, e.g. cast a
+	 * vote for the reader. Core keeps directives in the HTML of contributors, so every text
+	 * of someone else easyQ prints there goes through here: posts, the affixes of blocks,
+	 * the texts above forms and the notices.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $html HTML.
+	 * @return string
+	 */
+	public static function kses_post( string $html ): string {
+		return self::without_directives( wp_kses_post( $html ) );
+	}
+
+	/**
+	 * Removes every attribute that starts with `data-wp-`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $html HTML.
+	 * @return string
+	 */
+	private static function without_directives( string $html ): string {
+		$tags = new \WP_HTML_Tag_Processor( $html );
 		while ( $tags->next_tag() ) {
 			foreach ( (array) $tags->get_attribute_names_with_prefix( 'data-wp-' ) as $name ) {
 				$tags->remove_attribute( $name );

@@ -131,6 +131,49 @@ test.describe( 'HTML of visitors', () => {
 		).toEqual( [] );
 	} );
 
+	test( 'directives in HTML of an author next to an easyQ block never act for the reader', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		const favorite = JSON.stringify( {
+			favorite: false,
+			favoriteType: 'question',
+			favoriteId: question.id,
+			labels: { add: 'Add', remove: 'Remove' },
+		} );
+		// HTML core keeps for an author: directives with the namespace of easyQ, no form.
+		const post = await requestUtils.createPost( {
+			title: `Post with an easyQ block ${ Date.now() }`,
+			status: 'publish',
+			content:
+				`<!-- wp:easyq/question {"questionId":${ question.id }} --><!-- wp:easyq/post-title /--><!-- /wp:easyq/question -->` +
+				`<!-- wp:html --><div data-wp-interactive="easyq" data-wp-context='${ favorite }' data-wp-init="actions.favorite"><button type="button" data-wp-on--click="actions.favorite" data-wp-on--mouseenter="actions.vote">Forged button</button></div><!-- /wp:html -->`,
+		} );
+		const requests = [];
+		page.on( 'request', ( request ) => {
+			if ( /favorites|\/vote/.test( request.url() ) ) {
+				requests.push( request.url() );
+			}
+		} );
+		const errors = [];
+		page.on( 'pageerror', ( error ) => errors.push( error.message ) );
+
+		await page.goto( post.link );
+		const forged = page.getByRole( 'button', { name: 'Forged button' } );
+		await forged.hover();
+		await forged.click();
+		await page.waitForTimeout( 500 );
+		expect( requests ).toEqual( [] );
+		expect( errors ).toEqual( [] );
+		expect(
+			(
+				await requestUtils.rest( { path: '/easyq/v1/favorites' } )
+			).filter(
+				( item ) => item.type === 'question' && item.id === question.id
+			)
+		).toEqual( [] );
+	} );
+
 	for ( const failure of [ 'offline', 403, 429 ] ) {
 		test( `a favorite that fails (${ failure }) shows what the server holds`, async ( {
 			page,

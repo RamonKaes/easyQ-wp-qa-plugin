@@ -9,6 +9,26 @@
 import { store, getContext, getElement } from '@wordpress/interactivity';
 
 /**
+ * Returns the form of a submit event, or null for any other event or element.
+ *
+ * The actions that write act only for the forms easyQ renders: core removes `<form>`
+ * from the HTML of contributors (`wp_kses_allowed_html()`, since 5.0.1), so a directive
+ * in the HTML of someone else, on any other element or run by itself, never votes,
+ * adds a favorite or dismisses a notice for the reader.
+ *
+ * @since 0.1.0
+ *
+ * @param {Event} [event] Event of the action.
+ * @return {HTMLFormElement|null} The form, or null.
+ */
+function submittedForm( event ) {
+	return event?.type === 'submit' &&
+		event.target instanceof window.HTMLFormElement
+		? event.target
+		: null;
+}
+
+/**
  * Sends the request of a button in the background and returns its JSON, or null when
  * there is no usable answer: refused, not JSON, or no connection. The caller then
  * submits the form normally, as `submit` does, so the server says why, as without
@@ -294,8 +314,11 @@ const { state } = store( 'easyq', {
 		 * @param {SubmitEvent} event Submit event of the form.
 		 */
 		*submit( event ) {
+			const form = submittedForm( event );
+			if ( ! form ) {
+				return;
+			}
 			event.preventDefault();
-			const form = event.target;
 			// A second click while the form is on its way would post it twice: the nonce
 			// can be used again, as core's nonces can.
 			if ( form.getAttribute( 'aria-busy' ) === 'true' ) {
@@ -354,8 +377,11 @@ const { state } = store( 'easyq', {
 		 * @param {SubmitEvent} event Submit event of the vote form.
 		 */
 		*vote( event ) {
+			const form = submittedForm( event );
+			if ( ! form ) {
+				return;
+			}
 			event.preventDefault();
-			const form = event.target;
 			const context = getContext();
 			const vote =
 				context.vote === context.direction ? 0 : context.direction;
@@ -391,8 +417,11 @@ const { state } = store( 'easyq', {
 		 * @param {SubmitEvent} event Submit event of the notice form.
 		 */
 		*dismissNotice( event ) {
+			const form = submittedForm( event );
+			if ( ! form ) {
+				return;
+			}
 			event.preventDefault();
-			const form = event.target;
 			const context = getContext();
 
 			const result = yield* requestJson(
@@ -420,8 +449,11 @@ const { state } = store( 'easyq', {
 		 * @param {SubmitEvent} event Submit event of the favorite form.
 		 */
 		*favorite( event ) {
+			const form = submittedForm( event );
+			if ( ! form ) {
+				return;
+			}
 			event.preventDefault();
-			const form = event.target;
 			const context = getContext();
 
 			const result = yield* requestJson( `${ state.restUrl }favorites`, {

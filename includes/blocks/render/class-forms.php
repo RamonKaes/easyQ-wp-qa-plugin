@@ -18,6 +18,7 @@ use EasyQ\Mail\Notifications;
 use EasyQ\Mail\Unsubscribe;
 use EasyQ\Messages\Messages;
 use EasyQ\Newsletter\Newsletter;
+use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\REST\Post_Input;
@@ -465,7 +466,7 @@ final class Forms {
 	private static function custom_text( string $form ): string {
 		$text = Options::get_bool( 'posting', 'show_custom_' . $form ) ? trim( Options::get_string( 'posting', 'custom_' . $form ) ) : '';
 
-		return '' === $text ? '' : sprintf( '<div>%s</div>', wp_kses_post( $text ) );
+		return '' === $text ? '' : sprintf( '<div>%s</div>', Content_Renderer::kses_post( $text ) );
 	}
 
 	/**

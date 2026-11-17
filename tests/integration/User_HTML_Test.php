@@ -149,4 +149,73 @@ final class User_HTML_Test extends REST_Test_Case {
 		$this->assertStringNotContainsString( 'data-wp-text="state.restUrl"', $page );
 		$this->assertStringNotContainsString( 'data-wp-on--click="actions.vote"', $page );
 	}
+
+	public function test_html_of_others_in_the_region_of_easyq_has_no_directives(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		$answer   = $this->answer( $author, $question );
+		$this->comment( $author, $question, $answer );
+		$directive = '<span data-wp-on--click="actions.vote" data-wp-init="actions.favorite" data-note="kept">Affix</span>';
+
+		// The affixes of blocks, written by an author without `unfiltered_html`.
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$attributes = wp_json_encode(
+			array(
+				'prefix' => $directive,
+				'suffix' => $directive,
+			)
+		);
+		$page       = do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/post-tags ' . $attributes . ' /--><!-- /wp:easyq/question -->' );
+		$this->assertSame( 2, substr_count( $page, 'data-note="kept"' ), 'Both affixes are shown.' );
+
+		// The texts of the site owner above the forms, and the notices.
+		\EasyQ\Settings\Options::update(
+			'posting',
+			array(
+				'show_custom_answer' => true,
+				'custom_answer'      => $directive,
+			)
+		);
+		\EasyQ\Settings\Options::update(
+			'users',
+			array(
+				'show_notice_visitor' => true,
+				'notice_visitor'      => $directive,
+			)
+		);
+		wp_set_current_user( (int) $this->user()->user_id );
+		$page .= do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- /wp:easyq/question -->' );
+		wp_set_current_user( 0 );
+		$notices = Services::notices()->for_actor( new \EasyQ\Actor( null ) );
+		$this->assertNotEmpty( $notices );
+		$page .= implode( '', array_column( $notices, 'content' ) );
+
+		$this->assertGreaterThanOrEqual( 4, substr_count( $page, 'data-note="kept"' ), 'Affixes, the text above the form and the notice are shown.' );
+		$this->assertStringNotContainsString( 'data-wp-on--click="actions.vote"', $page );
+		$this->assertStringNotContainsString( 'data-wp-init="actions.favorite"', $page );
+
+		// Comments, also where another plugin lets `data-*` into the tags of comments.
+		$allow = static function ( $tags, $context ) {
+			if ( is_array( $tags ) && 'data' === $context ) {
+				$tags['span'] = array( 'data-*' => true );
+			}
+			return $tags;
+		};
+		add_filter( 'wp_kses_allowed_html', $allow, 10, 2 );
+		$comment = \EasyQ\Posts\Content_Renderer::kses( $directive, Post::COMMENT );
+		remove_filter( 'wp_kses_allowed_html', $allow );
+		$this->assertStringContainsString( 'data-note="kept"', $comment );
+		$this->assertStringNotContainsString( 'data-wp-', $comment );
+	}
+
+	public function test_no_html_of_others_reaches_the_page_without_the_filter_of_easyq(): void {
+		// A net over the source: every filter of HTML in the renderers of blocks and the notices
+		// goes through `Content_Renderer`, which removes directives.
+		$files = array_merge( (array) glob( dirname( __DIR__, 2 ) . '/includes/blocks/render/*.php' ), array( dirname( __DIR__, 2 ) . '/includes/notices/class-notices.php' ) );
+		$this->assertGreaterThan( 5, count( $files ) );
+		foreach ( $files as $file ) {
+			$source = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$this->assertSame( 0, preg_match( '/\bwp_kses_post\s*\(|\bwp_kses_data\s*\(|\bwp_filter_post_kses\s*\(/', $source ), basename( $file ) );
+		}
+	}
 }
