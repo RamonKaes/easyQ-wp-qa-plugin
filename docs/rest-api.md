@@ -182,7 +182,7 @@ category) and to the `move` action; a question may always keep the category it h
 | `POST /users/{id}/wall` | Post on a wall: `content`. Needs the permission of the settings; users can turn off posts by others on their wall |
 | `DELETE /users/{id}/wall/{message}` | Delete a wall post for good, with `force=true` as for categories: the owner of the wall, the author until someone else posted after it, and moderators who may hide and delete posts |
 | `GET /messages` | Private messages of the logged in user: `box` (`inbox`, `sent`), `page`, `per_page`; or `with` a user for the latest 20 between both, oldest first. `404` without the message history |
-| `POST /messages` | Send a private message: `to`, `content`; `201`, without `Location`, since a message has no route to read it alone. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
+| `POST /messages` | Send a private message: `to`, a user whose profile the sender may see (else `404`, as for no user), `content`; `201`, without `Location`, since a message has no route to read it alone. It is emailed, and kept if the history is on; otherwise the response has `stored` false |
 | `DELETE /messages/{id}` | Delete a message from your box; it is gone once both sides deleted it, so one request deletes nothing for good and takes no `force` |
 
 ### Feedback

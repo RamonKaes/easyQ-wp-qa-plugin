@@ -125,7 +125,7 @@ final class Messages_Test extends REST_Test_Case {
 
 	public function test_sends_and_lists_private_messages(): void {
 		$sender    = get_userdata( (int) $this->user()->user_id );
-		$recipient = get_userdata( (int) $this->user()->user_id );
+		$recipient = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
 		wp_set_current_user( $sender->ID );
 
 		$sent = $this->request(
@@ -162,9 +162,33 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertNull( Services::messages()->find( $id ) );
 	}
 
+	public function test_messages_go_only_to_users_whose_profile_is_shown(): void {
+		$sender = (int) $this->user()->user_id;
+		$hidden = (int) $this->user()->user_id;
+		$shown  = $this->take_part( (int) $this->user()->user_id );
+		wp_set_current_user( $sender );
+		$message = static fn ( int $to ): array => array(
+			'to'      => $to,
+			'content' => 'Hello there',
+		);
+
+		// As the message page of the user answers (`Router`, `message`): the same as for no user, without name or address.
+		$refused = $this->request( 'POST', '/messages', $message( $hidden ) );
+		$this->assertSame( 404, $refused->get_status() );
+		$this->assertSame( $this->data( $this->request( 'POST', '/messages', $message( PHP_INT_MAX ) ) ), $this->data( $refused ) );
+		$this->assertStringNotContainsString( get_userdata( $hidden )->display_name, (string) wp_json_encode( $this->data( $refused ) ) );
+		$this->assertFalse( tests_retrieve_phpmailer_instance()->get_sent( 0 ) );
+
+		$this->assertSame( 201, $this->request( 'POST', '/messages', $message( $shown ) )->get_status() );
+
+		// Who may list users sees every profile, so they may write to every user.
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( 201, $this->request( 'POST', '/messages', $message( $hidden ) )->get_status() );
+	}
+
 	public function test_private_messages_are_private(): void {
 		$sender    = (int) $this->user()->user_id;
-		$recipient = (int) $this->user()->user_id;
+		$recipient = $this->take_part( (int) $this->user()->user_id );
 		wp_set_current_user( $sender );
 		$id = $this->data(
 			$this->request(
@@ -188,7 +212,7 @@ final class Messages_Test extends REST_Test_Case {
 
 	public function test_messages_follow_settings_and_wishes(): void {
 		$sender    = (int) $this->user()->user_id;
-		$recipient = (int) $this->user()->user_id;
+		$recipient = $this->take_part( (int) $this->user()->user_id );
 		$message   = array(
 			'to'      => $recipient,
 			'content' => 'Hello there',

@@ -327,8 +327,9 @@ final class Messages_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ): WP_REST_Response|WP_Error {
+		// Only to a user whose profile the sender may see, as the message page of that user (`Router`).
 		$to = get_userdata( (int) self::int_param( $request, 'to' ) );
-		if ( false === $to || ! Services::user_query()->is_member( $to ) ) {
+		if ( false === $to || ! Services::user_query()->is_shown( $to, $this->actor()->user_id ) ) {
 			return REST_Errors::not_found();
 		}
 
