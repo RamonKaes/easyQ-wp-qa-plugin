@@ -21,7 +21,7 @@ for good. The rules of the reviews and the matrix the findings refer to are in
   measurement or a reading that shows the opposite, never because an attempt to
   reproduce it failed.
 
-The next free number is F-205.
+The next free number is F-206.
 
 ## Open
 
@@ -91,6 +91,7 @@ eval` or the browser) unless it says "read".
 | F-202 | should | No test holds any check of the values the filters of easyQ return: `easyq_rest_prepare_*`, `easyq_email_*`, `easyq_sitemaps_entry`, `user_request_key_expiration`, `wpml_translate_single_string` and `easyq_default_settings`; a value of another type would reach the code unchecked. | P × Form | Mutations P-1 to P-6; old. | `Filter_Values_Test` hands wrong types to the callbacks of easyQ on the filters of others, not to the filters easyQ applies (the net of F-188 forbids casts, not missing checks). |
 | F-203 | low | The pattern that reads the indexes `dbDelta()` added for Site Health is held by no test. | Q × State | Mutation Q-3; old. | `Site_Health_Test` simulates missing tables, not indexes. |
 | F-204 | should | Five guards stay green against a violation in a form they are not built from: `REST_Roles_Test` reads a `permission_callback` as the string `__return_true` (a closure that returns true passes); `Request_Bounds_Test` does not see `filter_input()`; the guard against styles in the admin markup does not see an attribute built from a `printf()` argument; `Docs_Test` asks no document for literal actions starting with `easyq_` and does not read `apply_filters_ref_array()`. | A, C, F, P × Guidelines | Attacks A-W1, CDE-W1, FG-W3, MNOPQ-A1, MNOPQ-A2 of the round of 2026-11-17; old. | The guards compare forms of the source, not the behavior. |
+| F-205 | low | The store acts only on the submit of a form (F-138), because core removes `<form>` from the HTML of contributors; a plugin that lets `input` or `select` into the post filter brings `<form>` back (`wp_kses_allowed_html()`), and with it a form with directives in HTML of others. | D × Abuse | A site with such a plugin and an author without `unfiltered_html`; new (F-138). | The end-to-end test uses core's filter. |
 
 ## Open suspicions
 

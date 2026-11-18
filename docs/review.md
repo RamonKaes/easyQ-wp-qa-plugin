@@ -228,15 +228,16 @@ not read"). No row is reported without a finding; the findings per row are in
    Multisite, M Multisite, N Concurrency) have a decision proposed in
    `docs/findings.md`, "Open cells", which the owner has not taken.
 
-Open after the round: 53 findings (24 should, 29 low) and ten suspicions (seven should,
+Open after the round: 54 findings (24 should, 30 low) and ten suspicions (seven should,
 three low).
 
 ### Does it count as a round
 
-Not yet. Every row was read, measured and mutated, and the machines ran from zero, but
-two mandatory parts are not complete: the decision per line of the coverage (830 lines),
-and the check of each fix of this round with the five questions of step 7a, which ran for
-some of them only. The round counts once both are made up. Settled: zero of two rounds,
+Not yet. Every row was read, measured and mutated, the machines ran from zero, and every
+fix of this round was checked with the five questions of step 7a, after which the
+end-to-end tests ran again in full (152, green) and F-205 was entered. One mandatory
+part is not complete: the decision per line of the coverage (830 lines). The round counts
+once it is made up. Settled: zero of two rounds,
 since this round found findings of class should and blocker in old code.
 
 ## Cross-cutting standards
