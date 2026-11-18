@@ -21,14 +21,16 @@ for good. The rules of the reviews and the matrix the findings refer to are in
   measurement or a reading that shows the opposite, never because an attempt to
   reproduce it failed.
 
-The next free number is F-193.
+The next free number is F-205.
 
 ## Open
 
 Found on 2026-11-17 in the first round over the whole matrix (`/big-review` without
 rows, on `3c5790a`). Twelve findings of that round were fixed on the same day, each
 with a guard and a counter-check in its commit: F-134 to F-143, F-173 and F-188. The
-others are open. Each
+others are open. F-193 to F-204 are lines and guards the mutations of the round left
+unchecked (2026-11-18, mutate.py); the guards for A-M11, A-M12, A-M14 and BI-I-Value-1
+were added the same day, so those lines are not listed. Each
 row names the cell, the trigger (who, on what condition), the commit since which the
 place is unchanged ("old" means it survived a run over its row), and why no guard saw
 it. Every one was reproduced (a test, `curl` against the development instance, `wp
@@ -83,6 +85,18 @@ eval` or the browser) unless it says "read".
 | F-190 | low | The guard of F-134 measures the fallback of the store for `favorite` only; `vote` and `dismissNotice` share `requestJson()` but no test makes their request fail. | D × Error path | A failed connection while voting or dismissing; new (F-134). | The end-to-end test covers one of three actions. |
 | F-191 | low | A user who never took part sends a private message; the recipient cannot answer, because the message page of the sender answers 404 (F-140 made the route answer the same). | A × State | Members who message before they post; old. | No test answers a message of a hidden user. |
 | F-192 | low | The blocks `post-actions`, `comment-form`, `comment-template` and `post-content` (while editing) print directives without `supports.interactivity`, as the Interactivity API handbook asks of blocks with directives; they are rendered inside the question block, which has it. | D × Guidelines | Read; old. | `Rendering_Test::test_blocks_with_directives_declare_interactivity_and_give_unique_ids` asks for the flag only where the markup has `data-wp-interactive`, in the default state. |
+| F-193 | should | Lines of the forms and uploads no test holds (mutations green on both suites): the type checks of the form name and the fields (`Form_Handler`), the fallback for an unknown form, the sanitizer of the registration fields, the TTL of the flash, the message of a REST error other than `rest_invalid_param`, both multisite branches of the registration (the stage check and `switch_to_blog()`), and in `Avatars` the part type, the error range, the default error, the size against `wp_max_upload_size()`, the partial upload and the attachment kept on deletion. | B × Form, B × Multisite, I × Form, I × Error path | Mutations of the round of 2026-11-17 (BI-B-Form-1 to 3, BI-B-Value-2, BI-B-Abuse-2, BI-B-Error-1, BI-B-Multisite-1 and 2, BI-I-Form-1 to 3, BI-I-Error-1 and 2, BI-I-State-3); old. | `test_every_field_of_every_form_reaches_the_rest_api_as_typed` sends strings only; the upload tests cover the eight error codes, not the forms PHP sends without one. |
+| F-194 | low | The start of a search is not bounded by any test (`Query_Resolver::MAX_SEARCH_START` in `GET /questions?search=`). | A × Volume | Mutation A-M13; old. | `test_every_paginated_list_pages_as_core_does` never sends `search` (see F-147). |
+| F-195 | should | The type checks of the query parameters (`sort`, `by`, `show`, `title`, the page of the messages) and of the block attributes (`query.tag`, `query.source`, `separator`, `rows`, `query` of the user list) are held by no test: an array there would reach `sanitize_key()` or a string function. | C × Form, D × Form | Mutations C-F1 to C-F4, C-W1, D-F1 to D-F5; old. | `Request_Bounds_Test` sends numbers and strings, `Block_Attributes_Test` numbers only (see F-204). |
+| F-196 | low | The branch of the censoring that skips separators in the map of bytes is held by no test. | E × Value | Mutation E-V1; new (F-139 kept it). | The tests of the censoring use texts where the branch changes nothing. |
+| F-197 | low | No test holds the length of user titles on save (`MAX_TITLE_LENGTH`) nor that the posts list offers only the row actions the moderator may use. | G × Value, F × Identity | Mutations FG-M23, FG-M24; old. | The tests save short titles and look at what the REST API refuses, not at the links. |
+| F-198 | should | Lines of cookies, mail, scheduled events and feeds no test holds: the digits of the visitor cookie and the check that its row exists, the validation of a mapped IP address, the remembered notice of a signed-in user, `is_email()` of a recipient, the retention run during an install, `COALESCE(written, created)` of the retention, the visibility check of the activity feed (a second net behind the query), the maximum of feed items, and the membership of a user in the sitemap. | H × Form, H × Value, J × Value, K × State, L × Volume, L × Multisite | Mutations H1, H2, H4, H5, J1, K3, K4, L1, L3, L5; old. | Each test covers the allowed case only. |
+| F-199 | should | Five lines of `wp easyq recalc` no test holds: the check that all tools were listed, the confirmation before the deleting tool, the handling of a `WP_Error`, the cache clearing between steps, and which tools `--all` takes. | M × State, M × Error path | Mutations M-1 to M-5; old. | `Tools_Test` runs the tools, not the command. |
+| F-200 | should | Lines of the privacy tools no test holds: the welcome notice erased with the profile, the row of limits of the user, hidden questions left out of the export of favorites or updates, and notes left out of the export of posts. | N × State | Mutations N-2, N-3, N-5, N-6; old and new (`a6681c2`). | `Personal_Data_Test` exports and erases visible data. |
+| F-201 | low | `delete_option( Updates::THRESHOLD_OPTION )` in `Uninstaller::uninstall_site()` changes nothing since F-142 deletes every option of the prefix. | O × Guidelines | Mutation O-6; new (F-142). | The line is covered by the sweep; it is dead code now. |
+| F-202 | should | No test holds any check of the values the filters of easyQ return: `easyq_rest_prepare_*`, `easyq_email_*`, `easyq_sitemaps_entry`, `user_request_key_expiration`, `wpml_translate_single_string` and `easyq_default_settings`; a value of another type would reach the code unchecked. | P × Form | Mutations P-1 to P-6; old. | `Filter_Values_Test` hands wrong types to the callbacks of easyQ on the filters of others, not to the filters easyQ applies (the net of F-188 forbids casts, not missing checks). |
+| F-203 | low | The pattern that reads the indexes `dbDelta()` added for Site Health is held by no test. | Q × State | Mutation Q-3; old. | `Site_Health_Test` simulates missing tables, not indexes. |
+| F-204 | should | Five guards stay green against a violation in a form they are not built from: `REST_Roles_Test` reads a `permission_callback` as the string `__return_true` (a closure that returns true passes); `Request_Bounds_Test` does not see `filter_input()`; the guard against styles in the admin markup does not see an attribute built from a `printf()` argument; `Docs_Test` asks no document for literal actions starting with `easyq_` and does not read `apply_filters_ref_array()`. | A, C, F, P × Guidelines | Attacks A-W1, CDE-W1, FG-W3, MNOPQ-A1, MNOPQ-A2 of the round of 2026-11-17; old. | The guards compare forms of the source, not the behavior. |
 
 ## Open suspicions
 
