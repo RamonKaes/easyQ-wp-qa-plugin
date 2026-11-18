@@ -17,7 +17,6 @@ use EasyQ\Newsletter\Newsletter;
 use EasyQ\Privacy\IP_Retention;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
-use EasyQ\Updates\Updates;
 use EasyQ\Users\Avatars;
 use EasyQ\Users\Site_Meta;
 
@@ -129,7 +128,6 @@ final class Uninstaller {
 		delete_option( Installer::DB_VERSION_OPTION );
 		delete_option( Counts::OPTION );
 		delete_option( Router::RULES_OPTION );
-		delete_option( Updates::THRESHOLD_OPTION );
 		Newsletter::cancel();
 		self::delete_options();
 		self::delete_transients();
