@@ -108,416 +108,136 @@ An entry that fits no row is a new row.
 | P | Values other plugins return through the filters | `docs/hooks.md` |
 | Q | Site Health | `includes/health/class-site-health.php` |
 
-## State on 2026-11-15
+## State on 2026-11-18
 
-The findings of the first round were fixed on this day, each with a guard that turned
-red when the fix was taken back (the commits name the finding and the
-counter-check). Open findings: none. Deferred: F-2 (the coverage gate needs a
-decision on `@covers`) and F-25 (the readme, in phase 9). Rejected: one part of F-36.
-
-A cell became ✓ where its guard reads the whole class from the plugin, holds the
-allowed and the refused case, and was seen red:
-
-- A × Identity: `REST_Roles_Test` sends every argument of every edit route of the
-  server alone, as visitor and subscriber, and every reading route with blocks, with
-  the view permission and in the edit context; the allowed side for authors,
-  administrators and the right to retag.
-- A × Frequency: every limit of `Limits::SETTINGS` through the REST API, the first
-  request passing and the second answering 429.
-- A × State: every route whose controller loads a post, every method and action,
-  with a hidden parent and with a closing note.
-- B × Value: every field of every form of `Form_Handler::FIELDS` reaches the REST API
-  as typed; the REST API sanitizes.
-- B × Error path: an expired submission of every form keeps every typed field and
-  stores nothing, as visitor and as user.
-- G × Error path: every field of every section that can refuse a value reports it.
-- I × Error path: every upload error PHP knows reports its reason.
-- A × Volume: `REST_Query_Growth_Test` reads the list routes from the server (every
-  `get_items`, the wall and the similar questions; the email templates are a fixed
-  set), fails for a list it does not measure, and expects no statement to run more
-  often with more items, for all 16 lists (F-51).
-
-The other cells of the five rows stay `partly`: their guards hold a part of the
-class, or list what they check.
-
-The rows C, D, E, H and J to Q were reviewed in a second round on the same day
-(`/big-review C D E H J K L M N O P Q`): read against the handbooks and core, each
-suspicion reproduced by a test before it became a finding (F-56 to F-133, in
-`docs/findings.md`), and the guards of each row taken back by mutations. The
-evidence per row is under "The cells of C, D, E, H and J to Q". No cell of these rows
-is ✓: no guard reads its class from the plugin with both sides and was seen red.
-
-| | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | partly | ✓ | ✓ | open | ✓ | partly | ✓ | open | partly | — | partly | partly |
-| B | partly | ✓ | partly | partly | partly | — | partly | partly | partly | ✓ | partly | partly | partly |
-| C | open | partly | partly | partly | — | partly | — | partly | partly | partly | partly | partly | partly |
-| D | open | partly | partly | — | — | partly | — | partly | partly | open | partly | partly | partly |
-| E | — | partly | partly | — | — | open | — | partly | partly | — | partly | partly | partly |
-| F | open | partly | partly | open | partly | partly | open | partly | open | partly | partly | partly | partly |
-| G | partly | partly | partly | open | open | open | — | open | open | ✓ | partly | partly | partly |
-| H | open | partly | — | partly | open | — | partly | partly | partly | partly | — | partly | partly |
-| I | open | partly | partly | partly | partly | partly | — | partly | partly | ✓ | partly | partly | partly |
-| J | — | partly | partly | partly | partly | partly | partly | partly | partly | partly | partly | partly | partly |
-| K | — | — | — | partly | partly | partly | partly | partly | — | partly | — | partly | partly |
-| L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
-| M | partly | — | — | — | partly | partly | — | partly | — | partly | — | open | partly |
-| N | — | — | partly | — | open | partly | — | partly | — | partly | — | partly | partly |
-| O | — | — | — | — | partly | partly | partly | partly | — | partly | — | partly | partly |
-| P | partly | partly | partly | partly | — | — | — | — | — | partly | — | — | partly |
-| Q | — | — | — | — | — | partly | — | partly | — | partly | partly | partly | partly |
-
-On 2026-11-16 the findings of the second round were fixed, F-112 kept with the
-owner's word: each commit names its findings, the guard that holds them and the
-counter-check (the fix taken back, the guard seen red). The guards read their class
-from the plugin where they can: `Request_Bounds_Test` (the query parameters of the
-frontend from the source, every page of the router), `Visibility_Test` and
-`Rendering_Test` (every block of the registry), `User_HTML_Test` and
-`Search_Args_REST_Test` (routes of the server), `Block_Attributes_Test`,
-`Filter_Values_Test` (every filter callback of the plugin), `Page_State_Test`,
-`Cookies_IP_Test`, `Newsletter_Run_Test` and `Lifecycle_Test`. The cells they changed
-are `partly`, not ✓: a ✓ waits for the cross-check in a fresh context.
-
-The release gate after the fixes:
-
-1. Holds: F-25, classed blocker, is deferred to phase 9. No other blocker finding
-   is open, but one open suspicion is classed blocker by its worst outcome (a
-   `data-wp-` directive in a visitor's answer, `docs/findings.md`, "Open
-   suspicions").
-2. Does not hold: no cell of Identity, Value or Error path is `open` in A, B, F, G
-   or I; the second round did not touch these rows.
-3. Holds: every cell of every row has now been looked at, but these cells stay
-   `open` without a decision written down in `docs/findings.md`: A Concurrency and
-   Abuse; F Form, Frequency, Time and Abuse; G Frequency, Concurrency, Volume, State
-   and Abuse; I Form; C Form; D Form and Error path; E Volume; H Form and
-   Concurrency; L Multisite; M Multisite; N Concurrency.
-
-The sections below are the record of the round of 2026-11-14; the findings they
-name are fixed, their commits say how. The cells that changed with F-42 to F-55 are
-listed under "Reproduced on 2026-11-15".
+The first run over the whole matrix (`/big-review` without rows), begun on 2026-11-17 on
+`3c5790a` and halted for the night, continued on 2026-11-18, by one session (Claude Opus 5.5) with six reading agents (each Claude Opus 5.5, read from their
+sessions), one per group of rows: A; B and I; C, D and E; F and G; H, J, K and L; M to Q.
+The agents read the source of their rows whole, reproduced on the development instance
+(wp-env 8888, over HTTP with `curl -i`, then `debug.log`) with fresh accounts per series,
+and proposed cells, findings and mutations; the session ran the machines, the browser
+tests, coverage and mutation, and fixed. Their reports are outside the repository.
 
 ### What the tools said
 
-- Green: `composer lint`, `composer analyse`, `composer test:unit` (89 tests),
-  `npm run lint:js`, `npm run test:php` (636 tests, 2 skipped: the network sign-up
-  exists on a multisite only), `npm run test:php:multisite` (648 tests),
-  `npm run test:e2e` (140 tests).
-- `npm run plugin-check`: no error, two warnings for untracked files of the developer
-  machine (F-39).
-- Lines no test runs were not measured: the local test site runs without a coverage
-  driver and the CI reports the sum only (F-2).
-- Inventory: 39 calls of `register_rest_route()` in 18 files, 41 routes on the
-  server; no outgoing request. Three commands of the inventory were empty in the
-  shell of the review (F-3). No entry without a row; the places of B, G and I in the
-  table above were completed.
+Set up from zero: `npm run build`, the test environment emptied with `wp-env clean all`.
 
-### The cells of A, B, F, G and I
-
-Each line names what holds the cell, the mutation that was seen red (the check
-removed, the whole suite run, the file restored and compared), and what is missing
-for a ✓. "Green" means the suite did not notice the removal.
-
-#### A, REST API
-
-- Form, partly: `REST_Schemas_Test::test_responses_match_their_schema` (red with a
-  wrong type in the post formatter and in the IP response). It reads the routes only
-  for "announces a schema"; the responses it checks are a list by hand, without
-  messages, wall, notices, newsletter, feedback and the writing responses of
-  questions, answers and comments. No test sends an array where a string is expected.
-  F-1.
-- Value, partly: `Post_Validator_Test` (red with the content limit removed),
-  `Questions_REST_Test::test_filters_html_content`, the checks of categories,
-  feedback, messages and user fields in their tests (each red). Green: the length
-  limit of messages and `esc_like()` in the tag search. Missing: limits read from the
-  schema of the tables, Unicode, control characters.
-- Identity, F-4, also F-10, F-11, F-13, F-15: the resource tests refuse and allow by
-  representatives (red: votes, post actions, the moderation list, editing questions,
-  categories, tools, user fields, email templates, newsletter, IP blocks, messages,
-  favorites, private profile fields, the unsubscribe token). Green: the edit check
-  of answers and of comments, the view permit of `/tags`. No blocked, unconfirmed or
-  unapproved user, no level of easyQ and no super admin goes through the routes.
-- Frequency, partly: `Questions_REST_Test::test_rate_limits_and_read_only_mode`,
-  `Feedback_Test::test_is_limited_per_hour`, the pause of the newsletter confirmation,
-  `Limits_Test` (each red). Green: the limits of answers and of messages.
-- Concurrency, open: no test. Limits are read in the permission callback and counted
-  after the insert.
-- Volume, partly: only the loading of the extra field for a list is held
-  (`Extra_Field_Test::test_lists_load_the_values_of_all_questions_at_once`).
-  `Query_Growth_Test` renders blocks and never sends a REST request.
-- Time, partly: `Newsletter_Test::test_confirmation_keys_expire`,
-  `Limits_Test::test_counts_restart_every_hour` (each red), both at service level.
-- State, F-8, also F-9, F-12: hidden questions and posts, closed questions, favorites
-  of hidden questions, walls and messages switched off (each red). Green: read-only on
-  `POST /users/me`.
-- Abuse, open: no test combines features or accounts.
-- Error path, partly, F-14: statuses are asserted case by case (red: 401 for a
-  visitor, the error of a refused upload, a 500 in the notices route). No test asserts
-  an error code, and the reading routes are never checked for 5xx.
-- Multisite, F-7: nothing in the row switches sites.
-- Guidelines, F-26, also F-27 to F-30: see `docs/guidelines-checklist.md`.
-
-#### B, forms and registration
-
-- Form, open: no test sends an array, a doubled field or an unknown form.
-- Value, F-5: `Registration_Test`, `Blocked_Names_Test` (red: blocked login, the
-  exemption of administrators, the network sign-up under the multisite run).
-- Identity, partly: `Form_Handler_Test::test_reports_permission_errors` (red), for
-  the vote form as a visitor; `Registration_Test::test_requires_the_terms_and_stores_the_consent`
-  (red). Ten of the sixteen forms never go through the handler in a test (F-24).
-- Frequency, partly: `Account_Limits_Test` (red: counting registrations, the login
-  limit). No form is sent over its limit or twice.
-- Concurrency, open.
-- Time, partly: `Form_Handler_Test::test_refuses_expired_forms`,
-  `Registration_Test::test_ignores_submissions_without_a_valid_nonce` (each red).
-- State, partly: the delete and unsubscribe forms (red: the return address after
-  deleting an answer).
-- Abuse, F-17, also F-18: `test_does_not_return_to_other_sites` (red).
-- Error path, F-6, also F-16: `test_keeps_values_and_field_errors_after_failures`,
-  `test_account_errors_keep_the_values` (red), for the ask and account forms.
-- Presentation, partly: axe on the registration, account and Q&A pages; no page in
-  its error state, no right-to-left run.
-- Multisite, F-32: the two sign-up tests; none switches sites.
-- Guidelines, F-31, also F-32, F-33.
-
-#### F, admin screens
-
-- Form, open: no test sends an array or a missing parameter to a handler.
-- Value, partly: the per-page range, duplicate names with the input kept (each red).
-- Identity, F-22, also F-24: categories, user fields and tools refuse an editor (red
-  with `MANAGE` lowered to `MODERATE`); the nonces of posts, users and profile (red);
-  `edit_user` on the profile (red); the dashboard widget and the User Titles menu
-  (red). Green: the same lowering on the email templates screen, the capability and
-  `edit_user` of the users bulk action, the limit of assignable levels, the nonce of
-  the newsletter buttons. The screens are listed by hand, not read from the menu.
-- Frequency, open: the reason for — did not hold; test emails, tools and bulk
-  actions can be repeated by their users.
-- Concurrency, open: a settings tab saved after an IP was blocked from the posts
-  screen writes the old list back (read, not run).
-- Volume, F-21: no test measures the queries of a list table.
-- Time, open: invalid nonces only.
-- State, F-23: a post already hidden, a category with children (each red).
-- Abuse, open.
-- Error path, partly: the missing confirmation of a tool, errors with the input, the
-  count of failed bulk actions (each red). Refusals assert that the request dies, not
-  its status.
-- Presentation, partly: axe on every screen as administrator; the users list and the
-  profile section are not among them.
-- Multisite, partly: the second run only.
-- Guidelines, F-35, also F-36, F-38.
-
-#### G, settings
-
-- Form, partly: `Settings_Test::test_every_field_belongs_to_a_setting_and_accepts_its_default`
-  reads the fields from the plugin, for the allowed case and without the points.
-  Green: the type check of a section.
-- Value, partly: numbers, choices, email addresses, user titles, empty templates (each
-  red), by representatives of each type.
-- Identity, partly: the capability of the settings pages, the fields of the site
-  owner, the templates (each red); the group capability is asserted for three of
-  twelve groups by name.
-- Frequency, open: the reason for — did not hold; saving the points updates every
-  user inside the request.
-- Concurrency, open: two managers who save the same section or two templates lose one
-  change (read, not run).
-- Volume, open: eleven autoloaded options hold texts without a limit.
-- State, open, and Abuse, open: were —. A search provider whose plugin is gone and
-  the line between `easyq_manage` and `manage_options` are cases no test holds.
-- Error path, F-37.
-- Presentation, partly: `test_layout_shows_every_field_once` reads every tab;
-  `aria-current` of the tabs (red); axe on every tab.
-- Multisite, partly: the second run only.
-- Guidelines, F-37, also F-38.
-
-#### I, uploads
-
-- Form, open: `Avatars::file_entry()` has no test.
-- Value, partly: a file that is no image, the allowed types, the crop,
-  `Avatars::set()` with a non-image (each red).
-- Identity, partly: the setting, the login (each red). No upload as a blocked user.
-- Frequency, partly: the upload limit (red). Refused uploads are not counted.
-- Concurrency, open. Volume, open: no limit on the dimensions before the image is
-  decoded (read, not run). Abuse, open. Multisite, open.
-- State, F-20: replace, remove, erase (each red). Green: the removal of the avatar
-  mark on uninstall.
-- Error path, F-19.
-- Presentation, partly: axe on the account page.
-- Guidelines, F-34.
-
-### Reproduced on 2026-11-15
-
-The 16 suspicions the round of 2026-11-14 found by reading and did not run were
-reproduced, by a test, a measurement or, for the ImageMagick case, on the PHP of the
-site. Fourteen were real and are fixed, each with a guard and a counter-check:
-
-- A: the newsletter step after a half-saved profile (F-43), converting into a target
-  that takes no comments (F-42), an edit without `format` (F-45), the address for
-  notifications longer than its column (F-46), the lists of the REST API (F-51),
-  favorite users whose profile is not shown, also on a single site (F-44).
-- B and I: a second click on an in-place form (F-52), the metadata of avatars with
-  ImageMagick, cropped or not (F-53), an image with more pixels than the memory holds,
-  and uploads that were not counted when refused (F-54), two uploads at once (F-55).
-- F and G: the counts of the views of the users list (F-47), the retention period and
-  the bonus beyond what a timestamp and the column hold (F-50), statuses written from
-  a stale profile form (F-48), a blocked user with the level Administrator (F-49).
-
-Two were not: a minimum above its maximum still lets questions be asked (measured;
-`docs/findings.md`), and the row-action nonce was bound to the action by F-33.
-
-The cells this changed: A × Volume became ✓ (above); B × Concurrency (F-52),
-F × Concurrency (F-48), I × Concurrency (F-55), I × Volume and I × Abuse (F-54) went
-from `open` to `partly`. A × Concurrency stays `open`: the rate limits are read before
-and counted after the insert, as in Question2Answer, and no test runs requests at
-once.
-
-### The cells of C, D, E, H and J to Q
-
-Measured on 2026-11-15. Each mutation changed one check in the plugin, ran the
-integration suite (701 tests single site; the survivors again as a multisite, 716
-tests), and restored the file. **Red** names the test that saw it; **green** means no
-test saw the change, so the cell it belongs to cannot be ✓. The survivors of D, K, L and
-N were not run as a multisite in this round; their green holds for a single site. Run outside the
-repository; the mutations are described here by what they removed.
-
-| Tool on the state before the round | Result |
+| Tool | Result |
 | --- | --- |
-| `composer lint`, `composer analyse` | no message |
-| `composer test:unit` | 89 tests, green |
-| `npm run test:php` | 701 tests, green, 2 skipped |
-| `npm run test:php:multisite` | 716 tests, green |
-| `npm run test:e2e` | 143 tests, green |
-| `npm run plugin-check` | no message |
+| `composer lint`, `composer analyse`, `composer test:unit`, `npm run lint:js` | Green (96 unit tests before the round, 98 after) |
+| `npm run test:php`, `npm run test:php:multisite` | Green (773 and 788 tests on `3c5790a`); green again after the first group of fixes |
+| `npm run test:e2e` | Green (144 tests) |
+| `npm run plugin-check` | No errors (on 8888: the emptied test environment has no Plugin Check) |
+| Inventory (`grep` per row) | Every command printed lines (A 39, B and I 21, C and F 57, D 54, E 9, F 11, G 3, H 13, J 12, K 4, L 8, M 1, N 2, O 5, P 21, Q 2); no outgoing request |
 
-- **C, routes and page meta.** Red: the user sections of `Routes::USER_SECTIONS`
-  (`Routing_Test::test_resolves_routes`), hidden profiles
-  (`Users_REST_Test::test_profiles_are_shown_as_core_shows_users`), robots for pages
-  that open a form and for empty lists (`Page_Meta_Test`), the view count once an
-  hour. Green, single site and multisite: a non-question post resolved as a question,
-  an empty tag, the 404 of an unknown route in the router and in the templates, the
-  login redirect, the page meta of a hidden question, page numbers below 1, and the
-  allow-lists of the list sorts (`query-resolver`, `users-render`). The findings:
-  F-56 (`TypeError` from numbers out of range), F-57 and F-58 (hidden or forbidden
-  questions answered with 200), F-64 to F-66, F-100, F-101. Form stays `open`: the
-  query variables were read, not sent in every type.
-- **D, blocks.** Red: 22 of 49 mutations, among them the permission of the user
-  blocks (`User_Blocks_Test`), hidden questions (`Blocks_Test`), the edit and close
-  forms, query growth (`Query_Growth_Test`), and the block options of
-  `Block_Settings_Test`. Green: the type checks of block attributes (`queryId`,
-  `rows`, `tag`, `query`), the upper limits of `perPage`, heading level, avatar size,
-  `midSize`, `length` and `buttonPosition`, the view check of child answers and
-  comments in the lists, the profile field permission, the message button,
-  `aria-pressed` (F-72), `supports.interactivity` (F-104) and the flags of
-  `Layouts::json()` (F-105). The findings: F-58, F-61, F-62, F-67, F-71, F-72,
-  F-104 to F-107. Form and Error path stay `open`: the attributes a theme or a
-  pattern can send were not sent in every type, and the store actions without `try`
-  need the browser.
-- **E, rendering of user text.** Red: 10 of 14, all in `Content_Renderer_Test`,
-  the censoring tests of `Blocks_Test` and `Routing_Test`, the wall of
-  `Messages_Test`. Green: the view check of the block context, and the escaping of
-  titles, excerpts and tag names after censoring. The findings: F-59, F-60 (data-wp
-  directives in user HTML), F-68 to F-70, F-102, F-103. Volume stays `open`: long
-  texts through the censor were not measured.
-- **H, cookies and addresses.** Red: anonymized addresses share a limit
-  (`Limits_Test`), the visitor notice (`Notices_Test`), empty login forms
-  (`Account_Limits_Test`). Green, single site and multisite: a cookie whose row does
-  not exist, `httponly`, an address that is not valid, the welcome notice for users,
-  the in-place header of the form handler (e2e only), the headers removed for feeds.
-  The findings: F-73 to F-75, F-108 to F-112. Form and Concurrency stay `open`:
-  cookie values of every shape and two requests with the same new cookie were not
-  sent.
-- **J, emails and newsletter.** Red: 11 of 20, among them the language of the
-  recipient, stopping the emails of a post, one comment notice per person, the
-  welcome link, the approval notice, expired confirmation keys; on a multisite also
-  tokens of another site (`Email_Tokens_Test`) and people who left the site
-  (`Notifications_Test`). Green, single site and multisite: an invalid recipient or
-  reply-to address, entities in the subject, the anonymous author, the owner's own
-  actions, moderated users in the newsletter, quotes in the sender name, the
-  confirmation check of the form, the stop of a run that is no longer ready. The
-  findings: F-76 to F-82, F-113, F-115 to F-117.
-- **K, scheduled events.** Red: the counters of past hours and the upper limit of
-  the retention (`IP_Retention_Test`), every event cleared on deactivation, batches
-  to confirmed users only. Green: scheduling during installation, scheduling twice,
-  the next batch of the newsletter, the stop of a run that is no longer ready. The
-  findings: F-77, F-78, F-114, F-118, F-119.
-- **L, feeds and sitemap.** Red: the category feed, the feed when visitors may not
-  view the Q&A area, valid RSS, the sitemap in that case. Green: hidden questions and
-  answers in the feed items, the conditional headers, the upper limit of items,
-  members only in the user sitemap. The findings: F-83 to F-86, F-120 to F-122.
-  Multisite stays `open`: the sitemap of a site was not compared with another.
-- **M, WP-CLI.** Red on both: the progress of the steps (`Tools_Test`). Green on
-  both: the order of the tools. The mutations of the confirmation, the unknown tool
-  and the exit code act only through `tests/e2e/cli.spec.js` and were not run. The
-  findings: F-90, F-124, F-125. Multisite stays `open`: `--url` was not run.
-- **N, privacy tools.** Red: 9 of 14, all in `Personal_Data_Test`,
-  `Favorites_Test`, `Newsletter_Test` and `Policy_Text_Test`. Green: the visitor
-  cookie in the erased posts, the count of users with points, the welcome notice
-  meta, hidden questions in the exported favorites, the user limits. The findings:
-  F-63 (addresses compared by case), F-87 to F-89, F-123. Concurrency stays `open`:
-  two erasers at the same time were not run.
-- **O, activation and removal.** Red: the drop list, the account limits table, the
-  events cleared on uninstall; the tables of a new site only on a multisite
-  (`Multisite_Installer_Test`). Green on both: four checks of the upgrade path and
-  the uninstall. The findings: F-91, F-92, F-99, F-126 to F-129.
-- **P, own hooks.** Red on both: the string translation of edited texts. Green on
-  both: all seven checks of filter returns. The findings: F-93 to F-97, F-99,
-  F-130, F-131.
-- **Q, Site Health.** Red on both: the outdated database, the permalinks, the read
-  only mode (`Site_Health_Test`). Green on both: two of the debug fields. The
-  findings: F-98, F-132, F-133.
+### The open suspicions first
 
-A cell that was `—` and is `open` now: H Concurrency (two requests with the same
-new cookie). Cells that were `—` and are findings now: L Abuse (control characters in a feed), O Time (network activation runs
-past the request), P Frequency (356 filter calls on a page).
+The four suspicions of 2026-11-16 were run in the browser: the directive in the answer of a
+visitor was measured not to act (`tests/e2e/user-html.spec.js`, red with the strip of
+F-60 taken out), the tag feed in two scripts was measured correct, the pickers of the editor
+find a question and a user behind more than a hundred; the failed request of the store and
+the category select became F-134 and F-135.
 
-### What carries the `partly` cells of the other rows
+### Measured, not read
 
-- **C**: `Routing_Test`, `Blocks_Test`, `Query_Growth_Test`; hidden posts for
-  visitors (Identity, State).
-- **D**: `Blocks_Test`, `Block_Settings_Test`, `Patterns_Test`; the editor and theme
-  tests end to end.
-- **E**: `Content_Renderer_Test`, the censoring tests in `Blocks_Test` and
-  `Routing_Test`.
-- **H**: `Limits_Test` (blocked and anonymized addresses), `IP_Retention_Test`, the
-  unit test of the IP class, the cookie test in `Permissions_Test`.
-- **J**: `Notifications_Test`, `Newsletter_Test`, `Email_Templates_Test`,
-  `Unsubscribe_REST_Test`.
-- **K**: `IP_Retention_Test`, `Newsletter_Test` (batches),
-  `Multisite_Installer_Test` (events of every site).
-- **L**: `Feeds_Test`, `Sitemap_Provider_Test`.
-- **M**: `tests/e2e/cli.spec.js` (order, unknown tool, the question before deleting),
-  `Tools_Test` (the progress of the steps); Guidelines: the WP-CLI chapter of
-  `docs/guidelines-checklist.md`.
-- **N**: `Personal_Data_Test`, `Privacy_Test`.
-- **O**: `Installer_Test`, `Multisite_Installer_Test`, `Uninstaller_Test`,
-  `tests/e2e/activation.spec.js`.
-- **Q**: `Site_Health_Test`, `tests/e2e/site-health.spec.js`.
-- **Multisite**: the integration tests run a second time as a multisite in the CI.
-  That shows that nothing breaks on a multisite, not that sites are separated; only
-  the tests that switch sites show that.
+Coverage (`mutate.py coverage`, Xdebug in the process, past PHPUnit, both suites green
+with 781 and 796 tests): 830 executable lines under `includes/` run in no test, and two
+files are loaded by none (`includes/frontend/views/classic.php`,
+`includes/frontend/views/no-comments.php`). Calibrated: `Post_Service::edit_answer()` and
+`Privacy::export_newsletter()`, which the first measurement through the report of PHPUnit
+listed as not covered (it counts only the units a test names in `@covers`), are covered;
+in the first only the branch that queues an answer with comments again is not. A decision
+per line is not made yet; the list is kept with the results of the round, outside the
+repository.
 
-### Why a cell does not apply
+Mutation (`mutate.py run`): every proposal of the reading agents with an anchor found once,
+145 in all, A and B/I on both suites in batches, C to Q on the single site and the green
+ones again on multisite. 64 lines stayed unchecked on both suites (A 4, B/I 16, C to Q 44);
+four were held on multisite only (O-3, O-4, O-5, O-7). Guards for four of them were added
+(`32e5a5d`); the others are F-193 to F-203, two of them second nets behind a check that
+already holds (the activity and search feeds), one equivalent (FG-M10: a third argument
+`check_admin_referer()` does not take). Eight fix commits of earlier rounds taken back: all
+red (F-7 on multisite only, which it is about). Attacks on the guards: five of six stayed
+green (F-204); `REST_Query_Growth_Test` saw a query added to a permission check of a link.
 
-- **Presentation** for A, H, K, M, N, O, P: nothing is shown; the REST responses are
-  under Form.
-- **Form** and **Value** for J, K, N, O and Q, and **Value** for M: the entry takes no
-  free input of its own; what it handles came in through another row.
-- **Identity** for H and K: cookies and scheduled events have no user; what a cookie
-  may claim is under Abuse.
-- **Identity** for M, O and Q: core decides who reaches them. A WP-CLI shell has the
-  database and core's own commands check no capability; activation, deletion and
-  `uninstall.php` are reached only through core's screens with their capabilities,
-  and `uninstall.php` stops without `WP_UNINSTALL_PLUGIN`; Site Health is shown only
-  with `view_site_health_checks`.
-- **Frequency**, **Concurrency**, **Time**, **Abuse**: marked — only where the entry
-  cannot be called by a user, or where calling it again changes nothing. For F and G
-  the reason did not hold for Frequency, nor for Volume, State and Abuse of G; these
-  cells are now `open`. **Time** of G stays —: a setting has no deadline.
-- **Volume** for B: a form sends one item; what a list costs is under A and C.
-- **P**: a filter is called by code the site owner installed, with their rights;
-  what counts is whether a wrong return value breaks a page (Form, Value, Error
-  path), and how often it is called (Frequency, F-131).
+### Fixed in this round
 
-Each — is a claim like any other cell: a review checks whether the reason still
-holds.
+Eighteen findings, each in a commit with its guard and counter-check: F-134 (the store
+submits the form without a usable answer), F-135 (every category in the question list),
+F-136 (only the level of the whole site manages the Q&A area), F-137 and F-138 (no
+directive in HTML of others acts on the store), F-139 (block words where lower case changes
+the length), F-140 (messages only to shown profiles), F-141 (tags whatever their case),
+F-142 (the locks of stopped runs on uninstall), F-143 (the readme on deleting data), F-148
+(links only when `_fields` asks), F-173 (lists of block words of any length), F-176 (the
+address the proxy appended), F-179 and F-180 (every offered placeholder replaced), F-182
+(every email through the filters), F-188 (a filter that returns no string), F-201 (a dead
+line).
+
+### The matrix
+
+A cell names an open finding where one is open; several findings of a cell are in
+`docs/findings.md`. Cells that were ✓ and were refuted this round are back to `partly`
+(rule 4): A Identity (F-140), B Value (F-156), B Error path (F-157), G Error path (F-174),
+I Error path (F-157, F-158).
+
+| | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A | partly | F-151 | partly | ✓ | F-144 | ✓ | partly | ✓ | F-144 | F-152 | — | partly | F-149 |
+| B | F-161 | F-156 | partly | F-154 | partly | — | F-160 | partly | F-159 | F-157 | partly | partly | partly |
+| C | partly | partly | partly | partly | — | partly | — | partly | partly | partly | partly | partly | partly |
+| D | partly | partly | partly | — | F-166 | partly | — | F-165 | partly | F-190 | F-164 | partly | F-192 |
+| E | — | partly | partly | — | — | open | — | partly | partly | — | partly | partly | partly |
+| F | open | partly | partly | partly | F-172 | F-168 | partly | partly | F-171 | F-171 | partly | partly | F-170 |
+| G | F-174 | partly | partly | partly | F-169 | F-175 | — | F-169 | partly | F-174 | partly | partly | partly |
+| H | open | partly | partly | partly | F-178 | — | partly | partly | F-198 | partly | — | partly | partly |
+| I | F-158 | partly | F-163 | partly | partly | partly | — | partly | F-155 | F-157 | partly | partly | partly |
+| J | — | F-198 | partly | F-181 | F-177 | partly | partly | partly | F-181 | partly | partly | partly | partly |
+| K | — | — | — | partly | F-177 | partly | partly | partly | — | partly | — | partly | partly |
+| L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
+| M | partly | — | — | — | partly | partly | partly | partly | — | partly | — | open | partly |
+| N | — | — | partly | — | open | F-185 | — | partly | — | partly | — | partly | F-185 |
+| O | — | — | — | partly | F-186 | partly | partly | F-187 | — | F-187 | — | partly | partly |
+| P | F-202 | partly | partly | partly | — | — | — | — | — | partly | — | — | F-204 |
+| Q | — | — | — | — | — | partly | — | partly | — | partly | partly | F-189 | partly |
+
+Cells that changed from `—`: H Identity (the visitor cookie decides what a visitor may
+edit), M Time (an expired lock of the tools), O Frequency (an install on every request
+until it is done); each has a test for a part (`Cookies_IP_Test`, `Tools_Test`,
+`Lifecycle_Test`). Cells that changed from `open` to `partly` name a test that holds a part,
+with both sides: C Form (`Request_Bounds_Test`), D Form (`Block_Attributes_Test`, numbers
+only), F Frequency and F Time (`Tools_Test`, `Posts_Screen_Test`, `Profile_Screen_Test`), G
+Frequency (`Users_Admin_Screens_Test`), G Abuse (`Capabilities_Test`, F-136). The cells
+that stay `open` were looked at; the decision for each is under "Open cells" in
+`docs/findings.md`.
+
+### The rows
+
+Every row was checked in this round: read whole by its agent, measured on the development
+instance, its cells set against the tests above, and its guards attacked (see "Measured,
+not read"). No row is reported without a finding; the findings per row are in
+`docs/findings.md` by their cell.
+
+### State of the release gate
+
+1. Holds: no finding classed blocker is open but F-25, deferred to phase 9; no open
+   suspicion is classed blocker. The blockers of this round (F-136, F-137, F-138,
+   F-139, F-140, F-173) are fixed.
+2. Holds: no cell of the columns Identity, Value or Error path is `open` in A, B, F, G
+   or I; several of them name open findings.
+3. Does not hold yet: the cells that stay `open` (E Volume, F Form, H Form, L
+   Multisite, M Multisite, N Concurrency) have a decision proposed in
+   `docs/findings.md`, "Open cells", which the owner has not taken.
+
+Open after the round: 53 findings (24 should, 29 low) and ten suspicions (seven should,
+three low).
+
+### Does it count as a round
+
+Not yet. Every row was read, measured and mutated, and the machines ran from zero, but
+two mandatory parts are not complete: the decision per line of the coverage (830 lines),
+and the check of each fix of this round with the five questions of step 7a, which ran for
+some of them only. The round counts once both are made up. Settled: zero of two rounds,
+since this round found findings of class should and blocker in old code.
 
 ## Cross-cutting standards
 
@@ -568,7 +288,8 @@ Only a review that looked can report that it found nothing (decided on 2026-11-1
   neither for nor against the release. The first round of 2026-11-14 ran over A, B,
   F, G and I and reported no open finding; the other twelve rows carried eight
   blockers (F-56 to F-63). The two rounds of 2026-11-14 and 2026-11-15 were both
-  run over chosen rows, so no round over the whole matrix has run yet.
+  run over chosen rows. The first run over the whole matrix began on 2026-11-17 (see
+  "State on 2026-11-18").
 - **Only a complete run.** If a mandatory part did not run (a tool of
   `/big-review` step 1, the multisite suite, the browser tests, coverage, a part
   auditor of the cross-check), because a permission, the time or the usage limit
