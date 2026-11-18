@@ -79,6 +79,41 @@ final class Newsletter_Run_Test extends Test_Case {
 		return $ids;
 	}
 
+	public function test_every_email_passes_the_filters_of_easyq(): void {
+		// A net over the source: `Mailer` is the only class that hands emails to `wp_mail()`.
+		$callers = array();
+		foreach ( new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( dirname( __DIR__, 2 ) . '/includes', \FilesystemIterator::SKIP_DOTS ) ) as $file ) {
+			if ( 'php' === $file->getExtension() && 1 === preg_match( '/\bwp_mail\s*\(\s*[^)\s]/', (string) preg_replace( '~//[^\n]*|/\*.*?\*/~s', '', (string) file_get_contents( $file->getPathname() ) ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$callers[] = $file->getFilename();
+			}
+		}
+		$this->assertSame( array( 'class-mailer.php' ), $callers );
+
+		// The emails without a template: the newsletter, its confirmation and the confirmation of an address.
+		$names = array();
+		add_filter(
+			'easyq_send_email',
+			static function ( $send, string $name ) use ( &$names ) {
+				$names[] = $name;
+				return false;
+			},
+			10,
+			2
+		);
+		$this->subscribers( 1 );
+		Services::newsletter()->start();
+		Services::newsletter()->send_batch();
+		Services::newsletter()->subscribe( get_userdata( self::factory()->user->create() ) );
+		Options::update( 'permissions', array( 'permit_post_q' => \EasyQ\Users\Permits::ALL ) );
+		$question = Services::post_service()->create_question( new \EasyQ\Actor( null, null, '192.0.2.9' ), 'A question of a visitor', 'Text.', '', array(), null, 'visitor@example.org', 'Visitor' );
+		\EasyQ\Mail\Unsubscribe::ask_for_confirmation( Services::posts()->find( $question ) ?? $this->fail() );
+
+		$this->assertSame( array(), $this->sent, 'The filter stops the newsletter.' );
+		foreach ( array( 'newsletter', 'newsletter_confirm', 'notify_confirm' ) as $name ) {
+			$this->assertContains( $name, $names );
+		}
+	}
+
 	public function test_cancelling_during_a_batch_stops_the_rest(): void {
 		$this->subscribers( 3 );
 		Services::newsletter()->start();

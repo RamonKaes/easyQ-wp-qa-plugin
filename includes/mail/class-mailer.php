@@ -53,16 +53,7 @@ final class Mailer {
 				continue;
 			}
 
-			/**
-			 * Filters whether an email is sent.
-			 *
-			 * @since 0.1.0
-			 *
-			 * @param bool      $send      Whether to send the email. Default true.
-			 * @param string    $name      Template name.
-			 * @param Recipient $recipient Recipient.
-			 */
-			if ( ! apply_filters( 'easyq_send_email', true, $name, $recipient ) ) {
+			if ( ! self::may_send( $name, $recipient ) ) {
 				continue;
 			}
 
@@ -132,6 +123,84 @@ final class Mailer {
 	}
 
 	/**
+	 * Sends an email that is no template, such as the newsletter and the confirmations, with
+	 * the filters every email of easyQ passes: `easyq_send_email` and `easyq_email_{name}`.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string    $name      Name of the email, the dynamic part of `easyq_email_{name}`.
+	 * @param Recipient $recipient Recipient.
+	 * @param string    $subject   Subject.
+	 * @param string    $message   Text.
+	 * @param string    $headers   Headers.
+	 * @return bool Whether `wp_mail()` accepted the email.
+	 */
+	public static function send_email( string $name, Recipient $recipient, string $subject, string $message, string $headers = '' ): bool {
+		if ( ! self::may_send( $name, $recipient ) ) {
+			return false;
+		}
+
+		return self::deliver(
+			$name,
+			$recipient,
+			array(
+				'to'      => $recipient->email,
+				'subject' => $subject,
+				'message' => $message,
+				'headers' => $headers,
+			)
+		);
+	}
+
+	/**
+	 * Asks the filter whether an email is sent.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string    $name      Name of the email.
+	 * @param Recipient $recipient Recipient.
+	 * @return bool
+	 */
+	private static function may_send( string $name, Recipient $recipient ): bool {
+		/**
+		 * Filters whether an email is sent.
+		 *
+		 * @since 0.1.0
+		 *
+		 * @param bool      $send      Whether to send the email. Default true.
+		 * @param string    $name      Template name, or the name of an email without template:
+		 *                             `newsletter`, `newsletter_confirm` or `notify_confirm`.
+		 * @param Recipient $recipient Recipient.
+		 */
+		$send = apply_filters( 'easyq_send_email', true, $name, $recipient );
+
+		// Any value core would take as true in `if ( ! apply_filters( … ) )`.
+		return ! empty( $send );
+	}
+
+	/**
+	 * Filters an email and hands it to `wp_mail()`, the only place easyQ calls it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string       $name      Name of the email.
+	 * @param Recipient    $recipient Recipient.
+	 * @param array<mixed> $email     The email with `to`, `subject`, `message` and `headers`.
+	 * @return bool Whether `wp_mail()` accepted the email.
+	 */
+	private static function deliver( string $name, Recipient $recipient, array $email ): bool {
+		$email = self::filter_email( $name, $email );
+
+		return wp_mail(
+			is_string( $email['to'] ?? null ) ? $email['to'] : $recipient->email,
+			wp_specialchars_decode( is_string( $email['subject'] ?? null ) ? $email['subject'] : '' ),
+			is_string( $email['message'] ?? null ) ? $email['message'] : '',
+			// wp_mail() takes the headers as text or as an array of lines; a filter may return either.
+			is_array( $email['headers'] ?? null ) ? array_values( array_filter( $email['headers'], 'is_string' ) ) : ( is_string( $email['headers'] ?? null ) ? $email['headers'] : '' )
+		);
+	}
+
+	/**
 	 * Applies the filter of a template to an email.
 	 *
 	 * @since 0.1.0
@@ -186,22 +255,15 @@ final class Mailer {
 			/* translators: %s: name of the recipient. */
 			: sprintf( __( '%s,', 'easyq' ), $recipient_name ) . "\n\n";
 
-		$email = self::filter_email(
+		$sent = self::deliver(
 			$name,
+			$recipient,
 			array(
 				'to'      => $recipient->email,
 				'subject' => $content['subject'],
 				'message' => $salutation . $content['message'] . $this->footer( $recipient ),
 				'headers' => $this->headers( $recipient ),
 			)
-		);
-
-		$sent = wp_mail(
-			is_string( $email['to'] ?? null ) ? $email['to'] : $recipient->email,
-			wp_specialchars_decode( is_string( $email['subject'] ?? null ) ? $email['subject'] : '' ),
-			is_string( $email['message'] ?? null ) ? $email['message'] : '',
-			// wp_mail() takes the headers as text or as an array of lines; a filter may return either.
-			is_array( $email['headers'] ?? null ) ? array_values( array_filter( $email['headers'], 'is_string' ) ) : ( is_string( $email['headers'] ?? null ) ? $email['headers'] : '' )
 		);
 
 		if ( $switched_locale ) {

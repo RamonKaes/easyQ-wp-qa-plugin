@@ -10,6 +10,8 @@ namespace EasyQ\Newsletter;
 
 use EasyQ\Database\DB;
 use EasyQ\Frontend\Routes;
+use EasyQ\Mail\Mailer;
+use EasyQ\Mail\Recipient;
 use EasyQ\REST\Controller;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Site_Meta;
@@ -201,7 +203,7 @@ final class Newsletter {
 		/* translators: 1: site name, 2: confirmation address. */
 		$body = sprintf( __( "Hello,\n\nyou asked for the newsletter of %1\$s. Please confirm it here:\n\n%2\$s\n\nIf you did not ask for it, ignore this email; you will get no newsletter.\n\n%1\$s", 'easyq' ), $site, $url );
 
-		$sent = wp_mail( $user->user_email, $subject, $body );
+		$sent = Mailer::send_email( 'newsletter_confirm', new Recipient( $user->user_email, $user->ID ), $subject, $body );
 		restore_previous_locale();
 		if ( $sent ) {
 			return true;
@@ -524,8 +526,9 @@ final class Newsletter {
 
 		// The text is the site owner's; what the plugin adds is in the language of the recipient.
 		switch_to_user_locale( $user->ID );
-		$sent = wp_mail(
-			$user->user_email,
+		$sent = Mailer::send_email(
+			'newsletter',
+			new Recipient( $user->user_email, $user->ID ),
 			Options::get_string( 'newsletter', 'mailing_subject' ),
 			trim( Options::get_string( 'newsletter', 'mailing_body' ) ) . "\n\n\n" . __( 'To stop the newsletter:', 'easyq' ) . ' ' . $page,
 			$headers

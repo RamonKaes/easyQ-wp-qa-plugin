@@ -181,6 +181,6 @@ final class Unsubscribe {
 		/* translators: 1: site name, 2: confirmation address. */
 		$body = sprintf( __( "Hello,\n\nyou posted on %1\$s without an account and asked for emails about the answers and comments. Please confirm your address here:\n\n%2\$s\n\nIf it was not you, ignore this email; you will get no further emails.\n\n%1\$s", 'easyq' ), $site, self::confirm_url( $post->id ) );
 
-		return wp_mail( $post->notify, $subject, $body );
+		return Mailer::send_email( 'notify_confirm', new Recipient( $post->notify, null, null, $post ), $subject, $body );
 	}
 }

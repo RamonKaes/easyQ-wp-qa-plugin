@@ -104,7 +104,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Open (F-182: the newsletter and the confirmations pass no filter of easyQ; F-179: two templates leave offered placeholders raw) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
+| `wp_mail()`, filters and language per recipient as in `wp_notify_postauthor()` | Met (`Newsletter_Run_Test::test_every_email_passes_the_filters_of_easyq`: `Mailer` is the only caller of `wp_mail()`, the newsletter and both confirmations pass `easyq_send_email`; `Notifications_Test` for the placeholders, F-179 and F-182 fixed on 2026-11-18) | `Mail\Mailer` (`switch_to_user_locale()`, decoded site name, `blog_charset`), filters in [hooks.md](hooks.md) |
 | Registration emails through core's filters | Met | `Mail\Notifications`; core's link to set the password stays |
 | Editable texts through the Settings API | Met | `Mail\Templates` with `register_setting()`, `Admin\Email_Templates_Screen` with `settings_fields()`, list through `WP_List_Table` |
 | Stop emails with one click | Met for the emails about posts and the newsletter; emails about messages and the wall link the account page (`List-Unsubscribe`, RFC 2369), core sends no such emails; headers a filter returns as lines keep `List-Unsubscribe` (`Filter_Values_Test`) | Signed link to a page with a form, `List-Unsubscribe` and `List-Unsubscribe-Post` (RFC 8058) |
