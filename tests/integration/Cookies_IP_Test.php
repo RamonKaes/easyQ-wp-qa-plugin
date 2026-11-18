@@ -144,8 +144,17 @@ final class Cookies_IP_Test extends REST_Test_Case {
 		$this->assertSame( '203.0.113.7', IP::current() );
 		$this->assertTrue( IP::is_blocked( '::ffff:203.0.113.7', '203.0.113.*' ) );
 
-		add_filter( 'easyq_client_ip', static fn (): string => '198.51.100.4, 10.0.0.1' );
-		$this->assertSame( '198.51.100.4', IP::current() );
+		// The client writes the start of `X-Forwarded-For` itself; the trusted proxy appends the address it saw.
+		$header = '198.51.100.4, 203.0.113.9';
+		add_filter(
+			'easyq_client_ip',
+			static function () use ( &$header ): string {
+				return $header;
+			}
+		);
+		$this->assertSame( '203.0.113.9', IP::current() );
+		$header = '203.0.113.9, not-an-address';
+		$this->assertNull( IP::current(), 'An invalid last address does not fall back to one the client wrote.' );
 	}
 
 	public function test_requests_without_an_address_share_a_limit(): void {

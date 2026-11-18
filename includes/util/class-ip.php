@@ -41,15 +41,15 @@ final class IP {
 		 */
 		$ip = apply_filters( 'easyq_client_ip', $ip );
 
-		// A filter may return a header with a list of addresses, as `X-Forwarded-For`: the first is the client.
-		foreach ( is_string( $ip ) ? explode( ',', $ip ) : array() as $part ) {
-			$part = self::normalize( trim( $part ) );
-			if ( false !== filter_var( $part, FILTER_VALIDATE_IP ) ) {
-				return $part;
-			}
+		// A filter may return a header with a list of addresses, as `X-Forwarded-For`. Its start is
+		// whatever the client sent; the last address is the one the trusted proxy appended.
+		if ( ! is_string( $ip ) ) {
+			return null;
 		}
+		$parts = explode( ',', $ip );
+		$last  = self::normalize( trim( (string) end( $parts ) ) );
 
-		return null;
+		return false !== filter_var( $last, FILTER_VALIDATE_IP ) ? $last : null;
 	}
 
 	/**
