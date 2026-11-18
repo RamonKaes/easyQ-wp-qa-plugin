@@ -472,6 +472,33 @@ final class Notifications_Test extends Test_Case {
 		// Core's link to set the password stays.
 		$this->assertStringContainsString( 'action=rp', $welcome['body'] );
 
+		// Every placeholder the template screen offers is replaced, for the site owner who gets the email.
+		foreach ( array(
+			'u_registered' => false,
+			'u_to_approve' => true,
+		) as $name => $moderated ) {
+			reset_phpmailer_instance();
+			Options::update( 'spam', array( 'moderate_users' => $moderated ) );
+			\EasyQ\Mail\Templates::save( $name, implode( ' ', \EasyQ\Mail\Templates::placeholders( $name ) ), implode( "\n", \EasyQ\Mail\Templates::placeholders( $name ) ) );
+			wp_new_user_notification( $user, null, 'admin' );
+			[ $owner ] = $this->sent();
+			$this->assertStringNotContainsString( '###', $owner['subject'] . $owner['body'], $name );
+			$this->assertStringContainsString( 'owner@example.com', $owner['body'], $name );
+			\EasyQ\Mail\Templates::reset( $name );
+		}
+		Options::update( 'spam', array( 'moderate_users' => false ) );
+
+		// The name of the new user as typed, not as an entity.
+		reset_phpmailer_instance();
+		wp_update_user(
+			array(
+				'ID'           => $user,
+				'display_name' => 'Tom & Jerry',
+			)
+		);
+		wp_new_user_notification( $user, null, 'admin' );
+		$this->assertStringContainsString( 'Tom & Jerry', $this->sent()[0]['body'] );
+
 		reset_phpmailer_instance();
 		Options::update( 'emails', array( 'register_notify_admin' => false ) );
 		wp_new_user_notification( $user, null, 'both' );

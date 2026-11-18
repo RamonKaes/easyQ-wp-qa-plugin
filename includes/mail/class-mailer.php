@@ -77,16 +77,27 @@ final class Mailer {
 	 *
 	 * @since 0.1.0
 	 *
+	 * The placeholders of the recipient (`###USERNAME###`, `###EMAIL###`) come from the
+	 * recipient whenever one is given, so an email built outside `send()`, such as the ones
+	 * that replace core's, offers the same placeholders as the template screen.
+	 *
 	 * @param string                $name         Template name.
 	 * @param array<string, string> $placeholders Placeholders with their values, besides those of every email.
+	 * @param Recipient|null        $recipient    Who gets the email; null for a preview with sample values.
 	 * @return array{subject: string, message: string}
 	 */
-	public static function content( string $name, array $placeholders ): array {
+	public static function content( string $name, array $placeholders, ?Recipient $recipient = null ): array {
 		$template = Templates::get( $name ) ?? array(
 			'subject' => '',
 			'body'    => '',
 		);
 
+		if ( null !== $recipient ) {
+			$placeholders += array(
+				'###USERNAME###' => self::recipient_name( $recipient ),
+				'###EMAIL###'    => $recipient->email,
+			);
+		}
 		$placeholders += array(
 			'###SITENAME###' => self::site_name(),
 			'###SITEURL###'  => Routes::url( 'home' ),
@@ -97,6 +108,27 @@ final class Mailer {
 			'subject' => strtr( $template['subject'], $placeholders ),
 			'message' => strtr( $template['body'], $placeholders ),
 		);
+	}
+
+	/**
+	 * Returns the name of a recipient as plain text: the given name, else the display name of
+	 * the user with the address.
+	 *
+	 * Display names are stored escaped; plain text shows them as typed, as core decodes the site name.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Recipient $recipient Recipient.
+	 * @return string
+	 */
+	private static function recipient_name( Recipient $recipient ): string {
+		$name = $recipient->name;
+		if ( null === $recipient->name ) {
+			$user = null === $recipient->user_id ? get_user_by( 'email', $recipient->email ) : get_userdata( $recipient->user_id );
+			$name = false === $user ? '' : $user->display_name;
+		}
+
+		return wp_specialchars_decode( (string) $name, ENT_QUOTES );
 	}
 
 	/**
@@ -145,15 +177,9 @@ final class Mailer {
 		$user            = null === $recipient->user_id ? get_user_by( 'email', $recipient->email ) : get_userdata( $recipient->user_id );
 		$switched_locale = false === $user ? switch_to_locale( get_locale() ) : switch_to_user_locale( $user->ID );
 
-		// Display names are stored escaped; plain text shows them as typed, as core decodes the site name.
+		// The salutation names only a recipient whose name was given, as before.
 		$recipient_name = wp_specialchars_decode( (string) $recipient->name, ENT_QUOTES );
-		$content        = self::content(
-			$name,
-			$placeholders() + array(
-				'###USERNAME###' => $recipient_name,
-				'###EMAIL###'    => $recipient->email,
-			)
-		);
+		$content        = self::content( $name, $placeholders(), $recipient );
 
 		$salutation = '' === $recipient_name
 			? ''

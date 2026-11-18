@@ -390,19 +390,22 @@ final class Notifications {
 
 		$to_approve = Options::get_bool( 'spam', 'moderate_users' );
 		$name       = $to_approve ? 'u_to_approve' : 'u_registered';
+		$owner      = $this->site_owner();
 		$content    = Mailer::content(
 			$name,
 			array(
-				'###USER###'      => $user->display_name,
+				// Display names are stored escaped; plain text shows them as typed.
+				'###USER###'      => wp_specialchars_decode( $user->display_name, ENT_QUOTES ),
 				'###URL###'       => URLs::user( $user ),
 				'###ADMIN_URL###' => admin_url( 'users.php' ),
-			)
+			),
+			$owner
 		);
 
 		return $this->core_email(
 			$name,
 			array(
-				'to'      => $this->site_owner()->email,
+				'to'      => $owner->email,
 				'subject' => $content['subject'],
 				'message' => $content['message'],
 			) + $email
