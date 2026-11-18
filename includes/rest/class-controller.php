@@ -137,7 +137,10 @@ abstract class Controller extends WP_REST_Controller {
 		$data   = $this->add_additional_fields_to_object( $data, $request );
 
 		$response = new WP_REST_Response( $this->filter_response_by_context( $data, self::context( $request ) ) );
-		$response->add_links( $links );
+		// Only when `_fields` asks for links or embeds, as core's controllers add them (`prepare_links()`).
+		if ( rest_is_field_included( '_links', $fields ) || rest_is_field_included( '_embedded', $fields ) ) {
+			$response->add_links( $links );
+		}
 
 		$type = $this->get_item_schema()['title'] ?? '';
 		if ( ! is_string( $type ) || ! str_starts_with( $type, 'easyq-' ) ) {

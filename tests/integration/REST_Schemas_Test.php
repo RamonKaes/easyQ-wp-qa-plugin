@@ -331,6 +331,15 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$this->assertSame( 'red-' . $category, $this->data( $this->request( 'GET', '/categories/' . $category ) )['color'] );
 		$this->assertArrayHasKey( 'color', $this->schema( '/categories/' . $category )['properties'] );
 		$this->assertSame( array( 'id', 'title' ), array_keys( $this->data( rest_get_server()->dispatch( self::with_fields( '/categories/' . $category, 'id,title' ) ) ) ) );
+
+		// Links only when `_fields` asks for them, as core's controllers add them (`prepare_links()`).
+		$question = $this->ask( $this->user() );
+		foreach ( array( '/categories/' . $category, '/questions/' . $question->id ) as $route ) {
+			$linked = static fn ( string $fields ): array => rest_get_server()->response_to_data( rest_get_server()->dispatch( self::with_fields( $route, $fields ) ), false );
+			$this->assertArrayNotHasKey( '_links', $linked( 'id' ), $route );
+			$this->assertArrayHasKey( '_links', $linked( 'id,_links' ), $route );
+			$this->assertArrayHasKey( '_links', rest_get_server()->response_to_data( rest_get_server()->dispatch( new WP_REST_Request( 'GET', '/easyq/v1' . $route ) ), false ), $route );
+		}
 	}
 
 	public function test_deleting_responds_with_the_previous_item_as_in_core(): void {
