@@ -103,6 +103,33 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertContains( 'u_wall_delete', $this->event_names() );
 	}
 
+	public function test_a_wall_route_reaches_only_the_posts_of_its_wall(): void {
+		$owner = $this->take_part( (int) $this->user()->user_id );
+		$other = $this->take_part( (int) $this->user()->user_id );
+		wp_set_current_user( $owner );
+		$wall = $this->data( $this->request( 'POST', "/users/$owner/wall", array( 'content' => 'On my own wall' ) ) )['id'];
+		$sent = $this->data(
+			$this->request(
+				'POST',
+				'/messages',
+				array(
+					'to'      => $other,
+					'content' => 'A private message',
+				)
+			)
+		)['id'];
+
+		// The address names the wall: a post of another wall, or a private message, is not found there.
+		$this->assertSame( 404, $this->request( 'DELETE', "/users/$other/wall/$wall", array( 'force' => true ) )->get_status() );
+		$this->assertSame( 404, $this->request( 'DELETE', "/users/$owner/wall/$sent", array( 'force' => true ) )->get_status() );
+		$this->assertNotNull( Services::messages()->find( $wall ) );
+		$this->assertNotNull( Services::messages()->find( $sent ) );
+
+		// The same post through the address of its own wall.
+		$this->assertSame( 200, $this->request( 'DELETE', "/users/$owner/wall/$wall", array( 'force' => true ) )->get_status() );
+		$this->assertNull( Services::messages()->find( $wall ) );
+	}
+
 	public function test_walls_follow_settings_permissions_and_wishes(): void {
 		$owner = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
 		$route = '/users/' . $owner->ID . '/wall';

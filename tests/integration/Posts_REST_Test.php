@@ -30,6 +30,17 @@ final class Posts_REST_Test extends REST_Test_Case {
 		$this->assertSame( 400, $this->request( 'POST', '/posts/' . $question->id . '/vote', array( 'vote' => 2 ) )->get_status() );
 	}
 
+	public function test_a_downvote_needs_its_own_permission(): void {
+		$question = $this->ask( $this->user() );
+		Options::update( 'permissions', array( 'permit_vote_down' => \EasyQ\Users\Permits::EXPERTS ) );
+		$this->login();
+
+		// As Question2Answer asks `permit_vote_down` besides the permission to vote (`qa_vote_error_html()`).
+		$this->assertSame( 403, $this->request( 'POST', '/posts/' . $question->id . '/vote', array( 'vote' => -1 ) )->get_status() );
+		$this->assertSame( 0, $this->post( $question->id )->net_votes );
+		$this->assertSame( 200, $this->request( 'POST', '/posts/' . $question->id . '/vote', array( 'vote' => 1 ) )->get_status() );
+	}
+
 	public function test_refuses_votes_on_own_posts_and_from_visitors(): void {
 		$author   = $this->user();
 		$question = $this->ask( $author );

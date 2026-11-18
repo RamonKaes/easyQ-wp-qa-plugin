@@ -229,6 +229,22 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertArrayHasKey( 'avatar', $response->as_error()?->get_error_data()['params'] ?? array() );
 	}
 
+	public function test_refuses_images_of_other_types_than_those_of_avatars(): void {
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$this->login();
+
+		// Core allows these uploads and its editor may read them; avatars take JPEG, PNG, GIF and WebP only.
+		foreach ( array(
+			'test-image.bmp'      => 'image/bmp',
+			'avif-lossy.avif'     => 'image/avif',
+			'test-image-zip.tiff' => 'image/tiff',
+		) as $file => $type ) {
+			$response = $this->upload( DIR_TESTDATA . '/images/' . $file, array(), $type );
+			$this->assertSame( 400, $response->get_status(), $file );
+		}
+		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg', array(), 'image/jpeg' )->get_status() );
+	}
+
 	public function test_uploads_can_be_disabled_and_are_rate_limited(): void {
 		$this->login();
 		Options::update( 'users', array( 'avatar_allow_upload' => false ) );

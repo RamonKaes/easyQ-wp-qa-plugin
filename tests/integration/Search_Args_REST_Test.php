@@ -44,5 +44,20 @@ final class Search_Args_REST_Test extends REST_Test_Case {
 		$found = $this->data( $this->request( 'GET', '/users', array( 'search' => 'Zebrina' ) ) );
 		$this->assertSame( array( $shown ), array_column( $found, 'id' ) );
 		$this->assertSame( array(), $this->data( $this->request( 'GET', '/users', array( 'search' => 'nobody-has-this' ) ) ) );
+
+		// Not by login or email address, as core searches for those who may not list users: a search would tell them.
+		$secret = self::factory()->user->create(
+			array(
+				'user_login'    => 'secretlogin',
+				'user_nicename' => 'plain-name',
+				'user_email'    => 'secret.mailbox@example.org',
+				'display_name'  => 'Plain Name',
+			)
+		);
+		$this->take_part( $secret );
+		$this->assertSame( array( $secret ), array_column( $this->data( $this->request( 'GET', '/users', array( 'search' => 'Plain Name' ) ) ), 'id' ) );
+		foreach ( array( 'secretlogin', 'secret.mailbox' ) as $term ) {
+			$this->assertSame( array(), $this->data( $this->request( 'GET', '/users', array( 'search' => $term ) ) ), $term );
+		}
 	}
 }

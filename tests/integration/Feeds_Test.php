@@ -147,6 +147,44 @@ final class Feeds_Test extends Test_Case {
 		$this->assertSame( array(), $this->feeds->channel( 'activity', null, new Actor() )['items'] ?? null );
 	}
 
+	public function test_the_search_feed_leaves_out_hidden_questions_a_provider_returns(): void {
+		$author  = $this->user();
+		$visible = $this->ask( $author, 'A visible question about the leak' );
+		$hidden  = $this->ask( $author, 'A hidden question about the leak' );
+		Services::post_service()->set_question_status( Actor::system(), $hidden, \EasyQ\Posts\Post::STATUS_HIDDEN );
+
+		// A search plugin keeps its own index and may still return what was hidden since.
+		$leaky = new class( array( $hidden->id, $visible->id ) ) implements \EasyQ\Search\Search_Provider {
+			/**
+			 * @param int[] $ids Question IDs it returns.
+			 */
+			public function __construct( private array $ids ) {
+			}
+			public function id(): string {
+				return 'leaky';
+			}
+			public function label(): string {
+				return 'Leaky';
+			}
+			public function index_post( \EasyQ\Search\Indexed_Post $post ): void {
+			}
+			public function unindex_post( int $post_id ): void {
+			}
+			public function move_post( int $post_id, ?int $category_id ): void {
+			}
+			public function search( string $query, int $start, int $count, ?int $user_id ): array {
+				return array_map( static fn ( int $id ): \EasyQ\Search\Search_Result => new \EasyQ\Search\Search_Result( $id, 1.0, 'Q', $id ), $this->ids );
+			}
+		};
+		add_filter( 'easyq_search_providers', static fn ( array $providers ): array => array_merge( $providers, array( $leaky ) ) );
+		Services::reset();
+		Options::update( 'lists', array( 'search_provider' => 'leaky' ) );
+		Options::update( 'feeds', array( 'feed_for_search' => true ) );
+
+		$items = $this->feeds->channel( 'search', 'leak', new Actor() )['items'] ?? null;
+		$this->assertSame( array( 'A visible question about the leak' ), array_column( (array) $items, 'title' ) );
+	}
+
 	public function test_is_not_available_when_visitors_may_not_view_the_qa_area(): void {
 		Options::update( 'permissions', array( 'permit_view_q_page' => Permits::USERS ) );
 
