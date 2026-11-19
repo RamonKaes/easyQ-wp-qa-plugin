@@ -190,6 +190,24 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertNull( get_post( (int) $second ) );
 	}
 
+	public function test_avatars_are_not_listed_in_the_media_of_core(): void {
+		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$user = $this->login();
+		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
+		$avatar = (int) Avatars::attachment_id( $user );
+
+		// The name and ID of a user whose profile is hidden must not show through the media of core.
+		$listed = static fn (): array => array_column( (array) rest_get_server()->dispatch( new \WP_REST_Request( 'GET', '/wp/v2/media' ) )->get_data(), 'id' );
+		wp_set_current_user( 0 );
+		$this->assertNotContains( $avatar, $listed() );
+		$this->assertSame( 401, rest_get_server()->dispatch( new \WP_REST_Request( 'GET', '/wp/v2/media/' . $avatar ) )->get_status() );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertNotContains( $avatar, $listed() );
+
+		// The image itself is still where the avatar points.
+		$this->assertStringContainsString( 'canola', (string) get_avatar_url( $user ) );
+	}
+
 	public function test_no_avatar_is_left_behind_by_two_uploads_at_once(): void {
 		\EasyQ\Settings\Options::update( 'users', array( 'avatar_allow_upload' => true ) );
 		$user = $this->login();

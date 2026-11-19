@@ -246,7 +246,9 @@ final class Avatars {
 				'post_mime_type' => $type,
 				/* translators: %s: user name. */
 				'post_title'     => sprintf( __( 'Avatar of %s', 'easyq' ), false === $user ? $user_id : $user->display_name ),
-				'post_status'    => 'inherit',
+				// Private, so core's media routes and attachment pages do not show the name and ID of a
+				// user whose profile is hidden; the image itself is served as before.
+				'post_status'    => 'private',
 				'post_author'    => $user_id,
 			),
 			$path,
