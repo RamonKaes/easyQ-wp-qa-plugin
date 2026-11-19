@@ -316,6 +316,15 @@ settled, and only then does work go on with phase 9 (translation and release) an
 phase 10 (extensions). New phases bring new code and new rows, and translations and
 screenshots made before the fixes would be made twice.
 
+**Changed by the owner on 2026-11-19**, after the first complete round took three
+days: before phase 9 the findings of class should in the behavior are fixed, and
+tests are added where losing a line would touch rights, data or privacy; the other
+missing tests and the low findings are deferred until after the release
+(`docs/findings.md`, "Deferred"). Then one `/cross-check-review` in a fresh context
+closes the reviews: without a finding of class blocker, work goes on with phase 9;
+what it finds of class should is fixed or deferred with a reason. The rule of two
+rounds in a row below applies again after phase 10.
+
 - **Settled means two rounds in a row without a finding of class should or blocker
   in old code.** A round is a run as defined above: over the whole matrix and
   complete. One round without such a finding can be luck, and a round nearly always
