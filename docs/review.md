@@ -186,20 +186,20 @@ I Error path (F-157, F-158).
 
 | | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | F-151 | partly | ✓ | F-144 | ✓ | partly | ✓ | F-144 | F-152 | — | partly | F-149 |
-| B | F-161 | F-156 | partly | F-154 | partly | — | F-160 | partly | F-159 | F-157 | partly | partly | partly |
-| C | partly | partly | partly | partly | — | partly | — | partly | partly | partly | partly | partly | partly |
-| D | partly | partly | partly | — | F-166 | partly | — | F-165 | partly | F-190 | F-164 | partly | F-192 |
-| E | — | partly | partly | — | — | open | — | partly | partly | — | partly | partly | partly |
-| F | open | partly | partly | partly | F-172 | F-168 | partly | partly | F-171 | F-171 | partly | partly | F-170 |
+| A | partly | F-214 | F-217 | F-231 | F-144 | F-231 | partly | F-231 | F-144 | F-214 | — | partly | F-149 |
+| B | F-161 | F-229 | F-219 | F-154 | partly | F-225 | F-160 | F-224 | F-223 | F-224 | partly | partly | partly |
+| C | partly | partly | F-219 | partly | partly | partly | — | partly | partly | partly | partly | partly | partly |
+| D | partly | partly | partly | — | F-226 | partly | — | F-165 | partly | F-226 | F-164 | partly | F-230 |
+| E | — | partly | partly | — | — | open | — | partly | partly | partly | partly | partly | partly |
+| F | partly | partly | F-216 | partly | F-172 | F-168 | partly | partly | F-220 | F-171 | partly | partly | F-216 |
 | G | F-174 | partly | partly | partly | F-169 | F-175 | — | F-169 | partly | F-174 | partly | partly | partly |
 | H | open | partly | partly | partly | F-178 | — | partly | partly | F-198 | partly | — | partly | partly |
-| I | F-158 | partly | F-163 | partly | partly | partly | — | partly | F-155 | F-157 | partly | partly | partly |
-| J | — | F-198 | partly | F-181 | F-177 | partly | partly | partly | F-181 | partly | partly | partly | partly |
+| I | F-158 | partly | F-163 | partly | partly | partly | — | partly | partly | F-215 | partly | partly | F-215 |
+| J | — | F-198 | F-221 | F-181 | F-177 | partly | partly | partly | F-222 | partly | partly | partly | F-230 |
 | K | — | — | — | partly | F-177 | partly | partly | partly | — | partly | — | partly | partly |
 | L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
 | M | partly | — | — | — | partly | partly | partly | partly | — | partly | — | open | partly |
-| N | — | — | partly | — | open | F-185 | — | partly | — | partly | — | partly | F-185 |
+| N | — | — | partly | — | open | F-185 | — | partly | — | partly | — | partly | F-228 |
 | O | — | — | — | partly | F-186 | partly | partly | F-187 | — | F-187 | — | partly | partly |
 | P | F-202 | partly | partly | partly | — | — | — | — | — | partly | — | — | F-204 |
 | Q | — | — | — | — | — | partly | — | partly | — | partly | partly | F-189 | partly |
@@ -243,6 +243,28 @@ with the five questions of step 7a, after which the end-to-end tests ran again i
 (152, green). It is the first complete round over the whole matrix. Settled: zero of two
 rounds, since it found findings of class should and blocker in old code. Settled: zero of two rounds,
 since this round found findings of class should and blocker in old code.
+
+## Cross-check on 2026-11-19
+
+The first `/cross-check-review` over the whole matrix, on `76f1989`, in a fresh session with
+nine part auditors in their own contexts (all Opus 5.5). Findings F-214 to F-234 and four
+open suspicions are in `docs/findings.md`; the notes and measurements are outside the
+repository, in the audit folder of the environment.
+
+- **Refuted ✓ (rule 4):** A × Frequency (mutations of `c_flag` and `a_to_c` in
+  `Limits::EVENT_ACTIONS` green on both suites), A × Volume (the `maximum` of `per_page`
+  raised to 100,000, green), A × State (four rules for hidden posts in
+  `Permissions::post_rules()`, green): F-231.
+- **Refuted —:** B × Volume (lengths cut without a message, F-225), C × Concurrency (the
+  view counter writes from a page address; now `partly`), E × Error path (block words
+  that reach the backtrack limit stop censoring silently; now `partly`).
+- **New measurements:** A × Value and Error path (F-214), A, B, C, F, J × Identity
+  (F-216 to F-221), B × State and Error path (F-224), F × Form (arrays in the query of the
+  admin screens: warnings of core only; now `partly`).
+- **Did not run (usage limit):** coverage with Xdebug, the mutation sets of the part
+  auditors "Mensch und Recht" and "Browser und Store" (`mut-6`), the data mutations on
+  the single-site suite, `npm run env:start` from the fresh clone (ports in use). The run
+  therefore does not count as a round until these are made up.
 
 ## Cross-cutting standards
 
