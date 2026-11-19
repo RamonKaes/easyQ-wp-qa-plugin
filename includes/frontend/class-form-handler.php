@@ -113,6 +113,29 @@ final class Form_Handler {
 	}
 
 	/**
+	 * Says on a Q&A page that a request was too large for PHP, which then hands on no field at
+	 * all, as Question2Answer checks (`qa_post_limit_exceeded()`); otherwise the request would
+	 * end without a word.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function report_too_large(): void {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) && is_string( $_SERVER['REQUEST_METHOD'] ) ? sanitize_key( $_SERVER['REQUEST_METHOD'] ) : '';
+		$length = \EasyQ\Util\Number::int_in_range( isset( $_SERVER['CONTENT_LENGTH'] ) && is_string( $_SERVER['CONTENT_LENGTH'] ) ? sanitize_text_field( wp_unslash( $_SERVER['CONTENT_LENGTH'] ) ) : null, 0 ) ?? 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only whether anything arrived is read.
+		if ( 'post' !== $method || array() !== $_POST || $length <= wp_convert_hr_to_bytes( (string) ini_get( 'post_max_size' ) ) || null === \EasyQ\Blocks\Block_Context::router()->current() ) {
+			return;
+		}
+
+		Flash::keep(
+			/* translators: %s: largest size of a file, e.g. 2 MB. */
+			sprintf( __( 'The form was too large to be sent. Files can be at most %s.', 'easyq' ), size_format( wp_max_upload_size() ) ),
+			'',
+			0
+		);
+	}
+
+	/**
 	 * Handles a submitted form and redirects after a successful submission.
 	 *
 	 * @since 0.1.0
@@ -146,6 +169,7 @@ final class Form_Handler {
 	public function process(): ?string {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- The nonce is verified below, per form.
 		if ( ! isset( $_POST[ self::FIELD ] ) || ! is_string( $_POST[ self::FIELD ] ) ) {
+			self::report_too_large();
 			return null;
 		}
 

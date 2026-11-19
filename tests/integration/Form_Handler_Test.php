@@ -71,6 +71,31 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertNull( ( new Form_Handler() )->process() );
 	}
 
+	public function test_a_request_over_the_limit_of_php_says_so_on_a_q_and_a_page(): void {
+		// PHP empties $_POST when a request is larger than post_max_size, as Question2Answer checks (`qa_post_limit_exceeded()`).
+		$limit                     = wp_convert_hr_to_bytes( (string) ini_get( 'post_max_size' ) );
+		$_POST                     = array();
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['CONTENT_LENGTH'] = (string) ( $limit + 1 );
+
+		\EasyQ\Blocks\Block_Context::router()->set_current( null );
+		$this->assertNull( ( new Form_Handler() )->process() );
+		$this->assertNull( Flash::current(), 'Pages of others are left alone.' );
+
+		\EasyQ\Blocks\Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'account' ) );
+		$this->assertNull( ( new Form_Handler() )->process() );
+		$this->assertSame( 'error', Flash::current()['type'] ?? '' );
+		$this->assertStringContainsString( size_format( wp_max_upload_size() ), Flash::current()['message'] ?? '' );
+
+		// Within the limit, an empty request is no form.
+		( new \ReflectionProperty( Flash::class, 'now' ) )->setValue( null, null );
+		$_SERVER['CONTENT_LENGTH'] = '10';
+		$this->assertNull( ( new Form_Handler() )->process() );
+		$this->assertNull( Flash::current() );
+		unset( $_SERVER['CONTENT_LENGTH'] );
+		\EasyQ\Blocks\Block_Context::router()->set_current( null );
+	}
+
 	public function test_refuses_expired_forms(): void {
 		$this->login();
 
