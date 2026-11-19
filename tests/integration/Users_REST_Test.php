@@ -204,6 +204,9 @@ final class Users_REST_Test extends REST_Test_Case {
 		wp_set_current_user( (int) $this->user()->user_id );
 		$this->assertNotContains( $avatar, $listed() );
 
+		// Nor its title, where an editor lists the media, nor after a change of the name.
+		$this->assertStringNotContainsString( get_userdata( $user )->display_name, get_the_title( $avatar ) );
+
 		// The image itself is still where the avatar points.
 		$this->assertStringContainsString( 'canola', (string) get_avatar_url( $user ) );
 	}

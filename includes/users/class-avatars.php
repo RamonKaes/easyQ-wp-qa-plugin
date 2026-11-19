@@ -240,12 +240,11 @@ final class Avatars {
 		$path = $saved['path'];
 		$type = $saved['mime-type'];
 
-		$user          = get_userdata( $user_id );
 		$attachment_id = wp_insert_attachment(
 			array(
 				'post_mime_type' => $type,
-				/* translators: %s: user name. */
-				'post_title'     => sprintf( __( 'Avatar of %s', 'easyq' ), false === $user ? $user_id : $user->display_name ),
+				// No name: a title would keep the old one after a change, and show where the attachment is listed.
+				'post_title'     => __( 'Avatar', 'easyq' ),
 				// Private, so core's media routes and attachment pages do not show the name and ID of a
 				// user whose profile is hidden; the image itself is served as before.
 				'post_status'    => 'private',
