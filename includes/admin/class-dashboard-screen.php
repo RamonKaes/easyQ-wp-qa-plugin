@@ -56,8 +56,24 @@ final class Dashboard_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
-		add_menu_page( __( 'Q&A Dashboard', 'easyq' ), 'easyQ', Capabilities::MODERATE, self::PAGE, array( $this, 'render' ), 'dashicons-format-chat', 26 );
+		$hook = add_menu_page( __( 'Q&A Dashboard', 'easyq' ), 'easyQ', Capabilities::MODERATE, self::PAGE, array( $this, 'render' ), 'dashicons-format-chat', 26 );
 		add_submenu_page( self::PAGE, __( 'Q&A Dashboard', 'easyq' ), __( 'Dashboard', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		add_action( 'load-' . $hook, array( $this, 'load' ) );
+	}
+
+	/**
+	 * Adds the help of the screen, as core's screens give it.
+	 *
+	 * @since 0.1.0
+	 */
+	public function load(): void {
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'The dashboard counts the questions, answers and comments, and lists what waits for approval or was flagged, with links to the posts screen where you handle them.', 'easyq' ) . '</p>',
+			)
+		);
 	}
 
 	/**

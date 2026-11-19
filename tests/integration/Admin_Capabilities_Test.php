@@ -201,6 +201,16 @@ final class Admin_Capabilities_Test extends Test_Case {
 		}
 		$this->assertGreaterThanOrEqual( 6, count( $helped ) );
 
+		// Every entry of the easyQ menu, read from the menu, gives help when its screen loads.
+		$pages = array_keys( $this->menu() );
+		$this->assertGreaterThanOrEqual( 9, count( $pages ) );
+		foreach ( $pages as $page ) {
+			$hook = (string) get_plugin_page_hookname( $page, 'easyq' );
+			set_current_screen( $hook );
+			do_action( 'load-' . $hook );
+			$this->assertNotNull( get_current_screen()?->get_help_tab( 'easyq-overview' ), $page );
+		}
+
 		// The users list of core, to which easyQ adds its bulk actions.
 		( new \EasyQ\Admin\Users_Screen() )->register();
 		$removed = apply_filters( 'removable_query_args', array() );

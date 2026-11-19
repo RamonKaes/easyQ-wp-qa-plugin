@@ -100,8 +100,44 @@ final class Points_Screen {
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
-		add_submenu_page( Dashboard_Screen::PAGE, __( 'Points', 'easyq' ), __( 'Points', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
-		add_submenu_page( Dashboard_Screen::PAGE, __( 'User Titles', 'easyq' ), __( 'User Titles', 'easyq' ), Capabilities::MANAGE, self::TITLES_PAGE, array( $this, 'render_titles' ) );
+		$points = add_submenu_page( Dashboard_Screen::PAGE, __( 'Points', 'easyq' ), __( 'Points', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		$titles = add_submenu_page( Dashboard_Screen::PAGE, __( 'User Titles', 'easyq' ), __( 'User Titles', 'easyq' ), Capabilities::MANAGE, self::TITLES_PAGE, array( $this, 'render_titles' ) );
+		if ( false !== $points ) {
+			add_action( 'load-' . $points, array( $this, 'load' ) );
+		}
+		if ( false !== $titles ) {
+			add_action( 'load-' . $titles, array( $this, 'load_titles' ) );
+		}
+	}
+
+	/**
+	 * Adds the help of the points screen, as core's screens give it.
+	 *
+	 * @since 0.1.0
+	 */
+	public function load(): void {
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'Users earn points for posting, for votes on their posts and for selected answers. Saving changed values recalculates the points of all users.', 'easyq' ) . '</p>',
+			)
+		);
+	}
+
+	/**
+	 * Adds the help of the user titles screen, as core's screens give it.
+	 *
+	 * @since 0.1.0
+	 */
+	public function load_titles(): void {
+		get_current_screen()?->add_help_tab(
+			array(
+				'id'      => 'easyq-overview',
+				'title'   => __( 'Overview', 'easyq' ),
+				'content' => '<p>' . esc_html__( 'A user title is shown with the name of a user who reached its number of points, up to the next title. Users with a level of Expert or higher show their level instead.', 'easyq' ) . '</p>',
+			)
+		);
 	}
 
 	/**
