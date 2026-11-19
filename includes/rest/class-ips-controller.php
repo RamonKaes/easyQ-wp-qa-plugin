@@ -236,6 +236,7 @@ final class IPs_Controller extends Controller {
 			$post = Services::posts()->find( $post_id );
 			// Hiding a question earlier in the loop does not hide its answers, so each post is checked when it comes.
 			if ( null === $post || ! $post->is_visible() ) {
+				// Not covered: the list holds visible posts only; this guards a post hidden or deleted while the loop runs.
 				continue;
 			}
 

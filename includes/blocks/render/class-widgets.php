@@ -44,6 +44,7 @@ final class Widgets {
 	 */
 	public static function page_title( array $attributes ): string {
 		$title = self::title_of_page();
+		// Not reachable today: every route has a title; an empty one renders no heading.
 		if ( '' === $title ) {
 			return '';
 		}

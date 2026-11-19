@@ -261,6 +261,7 @@ final class Notifications {
 		$answer   = $this->post( $params['post_id'] ?? null );
 		$question = $this->post( $params['parent_id'] ?? null );
 		if ( null === $answer || null === $question ) {
+			// Not covered: easyQ fires a_select only for posts it has just loaded; this guards a third party firing the event with stale IDs.
 			return;
 		}
 
@@ -508,6 +509,7 @@ final class Notifications {
 		$to   = get_userdata( is_numeric( $params['user_id'] ?? null ) ? (int) $params['user_id'] : 0 );
 		$from = null === $actor->user_id ? false : get_userdata( $actor->user_id );
 		if ( false === $to || false === $from ) {
+			// Not covered: sender and recipient were loaded just before the event; only a user deleted in between, or a third party firing the event, gets here.
 			return;
 		}
 

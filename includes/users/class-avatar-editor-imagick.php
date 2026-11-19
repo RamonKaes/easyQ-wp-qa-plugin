@@ -52,6 +52,7 @@ final class Avatar_Editor_Imagick extends WP_Image_Editor_Imagick {
 				}
 			}
 		} catch ( Exception $e ) {
+			// Not covered: needs ImageMagick to throw while reading the profiles, which the test site cannot provoke.
 			return new WP_Error( 'image_strip_meta_error', $e->getMessage() );
 		}
 

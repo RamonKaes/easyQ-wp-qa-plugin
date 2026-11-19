@@ -396,6 +396,7 @@ final class Updates {
 	public function refill( int $question_id ): void {
 		$question = $this->posts->find( $question_id );
 		if ( null === $question ) {
+			// Not covered: the tool lists existing questions; only one deleted between the listing and the refill gets here, a race with another request.
 			return;
 		}
 
@@ -524,6 +525,7 @@ final class Updates {
 		$type   = match ( $parent?->base_type() ) {
 			Post::QUESTION => self::COMMENT_ON_QUESTION,
 			Post::ANSWER   => self::COMMENT_ON_ANSWER,
+			// Not covered: the parent of a comment is always a question or an answer; the arm keeps match() exhaustive.
 			default        => null,
 		};
 

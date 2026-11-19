@@ -139,6 +139,7 @@ final class Post_Service {
 		$id         = $this->posts->insert( $queued ? 'Q_QUEUED' : 'Q', $follow_answer?->id, $category_id, $actor, $title, $content, $format, $tag_string, $notify, $name );
 
 		if ( 0 === $id ) {
+			// Not covered: needs a failing database insert, which the test site has no way to fake.
 			return 0;
 		}
 
@@ -196,6 +197,7 @@ final class Post_Service {
 		$id = $this->posts->insert( $queued ? 'A_QUEUED' : 'A', $question->id, $question->category_id, $actor, null, $content, $format, null, $notify, $name );
 
 		if ( 0 === $id ) {
+			// Not covered: needs a failing database insert, which the test site has no way to fake.
 			return 0;
 		}
 
@@ -250,6 +252,7 @@ final class Post_Service {
 		$id = $this->posts->insert( $queued ? 'C_QUEUED' : 'C', $parent_post->id, $question->category_id, $actor, null, $content, $format, null, $notify, $name );
 
 		if ( 0 === $id ) {
+			// Not covered: needs a failing database insert, which the test site has no way to fake.
 			return 0;
 		}
 
@@ -740,6 +743,7 @@ final class Post_Service {
 		$this->search->unindex( $answer->id );
 		$this->posts->delete( $answer->id );
 
+		// Not reachable today: hiding an answer clears the selection first; this repairs data stored before that.
 		if ( $question->selected_child_id === $answer->id ) {
 			$this->posts->update( $question->id, array( 'selected_child_id' => null ) );
 			$this->points->update( $question->user_id, array( Points::SELECTIONS ) );
@@ -910,6 +914,7 @@ final class Post_Service {
 
 		$note_id = $this->posts->insert( Post::NOTE, $question->id, $question->category_id, $actor, null, $note, '', null, null, null );
 		if ( 0 === $note_id ) {
+			// Not covered: needs a failing database insert, which the test site has no way to fake.
 			return;
 		}
 
@@ -1498,6 +1503,7 @@ final class Post_Service {
 	private function require_post( int $id ): Post {
 		$post = $this->posts->find( $id );
 		if ( null === $post ) {
+			// Not covered: only a race (the post deleted between write and read) gets here.
 			throw new \RuntimeException( esc_html( sprintf( 'Post %d does not exist.', $id ) ) );
 		}
 

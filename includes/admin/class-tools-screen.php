@@ -141,6 +141,7 @@ final class Tools_Screen {
 		}
 
 		check_admin_referer( self::NONCE );
+		// Not covered: redirect and exit; the address comes from handle(), which Dashboard_Tools_Screens_Test runs to the end.
 		$redirect = $this->handle( wp_unslash( $_POST ) );
 		if ( null !== $redirect ) {
 			wp_safe_redirect( $redirect );

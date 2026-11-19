@@ -241,6 +241,7 @@ final class Posts_Screen {
 		// address of the list then goes on without it.
 		$redirect = $this->without_form_fields();
 		if ( null !== $redirect ) {
+			// Not covered: redirect and exit; the address is tested through without_form_fields() (Admin_Capabilities_Test).
 			wp_safe_redirect( $redirect );
 			exit;
 		}

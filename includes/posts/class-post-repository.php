@@ -307,6 +307,7 @@ final class Post_Repository {
 		}
 
 		if ( array() === $columns ) {
+			// Not covered: an update without columns or actor; wpdb::update() would refuse the empty data anyway.
 			return;
 		}
 
@@ -426,6 +427,7 @@ final class Post_Repository {
 	 */
 	public function calc_category_paths_in( array $category_ids ): void {
 		if ( array() === $category_ids ) {
+			// Not covered: the plugin always passes a subtree with at least one category; the guard protects API callers from an invalid IN ().
 			return;
 		}
 

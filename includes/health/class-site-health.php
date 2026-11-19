@@ -118,6 +118,7 @@ final class Site_Health {
 		) . ( '' === $list ? '' : '<ul>' . $list . '</ul>' );
 		// On a network the plugin is changed on the Plugins screen of the network.
 		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			// Not covered: the test runner has loaded wp-admin/includes/plugin.php already, and a PHP function cannot be unloaded.
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 		$network           = is_multisite() && is_plugin_active_for_network( plugin_basename( \EasyQ\PLUGIN_FILE ) );

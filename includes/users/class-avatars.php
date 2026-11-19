@@ -254,6 +254,7 @@ final class Avatars {
 			true
 		);
 		if ( is_wp_error( $attachment_id ) ) {
+			// Not covered: needs wp_insert_attachment() to fail, which core offers no filter to force for attachments; the file left would be the cropped copy without metadata.
 			wp_delete_file( $path );
 			return $attachment_id;
 		}

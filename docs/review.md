@@ -146,9 +146,13 @@ files are loaded by none (`includes/frontend/views/classic.php`,
 `includes/frontend/views/no-comments.php`). Calibrated: `Post_Service::edit_answer()` and
 `Privacy::export_newsletter()`, which the first measurement through the report of PHPUnit
 listed as not covered (it counts only the units a test names in `@covers`), are covered;
-in the first only the branch that queues an answer with comments again is not. A decision
-per line is not made yet; the list is kept with the results of the round, outside the
-repository.
+in the first only the branch that queues an answer with comments again is not. Each line
+was decided on 2026-11-19, in 370 blocks (four reading agents, each Claude Opus 5.5): 52
+run in the end-to-end or unit tests, 92 stay without a test with their reason in a comment
+at the line (`// Not covered:` for guards against races, failing inserts and the like;
+`// Not reachable:` for checks the signature of a core class or a second net asks for,
+which were kept rather than removed), 221 need a test and are F-209 to F-213, and five are
+lines of a `match` Xdebug counts apart from its arms. The decisions found F-206 to F-208.
 
 Mutation (`mutate.py run`): every proposal of the reading agents with an anchor found once,
 145 in all, A and B/I on both suites in batches, C to Q on the single site and the green
@@ -228,16 +232,16 @@ not read"). No row is reported without a finding; the findings per row are in
    Multisite, M Multisite, N Concurrency) have a decision proposed in
    `docs/findings.md`, "Open cells", which the owner has not taken.
 
-Open after the round: 54 findings (24 should, 30 low) and ten suspicions (seven should,
+Open after the round: 62 findings (29 should, 33 low) and ten suspicions (seven should,
 three low).
 
 ### Does it count as a round
 
-Not yet. Every row was read, measured and mutated, the machines ran from zero, and every
-fix of this round was checked with the five questions of step 7a, after which the
-end-to-end tests ran again in full (152, green) and F-205 was entered. One mandatory
-part is not complete: the decision per line of the coverage (830 lines). The round counts
-once it is made up. Settled: zero of two rounds,
+Yes, since 2026-11-19. Every row was read, measured and mutated, the machines ran from
+zero, every line no test runs has its decision, and every fix of this round was checked
+with the five questions of step 7a, after which the end-to-end tests ran again in full
+(152, green). It is the first complete round over the whole matrix. Settled: zero of two
+rounds, since it found findings of class should and blocker in old code. Settled: zero of two rounds,
 since this round found findings of class should and blocker in old code.
 
 ## Cross-cutting standards

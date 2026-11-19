@@ -201,6 +201,7 @@ final class Answers_Controller extends Controller {
 	public function create_item( $request ): WP_REST_Response|WP_Error {
 		$question = Services::posts()->find( (int) self::int_param( $request, 'question' ) );
 		if ( null === $question ) {
+			// Not covered: the permission check found the question; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 
@@ -217,6 +218,7 @@ final class Answers_Controller extends Controller {
 		$id     = Services::post_service()->create_answer( $author['actor'], $question, $input['content'], $input['format'], $author['notify'], $author['name'], $queued );
 		$answer = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $answer ) {
+			// Not covered: needs a failing insert into the database, which the test site has no way to fake.
 			return new WP_Error( 'easyq_not_created', __( 'The answer could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
@@ -256,6 +258,7 @@ final class Answers_Controller extends Controller {
 		$answer   = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		$question = null === $answer ? null : Services::post_service()->question_of( $answer );
 		if ( null === $answer || null === $question ) {
+			// Not covered: the permission check found the question; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 

@@ -78,6 +78,7 @@ final class Mailer {
 	 * @return array{subject: string, message: string}
 	 */
 	public static function content( string $name, array $placeholders, ?Recipient $recipient = null ): array {
+		// Not reachable: every caller names a template of Templates; the fallback keeps the type.
 		$template = Templates::get( $name ) ?? array(
 			'subject' => '',
 			'body'    => '',

@@ -118,6 +118,7 @@ final class Messages {
 	public static function delete_all_of( int $user_id ): int {
 		$wpdb = DB::wpdb();
 		$sql  = $wpdb->prepare( 'DELETE FROM %i WHERE from_user_id = %d OR to_user_id = %d', Schema::table( 'messages' ), $user_id, $user_id );
+		// Not reachable: prepare() with a fixed format never returns null; the check keeps the type.
 		if ( null === $sql ) {
 			return 0;
 		}
@@ -182,6 +183,7 @@ final class Messages {
 	 * @return string|null Reason, see Permissions::error(), or `wall_blocked` or `walls_off`; null if allowed.
 	 */
 	public function wall_error( Actor $actor, WP_User $owner ): ?string {
+		// Not reachable from the plugin: both callers check the setting first; the method stays safe for others.
 		if ( ! Options::get_bool( 'users', 'allow_user_walls' ) ) {
 			return 'walls_off';
 		}

@@ -189,6 +189,7 @@ final class Comments_Controller extends Controller {
 		$parent   = Services::posts()->find( (int) self::int_param( $request, 'parent' ) );
 		$question = null === $parent ? null : Services::post_service()->question_of( $parent );
 		if ( null === $parent || null === $question ) {
+			// Not covered: the permission check found the post; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 
@@ -205,6 +206,7 @@ final class Comments_Controller extends Controller {
 		$id      = Services::post_service()->create_comment( $author['actor'], $question, $parent, $input['content'], $input['format'], $author['notify'], $author['name'], $queued );
 		$comment = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $comment ) {
+			// Not covered: needs a failing insert into the database, which the test site has no way to fake.
 			return new WP_Error( 'easyq_not_created', __( 'The comment could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
@@ -245,6 +247,7 @@ final class Comments_Controller extends Controller {
 		$parent   = null === $comment || null === $comment->parent_id ? null : Services::posts()->find( $comment->parent_id );
 		$question = null === $parent ? null : Services::post_service()->question_of( $parent );
 		if ( null === $comment || null === $parent || null === $question ) {
+			// Not covered: the permission check found the post; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 

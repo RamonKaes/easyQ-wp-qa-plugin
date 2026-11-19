@@ -146,6 +146,7 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 			'categories' => count( self::listed_categories() ),
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 			'users'      => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(DISTINCT user_id) FROM %i WHERE user_id IS NOT NULL AND type IN (%s, %s, %s)', Schema::table( 'posts' ), Post::QUESTION, Post::ANSWER, Post::COMMENT ) ),
+			// Not reachable: only the four subtypes reach this; the arm keeps match() from throwing.
 			default      => 0,
 		};
 
@@ -171,6 +172,7 @@ final class Sitemap_Provider extends WP_Sitemaps_Provider {
 		foreach ( $ids as $id ) {
 			$question = $posts[ $id ] ?? null;
 			if ( null === $question ) {
+				// Not covered: the IDs come from the same query on visible questions; this guards a question deleted in between.
 				continue;
 			}
 

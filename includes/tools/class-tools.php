@@ -279,6 +279,7 @@ final class Tools {
 				break;
 
 			case 'recount_posts/answers':
+				// Not reachable: run() calls this only with items for steps that have any; the check keeps an empty batch harmless.
 				if ( array() === $ids ) {
 					break;
 				}
@@ -355,6 +356,7 @@ final class Tools {
 		foreach ( Services::posts()->find_many( $ids ) as $post ) {
 			$question = $service->question_of( $post );
 			if ( null === $question ) {
+				// Not covered: needs a hidden post whose parent row is gone, which easyQ's own deletes never leave; the post then stays.
 				continue;
 			}
 

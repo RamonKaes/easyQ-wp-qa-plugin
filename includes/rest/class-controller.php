@@ -143,6 +143,7 @@ abstract class Controller extends WP_REST_Controller {
 		}
 
 		$type = $this->get_item_schema()['title'] ?? '';
+		// Not reachable today: every schema of easyQ has a title easyq-…; a controller without one gets no filter.
 		if ( ! is_string( $type ) || ! str_starts_with( $type, 'easyq-' ) ) {
 			return $response;
 		}
@@ -217,6 +218,7 @@ abstract class Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		// Not reachable from the plugin: every caller passes a Post; the signature of WP_REST_Controller takes any item.
 		if ( ! $item instanceof Post ) {
 			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
 		}
@@ -585,6 +587,7 @@ abstract class Controller extends WP_REST_Controller {
 		// A comment hangs below an answer or a question, a note or an answer below a question.
 		$chain = array( $post );
 		while ( Post::QUESTION !== end( $chain )->base_type() ) {
+			// Not covered: a post always has its parents; this guards a broken thread in the database.
 			$parent_id = end( $chain )->parent_id;
 			$parent    = null === $parent_id || count( $chain ) > 2 ? null : Services::posts()->find( $parent_id );
 			if ( null === $parent ) {

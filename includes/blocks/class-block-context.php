@@ -54,6 +54,7 @@ final class Block_Context {
 	 * @return Router
 	 */
 	public static function router(): Router {
+		// Not reachable from the plugin: Plugin::register() sets the router first; this serves code that renders earlier.
 		if ( null === self::$router ) {
 			self::$router = new Router();
 		}

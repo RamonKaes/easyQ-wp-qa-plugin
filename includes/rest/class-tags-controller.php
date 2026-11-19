@@ -104,6 +104,7 @@ final class Tags_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		// Not reachable from the plugin: every caller passes an array; the signature of WP_REST_Controller takes any item.
 		if ( ! is_array( $item ) ) {
 			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
 		}

@@ -44,6 +44,7 @@ final class Settings_Layout {
 		$fields = Fields::section( $tab );
 		$rest   = array_keys( array_filter( $fields, static fn ( array $field ): bool => ! isset( $field['parent'] ) ) );
 		$rest   = array_values( array_diff( $rest, $named ) );
+		// Not reachable today: the layout names every field; this keeps a field added without a place in the layout visible.
 		if ( array() !== $rest ) {
 			if ( array() === $sections ) {
 				$sections[] = self::section( '', array() );

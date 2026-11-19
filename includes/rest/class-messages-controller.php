@@ -386,6 +386,7 @@ final class Messages_Controller extends Controller {
 	 * @return WP_REST_Response
 	 */
 	public function prepare_item_for_response( $item, $request ): WP_REST_Response {
+		// Not reachable from the plugin: every caller passes a Message; the signature of WP_REST_Controller takes any item.
 		if ( ! $item instanceof Message ) {
 			return new WP_REST_Response( array() );
 		}

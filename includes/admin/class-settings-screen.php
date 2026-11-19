@@ -330,6 +330,7 @@ final class Settings_Screen {
 		$section = $args['section'];
 		$key     = $args['key'];
 		$field   = Fields::section( $section )[ $key ] ?? null;
+		// Not reachable: settings fields are registered only for keys of their section.
 		if ( null === $field ) {
 			return;
 		}
@@ -405,6 +406,7 @@ final class Settings_Screen {
 	private function render_control( string $section, string $key, bool $defaults, string $described ): void {
 		$fields = Fields::section( $section );
 		$field  = $fields[ $key ] ?? null;
+		// Not reachable: both callers pass a key of the section.
 		if ( null === $field ) {
 			return;
 		}

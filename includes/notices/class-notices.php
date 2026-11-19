@@ -190,6 +190,7 @@ final class Notices {
 			return true;
 		}
 
+		// Not reachable: the permission check lets visitors through for their own notice only, handled above; the check stays as a second net.
 		if ( null === $actor->user_id ) {
 			return false;
 		}

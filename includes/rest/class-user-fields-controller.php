@@ -191,10 +191,12 @@ final class User_Fields_Controller extends Controller {
 
 		$field = $fields->find( $result );
 		if ( null === $field ) {
+			// Not covered: the field was just created; this guards its deletion before it is read back.
 			return REST_Errors::not_found();
 		}
 
 		$response = $this->prepare_item_for_response( $field, $request );
+		// Not reachable: prepare_item_for_response() refuses only items that are no User_Field.
 		if ( $response instanceof WP_Error ) {
 			return $response;
 		}
@@ -391,6 +393,7 @@ final class User_Fields_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		// Not reachable from the plugin: every caller passes a User_Field; the signature of WP_REST_Controller takes any item.
 		if ( ! $item instanceof User_Field ) {
 			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
 		}

@@ -143,6 +143,7 @@ final class Newsletter {
 			return new WP_Error( 'easyq_newsletter_off', __( 'There is no newsletter.', 'easyq' ), array( 'status' => 404 ) );
 		}
 
+		// Not reachable from the plugin: both callers check the state first; the method answers for other callers.
 		if ( 'confirmed' === self::state( $user->ID ) ) {
 			return true;
 		}

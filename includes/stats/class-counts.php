@@ -192,6 +192,7 @@ final class Counts {
 			self::UNUPVOTED         => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type = 'Q' AND answer_max_votes = 0 AND closed_by_id IS NULL", $posts ) ),
 			self::QUEUED            => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE type IN ('Q_QUEUED', 'A_QUEUED', 'C_QUEUED')", $posts ) ),
 			self::FLAGGED           => $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE flag_count > 0 AND type IN ('Q', 'A', 'C')", $posts ) ),
+			// Not reachable from the plugin: no screen reads the count of tags today; it stays for other code.
 			self::TAGS              => $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE tag_count > 0', Schema::table( 'words' ) ) ),
 			self::USERS_WITH_POINTS => $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', Schema::table( 'userpoints' ) ) ),
 			default                 => null,

@@ -94,6 +94,7 @@ final class IP_Blocks {
 	public function visible_post_ids( string $ip ): array {
 		$wpdb   = DB::wpdb();
 		$binary = IP::to_binary( $ip );
+		// Not reachable from the plugin: both callers validate the address first; the guard serves other callers.
 		if ( null === $binary ) {
 			return array();
 		}

@@ -349,6 +349,7 @@ final class Text {
 		$found = array();
 		foreach ( self::regex_parts( $regex ) as $part ) {
 			if ( false === preg_match_all( '/' . $part . '/', ' ' . $text . ' ', $matches, PREG_OFFSET_CAPTURE ) ) {
+				// Not covered: preg_match_all() only fails here beyond PCRE's limits, which regex_parts() keeps every part below.
 				continue;
 			}
 			foreach ( $matches[0] as $match ) {
@@ -396,6 +397,7 @@ final class Text {
 		$length       = strlen( $regex );
 		for ( $index = 0; $index < $length; $index++ ) {
 			$character = $regex[ $index ];
+			// Not reachable from block_words_to_regex(), which leaves no escape in the fragment; the branch keeps other fragments intact.
 			if ( '\\' === $character && $index + 1 < $length ) {
 				$current .= $character . $regex[ ++$index ];
 				continue;

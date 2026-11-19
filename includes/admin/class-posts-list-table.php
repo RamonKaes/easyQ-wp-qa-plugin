@@ -18,6 +18,7 @@ use WP_List_Table;
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( WP_List_Table::class ) ) {
+	// Not covered: wp-admin always loads WP_List_Table (wp-admin/includes/admin.php:68); the guard is the handbook pattern for a load outside it.
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 
@@ -426,6 +427,7 @@ final class Posts_List_Table extends WP_List_Table {
 
 		$question = Services::post_service()->question_of( $item );
 		if ( null === $question ) {
+			// Not covered: only an orphaned answer or comment reaches this; deleting a post with children is refused (Post_Service::has_dependents()).
 			return '';
 		}
 

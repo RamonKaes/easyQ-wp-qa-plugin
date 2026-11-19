@@ -132,6 +132,7 @@ final class Messages_Render {
 	 * @return string
 	 */
 	private static function conversation( int $user_id, ?\WP_User $other, array $attributes ): string {
+		// Not reachable: the router answers a message page without a shown user with not found.
 		if ( null === $other ) {
 			return '';
 		}

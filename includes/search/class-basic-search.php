@@ -432,6 +432,7 @@ final class Basic_Search implements Search_Provider {
 		foreach ( explode( ',', Row::string( $row, 'match_parts' ) ) as $part ) {
 			$pieces = explode( ':', $part );
 			if ( 3 !== count( $pieces ) ) {
+				// Not covered: GROUP_CONCAT cuts match_parts at group_concat_max_len, about 80 matches of one question; only the cut part is skipped.
 				continue;
 			}
 

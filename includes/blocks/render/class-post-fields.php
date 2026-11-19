@@ -380,6 +380,7 @@ final class Post_Fields {
 		$item  = Activity_Item::from_context( $post->id, $block->context['easyq/activity'] ?? null ) ?? Activity_Item::created( $post, $post->id );
 		$other = $item->post_id === $post->id ? $post : Services::posts()->find( $item->post_id );
 		if ( null === $other ) {
+			// Not covered: the activity query only returns existing posts; this guards a post deleted between the query and the rendering.
 			return '';
 		}
 

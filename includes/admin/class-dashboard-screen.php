@@ -168,6 +168,7 @@ final class Dashboard_Screen {
 	 * @since 0.1.0
 	 */
 	private function render_queues(): void {
+		// Not reachable today: the menu and the widget ask for this capability first; the check stays, as core checks again in its screens.
 		if ( ! current_user_can( Capabilities::MODERATE ) ) {
 			return;
 		}

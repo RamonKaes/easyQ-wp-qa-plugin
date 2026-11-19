@@ -277,6 +277,7 @@ final class Users_Screen {
 				'' === $back ? admin_url( 'users.php' ) : $back
 			)
 		);
+		// Not covered: exit after the redirect; Users_Screen_Test reads the address through a throwing wp_redirect filter.
 		exit;
 	}
 

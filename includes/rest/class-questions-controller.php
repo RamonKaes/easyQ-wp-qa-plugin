@@ -306,6 +306,7 @@ final class Questions_Controller extends Controller {
 		$actor    = $this->actor();
 		$question = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $question ) {
+			// Not covered: the permission check found the post; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 
@@ -533,6 +534,7 @@ final class Questions_Controller extends Controller {
 	private function created( int $id, \EasyQ\Actor $actor, bool $queued, WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $post ) {
+			// Not covered: needs a failing insert into the database, which the test site has no way to fake.
 			return new WP_Error( 'easyq_not_created', __( 'The question could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 

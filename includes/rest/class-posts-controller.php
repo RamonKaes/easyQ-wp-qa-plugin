@@ -321,6 +321,7 @@ final class Posts_Controller extends Controller {
 		$actor = $this->actor();
 		$post  = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $post ) {
+			// Not covered: the permission check found the post; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 
@@ -378,6 +379,7 @@ final class Posts_Controller extends Controller {
 		$post     = Services::posts()->find( (int) self::int_param( $request, 'id' ) );
 		$question = null === $post ? null : $service->question_of( $post );
 		if ( null === $post || null === $question ) {
+			// Not covered: the permission check found the post; this guards its deletion in between.
 			return REST_Errors::not_found();
 		}
 
@@ -402,6 +404,7 @@ final class Posts_Controller extends Controller {
 			'claim'              => $this->run( static fn () => $service->claim( $actor, $post ) ),
 			'convert'            => $this->convert( $actor, $post, $question, self::int_param( $request, 'parent' ) ?? $question->id ),
 			'move'               => $this->move( $actor, $post, $request ),
+			// Not reachable: the enum of the argument lets only these actions through; the arm keeps match() exhaustive.
 			default              => REST_Errors::not_found(),
 		};
 
@@ -433,6 +436,7 @@ final class Posts_Controller extends Controller {
 	 */
 	private function select( Actor $actor, Post $question, ?int $answer_id ): bool|WP_Error {
 		if ( Post::QUESTION !== $question->type ) {
+			// Not covered: the permission check allows selecting on visible questions only; this guards a change of the question in between.
 			return $this->invalid( 'answer', __( 'Answers can only be selected on visible questions.', 'easyq' ) );
 		}
 

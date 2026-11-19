@@ -16,6 +16,7 @@ use WP_List_Table;
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( WP_List_Table::class ) ) {
+	// Not covered: wp-admin always loads WP_List_Table (wp-admin/includes/admin.php:68); the guard is the handbook pattern for a load outside it.
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 

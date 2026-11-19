@@ -97,6 +97,7 @@ final class IP {
 		}
 
 		// Only IPv4 (4 bytes) and IPv6 (16 bytes) addresses can be converted; other values are reported as null.
+		// Not reachable today: inet_ntop() refuses other lengths too; the check states the rule.
 		if ( 4 !== strlen( $binary ) && 16 !== strlen( $binary ) ) {
 			return null;
 		}
@@ -269,6 +270,7 @@ final class IP {
 	private static function bytes( string $ip ): array {
 		// Invalid addresses yield no bytes.
 		$packed = false === filter_var( $ip, FILTER_VALIDATE_IP ) ? false : inet_pton( $ip );
+		// Not reachable from the plugin: matches() validates every address first.
 		if ( false === $packed ) {
 			return array();
 		}

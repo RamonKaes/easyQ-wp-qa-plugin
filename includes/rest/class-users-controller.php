@@ -287,6 +287,7 @@ final class Users_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function get_current_item( $request ): WP_REST_Response|WP_Error {
+		// Not reachable: the route asks for a signed-in user, so the user exists; the check below keeps the type.
 		$user = get_userdata( (int) $this->actor()->user_id );
 		if ( false === $user ) {
 			return REST_Errors::not_found();
@@ -326,6 +327,7 @@ final class Users_Controller extends Controller {
 		$actor   = $this->actor();
 		$user_id = (int) $actor->user_id;
 		$user    = get_userdata( $user_id );
+		// Not reachable: the route asks for a signed-in user, so the user exists; the check keeps the type.
 		if ( false === $user ) {
 			return REST_Errors::not_found();
 		}
@@ -483,6 +485,7 @@ final class Users_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function prepare_item_for_response( $item, $request ): WP_REST_Response|WP_Error {
+		// Not reachable from the plugin: every caller passes a WP_User; the signature of WP_REST_Controller takes any item.
 		if ( ! $item instanceof WP_User ) {
 			return new WP_Error( 'easyq_invalid_item', __( 'The item cannot be shown.', 'easyq' ), array( 'status' => 500 ) );
 		}

@@ -325,6 +325,7 @@ final class Post_Data {
 		$sql   = $replies_first
 			? $wpdb->prepare( "SELECT * FROM %i WHERE user_id = %d OR last_user_id = %d OR (user_id IS NULL AND notify = %s) ORDER BY LEFT(type, 1) = 'C' DESC, LEFT(type, 1) = 'A' DESC, id DESC LIMIT %d OFFSET %d", $table, $user_id, $user_id, $email, self::PER_PAGE, $offset )
 			: $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d OR last_user_id = %d OR (user_id IS NULL AND notify = %s) ORDER BY id LIMIT %d OFFSET %d', $table, $user_id, $user_id, $email, self::PER_PAGE, $offset );
+		// Not reachable: prepare() with a fixed format never returns null; the check keeps the type.
 		if ( null === $sql ) {
 			return array();
 		}
@@ -414,6 +415,7 @@ final class Post_Data {
 		$question = $service->question_of( $post );
 		$parent   = null === $post->parent_id ? null : $posts->find( $post->parent_id );
 		if ( null === $question ) {
+			// Not covered: needs an orphaned post whose question row is gone, which easyQ's own deletes never leave; the post is anonymized instead.
 			return false;
 		}
 
@@ -428,6 +430,7 @@ final class Post_Data {
 		$hidden   = $posts->find( $post->id );
 		$question = $service->question_of( $post );
 		if ( null === $hidden || null === $question ) {
+			// Not covered: the post or its question would have to vanish between hiding and deleting, a race with another request.
 			return false;
 		}
 

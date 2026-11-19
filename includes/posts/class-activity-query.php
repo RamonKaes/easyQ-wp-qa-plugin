@@ -260,6 +260,7 @@ final class Activity_Query {
 	 * @return int
 	 */
 	private function count( string $kind, array $filters ): int {
+		// Not reachable in part: by_user() is called for answers only today (Query_Resolver), so the other kinds and a missing filter do not occur.
 		$values = $this->filter_values( $filters );
 		if ( null === $values ) {
 			return 0;

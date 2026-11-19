@@ -781,6 +781,7 @@ final class Categories {
 			}
 		}
 
+		// Not covered: needs about 100 sibling categories that take every fallback slug; validation then reports the slug anyway.
 		return $slug;
 	}
 

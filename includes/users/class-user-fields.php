@@ -347,6 +347,7 @@ final class User_Fields {
 			}
 		}
 
+		// Not covered: needs 999 fields named after the same label; validation then asks for a name.
 		return '';
 	}
 

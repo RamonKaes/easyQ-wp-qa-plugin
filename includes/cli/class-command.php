@@ -135,9 +135,11 @@ final class Command {
 
 		do {
 			$result = $runner->run( $actor, $tool, $step, $after, $total, $done, $token );
+			// Not covered: needs a second run holding the lock of the tools at the same moment; WP_CLI::error() then ends the process.
 			if ( $result instanceof \WP_Error ) {
 				WP_CLI::error( $result->get_error_message() );
 			}
+			// Not reachable: the tool and its steps come from Tools::STEPS.
 			if ( null === $result ) {
 				WP_CLI::error( __( 'The tool has no such step.', 'easyq' ) );
 			}
@@ -145,6 +147,7 @@ final class Command {
 			// The result describes the next step once this one is finished.
 			$finished = $result['complete'] || $result['step'] !== $step;
 			if ( Tools::STEPS[ $tool ][ $step ] > 0 && $result['step'] === $step && $result['total'] > 0 ) {
+				// Not covered: the progress bar is CLI output without a return value; the E2E runs draw it but only the result of the tools is checked.
 				if ( null === $bar ) {
 					$bar = Utils\make_progress_bar(
 						/* translators: 1: name of the tool, 2: number of the step, 3: number of steps. */

@@ -183,6 +183,7 @@ final class Templates {
 
 		$theme_file = locate_template( array( 'easyq/classic.php' ) );
 		if ( '' !== $theme_file ) {
+			// Not covered: needs a classic theme that ships easyq/classic.php; the test site has only the default themes.
 			self::$classic_html = do_blocks( $content );
 
 			return $theme_file;
@@ -202,6 +203,7 @@ final class Templates {
 			}
 		}
 
+		// Not reachable: core activates no classic theme without index.php; the view keeps the page working if one is.
 		return \EasyQ\PLUGIN_DIR . '/includes/frontend/views/classic.php';
 	}
 

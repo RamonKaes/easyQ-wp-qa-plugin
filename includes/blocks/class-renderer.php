@@ -61,6 +61,7 @@ final class Renderer {
 			}
 		}
 
+		// Not reachable: every block of blocks/ has its render method; the empty string keeps the return type.
 		return '';
 	}
 }

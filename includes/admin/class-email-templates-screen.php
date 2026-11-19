@@ -218,6 +218,7 @@ final class Email_Templates_Screen {
 	 * @param string $message Message key from the last action.
 	 */
 	private function render_edit( string $name, string $message ): void {
+		// Not reachable: render() calls this only for a template that exists; the fallback keeps the type.
 		$template = Templates::get( $name ) ?? array(
 			'subject' => '',
 			'body'    => '',

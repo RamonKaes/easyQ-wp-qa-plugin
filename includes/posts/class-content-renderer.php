@@ -169,6 +169,7 @@ final class Content_Renderer {
 			$byte       = $start + $length;
 			foreach ( array_reverse( false === $characters ? array() : $characters ) as $character ) {
 				$byte -= strlen( $character );
+				// Not reachable today: a match never holds a separator added for a block tag; the check keeps such a byte out of the stars.
 				if ( $map[ $byte ] < 0 ) {
 					continue;
 				}
