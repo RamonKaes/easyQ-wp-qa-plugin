@@ -287,11 +287,12 @@ final class Registration {
 		}
 
 		$fields = array();
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Verified in has_valid_nonce().
-		$posted = isset( $_POST['easyq_fields'] ) && is_array( $_POST['easyq_fields'] ) ? map_deep( wp_unslash( $_POST['easyq_fields'] ), 'sanitize_textarea_field' ) : array();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Verified in has_valid_nonce(); each value is sanitized below as its field takes it.
+		$posted = isset( $_POST['easyq_fields'] ) && is_array( $_POST['easyq_fields'] ) ? wp_unslash( $_POST['easyq_fields'] ) : array();
 		foreach ( $this->fields() as $field ) {
 			if ( is_array( $posted ) && is_string( $posted[ $field->id ] ?? null ) ) {
-				$fields[ $field->id ] = $posted[ $field->id ];
+				// As the profile stores it: a link keeps its percent encoding, which `sanitize_textarea_field()` removed.
+				$fields[ $field->id ] = User_Fields::sanitize_value( $field, $posted[ $field->id ] );
 			}
 		}
 

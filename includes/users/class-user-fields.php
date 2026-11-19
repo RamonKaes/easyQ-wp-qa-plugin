@@ -248,11 +248,7 @@ final class User_Fields {
 	 * @param string     $value   Raw value.
 	 */
 	public function set_value( int $user_id, User_Field $field, string $value ): void {
-		$value = match ( true ) {
-			$field->is_link()       => esc_url_raw( trim( $value ) ),
-			$field->is_multi_line() => sanitize_textarea_field( $value ),
-			default                 => sanitize_text_field( $value ),
-		};
+		$value = self::sanitize_value( $field, $value );
 
 		if ( Text::length( $value ) > self::MAX_VALUE_LENGTH ) {
 			$value = mb_substr( $value, 0, self::MAX_VALUE_LENGTH );
@@ -263,6 +259,24 @@ final class User_Fields {
 		} else {
 			update_user_meta( $user_id, $field->meta_key(), $value );
 		}
+	}
+
+	/**
+	 * Sanitizes a value as its field takes it, for every way a value arrives (profile,
+	 * registration, REST API): a link as `esc_url_raw()` keeps it, with its percent encoding.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param User_Field $field Field.
+	 * @param string     $value Value, unslashed.
+	 * @return string
+	 */
+	public static function sanitize_value( User_Field $field, string $value ): string {
+		return match ( true ) {
+			$field->is_link()       => esc_url_raw( trim( $value ) ),
+			$field->is_multi_line() => sanitize_textarea_field( $value ),
+			default                 => sanitize_text_field( $value ),
+		};
 	}
 
 	/**

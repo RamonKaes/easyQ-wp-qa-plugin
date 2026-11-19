@@ -280,6 +280,24 @@ final class Registration_Test extends Test_Case {
 		$this->assertSame( '', Services::user_fields()->value( $user_id, $location ) );
 	}
 
+	public function test_registration_stores_each_field_as_its_type_takes_it(): void {
+		$link = Services::user_fields()->create( 'homepage', '', User_Field::FLAG_ON_REGISTER | User_Field::FLAG_LINK, null );
+		$text = Services::user_fields()->create( 'about', '', User_Field::FLAG_ON_REGISTER | User_Field::FLAG_MULTI_LINE, null );
+		$this->assertIsInt( $link );
+		$this->assertIsInt( $text );
+
+		// The same rule as the profile: a link keeps its percent encoding, as `esc_url_raw()` keeps it.
+		$_POST['easyq_register'] = wp_create_nonce( 'easyq_register' );
+		$_POST['easyq_fields']   = array(
+			$link => 'https://example.org/K%C3%B6ln?a=1&b=2',
+			$text => "Line one\nLine two <b>bold</b>",
+		);
+		$user_id                 = self::factory()->user->create();
+
+		$this->assertSame( 'https://example.org/K%C3%B6ln?a=1&b=2', Services::user_fields()->value( $user_id, Services::user_fields()->find( $link ) ?? $this->fail() ) );
+		$this->assertSame( "Line one\nLine two bold", Services::user_fields()->value( $user_id, Services::user_fields()->find( $text ) ?? $this->fail() ) );
+	}
+
 	public function test_ignores_submissions_without_a_valid_nonce(): void {
 		$field_id = Services::user_fields()->create( 'company', '', User_Field::FLAG_ON_REGISTER, null );
 		$this->assertIsInt( $field_id );
