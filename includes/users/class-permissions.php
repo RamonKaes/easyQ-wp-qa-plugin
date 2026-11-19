@@ -14,6 +14,7 @@ use EasyQ\Limits\Limits;
 use EasyQ\Points\Points;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Votes\Votes;
 
@@ -357,7 +358,10 @@ final class Permissions {
 		$rules['reshowable']     = $hidden && null === $hide_self
 			&& ( $rules['reshow_at_once'] || ( $not_hidden_by_other && 0 === $post->flag_count ) );
 
-		$rules['deletable'] = $hidden && null === $error( 'permit_delete_hidden' );
+		// A question other questions are closed as duplicates of stays, as Question2Answer passes
+		// the duplicates to its rules (`qa-include/pages/question.php`); only a hidden post asks.
+		$rules['deletable'] = $hidden && null === $error( 'permit_delete_hidden' )
+			&& ! ( Post::QUESTION === $base_type && Services::posts()->has_duplicates( $post->id ) );
 
 		$rules['claimable'] = null === $post->user_id && null !== $actor->user_id && null !== $post->cookie_id && $post->cookie_id === $actor->cookie_id
 			&& null === match ( $base_type ) {
@@ -395,11 +399,6 @@ final class Permissions {
 						$rules['claimable'] = false;
 					}
 				}
-			}
-
-			if ( $child->closed_by_id === $post->id ) {
-				// Other questions are closed as duplicates of this one.
-				$rules['deletable'] = false;
 			}
 		}
 

@@ -301,6 +301,26 @@ final class Post_Service_Test extends Test_Case {
 		$this->assertSame( 'duplicate', $this->event_params( 'q_close' )['reason'] );
 	}
 
+	public function test_a_question_other_questions_duplicate_cannot_be_deleted(): void {
+		$original  = $this->ask( $this->user(), 'Original question title' );
+		$duplicate = $this->ask( $this->user(), 'Duplicate question title' );
+		Services::post_service()->close_as_duplicate( $this->user( 'editor' ), $duplicate, $original->id );
+		Services::post_service()->set_question_status( Actor::system(), $original, Post::STATUS_HIDDEN );
+		$hidden = $this->post( $original->id );
+
+		// As Question2Answer passes the duplicates to the rules (`qa-include/pages/question.php`): no button, no deletion.
+		$moderator = $this->user( 'administrator' );
+		$this->assertFalse( Services::permissions()->post_rules( $hidden, $moderator )['deletable'] );
+		$this->assertInstanceOf( WP_Error::class, Services::post_service()->delete_question( Actor::system(), $hidden ) );
+		$this->assertNotNull( Services::posts()->find( $original->id ) );
+		$this->assertSame( $original->id, $this->post( $duplicate->id )->closed_by_id );
+
+		// Once the duplicate is reopened, the question can go.
+		Services::post_service()->reopen( Actor::system(), $this->post( $duplicate->id ) );
+		$this->assertTrue( Services::permissions()->post_rules( $this->post( $original->id ), $moderator )['deletable'] );
+		$this->assertTrue( Services::post_service()->delete_question( Actor::system(), $this->post( $original->id ) ) );
+	}
+
 	public function test_moving_a_question_moves_its_posts(): void {
 		$categories = Services::categories();
 		$old        = $categories->create( null, 'Old category' );

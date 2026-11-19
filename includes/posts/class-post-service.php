@@ -682,6 +682,9 @@ final class Post_Service {
 		if ( $this->has_dependents( $question->id, $note?->id ) ) {
 			return new WP_Error( 'has_dependents', __( 'Questions with answers or comments cannot be deleted.', 'easyq' ) );
 		}
+		if ( $this->posts->has_duplicates( $question->id ) ) {
+			return new WP_Error( 'has_duplicates', __( 'Questions that others are closed as duplicates of cannot be deleted.', 'easyq' ) );
+		}
 
 		$params = array(
 			'post_id' => $question->id,

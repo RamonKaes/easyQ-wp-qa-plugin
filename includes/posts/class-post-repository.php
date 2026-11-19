@@ -242,6 +242,21 @@ final class Post_Repository {
 	}
 
 	/**
+	 * Checks whether other questions are closed as duplicates of a question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $question_id Question ID.
+	 * @return bool
+	 */
+	public function has_duplicates( int $question_id ): bool {
+		$wpdb = DB::wpdb();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		return null !== $wpdb->get_var( $wpdb->prepare( "SELECT 1 FROM %i WHERE closed_by_id = %d AND type IN ('Q', 'Q_HIDDEN', 'Q_QUEUED') LIMIT 1", Schema::table( 'posts' ), $question_id ) );
+	}
+
+	/**
 	 * Inserts a post.
 	 *
 	 * @since 0.1.0
