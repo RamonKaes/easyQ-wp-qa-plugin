@@ -172,7 +172,7 @@ final class User_Fields_Screen {
 			wp_die( esc_html__( 'Sorry, you are not allowed to manage the user fields.', 'easyq' ), 403 );
 		}
 
-		foreach ( array( 'easyq_action', 'field', 'name', 'label', 'type', 'permit', 'position', 'on_register' ) as $key ) {
+		foreach ( array( 'easyq_action', 'field', 'name', 'label', 'type', 'permit', 'position', 'on_register', 'confirm' ) as $key ) {
 			$this->input[ $key ] = isset( $post[ $key ] ) && is_scalar( $post[ $key ] ) ? (string) $post[ $key ] : '';
 		}
 
@@ -207,11 +207,18 @@ final class User_Fields_Screen {
 				break;
 
 			case 'delete':
-				if ( null !== $field ) {
+				// The values of every user go with the field: as Question2Answer, only after a check box.
+				if ( null === $field ) {
+					return self::url( array( 'message' => 'missing' ) );
+				}
+				if ( '' !== $this->input['confirm'] ) {
 					$fields->delete( $field->id );
+
+					return self::url( array( 'message' => 'deleted' ) );
 				}
 
-				return self::url( array( 'message' => null === $field ? 'missing' : 'deleted' ) );
+				$result = new WP_Error( 'confirm', __( 'Please confirm first.', 'easyq' ) );
+				break;
 
 			default:
 				$result = new WP_Error( 'action', __( 'Unknown action.', 'easyq' ) );
@@ -342,6 +349,15 @@ final class User_Fields_Screen {
 		wp_nonce_field( self::NONCE );
 		echo '<input type="hidden" name="easyq_action" value="delete">';
 		printf( '<input type="hidden" name="field" value="%d">', (int) $field->id );
+		$message = $this->error( 'confirm' );
+		printf(
+			'<p><label for="easyq-user-field-confirm"><input type="checkbox" id="easyq-user-field-confirm" name="confirm" value="1" required%1$s> %2$s</label></p>',
+			'' === $message ? '' : ' aria-invalid="true" aria-describedby="easyq-user-field-confirm-error"',
+			esc_html__( 'I understand that the field and its values are deleted for good.', 'easyq' )
+		);
+		if ( '' !== $message ) {
+			printf( '<p class="notice-error" id="easyq-user-field-confirm-error"><strong>%s</strong></p>', esc_html( $message ) );
+		}
 		// A name of its own: the edit form above has the button `submit`, and an ID must not repeat.
 		submit_button( __( 'Delete User Field', 'easyq' ), 'delete', 'easyq-delete', false );
 		echo '</form>';

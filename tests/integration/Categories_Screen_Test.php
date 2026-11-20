@@ -230,10 +230,24 @@ final class Categories_Screen_Test extends Test_Case {
 				array(
 					'easyq_action' => 'delete',
 					'category'     => (string) $parent,
+					'confirm'      => '1',
 				)
 			)
 		);
 		$this->assertNotNull( Services::categories()->find( $parent ) );
+
+		// As Question2Answer: only with the check box (F-171), which the form requires.
+		$this->assertStringContainsString( 'name="confirm" value="1" required', $html );
+		$this->assertNull(
+			$screen->handle(
+				array(
+					'easyq_action' => 'delete',
+					'category'     => (string) $child,
+					'reassign'     => (string) $parent,
+				)
+			)
+		);
+		$this->assertNotNull( Services::categories()->find( $child ) );
 
 		$this->assertSame(
 			Categories_Screen::url( array( 'message' => 'deleted' ) ),
@@ -242,6 +256,7 @@ final class Categories_Screen_Test extends Test_Case {
 					'easyq_action' => 'delete',
 					'category'     => (string) $child,
 					'reassign'     => (string) $parent,
+					'confirm'      => '1',
 				)
 			)
 		);

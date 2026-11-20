@@ -198,12 +198,25 @@ final class Users_Admin_Screens_Test extends Test_Case {
 		$this->assertStringContainsString( '<h1>Edit User Field</h1>', $html );
 		$this->assertMatchesRegularExpression( '/<option value="2">After “location”<\/option>/', $html );
 
+		// The values of every user go with the field: only with the check box (F-171), which the form requires.
+		$this->assertStringContainsString( 'name="confirm" value="1" required', $html );
+		$this->assertNull(
+			$screen->handle(
+				array(
+					'easyq_action' => 'delete',
+					'field'        => (string) $field->id,
+				)
+			)
+		);
+		$this->assertNotNull( Services::user_fields()->find( $field->id ) );
+
 		$this->assertSame(
 			User_Fields_Screen::url( array( 'message' => 'deleted' ) ),
 			$screen->handle(
 				array(
 					'easyq_action' => 'delete',
 					'field'        => (string) $field->id,
+					'confirm'      => '1',
 				)
 			)
 		);

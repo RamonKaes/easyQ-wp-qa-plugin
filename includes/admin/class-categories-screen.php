@@ -181,7 +181,7 @@ final class Categories_Screen {
 		}
 
 		$categories = Services::categories();
-		foreach ( array( 'easyq_action', 'title', 'slug', 'description', 'parent', 'position', 'category', 'reassign' ) as $key ) {
+		foreach ( array( 'easyq_action', 'title', 'slug', 'description', 'parent', 'position', 'category', 'reassign', 'confirm' ) as $key ) {
 			$this->input[ $key ] = isset( $post[ $key ] ) && is_scalar( $post[ $key ] ) ? (string) $post[ $key ] : '';
 		}
 
@@ -229,6 +229,12 @@ final class Categories_Screen {
 				$category = null === $id ? null : $categories->find( $id );
 				if ( null === $category ) {
 					return self::url( array( 'message' => 'missing' ) );
+				}
+
+				// As Question2Answer asks for a check box before it deletes a category.
+				if ( '' === $this->input['confirm'] ) {
+					$result = new WP_Error( 'confirm', __( 'Please confirm first.', 'easyq' ) );
+					break;
 				}
 
 				$result = $categories->delete( $category->id, self::id( $this->input['reassign'] ) );
@@ -470,6 +476,7 @@ final class Categories_Screen {
 		$this->render_category_select( 'reassign', $others, $category->parent_id, __( 'No category', 'easyq' ) );
 		$this->render_error( 'reassign' );
 		echo '</p>';
+		$this->render_confirm( __( 'I understand that the category is deleted for good.', 'easyq' ) );
 		// A name of its own: the edit form above has the button `submit`, and an ID must not repeat.
 		submit_button( __( 'Delete Category', 'easyq' ), 'delete', 'easyq-delete', false );
 		echo '</form>';
@@ -728,6 +735,23 @@ final class Categories_Screen {
 	}
 
 	/**
+	 * Renders the check box that confirms a deletion, with its error.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $label Label.
+	 */
+	private function render_confirm( string $label ): void {
+		$invalid = '' !== $this->error( 'confirm' );
+		printf(
+			'<p><label for="easyq-category-confirm"><input type="checkbox" id="easyq-category-confirm" name="confirm" value="1" required%1$s> %2$s</label></p>',
+			$invalid ? ' aria-invalid="true" aria-describedby="easyq-category-confirm-error"' : '',
+			esc_html( $label )
+		);
+		$this->render_error( 'confirm' );
+	}
+
+	/**
 	 * Renders the error of a field.
 	 *
 	 * @since 0.1.0
@@ -773,7 +797,7 @@ final class Categories_Screen {
 		}
 
 		// Errors that belong to no field of the form are shown at the name.
-		$field_codes = array( 'title', 'slug', 'description', 'parent', 'reassign', 'children', 'not_found' );
+		$field_codes = array( 'title', 'slug', 'description', 'parent', 'reassign', 'children', 'not_found', 'confirm' );
 		$codes       = 'title' === $field ? array_merge( array( 'title' ), array_diff( array_map( 'strval', $this->errors->get_error_codes() ), $field_codes ) ) : array( $field );
 		if ( 'reassign' === $field ) {
 			$codes = array_merge( $codes, array( 'children', 'not_found' ) );
