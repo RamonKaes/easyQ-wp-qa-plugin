@@ -99,7 +99,7 @@ final class Profile_Screen {
 				<th scope="row"><?php esc_html_e( 'Points', 'easyq' ); ?></th>
 				<td>
 					<?php echo esc_html( number_format_i18n( Services::points()->get( $user->ID ) ) ); ?>
-					<?php if ( current_user_can( Capabilities::MANAGE ) ) : ?>
+					<?php if ( $this->can_set_bonus( Actor::current(), $user->ID ) ) : ?>
 						<p>
 							<label for="easyq-bonus"><?php esc_html_e( 'Bonus points', 'easyq' ); ?></label>
 							<input type="number" class="small-text" id="easyq-bonus" name="easyq_bonus" value="<?php echo esc_attr( (string) $this->bonus( $user->ID ) ); ?>" min="<?php echo esc_attr( (string) Points::MIN_BONUS ); ?>" max="<?php echo esc_attr( (string) Points::MAX_BONUS ); ?>" step="1" />
@@ -228,7 +228,7 @@ final class Profile_Screen {
 				),
 			)
 		) : false;
-		if ( user_can( $editor_id, Capabilities::MANAGE ) && is_int( $bonus ) ) {
+		if ( $this->can_set_bonus( $editor, $user_id ) && is_int( $bonus ) ) {
 			if ( $bonus !== $this->bonus( $user_id ) ) {
 				Services::points()->set_bonus( $user_id, $bonus );
 			}
@@ -369,6 +369,21 @@ final class Profile_Screen {
 			</td>
 		</tr>
 		<?php
+	}
+
+	/**
+	 * Checks whether the editor may change the bonus points of a user: a manager, not on
+	 * their own account.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Actor $editor  Who edits the profile.
+	 * @param int   $user_id The user being edited.
+	 * @return bool
+	 */
+	private function can_set_bonus( Actor $editor, int $user_id ): bool {
+		// As Question2Answer, nobody changes their own account here (`qa-include/pages/user-profile.php`).
+		return null !== $editor->user_id && $editor->user_id !== $user_id && user_can( $editor->user_id, Capabilities::MANAGE );
 	}
 
 	/**

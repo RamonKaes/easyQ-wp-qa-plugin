@@ -138,6 +138,22 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertFalse( User_Status::awaits_approval( $user ), 'Saving levels leaves the status alone.' );
 	}
 
+	public function test_nobody_gives_themselves_bonus_points(): void {
+		// A Q&A administrator who may not manage the options of the site, as Question2Answer refuses the own account.
+		$manager = self::factory()->user->create();
+		Services::user_levels()->set_level( Actor::system(), $manager, \EasyQ\Users\Levels::ADMIN );
+		$this->assertTrue( user_can( $manager, 'easyq_manage' ) );
+		$this->assertFalse( user_can( $manager, 'manage_options' ) );
+		$other = self::factory()->user->create();
+
+		$this->assertStringNotContainsString( 'name="easyq_bonus"', $this->render( $manager, $manager ) );
+		$this->screen->save( $manager, array( 'easyq_bonus' => '5000' ), new Actor( $manager ) );
+		$this->assertSame( 0, $this->bonus_of( $manager ) );
+
+		// The profiles of others offer it; saving them needs edit_user of core as well (see the column test).
+		$this->assertStringContainsString( 'name="easyq_bonus"', $this->render( $manager, $other ) );
+	}
+
 	public function test_the_bonus_stays_within_its_column(): void {
 		$admin = $this->administrator();
 		$user  = self::factory()->user->create();
