@@ -102,7 +102,7 @@ final class Users_Render {
 			);
 		} else {
 			$found = null === self::permission_error( $sort )
-				? Services::user_query()->find( $sort, $page, $per_page )
+				? Services::user_query()->find( $sort, $page, $per_page, Block_Context::viewer()->user_id )
 				: array(
 					'ids'   => array(),
 					'total' => 0,

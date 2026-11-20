@@ -38,9 +38,21 @@ final class User_Query_Test extends Test_Case {
 		$older = self::factory()->user->create( array( 'user_registered' => '2020-01-01 00:00:00' ) );
 		$newer = self::factory()->user->create( array( 'user_registered' => '2026-01-01 00:00:00' ) );
 
-		$ids = Services::user_query()->find( 'newest', 1, 100 )['ids'];
+		$quiet = self::factory()->user->create( array( 'user_registered' => '2026-02-01 00:00:00' ) );
+		$this->take_part( $older );
+		$this->take_part( $newer );
 
+		// Who may list users sees every user by registration, as core sorts users by it only for them.
+		$ids = Services::user_query()->find( 'newest', 1, 100, $this->administrator() )['ids'];
 		$this->assertLessThan( array_search( $older, $ids, true ), array_search( $newer, $ids, true ) );
+		$this->assertContains( $quiet, $ids );
+
+		// Others see the profiles they may open: users who took part (F-217).
+		foreach ( array( null, (int) $this->user()->user_id ) as $viewer ) {
+			$found = Services::user_query()->find( 'newest', 1, 100, $viewer );
+			$this->assertSame( array( $newer, $older ), array_values( array_intersect( $found['ids'], array( $newer, $older, $quiet ) ) ) );
+			$this->assertSame( count( $found['ids'] ), $found['total'] );
+		}
 	}
 
 	public function test_lists_users_with_special_levels_highest_first(): void {
@@ -55,10 +67,15 @@ final class User_Query_Test extends Test_Case {
 		$basic  = self::factory()->user->create();
 		Services::user_levels()->set_level( Actor::system(), $expert, Levels::EXPERT );
 
-		$found = Services::user_query()->find( 'special', 1, 10 );
+		$found = Services::user_query()->find( 'special', 1, 10, $this->administrator() );
 
-		$this->assertSame( array( $editor, $expert ), $found['ids'] );
+		$this->assertSame( $editor, $found['ids'][0] );
+		$this->assertContains( $expert, $found['ids'] );
 		$this->assertNotContains( $basic, $found['ids'] );
+
+		// Others see only the special users who took part (F-217).
+		$this->take_part( $expert );
+		$this->assertSame( array( $expert ), Services::user_query()->find( 'special', 1, 10, (int) $this->user()->user_id )['ids'] );
 	}
 
 	public function test_titles_come_from_levels_or_points(): void {

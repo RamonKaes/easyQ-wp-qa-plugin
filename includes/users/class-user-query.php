@@ -64,18 +64,24 @@ final class User_Query {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $sort     One of the SORTS keys.
-	 * @param int    $page     Page number, starting at 1.
-	 * @param int    $per_page Users per page.
+	 * The newest and the special users are the profiles the viewer may see (is_shown()): users
+	 * who took part, or every user for those who may list users, as core sorts users by their
+	 * registration only for them. The list by points has only users who took part anyway.
+	 *
+	 * @param string   $sort      One of the SORTS keys.
+	 * @param int      $page      Page number, starting at 1.
+	 * @param int      $per_page  Users per page.
+	 * @param int|null $viewer_id Viewer, null for a visitor.
 	 * @return array{ids: int[], total: int}
 	 */
-	public function find( string $sort, int $page, int $per_page ): array {
+	public function find( string $sort, int $page, int $per_page, ?int $viewer_id = null ): array {
 		$per_page = max( 1, min( self::MAX_PER_PAGE, $per_page ) );
 		$offset   = ( max( 1, $page ) - 1 ) * $per_page;
+		$all      = null !== $viewer_id && user_can( $viewer_id, 'list_users' );
 
 		return match ( $sort ) {
-			'newest'  => $this->newest( $offset, $per_page ),
-			'special' => $this->special( $offset, $per_page ),
+			'newest'  => $this->newest( $offset, $per_page, $all ),
+			'special' => $this->special( $offset, $per_page, $all ),
 			default   => $this->by_points( $offset, $per_page ),
 		};
 	}
@@ -216,11 +222,26 @@ final class User_Query {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $offset Users to skip.
-	 * @param int $limit  Maximum number of users.
+	 * @param int  $offset Users to skip.
+	 * @param int  $limit  Maximum number of users.
+	 * @param bool $all    Whether the viewer may list every user; otherwise only users who took part.
 	 * @return array{ids: int[], total: int}
 	 */
-	private function newest( int $offset, int $limit ): array {
+	private function newest( int $offset, int $limit, bool $all ): array {
+		if ( ! $all ) {
+			$wpdb  = DB::wpdb();
+			$table = Schema::table( 'userpoints' );
+
+			return array(
+				'ids'   => DB::int_col(
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+					$wpdb->get_col( $wpdb->prepare( 'SELECT u.ID FROM %i AS u INNER JOIN %i AS p ON p.user_id = u.ID ORDER BY u.user_registered DESC, u.ID DESC LIMIT %d OFFSET %d', $wpdb->users, $table, $limit, $offset ) )
+				),
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+				'total' => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i AS u INNER JOIN %i AS p ON p.user_id = u.ID', $wpdb->users, $table ) ),
+			);
+		}
+
 		$query = new WP_User_Query(
 			array(
 				'orderby'     => array(
@@ -264,11 +285,12 @@ final class User_Query {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $offset Users to skip.
-	 * @param int $limit  Maximum number of users.
+	 * @param int  $offset Users to skip.
+	 * @param int  $limit  Maximum number of users.
+	 * @param bool $all    Whether the viewer may list every user; otherwise only users who took part.
 	 * @return array{ids: int[], total: int}
 	 */
-	private function special( int $offset, int $limit ): array {
+	private function special( int $offset, int $limit, bool $all ): array {
 		$ids   = $this->levels->special_user_ids();
 		$roles = array_keys( array_filter( $this->levels->role_levels(), static fn ( int $level ): bool => $level >= Levels::EXPERT ) );
 
@@ -282,8 +304,10 @@ final class User_Query {
 			$ids     = array_merge( $ids, self::ids( $by_role ) );
 		}
 
+		$ids   = array_values( array_unique( $ids ) );
+		$ids   = $all ? $ids : Services::points()->with_row( $ids );
 		$users = array();
-		foreach ( array_unique( $ids ) as $id ) {
+		foreach ( $ids as $id ) {
 			$level = $this->levels->maximum_level( $id );
 			$user  = get_userdata( $id );
 			if ( false !== $user && null !== $level && $level >= Levels::EXPERT && $this->is_member( $user ) ) {

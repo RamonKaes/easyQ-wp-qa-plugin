@@ -217,7 +217,7 @@ final class Users_Controller extends Controller {
 				'total' => count( $ids ),
 			);
 		} else {
-			$found = Services::user_query()->find( $sort, $page, $per_page );
+			$found = Services::user_query()->find( $sort, $page, $per_page, get_current_user_id() > 0 ? get_current_user_id() : null );
 		}
 
 		Services::user_query()->prime( $found['ids'] );
