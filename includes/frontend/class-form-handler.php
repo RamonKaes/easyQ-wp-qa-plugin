@@ -213,7 +213,8 @@ final class Form_Handler {
 
 		$request = new WP_REST_Request( $method, '/' . Controller::NAMESPACE . $route );
 		foreach ( $values as $key => $value ) {
-			$request->set_param( $key, $value );
+			// The choice "no category" of a form is empty; the REST API takes it as null.
+			$request->set_param( $key, 'category' === $key && '' === $value ? null : $value );
 		}
 		// The delete button of a wall post deletes it for good, which the REST API asks to confirm.
 		if ( 'wall_delete' === $form ) {

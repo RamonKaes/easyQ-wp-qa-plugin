@@ -335,6 +335,40 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertStringContainsString( 'readonly', $html );
 	}
 
+	public function test_a_question_without_a_category_is_asked_from_the_form_where_allowed(): void {
+		$this->assertIsInt( Services::categories()->create( null, 'Some category' ) );
+		Options::update( 'posting', array( 'allow_no_category' => true ) );
+		$this->login();
+
+		// "No category" is sent empty; the REST API takes null (F-229).
+		$this->assertNotSame(
+			'',
+			$this->submit(
+				'ask',
+				array(
+					'title'    => 'A question without a category at all',
+					'content'  => 'Text.',
+					'category' => '',
+				)
+			)
+		);
+		$this->assertNull( $this->post( (int) Services::question_query()->find( array() )['posts'][0]->id )->category_id );
+
+		// A short title is reported at its field, not hidden behind the category.
+		$this->assertSame(
+			'',
+			$this->submit(
+				'ask',
+				array(
+					'title'    => 'Short',
+					'category' => '',
+				)
+			)
+		);
+		$this->assertNotSame( '', Flash::error( 'ask', 'title' ) );
+		$this->assertSame( '', Flash::error( 'ask', 'category' ) );
+	}
+
 	public function test_the_nonce_of_a_form_holds_for_its_own_post_and_action_only(): void {
 		$this->login( 'editor' );
 		$first  = $this->ask( $this->user(), 'A first question to close' );
