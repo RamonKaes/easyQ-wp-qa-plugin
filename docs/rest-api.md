@@ -219,7 +219,7 @@ category) and to the `move` action; a question may always keep the category it h
 | `PUT /email-templates/{name}` | Change `subject` and `body`; both are required, as an email needs them |
 | `DELETE /email-templates/{name}` | Go back to the default text; responds with `deleted` and `previous` |
 | `POST /email-templates/{name}/test` | Send the template with sample values to the current user; responds with `sent` and `to` |
-| `POST /unsubscribe` | Stop the emails about a post: `post` and `token` from the email, without logging in. Mail programs post here for a one-click unsubscribe (RFC 8058), from the `List-Unsubscribe` header. With `notify=confirm` the author of the post without an account confirms the address they gave instead (double opt-in); no email goes to it before |
+| `POST /unsubscribe` | Stop the emails about a post: `post` and `token` from the email, without logging in. Mail programs post here for a one-click unsubscribe (RFC 8058), from the `List-Unsubscribe` header. With `notify=confirm` and the token of the confirmation email, which holds for the address it was sent to, the author of the post without an account confirms that address instead (double opt-in); no email goes to it before. A changed address is asked again: each address once per post, three at most |
 
 ### Moderation
 
