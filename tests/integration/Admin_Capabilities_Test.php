@@ -7,6 +7,7 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Services;
 use ReflectionClass;
 use WPDieException;
 
@@ -228,6 +229,42 @@ final class Admin_Capabilities_Test extends Test_Case {
 			}
 		}
 
+		$this->assertSame( array(), $styled );
+	}
+
+	public function test_no_rendered_admin_screen_brings_a_style_of_its_own(): void {
+		// What the screens print, so that an attribute built from an argument of printf() is seen too.
+		require_once ABSPATH . 'wp-admin/includes/template.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
+		$question = $this->ask( $this->user(), 'A question listed on the screens' );
+		$this->answer( $this->user(), $question );
+		$this->assertIsInt( Services::categories()->create( null, 'A category of the screens' ) );
+		$styled   = array();
+		$rendered = 0;
+		$pagenow  = $GLOBALS['pagenow'] ?? null;
+
+		foreach ( array_keys( $this->menu() ) as $page ) {
+			$hook = (string) get_plugin_page_hookname( $page, 'easyq' );
+			// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- As wp-admin/admin.php sets them for a plugin page.
+			$GLOBALS['plugin_page'] = $page;
+			$GLOBALS['pagenow']     = 'admin.php';
+			$GLOBALS['title']       = null;
+			// phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
+			set_current_screen( $hook );
+			do_action( 'load-' . $hook ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- The hook of core's admin screens (wp-admin/admin.php).
+			ob_start();
+			do_action( $hook ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- The page hook of core (wp-admin/admin.php).
+			$html = (string) ob_get_clean();
+			++$rendered;
+			if ( 1 === preg_match( '/<[^>]+\sstyle\s*=/i', $html, $match ) ) {
+				$styled[] = $page . ': ' . $match[0];
+			}
+		}
+
+		unset( $GLOBALS['plugin_page'], $GLOBALS['title'] );
+		$GLOBALS['pagenow'] = $pagenow; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restored as it was.
+
+		$this->assertGreaterThanOrEqual( 9, $rendered );
 		$this->assertSame( array(), $styled );
 	}
 }

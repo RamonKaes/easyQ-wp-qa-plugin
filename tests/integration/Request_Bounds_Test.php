@@ -254,4 +254,24 @@ final class Request_Bounds_Test extends Test_Case {
 
 		$this->assertSame( array(), $found, 'Integers from a request go through EasyQ\Util\Number.' );
 	}
+
+	public function test_request_values_are_read_only_from_the_superglobals(): void {
+		// The guards of this class read $_GET, $_POST, $_REQUEST, $_COOKIE and $_SERVER; a value read
+		// another way (filter_input() reads the request as PHP got it, past them) would pass unseen.
+		$root  = dirname( __DIR__, 2 ) . '/includes';
+		$found = array();
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $root ) );
+		foreach ( $files as $file ) {
+			if ( 'php' !== $file->getExtension() ) {
+				continue;
+			}
+			foreach ( (array) file( $file->getPathname() ) as $number => $line ) {
+				if ( preg_match( '/\b(filter_input(_array)?|filter_has_var|getenv)\s*\(|\$HTTP_\w+_VARS\b|\bphp:\/\/input\b/', (string) $line ) ) {
+					$found[] = $file->getFilename() . ':' . ( $number + 1 );
+				}
+			}
+		}
+
+		$this->assertSame( array(), $found );
+	}
 }

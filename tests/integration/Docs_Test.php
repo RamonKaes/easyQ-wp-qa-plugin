@@ -147,7 +147,7 @@ final class Docs_Test extends Test_Case {
 	 */
 	private function applied_filters( string $source ): array {
 		// Every filter easyQ applies: its own, and those of core and others it applies too.
-		preg_match_all( '/\bapply_filters\(\s*[\'"]([a-z][^\'"]+)[\'"]/', $source, $matches );
+		preg_match_all( '/\bapply_filters(?:_ref_array|_deprecated)?\(\s*[\'"]([a-z][^\'"]+)[\'"]/', $source, $matches );
 
 		return array_map( static fn ( string $name ): string => (string) preg_replace( '/\{\$(\w+)\}/', '{$1}', $name ), $matches[1] );
 	}
@@ -232,8 +232,12 @@ final class Docs_Test extends Test_Case {
 		$filters = substr( $hooks, (int) strpos( $hooks, '## Filters' ) );
 		$filters = substr( $filters, 0, (int) strpos( $filters, "\n## ", 1 ) );
 		preg_match_all( '/^\| `(easyq_[^`]+)` \|/m', $filters, $documented );
-		preg_match_all( '/\bdo_action\(\s*[\'"]([a-z][^\'"]+)[\'"]/', $source, $actions );
-		$this->assertSame( array(), array_values( array_filter( array_unique( $actions[1] ), static fn ( string $name ): bool => ! str_starts_with( $name, 'easyq_' ) && ! str_contains( $hooks, "`$name`" ) ) ), 'Hooks of others easyQ fires without documentation.' );
+		preg_match_all( '/\bdo_action(?:_ref_array|_deprecated)?\(\s*[\'"]([a-z][^\'"]+)[\'"]/', $source, $actions );
+		// Every action fired with a name of its own is documented: those of others, and easyQ's own
+		// (`easyq_event` and the events, whose dynamic `easyq_{event}` stands for the list below).
+		$literal = array_filter( array_unique( $actions[1] ), static fn ( string $name ): bool => ! str_contains( $name, '{' ) );
+		$this->assertContains( 'easyq_event', $literal );
+		$this->assertSame( array(), array_values( array_filter( $literal, static fn ( string $name ): bool => ! str_contains( $hooks, "`$name`" ) ) ), 'Actions easyQ fires without documentation.' );
 		$this->assertNotSame( array(), $documented[1] );
 		$this->assertSame( array(), array_values( array_diff( $documented[1], $applied ) ), 'Documented filters that do not exist.' );
 
@@ -345,6 +349,7 @@ final class Docs_Test extends Test_Case {
 		$log = "## 14. Decisions log\n| 1 | a |\n| 2 | b |\n";
 		$this->assertSame( array( '9' ), $this->missing_decisions( 'decision 1, decisions 2 and 9', $log ) );
 		$this->assertSame( array( 'easyq_email_{name}', 'easyq_a', 'other' ), $this->applied_filters( 'apply_filters( "easyq_email_{$name}", $a ); apply_filters( \'easyq_a\', 1 ); apply_filters( \'other\', 1 );' ), 'Filters of others count too.' );
+		$this->assertSame( array( 'easyq_b', 'easyq_c' ), $this->applied_filters( 'apply_filters_ref_array( \'easyq_b\', array( 1 ) ); apply_filters_deprecated( \'easyq_c\', array( 1 ), \'0.2.0\' );' ), 'Every form of applying a filter counts.' );
 		$this->assertSame( '/posts/{}/actions/{}', $this->normal_route( '/posts/(?P<id>[\d]+)/actions/(?P<action>[a-z_]+)' ) );
 		$this->assertSame( '/posts/{}', $this->normal_route( '/posts/{id}' ) );
 	}

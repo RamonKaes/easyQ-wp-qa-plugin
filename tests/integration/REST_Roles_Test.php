@@ -148,16 +148,36 @@ final class REST_Roles_Test extends REST_Test_Case {
 	}
 
 	public function test_writing_routes_check_in_their_permission_callback(): void {
-		$open = array();
+		$category = Services::categories()->create( null, 'Target' );
+		$this->assertIsInt( $category );
+		$post = $this->ask( $this->user() )->id;
+		wp_set_current_user( 0 );
+		$open    = array();
+		$checked = 0;
+
+		// The callback itself, run as a visitor: a closure that returns true counts as open, as
+		// `__return_true` does; the REST API handbook keeps open callbacks for routes that only read.
 		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
 			foreach ( $handlers as $handler ) {
-				// The REST API handbook keeps `__return_true` for public routes that only read.
-				if ( array() !== self::write_methods( array( $handler ) ) && '__return_true' === ( $handler['permission_callback'] ?? null ) ) {
-					$open[] = $route;
+				foreach ( self::write_methods( array( $handler ) ) as $method ) {
+					$names   = array();
+					$request = new WP_REST_Request( $method, $this->filled( $route, $post, $names ) );
+					preg_match( '@^' . $route . '$@i', $request->get_route(), $matches );
+					$request->set_url_params( array_filter( $matches, 'is_string', ARRAY_FILTER_USE_KEY ) );
+					foreach ( self::required_params( array( $handler ), $method, $category ) as $name => $value ) {
+						$request->set_param( $name, $value );
+					}
+					++$checked;
+
+					$key = $method . ' ' . (string) preg_replace( array( '#^/easyq/v1#', '/\(\?P<\w+>(?:[^()]|\([^()]*\))*\)/' ), array( '', '{}' ), $route );
+					if ( true === call_user_func( $handler['permission_callback'], $request ) && ! isset( self::OPEN_TO_VISITORS[ $key ] ) ) {
+						$open[] = $key;
+					}
 				}
 			}
 		}
 
+		$this->assertGreaterThan( 30, $checked );
 		$this->assertSame( array(), $open );
 	}
 
