@@ -445,7 +445,7 @@ final class Privacy {
 		$done   = count( $keys ) <= $offset + Post_Data::PER_PAGE;
 		$keys   = array_slice( $keys, $offset, Post_Data::PER_PAGE );
 
-		$of = static fn ( string $type ): array => array_map( static fn ( array $key ): int => (int) $key[1], array_values( array_filter( $keys, static fn ( array $key ): bool => $type === $key[0] ) ) );
+		$of        = static fn ( string $type ): array => array_map( static fn ( array $key ): int => (int) $key[1], array_values( array_filter( $keys, static fn ( array $key ): bool => $type === $key[0] ) ) );
 		$questions = Services::posts()->find_many( $of( 'question' ) );
 		cache_users( $of( 'user' ) );
 
