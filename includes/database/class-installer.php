@@ -40,6 +40,24 @@ final class Installer {
 	public const DB_VERSION_OPTION = 'easyq_db_version';
 
 	/**
+	 * Option with the time of the last upgrade dbDelta() could not finish.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const FAILED_OPTION = 'easyq_db_upgrade_failed';
+
+	/**
+	 * Seconds before a request tries a failed upgrade again; activating the plugin tries at once.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	private const RETRY_AFTER = HOUR_IN_SECONDS;
+
+	/**
 	 * Hooks the installer into WordPress.
 	 *
 	 * @since 0.1.0
@@ -125,39 +143,92 @@ final class Installer {
 	/**
 	 * Creates or upgrades tables and default options of the current site.
 	 *
+	 * One request at a time: the first visits after an update arrive together, and two installs
+	 * at once collide ("already exists", a duplicate default field). A request that finds the
+	 * install running goes on with the schema as it is, and the next one checks again.
+	 *
 	 * @since 0.1.0
+	 *
+	 * @param bool $only_if_outdated Whether to stop if another request has finished the upgrade meanwhile.
 	 */
-	public static function install_site(): void {
-		$first = 0 === self::installed_version();
-		Schema::install();
-		Schema::register_meta_tables();
-
-		// The version is saved only when every table is in place, so a later request tries again.
-		if ( array() !== Schema::missing_tables() ) {
+	public static function install_site( bool $only_if_outdated = false ): void {
+		$wpdb = DB::wpdb();
+		$lock = $wpdb->prefix . 'easyq_install';
+		// A lock of MySQL, released when the connection ends, so a request that dies leaves none behind.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A lock, not data.
+		if ( '1' !== (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 0)', $lock ) ) ) {
 			return;
 		}
 
-		Options::install();
-		// The default field comes with the first install only; an upgrade keeps the owner's choice.
-		if ( $first ) {
-			( new User_Fields() )->install_defaults();
+		try {
+			if ( $only_if_outdated && self::stored_version() >= self::DB_VERSION ) {
+				return;
+			}
+
+			$first = 0 === self::stored_version();
+			Schema::install();
+			Schema::register_meta_tables();
+
+			// The version is saved only when every table is in place and dbDelta() has nothing left
+			// to change, so that Site Health and a later request see the upgrade as not done.
+			if ( array() !== Schema::missing_tables() || array() !== Schema::pending_changes() ) {
+				update_option( self::FAILED_OPTION, time(), false );
+				return;
+			}
+
+			Options::install();
+			// The default field comes with the first install only; an upgrade keeps the owner's choice.
+			if ( $first ) {
+				( new User_Fields() )->install_defaults();
+			}
+
+			update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
+			delete_option( self::FAILED_OPTION );
+
+			// Adds the Q&A routes to the rewrite rules on the next request.
+			delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
+		} finally {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A lock, not data.
+			$wpdb->get_var( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
 		}
-
-		update_option( self::DB_VERSION_OPTION, self::DB_VERSION, true );
-
-		// Adds the Q&A routes to the rewrite rules on the next request.
-		delete_option( \EasyQ\Frontend\Router::RULES_OPTION );
 	}
 
 	/**
 	 * Installs or upgrades the current site if its schema version is outdated.
 	 *
+	 * After an upgrade dbDelta() could not finish, requests wait an hour before they try again,
+	 * so that not every request runs it; Site Health shows what is left meanwhile.
+	 *
 	 * @since 0.1.0
 	 */
 	public static function maybe_upgrade(): void {
-		if ( self::installed_version() < self::DB_VERSION ) {
-			self::install_site();
+		if ( self::installed_version() >= self::DB_VERSION ) {
+			return;
 		}
+
+		$failed = get_option( self::FAILED_OPTION );
+		if ( is_numeric( $failed ) && (int) $failed > time() - self::RETRY_AFTER ) {
+			return;
+		}
+
+		self::install_site( true );
+	}
+
+	/**
+	 * Returns the schema version as stored, past the object cache, which another request
+	 * may have changed meanwhile.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int
+	 */
+	private static function stored_version(): int {
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Read as stored, under the install lock.
+		$version = $wpdb->get_var( $wpdb->prepare( 'SELECT option_value FROM %i WHERE option_name = %s', $wpdb->options, self::DB_VERSION_OPTION ) );
+		wp_cache_delete( self::DB_VERSION_OPTION, 'options' );
+
+		return is_numeric( $version ) ? (int) $version : 0;
 	}
 
 	/**
