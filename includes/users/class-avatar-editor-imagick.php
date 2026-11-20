@@ -11,6 +11,8 @@ use Exception;
 use WP_Error;
 use WP_Image_Editor_Imagick;
 
+defined( 'ABSPATH' ) || exit;
+
 /**
  * The image editor of core, with one more step: removing every profile but the colour
  * profiles.

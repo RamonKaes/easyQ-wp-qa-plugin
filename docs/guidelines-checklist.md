@@ -37,7 +37,7 @@ code, and known vulnerabilities of the dependencies.
 | Header: name, description under 140 characters, version, `Requires at least`, `Requires PHP`, license, text domain, domain path | Met | `easyq.php` |
 | Prefix of at least four letters for everything global | Met | Namespace `EasyQ`; options, transients, meta, capabilities, hooks, blocks, REST namespace, cookies `easyq_` |
 | Only the main file and `uninstall.php` in the root; other files in folders | Met | `includes/`, `blocks/`, `src/`, `languages/`; tooling files are left out of the release archive (`.gitattributes`) |
-| `ABSPATH` check in files with code outside classes | Met | Every PHP file |
+| `ABSPATH` check in files with code outside classes | Met (`Direct_Access_Test`, since F-215 on 2026-11-20) | Every PHP file; `uninstall.php` checks `WP_UNINSTALL_PLUGIN` |
 | Admin code loaded with `is_admin()`, capabilities still checked | Met | `includes/class-plugin.php`, each screen checks its capability |
 | Activation creates tables and defaults | Met | `Database\Installer::activate()`, network-wide on multisite |
 | Deactivation removes temporary data only, never content | Met | `Installer::deactivate()` deletes the rewrite rules; flushing in the same request would add the easyQ rules again |
@@ -215,7 +215,7 @@ is WordPress 7.1.4; a file without a path prefix of the plugin is a file of core
 | --- | --- | --- | --- |
 | Header | Plugin Handbook, Header Requirements | `easyq.php`: all fields, description of 84 characters | Plugin Check |
 | Prefix | Plugin Handbook, Best Practices (at least four letters) | Namespace `EasyQ`, `easyq_` everywhere, the result arguments of the screens included, which `removable_query_args` removes | PHPCS `PrefixAllGlobals` |
-| `ABSPATH` check | Best Practices; Common Issues, "Direct file access" | Every file of `includes/admin/` and `includes/settings/`; `uninstall.php` checks `WP_UNINSTALL_PLUGIN` | Plugin Check |
+| `ABSPATH` check | Best Practices; Common Issues, "Direct file access" | Every PHP file of the plugin; `uninstall.php` checks `WP_UNINSTALL_PLUGIN` | `Direct_Access_Test` reads every file; Plugin Check did not report the one that lacked it (F-215) |
 | Uninstall | Plugin Handbook, Uninstall Methods | `uninstall.php`, `Uninstaller` | `Uninstaller_Test` |
 | Capability for every action | REST API Handbook, Adding Custom Endpoints; `wp-admin/options.php` (capability of the option page) | A `permission_callback` on each of the 41 routes; the handlers of the screens check `easyq_manage`; `option_page_capability_{group}` in `Settings\Registry` and `Mail\Templates` | Mutations of 2026-11-14 (red for 22 checks, green for 5: F-15, F-24) |
 | Sanitizing | Common Issues, "Sanitize" | Named keys with a sanitizer each in `Frontend\Form_Handler`; `sanitize_callback` of every setting | PHPCS `ValidatedSanitizedInput` |
