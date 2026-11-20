@@ -86,6 +86,12 @@ test.describe( 'Categories screen', () => {
 		await expect( page.getByLabel( 'Name' ) ).toHaveValue( 'Themes' );
 		await expect( page.getByLabel( 'Position' ) ).toHaveValue( '2' );
 
+		// The browser asks for the check box first, as Question2Answer does (F-171).
+		await page.getByRole( 'button', { name: 'Delete Category' } ).click();
+		await expect( page.getByText( 'Category deleted.' ) ).toHaveCount( 0 );
+		await page
+			.getByLabel( 'I understand that the category is deleted for good.' )
+			.check();
 		await page.getByRole( 'button', { name: 'Delete Category' } ).click();
 		await expect( page.getByText( 'Category deleted.' ) ).toBeVisible();
 		await expect(

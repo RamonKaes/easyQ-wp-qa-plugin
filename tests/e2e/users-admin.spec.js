@@ -102,6 +102,11 @@ test.describe( 'Points, user titles and user fields screens', () => {
 			page.getByRole( 'textbox', { name: 'Label' } )
 		).toHaveValue( 'Book' );
 
+		await page
+			.getByLabel(
+				'I understand that the field and its values are deleted for good.'
+			)
+			.check();
 		await page.getByRole( 'button', { name: 'Delete User Field' } ).click();
 		await expect( page.getByText( 'User field deleted.' ) ).toBeVisible();
 		await expect( list.getByText( 'favourite-book' ) ).toHaveCount( 0 );
