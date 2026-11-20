@@ -84,8 +84,8 @@ final class Uninstaller {
 			restore_current_blog();
 		}
 
-		// Sites deleted before keep no data of their own; their meta goes in any case.
-		self::delete_meta_of_deleted_sites( array_map( 'intval', $site_ids ) );
+		// Sites deleted before keep no data of their own: their tables and meta go in any case.
+		self::remove_data_of_deleted_sites();
 
 		// User meta is shared by all sites of a network; keep it while any site keeps its data.
 		if ( $all_opted_in ) {
@@ -215,6 +215,51 @@ final class Uninstaller {
 		foreach ( array_filter( $keys, 'is_string' ) as $key ) {
 			delete_metadata( 'user', 0, $key, '', true );
 		}
+	}
+
+	/**
+	 * Removes the tables and the user meta of easyQ that sites deleted from the network left
+	 * behind.
+	 *
+	 * Core drops only the tables it knows and those a loaded plugin names
+	 * (`wp_uninitialize_site()`, `wpmu_drop_tables`). When easyQ is active on some sites only,
+	 * the network admin that deletes one does not load it, so its tables, with posts, email
+	 * and IP addresses, would stay for good. The daily run of every site with easyQ and the
+	 * uninstall remove them.
+	 *
+	 * @since 0.1.0
+	 */
+	public static function remove_data_of_deleted_sites(): void {
+		if ( ! is_multisite() ) {
+			return;
+		}
+
+		$wpdb     = DB::wpdb();
+		$site_ids = array_map(
+			'intval',
+			get_sites(
+				array(
+					'fields' => 'ids',
+					'number' => 0,
+				)
+			)
+		);
+		$own      = array_flip( Schema::table_names( '' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No API lists the tables of deleted sites.
+		$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->base_prefix ) . '%' ) );
+		foreach ( array_filter( $tables, 'is_string' ) as $table ) {
+			if ( 1 !== preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+)_(.+)$/', $table, $match ) || ! isset( $own[ $match[2] ] ) || in_array( (int) $match[1], $site_ids, true ) ) {
+				continue;
+			}
+			$sql = $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table );
+			if ( null !== $sql ) {
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; the tables of easyQ of a site that no longer exists.
+				$wpdb->query( $sql );
+			}
+		}
+
+		self::delete_meta_of_deleted_sites( $site_ids );
 	}
 
 	/**

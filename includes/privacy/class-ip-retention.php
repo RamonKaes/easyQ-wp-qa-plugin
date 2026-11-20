@@ -91,6 +91,9 @@ final class IP_Retention {
 	 * @since 0.1.0
 	 */
 	public static function run(): void {
+		// The data of sites deleted from the network while easyQ was not loaded goes too, see Uninstaller.
+		\EasyQ\Uninstaller::remove_data_of_deleted_sites();
+
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - self::days() * DAY_IN_SECONDS );
 
 		Services::posts()->clear_ips_before( $cutoff );

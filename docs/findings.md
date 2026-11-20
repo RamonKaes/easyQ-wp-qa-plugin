@@ -21,7 +21,7 @@ for good. The rules of the reviews and the matrix the findings refer to are in
   measurement or a reading that shows the opposite, never because an attempt to
   reproduce it failed.
 
-The next free number is F-244.
+The next free number is F-245.
 
 ## Open
 
@@ -135,7 +135,6 @@ finding of its class.
 | should | `aria-busy` stays when `navigateTo()` throws after a successful post (the router module fails to load). | The answer is stored but not shown, and the button stays disabled. | A browser test that blocks the router module after the POST. |
 | should | Deactivating on a network and uninstalling walk up to 10,000 sites in one request (`class-installer.php:97-108`, `Uninstaller::run()`). | The request ends halfway, part of the sites keep their data. | A network with thousands of sites. |
 | should | The count of posts waiting for approval runs twice per admin page and once per frontend page for moderators, without a cache. | A costly count with category levels on every page view of a moderator. | A site with many waiting posts and `EXPLAIN`. |
-| blocker | easyQ activated on one site of a network only, that site deleted from the network admin: easyQ is not loaded there (`wp-includes/load.php:1015` reads the plugins of the main site), so `wpmu_drop_tables` and `wp_uninitialize_site` of `Installer::register()` never run, and the tables with posts, emails and IP addresses stay without any way to erase them (`readme.txt`: IP addresses removed after 30 days). Read, not measured (cross-check 2026-11-19). | Personal data kept for good against the readme. | A network where easyQ is active on site 2 only; delete site 2 in the network admin over HTTP; `SHOW TABLES LIKE 'wp_2_easyq_%'`. |
 | should | A network user deleted while easyQ is active on one site only keeps their data there; moderators on a network can block only as super admins (F-218). | Data of a deleted user kept. | A network test with easyQ on a sub-site. |
 | should | When core removes the fallback for `event.preventDefault()` without `withSyncEvent()`, forms of the store go out twice (F-230). | Double posts. | A WordPress version without the fallback. |
 | low | A persistent object cache keeps `last_user_id` of others' posts and the levels of a deleted user (`User_Events::remove_data()`), and nothing is flushed on uninstall. | Stale author or level shown. | A Redis or Memcached drop-in. |
