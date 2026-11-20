@@ -16,6 +16,7 @@ use EasyQ\Mail\Notifications;
 use EasyQ\Mail\Unsubscribe;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
+use EasyQ\Settings\Options;
 
 /**
  * @covers \EasyQ\Frontend\Form_Handler
@@ -234,6 +235,62 @@ final class Form_Handler_Test extends REST_Test_Case {
 		}
 
 		$this->assertSame( $before, $count(), 'A successful request wrote to the options table.' );
+	}
+
+	public function test_answers_and_comments_are_edited_without_javascript(): void {
+		$question = $this->ask( $this->user() );
+		$author   = $this->user();
+		$answer   = $this->answer( $author, $question );
+		$comment  = $this->post( Services::post_service()->create_comment( $author, $question, $answer, 'A comment before the edit.' ) );
+		wp_set_current_user( (int) $author->user_id );
+
+		// Each kind goes to its own route (`edit_route()`).
+		$this->assertNotSame(
+			'',
+			$this->submit(
+				'edit',
+				array(
+					'easyq_post' => (string) $answer->id,
+					'content'    => 'The answer after the edit, without JavaScript.',
+				)
+			)
+		);
+		$this->assertSame( 'Your changes have been saved.', Flash::current()['message'] ?? null );
+		$this->assertNotSame(
+			'',
+			$this->submit(
+				'edit',
+				array(
+					'easyq_post' => (string) $comment->id,
+					'content'    => 'The comment after the edit.',
+				)
+			)
+		);
+
+		Services::posts()->forget( $answer->id );
+		Services::posts()->forget( $comment->id );
+		$this->assertSame( 'The answer after the edit, without JavaScript.', $this->post( $answer->id )->content );
+		$this->assertSame( 'The comment after the edit.', $this->post( $comment->id )->content );
+	}
+
+	public function test_private_messages_are_deleted_without_javascript(): void {
+		Options::update(
+			'users',
+			array(
+				'allow_private_messages' => true,
+				'show_message_history'   => true,
+			)
+		);
+		$to = get_userdata( (int) $this->user()->user_id );
+		$this->assertInstanceOf( \WP_User::class, $to );
+		$id = Services::messages()->send( $this->user(), $to, 'A message to delete.' );
+		$this->assertIsInt( $id );
+		wp_set_current_user( $to->ID );
+
+		$this->assertNotSame( '', $this->submit( 'message_delete', array( 'easyq_message' => (string) $id ) ) );
+		$this->assertSame( 'Deleted.', Flash::current()['message'] ?? null );
+		// Gone from the box of the recipient; the sender keeps it, as in Question2Answer.
+		$this->assertSame( 1, (int) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare( 'SELECT to_hidden FROM %i WHERE id = %d', \EasyQ\Database\Schema::table( 'messages' ), $id ) ) );
 	}
 
 	public function test_the_nonce_of_a_form_holds_for_its_own_post_and_action_only(): void {

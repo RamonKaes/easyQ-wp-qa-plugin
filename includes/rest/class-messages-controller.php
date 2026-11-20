@@ -278,6 +278,7 @@ final class Messages_Controller extends Controller {
 		$previous = $this->prepare_item_for_response( $post, $request )->get_data();
 		$deleted  = Services::messages()->delete_wall_post( $this->actor(), $id );
 		if ( $deleted instanceof WP_Error ) {
+			// Not covered: the permission check refused who may not delete (Messages_Test); this guards a change in between.
 			return $deleted;
 		}
 

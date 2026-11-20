@@ -88,6 +88,82 @@ final class Blocks_Test extends Test_Case {
 		$this->assertSame( array(), $missing );
 	}
 
+	public function test_the_newsletter_link_opens_the_form_to_stop_it_only_with_a_valid_token(): void {
+		$user = (int) $this->user()->user_id;
+		$_GET = array(
+			'newsletter' => 'stop',
+			'user'       => (string) $user,
+			'token'      => \EasyQ\Newsletter\Newsletter::token( $user ),
+		);
+
+		$html = $this->render( '<!-- wp:easyq/unsubscribe /-->' );
+		$this->assertStringContainsString( 'Do you want to stop the newsletter?', $html );
+		$this->assertStringContainsString( 'Stop the newsletter', $html );
+
+		$_GET['token'] = 'not-the-token';
+		$html          = $this->render( '<!-- wp:easyq/unsubscribe /-->' );
+		$this->assertStringContainsString( 'This link is not valid.', $html );
+		$this->assertStringNotContainsString( 'Stop the newsletter', $html );
+		$_GET = array();
+	}
+
+	public function test_the_account_form_offers_to_remove_an_uploaded_avatar(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$user = (int) $this->user()->user_id;
+		wp_set_current_user( $user );
+		$this->assertStringNotContainsString( 'name="remove_avatar"', $this->render( '<!-- wp:easyq/account /-->' ) );
+
+		\EasyQ\Users\Site_Meta::update( $user, \EasyQ\Users\Avatars::META, self::factory()->attachment->create() );
+		$this->assertStringContainsString( 'name="remove_avatar" value="1"', $this->render( '<!-- wp:easyq/account /-->' ) );
+	}
+
+	public function test_forms_say_why_they_are_refused(): void {
+		$messages = array(
+			'confirm'   => 'Please confirm your email address to take part.',
+			'approve'   => 'Your account must be approved by a moderator before you can take part.',
+			'userblock' => 'Your account is blocked.',
+			'ipblock'   => 'Posting is not possible from your IP address.',
+			'limit'     => 'You have reached the limit for this hour. Please try again later.',
+			'level'     => 'You are not allowed to do this.',
+		);
+		foreach ( $messages as $reason => $message ) {
+			$this->assertStringContainsString( $message, Forms::permission_message( $reason ), $reason );
+		}
+
+		// As a blocked user sees it on the ask form.
+		$user = (int) $this->user()->user_id;
+		\EasyQ\Users\User_Status::block( Actor::system(), $user );
+		wp_set_current_user( $user );
+		$this->assertStringContainsString( 'Your account is blocked.', $this->render( '<!-- wp:easyq/ask-form /-->', new Route( 'ask' ) ) );
+	}
+
+	public function test_the_asker_can_unselect_the_selected_answer(): void {
+		$asker    = $this->user();
+		$question = $this->ask( $asker, 'A question with a selected answer' );
+		$answer   = $this->answer( $this->user(), $question, 'The answer that was selected.' );
+		Services::post_service()->select_answer( $asker, $question, $answer->id );
+		wp_set_current_user( (int) $asker->user_id );
+		$definitions = ( new Templates( Block_Context::router() ) )->definitions();
+
+		$html = $this->render( $definitions['easyq-question']['content'], new Route( 'question', $this->post( $question->id ) ) );
+
+		$this->assertStringContainsString( 'value="unselect"', $html );
+		$this->assertStringContainsString( '>Unselect<', $html );
+	}
+
+	public function test_a_category_page_lists_the_questions_of_its_category(): void {
+		$category = Services::categories()->create( null, 'Gardening' );
+		$this->assertIsInt( $category );
+		$this->ask( $this->user(), 'A question about roses', 'Text.', array(), $category );
+		$this->ask( $this->user(), 'A question about cars' );
+		$definitions = ( new Templates( Block_Context::router() ) )->definitions();
+
+		$html = $this->render( $definitions['easyq-category']['content'], new Route( 'category', Services::categories()->find( $category ) ) );
+
+		$this->assertStringContainsString( 'A question about roses', $html );
+		$this->assertStringNotContainsString( 'A question about cars', $html );
+	}
+
 	public function test_renders_the_question_page(): void {
 		$question = $this->ask( $this->user(), 'A question for the page', 'The <b>details</b>.' );
 		$this->answer( $this->user(), $question, 'An answer for the page.' );
