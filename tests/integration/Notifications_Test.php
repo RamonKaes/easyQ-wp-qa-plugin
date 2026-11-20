@@ -265,6 +265,31 @@ final class Notifications_Test extends Test_Case {
 		$this->assertSame( array( 'someone@example.com' ), array_values( array_intersect( $this->addresses(), array( 'someone@example.com' ) ) ), 'The moderators hear about the queue; the author is asked once.' );
 	}
 
+	public function test_a_changed_address_of_an_author_without_an_account_is_confirmed_again(): void {
+		$visitor  = new Actor( null, 4711, '192.0.2.9' );
+		$question = $this->post( Services::post_service()->create_question( $visitor, 'A question with a confirmed address', 'Text.', '', array(), null, 'attacker@example.com' ) );
+		Unsubscribe::confirm( $question );
+		reset_phpmailer_instance();
+
+		// The author sets another address: it is asked to confirm, and gets nothing before (F-222).
+		Services::post_service()->edit_question( $visitor, $question, (string) $question->title, 'Text.', '', array(), 'victim@example.com' );
+		$this->assertSame( array( 'victim@example.com' ), $this->addresses() );
+		$this->assertStringContainsString( 'notify=confirm', $this->sent()[0]['body'] );
+		$this->assertFalse( Unsubscribe::is_confirmed( $this->post( $question->id ) ) );
+		reset_phpmailer_instance();
+
+		$this->answer_with_emails( $this->member( 'helper' ), $this->post( $question->id ) );
+		$this->assertSame( array(), $this->addresses() );
+
+		// The same for an answer.
+		$answer = $this->post( Services::post_service()->create_answer( $visitor, $this->post( $question->id ), 'An answer without an account.', '', 'attacker@example.com' ) );
+		Unsubscribe::confirm( $answer );
+		reset_phpmailer_instance();
+		Services::post_service()->edit_answer( $visitor, $answer, $this->post( $question->id ), 'An answer without an account.', '', 'victim@example.com' );
+		$this->assertFalse( Unsubscribe::is_confirmed( $this->post( $answer->id ) ) );
+		$this->assertSame( array( 'victim@example.com' ), $this->addresses() );
+	}
+
 	public function test_nobody_hears_about_comments_below_hidden_posts(): void {
 		$asker    = $this->member( 'asker' );
 		$question = $this->question_with_emails( $asker );

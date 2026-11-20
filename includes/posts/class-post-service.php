@@ -14,6 +14,7 @@ use EasyQ\Database\DB;
 use EasyQ\Database\Row;
 use EasyQ\Database\Schema;
 use EasyQ\Events\Events;
+use EasyQ\Mail\Unsubscribe;
 use EasyQ\Points\Points;
 use EasyQ\Search\Search;
 use EasyQ\Settings\Options;
@@ -329,12 +330,16 @@ final class Post_Service {
 			$columns['author_name'] = $name;
 		}
 
+		$new_address = $this->forget_confirmation( $question, $notify );
 		$this->posts->update(
 			$question->id,
 			$columns,
 			$record_edit ? $actor : null,
 			( $title_changed || $content_changed ) ? Post::UPDATE_CONTENT : Post::UPDATE_TAGS
 		);
+		if ( $new_address ) {
+			Unsubscribe::ask_for_confirmation( $this->require_post( $question->id ) );
+		}
 
 		if ( null !== $extra ) {
 			update_metadata( 'easyq_post', $question->id, self::EXTRA_META, $extra );
@@ -1268,7 +1273,33 @@ final class Post_Service {
 			$columns['author_name'] = $name;
 		}
 
+		$new_address = $this->forget_confirmation( $post, $notify );
 		$this->posts->update( $post->id, $columns, $record_edit ? $actor : null, Post::UPDATE_CONTENT );
+		if ( $new_address ) {
+			Unsubscribe::ask_for_confirmation( $this->require_post( $post->id ) );
+		}
+	}
+
+	/**
+	 * Forgets the confirmed address of an author without an account when the address changes.
+	 *
+	 * The confirmation holds for the address that was confirmed: a new one is asked again, so
+	 * nobody gets emails for an address typed for someone else.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post        $post   Post before the change.
+	 * @param string|null $notify New notification value.
+	 * @return bool Whether the new address must be confirmed.
+	 */
+	private function forget_confirmation( Post $post, ?string $notify ): bool {
+		if ( null !== $post->user_id || $notify === $post->notify ) {
+			return false;
+		}
+
+		delete_metadata( 'easyq_post', $post->id, Unsubscribe::CONFIRMED_META );
+
+		return true;
 	}
 
 	/**
