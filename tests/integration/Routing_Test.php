@@ -337,4 +337,30 @@ final class Routing_Test extends Test_Case {
 		$this->assertTrue( defined( 'DONOTCACHEPAGE' ) );
 		$router->set_current( null );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_a_question_page_seen_with_the_visitor_cookie_is_never_cached(): void {
+		global $wpdb;
+		$router = \EasyQ\Blocks\Block_Context::router();
+		$router->set_current( new \EasyQ\Frontend\Route( 'question', $this->ask( $this->user() ) ) );
+		$this->assertTrue( $router->handle_404( false ) );
+		$this->assertFalse( defined( 'DONOTCACHEPAGE' ), 'A public question without the cookie may be cached.' );
+
+		// With the cookie the page may show the visitor's own waiting answers and comments.
+		$wpdb->insert(
+			\EasyQ\Database\Schema::table( 'cookies' ),
+			array(
+				'id'      => 4242,
+				'created' => current_time( 'mysql', true ),
+			)
+		);
+		$_COOKIE[ \EasyQ\Util\Cookies::name( \EasyQ\Users\Visitor_Cookie::NAME ) ] = '4242';
+		$this->assertTrue( $router->handle_404( false ) );
+		$this->assertTrue( defined( 'DONOTCACHEPAGE' ) );
+		unset( $_COOKIE[ \EasyQ\Util\Cookies::name( \EasyQ\Users\Visitor_Cookie::NAME ) ] );
+		$router->set_current( null );
+	}
 }

@@ -198,9 +198,11 @@ final class Router {
 		status_header( 200 );
 
 		// A post waiting for approval or hidden is shown only to who may see it, the author by
-		// their visitor cookie, which page caches do not know: such a page is never cached.
+		// their visitor cookie, which page caches do not know: such a page is never cached, nor
+		// a question page seen with the cookie, which may show the visitor's own waiting answers
+		// and comments.
 		$question = $this->current->question();
-		if ( null !== $question && ! $question->is_visible() ) {
+		if ( null !== $question && ( ! $question->is_visible() || null !== \EasyQ\Users\Visitor_Cookie::current() ) ) {
 			self::no_cache();
 		}
 
