@@ -657,11 +657,14 @@ abstract class Controller extends WP_REST_Controller {
 	 */
 	protected function pagination_args( int $default_per_page ): array {
 		return array(
+			// Bounded as the pages of easyQ (`Number::page()`): a larger page made `( $page - 1 ) * $per_page`
+			// a float, a fatal error in the lists that take an integer offset.
 			'page'     => array(
 				'description' => __( 'Page of the list.', 'easyq' ),
 				'type'        => 'integer',
 				'default'     => 1,
 				'minimum'     => 1,
+				'maximum'     => \EasyQ\Util\Number::MAX_PAGE,
 			),
 			'per_page' => array(
 				'description' => __( 'Items per page.', 'easyq' ),

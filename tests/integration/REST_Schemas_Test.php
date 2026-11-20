@@ -396,4 +396,30 @@ final class REST_Schemas_Test extends REST_Test_Case {
 		$this->assertNotSame( array(), $this->problems( array( 'count' => 'two' ), $schema ) );
 		$this->assertNotSame( array(), $this->problems( array( 'path' => array( 1 ) ), Schemas::category() ) );
 	}
+
+	public function test_no_list_takes_a_page_beyond_the_range_of_easyq(): void {
+		// Read from the server: every route with a `page` argument bounds it, as the pages of easyQ do (`Number::page()`).
+		$paged = 0;
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $endpoints ) {
+			foreach ( $endpoints as $endpoint ) {
+				if ( isset( $endpoint['args']['page'] ) ) {
+					++$paged;
+					$this->assertSame( \EasyQ\Util\Number::MAX_PAGE, $endpoint['args']['page']['maximum'] ?? null, $route );
+				}
+			}
+		}
+		$this->assertGreaterThanOrEqual( 8, $paged );
+
+		// The lists that ended in a fatal error or sent a negative LIMIT, as a signed-in user.
+		$owner    = $this->take_part( (int) $this->user()->user_id );
+		$question = $this->ask( $this->user() );
+		wp_set_current_user( $owner );
+		foreach ( array( '/users', '/favorites', '/questions/' . $question->id . '/answers', '/posts/' . $question->id . '/comments', '/categories', '/tags', "/users/$owner/wall", '/messages' ) as $route ) {
+			foreach ( array( '9223372036854775807', '1e18' ) as $page ) {
+				$this->assertSame( 400, $this->request( 'GET', $route, array( 'page' => $page ) )->get_status(), "$route?page=$page" );
+			}
+			// The largest page is taken; beyond the last page core answers 400 as well (`rest_post_invalid_page_number`).
+			$this->assertContains( $this->request( 'GET', $route, array( 'page' => \EasyQ\Util\Number::MAX_PAGE ) )->get_status(), array( 200, 400 ), $route );
+		}
+	}
 }
