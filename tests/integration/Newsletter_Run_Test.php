@@ -186,6 +186,53 @@ final class Newsletter_Run_Test extends Test_Case {
 		$this->assertSame( 1, Services::newsletter()->send_batch() );
 	}
 
+	/**
+	 * Takes the lock of the batches, as a batch does.
+	 *
+	 * @return bool
+	 */
+	private function lock(): bool {
+		return (bool) ( new \ReflectionMethod( Newsletter::class, 'lock' ) )->invoke( null );
+	}
+
+	public function test_a_lock_a_persistent_cache_still_lists_as_missing_is_kept(): void {
+		global $wpdb;
+		$name = Newsletter::RUN_OPTION . '_lock';
+		// Another request has just inserted the lock; this one's object cache still says there is none.
+		$wpdb->insert(
+			$wpdb->options,
+			array(
+				'option_name'  => $name,
+				'option_value' => (string) time(),
+				'autoload'     => 'off',
+			)
+		);
+		wp_cache_set( 'notoptions', array( $name => true ), 'options' );
+
+		$this->assertFalse( $this->lock(), 'As WP_Upgrader::create_lock(): a lock that is there is kept.' );
+	}
+
+	public function test_a_stale_lock_is_taken_over_by_one_request_only(): void {
+		$name = Newsletter::RUN_OPTION . '_lock';
+		add_option( $name, (string) ( time() - HOUR_IN_SECONDS ), '', false );
+
+		// Another request takes the stale lock between this one's reading and its taking over.
+		$other = static function ( string $query ) use ( $name ): string {
+			global $wpdb;
+			if ( str_starts_with( ltrim( $query ), 'UPDATE' ) && str_contains( $query, $name ) ) {
+				remove_all_filters( 'query' );
+				$wpdb->update( $wpdb->options, array( 'option_value' => (string) ( time() - 1 ) ), array( 'option_name' => $name ) );
+			}
+			return $query;
+		};
+		add_filter( 'query', $other );
+		$taken = $this->lock();
+		remove_filter( 'query', $other );
+
+		$this->assertFalse( $taken );
+		$this->assertFalse( $this->lock(), 'The lock of the other request is fresh now.' );
+	}
+
 	public function test_counting_the_recipients_loads_them_at_once(): void {
 		global $wpdb;
 		$this->subscribers( 30 );

@@ -448,16 +448,24 @@ final class Newsletter {
 			return true;
 		}
 
-		wp_cache_delete( $name, 'options' );
-		$since = get_option( $name );
-		if ( is_numeric( $since ) && (int) $since > time() - 5 * MINUTE_IN_SECONDS ) {
+		// Read from the table, not through the object cache: a persistent cache may still list the
+		// option as missing (`notoptions`) although another request has just inserted it.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The lock must be read as stored.
+		$since = $wpdb->get_var( $wpdb->prepare( 'SELECT option_value FROM %i WHERE option_name = %s', $wpdb->options, $name ) );
+
+		// As core: if the lock could not be created and there is none, stop; a lock held by a
+		// batch that runs is kept.
+		if ( ! is_numeric( $since ) || (int) $since > time() - 5 * MINUTE_IN_SECONDS ) {
 			return false;
 		}
 
-		// The lock of a batch that died.
-		update_option( $name, (string) time(), false );
+		// The lock of a batch that died: taken over only if no other request took it first, in
+		// one statement, so that two requests that both saw it stale do not both send.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- An atomic compare and set of the lock.
+		$taken = $wpdb->query( (string) $wpdb->prepare( 'UPDATE %i SET option_value = %s WHERE option_name = %s AND option_value = %s', $wpdb->options, (string) time(), $name, $since ) );
+		wp_cache_delete( $name, 'options' );
 
-		return true;
+		return 1 === $taken;
 	}
 
 	/**
