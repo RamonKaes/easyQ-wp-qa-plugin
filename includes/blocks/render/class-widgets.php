@@ -620,19 +620,29 @@ final class Widgets {
 			);
 		}
 
-		// Forms show their own errors next to the fields.
-		if ( null === $flash || ( 'error' === $flash['type'] && in_array( $flash['form'], Forms::INLINE_NOTICES, true ) ) ) {
+		// Forms show their own errors next to the fields, if they are on the page.
+		$inline = null !== $flash && 'error' === $flash['type'] && in_array( $flash['form'], Forms::INLINE_NOTICES, true );
+		if ( null === $flash || ( $inline && Forms::shows_its_error( $flash ) ) ) {
 			return '' === $items
 				? sprintf( '<div %s %s hidden></div>', get_block_wrapper_attributes(), $region )
 				: sprintf( '<div %s %s>%s</div>', get_block_wrapper_attributes(), $region, $items );
 		}
 
+		// A form that is no longer on the page: its error here, and what was typed, to copy.
+		$typed = $inline ? Flash::value( $flash['form'], 'content', $flash['target'] ) : '';
+		$kept  = '' === $typed ? '' : sprintf(
+			'<p><label for="easyq-notice-typed">%1$s</label><br /><textarea id="easyq-notice-typed" rows="4" readonly>%2$s</textarea></p>',
+			esc_html__( 'What you wrote, which was not sent:', 'easyq' ),
+			esc_textarea( $typed )
+		);
+
 		return sprintf(
-			'<div %s %s><p role="%s">%s</p>%s</div>',
+			'<div %s %s><p role="%s">%s</p>%s%s</div>',
 			get_block_wrapper_attributes(),
 			$region,
 			'error' === $flash['type'] ? 'alert' : 'status',
 			esc_html( $flash['message'] ),
+			$kept,
 			$items
 		);
 	}

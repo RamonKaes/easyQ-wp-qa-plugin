@@ -371,6 +371,31 @@ final class Forms {
 	}
 
 	/**
+	 * Tells whether the form of a failed submission is on the page to show its error and what
+	 * was typed: the answer form while the question may be answered, the comment form while
+	 * its post is shown and may be commented on. A tab that stayed open while the question was
+	 * closed or the post hidden sends to a page without the form.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array{form: string, target: int} $flash Message of the failed submission.
+	 * @return bool
+	 */
+	public static function shows_its_error( array $flash ): bool {
+		if ( ! in_array( $flash['form'], array( 'answer', 'comment' ), true ) ) {
+			return true;
+		}
+
+		$post   = Services::posts()->find( $flash['target'] );
+		$viewer = Block_Context::viewer();
+		if ( null === $post || ! Services::permissions()->shows( $post, $viewer ) ) {
+			return false;
+		}
+
+		return (bool) Services::permissions()->post_rules( $post, $viewer )[ 'answer' === $flash['form'] ? 'answer_button' : 'comment_button' ];
+	}
+
+	/**
 	 * Renders the form to answer the question.
 	 *
 	 * @since 0.1.0

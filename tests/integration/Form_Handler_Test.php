@@ -311,6 +311,30 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertTrue( \EasyQ\Users\User_Status::is_blocked( $user ) );
 	}
 
+	public function test_an_answer_to_a_question_closed_meanwhile_keeps_its_text_and_says_why(): void {
+		$question = $this->ask( $this->user() );
+		$this->login();
+		// The tab stayed open while a moderator closed the question.
+		Services::post_service()->close_with_note( Actor::system(), $question, 'Closed meanwhile.' );
+
+		$this->assertSame(
+			'',
+			$this->submit(
+				'answer',
+				array(
+					'easyq_post' => (string) $question->id,
+					'content'    => 'The answer I typed for a long time.',
+				)
+			)
+		);
+
+		// The answer form is not on the page any more, so the notices say it, with the text (F-224).
+		$html = do_blocks( '<!-- wp:easyq/notices /-->' );
+		$this->assertStringContainsString( 'role="alert"', $html );
+		$this->assertStringContainsString( 'The answer I typed for a long time.', $html );
+		$this->assertStringContainsString( 'readonly', $html );
+	}
+
 	public function test_the_nonce_of_a_form_holds_for_its_own_post_and_action_only(): void {
 		$this->login( 'editor' );
 		$first  = $this->ask( $this->user(), 'A first question to close' );
