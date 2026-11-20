@@ -515,15 +515,17 @@ final class Messages {
 	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
+	 * @param int $limit   Messages of one page.
+	 * @param int $offset  Messages before the page.
 	 * @return list<Message>
 	 */
-	public function all_of( int $user_id ): array {
+	public function all_of( int $user_id, int $limit = PHP_INT_MAX, int $offset = 0 ): array {
 		$wpdb = DB::wpdb();
 
 		return self::messages(
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
 			$wpdb->get_results(
-				$wpdb->prepare( 'SELECT * FROM %i WHERE from_user_id = %d OR to_user_id = %d ORDER BY created ASC, id ASC', Schema::table( 'messages' ), $user_id, $user_id )
+				$wpdb->prepare( 'SELECT * FROM %i WHERE from_user_id = %d OR to_user_id = %d ORDER BY created ASC, id ASC LIMIT %d OFFSET %d', Schema::table( 'messages' ), $user_id, $user_id, $limit, $offset )
 			)
 		);
 	}

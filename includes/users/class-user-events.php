@@ -280,17 +280,25 @@ final class User_Events {
 	 * @since 0.1.0
 	 *
 	 * @param int $user_id User ID.
-	 * @return int Number of posts the user had voted on or flagged.
+	 * @param int $limit   Posts to handle at most, as the personal data eraser pages; 0 for all.
+	 * @return int Number of posts the user had voted on or flagged that were handled.
 	 */
-	public function remove_votes( int $user_id ): int {
+	public function remove_votes( int $user_id, int $limit = 0 ): int {
 		$wpdb  = DB::wpdb();
 		$votes = Schema::table( 'uservotes' );
 
-		// Posts the user voted on or flagged need their counts updated afterwards.
+		// Posts the user voted on or flagged need their counts updated afterwards; at most $limit,
+		// or all of them (a limit of PHP_INT_MAX).
+		$limit = $limit > 0 ? $limit : PHP_INT_MAX;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		$voted_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0)', $votes, $user_id ) ) );
+		$voted_ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0) ORDER BY post_id LIMIT %d', $votes, $user_id, $limit ) ) );
 
-		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE user_id = %d', $votes, $user_id );
+		// The rows of these posts, and those that hold neither vote nor flag.
+		$ids = array() === $voted_ids ? array( 0 ) : $voted_ids;
+		$sql = $wpdb->prepare(
+			'DELETE FROM %i WHERE user_id = %d AND ( (vote = 0 AND flag = 0) OR post_id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ') )',
+			array_merge( array( $votes, $user_id ), $ids )
+		);
 		if ( null !== $sql ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
 			$wpdb->query( $sql );

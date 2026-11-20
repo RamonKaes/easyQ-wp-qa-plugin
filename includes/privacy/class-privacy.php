@@ -225,10 +225,13 @@ final class Privacy {
 	 * @return array{data: list<array<string, mixed>>, done: bool}
 	 */
 	public static function export_messages( string $email, int $page = 1 ): array {
-		$user = get_user_by( 'email', $email );
-		$data = array();
+		$user     = get_user_by( 'email', $email );
+		$data     = array();
+		$messages = false === $user ? array() : Services::messages()->all_of( $user->ID, Post_Data::PER_PAGE, ( max( 1, $page ) - 1 ) * Post_Data::PER_PAGE );
 		if ( false !== $user ) {
-			foreach ( Services::messages()->all_of( $user->ID ) as $message ) {
+			// The other side of each message, loaded at once.
+			cache_users( array_map( static fn ( $message ): int => (int) ( $message->from_user_id === $user->ID ? $message->to_user_id : $message->from_user_id ), $messages ) );
+			foreach ( $messages as $message ) {
 				$other  = get_userdata( (int) ( $message->from_user_id === $user->ID ? $message->to_user_id : $message->from_user_id ) );
 				$data[] = array(
 					'group_id'          => 'easyq-messages',
@@ -257,7 +260,11 @@ final class Privacy {
 			}
 		}
 
-		return self::page( $data, $page );
+		// Paged in the query, as core pages the export of comments: only one page is loaded.
+		return array(
+			'data' => $data,
+			'done' => count( $messages ) < Post_Data::PER_PAGE,
+		);
 	}
 
 	/**
@@ -425,31 +432,50 @@ final class Privacy {
 			);
 		}
 
+		// The favorites are listed by their keys first; only those of the page are loaded.
 		$favorites = Services::favorites();
-		$rows      = array();
-		foreach ( $favorites->ids( $user->ID, 'question' ) as $id ) {
-			$question = Services::posts()->find( $id );
-			if ( null !== $question && $question->is_visible() ) {
-				$rows[] = array( 'question-' . $id, __( 'Question', 'easyq' ), Services::content_renderer()->text( (string) $question->title ), URLs::question( $question ) );
-			} else {
-				// Stored and erased as the others; the title of a question the person may not see stays out.
-				/* translators: %d: question number. */
-				$rows[] = array( 'question-' . $id, __( 'Question', 'easyq' ), sprintf( __( 'A question that is not shown (number %d)', 'easyq' ), $id ), '' );
+		$keys      = array();
+		foreach ( array( 'question', 'user', 'tag', 'category' ) as $type ) {
+			$ids = 'tag' === $type ? array_column( $favorites->tags( $user->ID ), 'name' ) : $favorites->ids( $user->ID, $type );
+			foreach ( $ids as $id ) {
+				$keys[] = array( $type, $id );
 			}
 		}
-		foreach ( $favorites->ids( $user->ID, 'user' ) as $id ) {
-			$followed = get_userdata( $id );
-			if ( false !== $followed ) {
-				$rows[] = array( 'user-' . $id, __( 'User', 'easyq' ), $followed->display_name, URLs::user( $followed ) );
-			}
-		}
-		foreach ( $favorites->tags( $user->ID ) as $tag ) {
-			$rows[] = array( 'tag-' . $tag['name'], __( 'Tag', 'easyq' ), $tag['name'], URLs::tag( $tag['name'] ) );
-		}
-		foreach ( $favorites->ids( $user->ID, 'category' ) as $id ) {
-			$category = Services::categories()->find( $id );
-			if ( null !== $category ) {
-				$rows[] = array( 'category-' . $id, __( 'Category', 'easyq' ), $category->title, URLs::category( $category ) );
+		$offset = ( max( 1, $page ) - 1 ) * Post_Data::PER_PAGE;
+		$done   = count( $keys ) <= $offset + Post_Data::PER_PAGE;
+		$keys   = array_slice( $keys, $offset, Post_Data::PER_PAGE );
+
+		$of = static fn ( string $type ): array => array_map( static fn ( array $key ): int => (int) $key[1], array_values( array_filter( $keys, static fn ( array $key ): bool => $type === $key[0] ) ) );
+		$questions = Services::posts()->find_many( $of( 'question' ) );
+		cache_users( $of( 'user' ) );
+
+		$rows = array();
+		foreach ( $keys as [ $type, $id ] ) {
+			switch ( $type ) {
+				case 'question':
+					$question = $questions[ (int) $id ] ?? null;
+					if ( null !== $question && $question->is_visible() ) {
+						$rows[] = array( 'question-' . $id, __( 'Question', 'easyq' ), Services::content_renderer()->text( (string) $question->title ), URLs::question( $question ) );
+					} else {
+						// Stored and erased as the others; the title of a question the person may not see stays out.
+						/* translators: %d: question number. */
+						$rows[] = array( 'question-' . $id, __( 'Question', 'easyq' ), sprintf( __( 'A question that is not shown (number %d)', 'easyq' ), (int) $id ), '' );
+					}
+					break;
+				case 'user':
+					$followed = get_userdata( (int) $id );
+					if ( false !== $followed ) {
+						$rows[] = array( 'user-' . $id, __( 'User', 'easyq' ), $followed->display_name, URLs::user( $followed ) );
+					}
+					break;
+				case 'tag':
+					$rows[] = array( 'tag-' . $id, __( 'Tag', 'easyq' ), (string) $id, URLs::tag( (string) $id ) );
+					break;
+				default:
+					$category = Services::categories()->find( (int) $id );
+					if ( null !== $category ) {
+						$rows[] = array( 'category-' . $id, __( 'Category', 'easyq' ), $category->title, URLs::category( $category ) );
+					}
 			}
 		}
 
@@ -472,7 +498,10 @@ final class Privacy {
 			);
 		}
 
-		return self::page( $data, $page );
+		return array(
+			'data' => $data,
+			'done' => $done,
+		);
 	}
 
 	/**

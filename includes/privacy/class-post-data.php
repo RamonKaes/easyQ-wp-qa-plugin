@@ -47,6 +47,15 @@ final class Post_Data {
 	public const PER_PAGE = 500;
 
 	/**
+	 * Posts whose votes the eraser handles per request; each post is recounted with a few queries.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const VOTES_PER_PAGE = 100;
+
+	/**
 	 * Exports the posts a person wrote or changed last.
 	 *
 	 * @since 0.1.0
@@ -280,12 +289,15 @@ final class Post_Data {
 	 */
 	public static function erase_votes( string $email ): array {
 		$user_id = self::user_id( $email );
+		// A page at a time, as core erases comments: each post is recounted, so a request that
+		// breaks off leaves the counts of the posts done so far right, and the next page goes on.
+		$removed = $user_id > 0 ? ( new User_Events( Services::posts(), Services::points() ) )->remove_votes( $user_id, self::VOTES_PER_PAGE ) : 0;
 
 		return array(
-			'items_removed'  => $user_id > 0 && ( new User_Events( Services::posts(), Services::points() ) )->remove_votes( $user_id ) > 0,
+			'items_removed'  => $removed > 0,
 			'items_retained' => false,
 			'messages'       => array(),
-			'done'           => true,
+			'done'           => $removed < self::VOTES_PER_PAGE,
 		);
 	}
 
