@@ -332,6 +332,44 @@ final class Post_Repository {
 	}
 
 	/**
+	 * Changes the type of a post only if it still has the type it was read with.
+	 *
+	 * Two moderators, or a double submission, may act on the same post at once; only the
+	 * first change goes through, so that its events (and their emails) happen once.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int         $id          Post ID.
+	 * @param string      $from        Type the post was read with.
+	 * @param string      $to          New type.
+	 * @param Actor|null  $actor       Who made the change, or null to leave the change metadata untouched.
+	 * @param string|null $update_type Kind of change, see the Post::UPDATE_* constants; required with an actor.
+	 * @return bool Whether the post had the type and was changed.
+	 */
+	public function change_type( int $id, string $from, string $to, ?Actor $actor = null, ?string $update_type = null ): bool {
+		$columns = array( 'type' => $to );
+		if ( null !== $actor ) {
+			$columns['updated']      = DB::now();
+			$columns['update_type']  = $update_type;
+			$columns['last_user_id'] = $actor->user_id;
+			$columns['last_ip']      = $actor->stored_ip();
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
+		$changed = DB::wpdb()->update(
+			Schema::table( 'posts' ),
+			$columns,
+			array(
+				'id'   => $id,
+				'type' => $from,
+			)
+		);
+		$this->forget( $id );
+
+		return is_int( $changed ) && $changed > 0;
+	}
+
+	/**
 	 * Sets the selected answer of a question.
 	 *
 	 * The previous answer loses its "selected" change metadata; the new answer records who selected it.

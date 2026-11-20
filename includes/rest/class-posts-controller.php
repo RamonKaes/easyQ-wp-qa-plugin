@@ -478,18 +478,18 @@ final class Posts_Controller extends Controller {
 	 * @param Post   $question Question of the post.
 	 * @param Post   $parent_post   Parent of the post.
 	 * @param string $status   New status.
-	 * @return true
+	 * @return true|WP_Error The error `easyq_changed` with status 409 if someone else changed the post first.
 	 */
-	private function set_status( Actor $actor, Post $post, Post $question, Post $parent_post, string $status ): bool {
+	private function set_status( Actor $actor, Post $post, Post $question, Post $parent_post, string $status ): bool|WP_Error {
 		$service = Services::post_service();
 
-		match ( $post->base_type() ) {
+		$changed = match ( $post->base_type() ) {
 			Post::QUESTION => $service->set_question_status( $actor, $post, $status ),
 			Post::ANSWER   => $service->set_answer_status( $actor, $post, $question, $status ),
 			default        => $service->set_comment_status( $actor, $post, $question, $parent_post, $status ),
 		};
 
-		return true;
+		return $changed ? true : new WP_Error( 'easyq_changed', __( 'Someone else changed this post in the meantime. Reload the page to see it.', 'easyq' ), array( 'status' => 409 ) );
 	}
 
 	/**
@@ -501,9 +501,9 @@ final class Posts_Controller extends Controller {
 	 * @param Post  $post     Post.
 	 * @param Post  $question Question of the post.
 	 * @param Post  $parent_post   Parent of the post.
-	 * @return true
+	 * @return true|WP_Error
 	 */
-	private function reshow( Actor $actor, Post $post, Post $question, Post $parent_post ): bool {
+	private function reshow( Actor $actor, Post $post, Post $question, Post $parent_post ): bool|WP_Error {
 		$rules  = Services::permissions()->post_rules( $post, $actor );
 		$queued = ! $rules['reshow_at_once'] && null !== Services::permissions()->moderation_reason( $actor );
 

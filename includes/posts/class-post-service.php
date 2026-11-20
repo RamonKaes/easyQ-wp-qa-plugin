@@ -512,18 +512,21 @@ final class Post_Service {
 	 * @param Actor  $actor    Who changes the status.
 	 * @param Post   $question Question before the change.
 	 * @param string $status   One of the Post::STATUS_* constants.
+	 * @return bool False if the question no longer had the type it was read with: someone else changed it first.
 	 */
-	public function set_question_status( Actor $actor, Post $question, string $status ): void {
+	public function set_question_status( Actor $actor, Post $question, string $status ): bool {
 		$was_hidden   = $question->is_hidden();
 		$was_queued   = $question->is_queued();
 		$was_requeued = $was_queued && null !== $question->updated;
 
-		$this->search->unindex( $question->id );
-		$this->unindex_question_tree( $question );
-
 		[ $event, $record ] = $this->status_change( 'q', $status, $was_hidden, $was_queued );
 
-		$this->posts->update( $question->id, array( 'type' => Post::type_for( Post::QUESTION, $status ) ), $record ? $actor : null, Post::UPDATE_VISIBLE );
+		if ( ! $this->posts->change_type( $question->id, $question->type, Post::type_for( Post::QUESTION, $status ), $record ? $actor : null, Post::UPDATE_VISIBLE ) ) {
+			return false;
+		}
+
+		$this->search->unindex( $question->id );
+		$this->unindex_question_tree( $question );
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
 			// Approving: the post appears as new, or as edited now.
@@ -551,6 +554,8 @@ final class Post_Service {
 		if ( $was_queued && Post::STATUS_NORMAL === $status && ! $was_requeued ) {
 			Events::dispatch( 'q_post', $params + $this->delayed_params( $question ), $this->author_of( $question ) );
 		}
+
+		return true;
 	}
 
 	/**
@@ -562,26 +567,29 @@ final class Post_Service {
 	 * @param Post   $answer   Answer before the change.
 	 * @param Post   $question Question of the answer.
 	 * @param string $status   One of the Post::STATUS_* constants.
+	 * @return bool False if the post no longer had the type it was read with: someone else changed it first.
 	 */
-	public function set_answer_status( Actor $actor, Post $answer, Post $question, string $status ): void {
+	public function set_answer_status( Actor $actor, Post $answer, Post $question, string $status ): bool {
 		$was_hidden   = $answer->is_hidden();
 		$was_queued   = $answer->is_queued();
 		$was_requeued = $was_queued && null !== $answer->updated;
-		$comments     = $this->comments_of( $question, $answer->id );
 
+		[ $event, $record ] = $this->status_change( 'a', $status, $was_hidden, $was_queued );
+
+		if ( ! $this->posts->change_type( $answer->id, $answer->type, Post::type_for( Post::ANSWER, $status ), $record ? $actor : null, Post::UPDATE_VISIBLE ) ) {
+			return false;
+		}
+
+		$comments = $this->comments_of( $question, $answer->id );
 		$this->search->unindex( $answer->id );
 		foreach ( $comments as $comment ) {
 			$this->search->unindex( $comment->id );
 		}
 
-		[ $event, $record ] = $this->status_change( 'a', $status, $was_hidden, $was_queued );
-
 		if ( Post::STATUS_HIDDEN === $status && $question->selected_child_id === $answer->id ) {
 			$this->select_answer( Actor::system(), $question, null );
 			$question = $this->require_post( $question->id );
 		}
-
-		$this->posts->update( $answer->id, array( 'type' => Post::type_for( Post::ANSWER, $status ) ), $record ? $actor : null, Post::UPDATE_VISIBLE );
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
 			$this->posts->update( $answer->id, array( $was_requeued ? 'updated' : 'created' => DB::now() ) );
@@ -610,6 +618,8 @@ final class Post_Service {
 		if ( $was_queued && Post::STATUS_NORMAL === $status && ! $was_requeued ) {
 			Events::dispatch( 'a_post', $params + $this->delayed_params( $answer ), $this->author_of( $answer ) );
 		}
+
+		return true;
 	}
 
 	/**
@@ -622,17 +632,20 @@ final class Post_Service {
 	 * @param Post   $question Question the comment belongs to.
 	 * @param Post   $parent_post   Question or answer the comment is on.
 	 * @param string $status   One of the Post::STATUS_* constants.
+	 * @return bool False if the post no longer had the type it was read with: someone else changed it first.
 	 */
-	public function set_comment_status( Actor $actor, Post $comment, Post $question, Post $parent_post, string $status ): void {
+	public function set_comment_status( Actor $actor, Post $comment, Post $question, Post $parent_post, string $status ): bool {
 		$was_hidden   = $comment->is_hidden();
 		$was_queued   = $comment->is_queued();
 		$was_requeued = $was_queued && null !== $comment->updated;
 
-		$this->search->unindex( $comment->id );
-
 		[ $event, $record ] = $this->status_change( 'c', $status, $was_hidden, $was_queued );
 
-		$this->posts->update( $comment->id, array( 'type' => Post::type_for( Post::COMMENT, $status ) ), $record ? $actor : null, Post::UPDATE_VISIBLE );
+		if ( ! $this->posts->change_type( $comment->id, $comment->type, Post::type_for( Post::COMMENT, $status ), $record ? $actor : null, Post::UPDATE_VISIBLE ) ) {
+			return false;
+		}
+
+		$this->search->unindex( $comment->id );
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
 			$this->posts->update( $comment->id, array( $was_requeued ? 'updated' : 'created' => DB::now() ) );
@@ -662,6 +675,8 @@ final class Post_Service {
 				$this->author_of( $comment )
 			);
 		}
+
+		return true;
 	}
 
 	/**
