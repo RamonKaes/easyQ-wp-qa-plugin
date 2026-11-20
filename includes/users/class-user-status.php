@@ -235,8 +235,9 @@ final class User_Status {
 
 	/**
 	 * Checks whether an actor may approve, block and unblock a user, as Question2Answer lets a
-	 * moderator do it on the profile page (`qa-include/pages/user-profile.php`): not themselves,
-	 * and only users below their own level, unless they are a super administrator. Who may edit
+	 * moderator do it on the profile page (`qa-include/pages/user-profile.php`): with the level
+	 * of the whole site, not themselves, and only users below their own level, unless they are
+	 * a super administrator. Who may edit
 	 * the user in WordPress may too, as on the screens of core.
 	 *
 	 * @since 0.1.0
@@ -253,8 +254,10 @@ final class User_Status {
 			return true;
 		}
 
+		// The level of the whole site, as `qa_get_logged_in_level()`: a level in one category
+		// moderates its posts, not users. The user counts with their highest level, the stricter side.
 		$levels = Services::user_levels();
-		$level  = $levels->maximum_level( $actor->user_id ) ?? Levels::BASIC;
+		$level  = $levels->level( $actor->user_id ) ?? Levels::BASIC;
 		$target = $levels->maximum_level( $user_id ) ?? Levels::BASIC;
 
 		return $level >= Levels::MODERATOR && ( $level >= Levels::SUPER || $level > $target ) && ! self::is_blocked( $actor->user_id );

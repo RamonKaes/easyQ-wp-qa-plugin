@@ -70,6 +70,14 @@ final class User_Moderation_Test extends REST_Test_Case {
 		wp_set_current_user( (int) $this->user()->user_id );
 		$this->assertSame( 403, $this->request( 'POST', '/users/' . $expert . '/actions/block' )->get_status(), 'A user without a level.' );
 
+		// A moderator of one category moderates its posts, not users (the level of the whole site counts).
+		$category = \EasyQ\Services::categories()->create( null, 'Moderated here' );
+		$this->assertIsInt( $category );
+		$in_category = (int) $this->user()->user_id;
+		\EasyQ\Services::user_levels()->set_category_level( \EasyQ\Actor::system(), $in_category, $category, Levels::MODERATOR );
+		wp_set_current_user( $in_category );
+		$this->assertSame( 403, $this->request( 'POST', '/users/' . $this->user()->user_id . '/actions/block' )->get_status(), 'A level in a category.' );
+
 		// An expert is above users without a level, but no moderator.
 		wp_set_current_user( $expert );
 		$this->assertSame( 403, $this->request( 'POST', '/users/' . $this->user()->user_id . '/actions/block' )->get_status(), 'Below the level of moderators.' );

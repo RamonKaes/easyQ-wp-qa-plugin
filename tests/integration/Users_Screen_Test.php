@@ -129,14 +129,15 @@ final class Users_Screen_Test extends Test_Case {
 		}
 	}
 
-	public function test_bulk_actions_change_only_users_the_moderator_may_edit_and_never_themselves(): void {
+	public function test_bulk_actions_change_only_users_the_moderator_may_moderate_and_never_themselves(): void {
 		$moderator = (int) $this->user( 'editor' )->user_id;
 		$admin     = $this->administrator();
 		$user      = self::factory()->user->create();
 
-		$count = $this->screen->perform( 'easyq_block', array( $moderator, $admin, $user ), new \EasyQ\Actor( $moderator ) );
+		// As on the profile page of Question2Answer: users below the level of the moderator (F-218).
+		$count = $this->screen->perform( 'easyq_block', array( $moderator, $admin ), new \EasyQ\Actor( $moderator ) );
 
-		$this->assertSame( 0, $count, 'Editors may not edit users in WordPress.' );
+		$this->assertSame( 0, $count, 'Not themselves, nor a higher level.' );
 		$this->assertFalse( User_Status::is_blocked( $admin ) );
 		$this->assertSame( 1, $this->screen->perform( 'easyq_block', array( $admin, $user ), new \EasyQ\Actor( $admin ) ) );
 		$this->assertTrue( User_Status::is_blocked( $user ) );

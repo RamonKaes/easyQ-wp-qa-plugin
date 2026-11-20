@@ -173,6 +173,7 @@ final class Users_Controller extends Controller {
 						),
 					),
 				),
+				'schema' => array( $this, 'get_moderation_schema' ),
 			)
 		);
 	}
@@ -210,6 +211,38 @@ final class Users_Controller extends Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Returns the schema of the answer to a moderation of a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_moderation_schema(): array {
+		return array(
+			'$schema'    => 'http://json-schema.org/draft-04/schema#',
+			'title'      => 'easyq-user-moderation',
+			'type'       => 'object',
+			'properties' => array(
+				'id'                => array(
+					'description' => __( 'User ID.', 'easyq' ),
+					'type'        => 'integer',
+					'readonly'    => true,
+				),
+				'awaiting_approval' => array(
+					'description' => __( 'Whether the user waits for approval.', 'easyq' ),
+					'type'        => 'boolean',
+					'readonly'    => true,
+				),
+				'blocked'           => array(
+					'description' => __( 'Whether the user is blocked.', 'easyq' ),
+					'type'        => 'boolean',
+					'readonly'    => true,
+				),
+			),
+		);
 	}
 
 	/**
