@@ -305,4 +305,19 @@ final class Newsletter_Run_Test extends Test_Case {
 
 		$this->assertSame( array( get_userdata( $member )->user_email ), $this->sent );
 	}
+
+	public function test_the_cron_runs_the_batches_and_stops_when_the_newsletter_is_turned_off(): void {
+		$this->subscribers( 5 );
+		Services::newsletter()->start();
+
+		// The event of WP-Cron sends a batch.
+		do_action( Newsletter::CRON_HOOK );
+		$this->assertCount( 3, $this->sent );
+
+		// Turned off between two batches: the next batch sends nothing and ends the run.
+		Options::update( 'newsletter', array( 'mailing_enabled' => false ) );
+		$this->assertSame( 0, Services::newsletter()->send_batch() );
+		$this->assertCount( 3, $this->sent );
+		$this->assertFalse( get_option( Newsletter::RUN_OPTION ) );
+	}
 }

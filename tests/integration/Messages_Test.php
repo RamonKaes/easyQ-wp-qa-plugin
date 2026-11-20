@@ -323,4 +323,16 @@ final class Messages_Test extends REST_Test_Case {
 		}
 		$this->assertSame( array(), Services::messages()->all_of( $user->ID ) );
 	}
+
+	public function test_moderators_delete_the_wall_posts_of_others(): void {
+		$owner  = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
+		$author = (int) $this->user()->user_id;
+		wp_set_current_user( $author );
+		$post = $this->data( $this->request( 'POST', '/users/' . $owner->ID . '/wall', array( 'content' => 'A post a moderator removes' ) ) );
+
+		// Who may hide posts and delete hidden ones deletes any wall post, as in Question2Answer.
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( 200, $this->request( 'DELETE', '/users/' . $owner->ID . '/wall/' . $post['id'], array( 'force' => true ) )->get_status() );
+		$this->assertNull( Services::messages()->find( $post['id'] ) );
+	}
 }

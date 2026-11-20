@@ -32,6 +32,34 @@ final class Uninstaller_Test extends Test_Case {
 		$this->assertTrue( Uninstaller::site_opted_in() );
 	}
 
+	/**
+	 * @group ms-excluded
+	 */
+	public function test_a_single_site_that_asked_for_it_is_uninstalled(): void {
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'easyq_points', 10 );
+		$dropped = array();
+		$record  = static function ( string $query ) use ( &$dropped ): string {
+			if ( 1 === preg_match( '/^\s*DROP (?:TEMPORARY )?TABLE IF EXISTS `?(\w+)`?/i', $query, $match ) ) {
+				$dropped[] = $match[1];
+			}
+			return $query;
+		};
+
+		// Without the setting, the data stays.
+		Uninstaller::run();
+		$this->assertSame( '10', get_user_meta( $user_id, 'easyq_points', true ) );
+
+		update_option( Options::option_name( 'general' ), array( 'delete_data_on_uninstall' => true ) );
+		add_filter( 'query', $record );
+		Uninstaller::run();
+		remove_filter( 'query', $record );
+
+		$this->assertContains( Schema::table( 'posts' ), $dropped );
+		$this->assertFalse( get_option( Options::option_name( 'general' ), false ) );
+		$this->assertSame( '', get_user_meta( $user_id, 'easyq_points', true ) );
+	}
+
 	public function test_deletes_only_plugin_user_meta(): void {
 		$user_id = self::factory()->user->create();
 		update_user_meta( $user_id, 'easyq_points', 10 );

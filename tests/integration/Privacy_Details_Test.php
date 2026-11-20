@@ -88,4 +88,23 @@ final class Privacy_Details_Test extends Test_Case {
 		$this->assertNull( $note->user_id );
 		$this->assertTrue( $this->post( $question->id )->is_closed() );
 	}
+
+	public function test_the_export_of_the_profile_has_the_levels_the_status_and_the_settings(): void {
+		$user     = $this->user();
+		$id       = (int) $user->user_id;
+		$category = Services::categories()->create( null, 'Gardening' );
+		$this->assertIsInt( $category );
+		// Blocked first: users with a level cannot be blocked, as in Question2Answer.
+		\EasyQ\Users\User_Status::block( Actor::system(), $id );
+		Services::user_levels()->set_level( Actor::system(), $id, \EasyQ\Users\Levels::EXPERT );
+		Services::user_levels()->set_category_level( Actor::system(), $id, $category, \EasyQ\Users\Levels::MODERATOR );
+		Site_Meta::update( $id, \EasyQ\Messages\Messages::NO_WALL_META, 1 );
+
+		$text = (string) wp_json_encode( Profile_Data::export( $this->email( $user ) )['data'] );
+
+		$this->assertStringContainsString( 'Q&A level', $text );
+		$this->assertStringContainsString( 'Q&A level in Gardening', $text );
+		$this->assertStringContainsString( 'Blocked', $text );
+		$this->assertStringContainsString( 'No posts on your wall', $text );
+	}
 }
