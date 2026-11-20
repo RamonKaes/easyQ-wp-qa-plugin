@@ -207,7 +207,7 @@ final class Admin_Capabilities_Test extends Test_Case {
 		foreach ( $pages as $page ) {
 			$hook = (string) get_plugin_page_hookname( $page, 'easyq' );
 			set_current_screen( $hook );
-			do_action( 'load-' . $hook );
+			do_action( 'load-' . $hook ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- The hook of core's admin screens (wp-admin/admin.php).
 			$this->assertNotNull( get_current_screen()?->get_help_tab( 'easyq-overview' ), $page );
 		}
 
