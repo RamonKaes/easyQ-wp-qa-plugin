@@ -10,6 +10,7 @@ namespace EasyQ\Users;
 
 use EasyQ\Services;
 use EasyQ\Settings\Options;
+use EasyQ\Util\Text;
 use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
@@ -127,9 +128,9 @@ final class Registration {
 			<p>
 				<label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $field->display_label() ); ?></label>
 				<?php if ( $field->is_multi_line() ) : ?>
-					<textarea name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" rows="3"><?php echo esc_textarea( $value ); ?></textarea>
+					<textarea name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" rows="3" maxlength="<?php echo esc_attr( (string) User_Fields::MAX_VALUE_LENGTH ); ?>"><?php echo esc_textarea( $value ); ?></textarea>
 				<?php else : ?>
-					<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" size="25" value="<?php echo esc_attr( $value ); ?>" />
+					<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" id="<?php echo esc_attr( $id ); ?>" class="input" size="25" maxlength="<?php echo esc_attr( (string) User_Fields::MAX_VALUE_LENGTH ); ?>" value="<?php echo esc_attr( $value ); ?>" />
 				<?php endif; ?>
 			</p>
 			<?php
@@ -174,6 +175,17 @@ final class Registration {
 
 		if ( self::asks_for_terms() && ! $this->ticked( 'easyq_terms' ) ) {
 			$errors->add( 'easyq_terms', __( '<strong>Error:</strong> Please accept the terms.', 'easyq' ) );
+		}
+
+		// A value longer than a field holds is refused with its field, as Question2Answer reports the length.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Only the length is read; core checks the request of the form.
+		$posted = isset( $_POST['easyq_fields'] ) && is_array( $_POST['easyq_fields'] ) ? wp_unslash( $_POST['easyq_fields'] ) : array();
+		foreach ( $this->fields() as $field ) {
+			$value = is_array( $posted ) ? ( $posted[ $field->id ] ?? null ) : null;
+			if ( is_string( $value ) && Text::length( $value ) > User_Fields::MAX_VALUE_LENGTH ) {
+				/* translators: 1: field label, 2: number of characters. */
+				$errors->add( 'easyq_field_' . $field->id, sprintf( __( '<strong>Error:</strong> %1$s can have at most %2$s characters.', 'easyq' ), esc_html( $field->display_label() ), number_format_i18n( User_Fields::MAX_VALUE_LENGTH ) ) );
+			}
 		}
 
 		return $errors;

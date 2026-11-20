@@ -298,6 +298,16 @@ final class Registration_Test extends Test_Case {
 		$this->assertSame( "Line one\nLine two bold", Services::user_fields()->value( $user_id, Services::user_fields()->find( $text ) ?? $this->fail() ) );
 	}
 
+	public function test_registration_refuses_a_value_longer_than_its_field(): void {
+		$field = Services::user_fields()->create( 'about', 'About', User_Field::FLAG_ON_REGISTER | User_Field::FLAG_MULTI_LINE, null );
+		$this->assertIsInt( $field );
+		$_POST['easyq_register'] = wp_create_nonce( 'easyq_register' );
+		$_POST['easyq_fields']   = array( $field => str_repeat( 'x', \EasyQ\Users\User_Fields::MAX_VALUE_LENGTH + 1 ) );
+
+		$this->assertContains( 'easyq_field_' . $field, $this->errors_of( 'longtext' ) );
+		$this->assertStringContainsString( 'maxlength="' . \EasyQ\Users\User_Fields::MAX_VALUE_LENGTH . '"', $this->render() );
+	}
+
 	public function test_ignores_submissions_without_a_valid_nonce(): void {
 		$field_id = Services::user_fields()->create( 'company', '', User_Field::FLAG_ON_REGISTER, null );
 		$this->assertIsInt( $field_id );

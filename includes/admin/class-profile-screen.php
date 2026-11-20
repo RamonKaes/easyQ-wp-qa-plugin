@@ -14,6 +14,7 @@ use EasyQ\Points\Points;
 use EasyQ\REST\REST_Errors;
 use EasyQ\Services;
 use EasyQ\Users\Levels;
+use EasyQ\Users\User_Fields;
 use EasyQ\Users\User_Status;
 use WP_User;
 
@@ -87,9 +88,9 @@ final class Profile_Screen {
 					<th scope="row"><label for="<?php echo esc_attr( $field_id ); ?>"><?php echo esc_html( $field->display_label() ); ?></label></th>
 					<td>
 						<?php if ( $field->is_multi_line() ) : ?>
-							<textarea id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" rows="5" cols="30"><?php echo esc_textarea( Services::user_fields()->value( $user->ID, $field ) ); ?></textarea>
+							<textarea id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" rows="5" cols="30" maxlength="<?php echo esc_attr( (string) User_Fields::MAX_VALUE_LENGTH ); ?>"><?php echo esc_textarea( Services::user_fields()->value( $user->ID, $field ) ); ?></textarea>
 						<?php else : ?>
-							<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" class="regular-text" id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" value="<?php echo esc_attr( Services::user_fields()->value( $user->ID, $field ) ); ?>" />
+							<input type="<?php echo $field->is_link() ? 'url' : 'text'; ?>" class="regular-text" id="<?php echo esc_attr( $field_id ); ?>" name="easyq_fields[<?php echo esc_attr( (string) $field->id ); ?>]" maxlength="<?php echo esc_attr( (string) User_Fields::MAX_VALUE_LENGTH ); ?>" value="<?php echo esc_attr( Services::user_fields()->value( $user->ID, $field ) ); ?>" />
 						<?php endif; ?>
 					</td>
 				</tr>

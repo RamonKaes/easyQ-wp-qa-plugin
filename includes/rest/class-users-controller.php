@@ -19,6 +19,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
 use EasyQ\Users\Levels;
+use EasyQ\Users\User_Fields;
 use EasyQ\Users\User_Query;
 use EasyQ\Users\User_Status;
 use WP_Error;
@@ -114,7 +115,11 @@ final class Users_Controller extends Controller {
 						'fields'        => array(
 							'description'          => __( 'Values of the profile fields, keyed by field name.', 'easyq' ),
 							'type'                 => 'object',
-							'additionalProperties' => array( 'type' => 'string' ),
+							// Longer values are refused, as Question2Answer reports the length, not cut without a word.
+							'additionalProperties' => array(
+								'type'      => 'string',
+								'maxLength' => User_Fields::MAX_VALUE_LENGTH,
+							),
 						),
 						'remove_avatar' => array(
 							'description' => __( 'Whether to remove the uploaded avatar.', 'easyq' ),

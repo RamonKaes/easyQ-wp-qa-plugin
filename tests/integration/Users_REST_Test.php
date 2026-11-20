@@ -157,6 +157,17 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertSame( $user, $this->event_params( 'u_save' )['user_id'] );
 	}
 
+	public function test_a_value_longer_than_its_field_is_refused_not_cut(): void {
+		$this->login();
+		$long = str_repeat( 'x', \EasyQ\Users\User_Fields::MAX_VALUE_LENGTH + 1 );
+
+		// As Question2Answer reports the length (F-225): refused, and nothing saved.
+		$response = $this->request( 'POST', '/users/me', array( 'fields' => array( 'location' => $long ) ) );
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'rest_invalid_param', $response->as_error()->get_error_code() );
+		$this->assertSame( 200, $this->request( 'POST', '/users/me', array( 'fields' => array( 'location' => substr( $long, 1 ) ) ) )->get_status() );
+	}
+
 	public function test_visitors_and_blocked_users_cannot_update_profiles(): void {
 		$this->assertSame( 401, $this->request( 'POST', '/users/me', array( 'fields' => array( 'location' => 'Rome' ) ) )->get_status() );
 
