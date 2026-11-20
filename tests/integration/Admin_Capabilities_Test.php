@@ -94,6 +94,29 @@ final class Admin_Capabilities_Test extends Test_Case {
 		}
 	}
 
+	public function test_the_menu_item_leads_moderators_to_a_screen_they_may_open(): void {
+		global $submenu;
+		$this->menu();
+		$moderator = (int) $this->user( 'editor' )->user_id;
+		$this->assertTrue( user_can( $moderator, 'easyq_moderate' ) );
+		$this->assertFalse( user_can( $moderator, 'easyq_manage' ) );
+
+		// Core links the menu item of a plugin to its first entry, whether the user may open it or not (wp-admin/menu-header.php).
+		$first = array_values( (array) $submenu['easyq'] )[0];
+		$this->assertTrue( user_can( $moderator, (string) $first[1] ), 'The first entry of the menu: ' . $first[2] );
+
+		// The dashboard leaves out what only managers use.
+		wp_set_current_user( $moderator );
+		$GLOBALS['title'] = 'Q&A Dashboard'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- As wp-admin/admin.php sets it.
+		ob_start();
+		( new \EasyQ\Admin\Dashboard_Screen() )->render();
+		$html = (string) ob_get_clean();
+		unset( $GLOBALS['title'] );
+		$this->assertStringContainsString( 'easyq-figures-posts', $html );
+		$this->assertStringNotContainsString( 'easyq-figures-system', $html );
+		$this->assertStringNotContainsString( 'page=easyq-settings', $html );
+	}
+
 	public function test_every_form_handler_refuses_users_without_the_capability_of_its_menu_entry(): void {
 		$capabilities = $this->menu();
 		$users        = array(

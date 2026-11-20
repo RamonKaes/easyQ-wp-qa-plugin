@@ -50,14 +50,16 @@ final class Dashboard_Screen {
 	/**
 	 * Adds the easyQ menu and the dashboard as its first entry.
 	 *
-	 * The menu is shown to moderators too; without the dashboard, it leads to the first
-	 * screen they may use.
+	 * The menu is shown to moderators too, and so is the dashboard: core links the menu item of
+	 * a plugin to its first entry (`wp-admin/menu-header.php`), whether the user may open it or
+	 * not, so the first entry is one every user of the menu may open. What only managers use
+	 * (the figures of users and of the system, the links to settings and tools) stays theirs.
 	 *
 	 * @since 0.1.0
 	 */
 	public function add_menu(): void {
 		$hook = add_menu_page( __( 'Q&A Dashboard', 'easyq' ), 'easyQ', Capabilities::MODERATE, self::PAGE, array( $this, 'render' ), 'dashicons-format-chat', 26 );
-		add_submenu_page( self::PAGE, __( 'Q&A Dashboard', 'easyq' ), __( 'Dashboard', 'easyq' ), Capabilities::MANAGE, self::PAGE, array( $this, 'render' ) );
+		add_submenu_page( self::PAGE, __( 'Q&A Dashboard', 'easyq' ), __( 'Dashboard', 'easyq' ), Capabilities::MODERATE, self::PAGE, array( $this, 'render' ) );
 		add_action( 'load-' . $hook, array( $this, 'load' ) );
 	}
 
@@ -104,7 +106,6 @@ final class Dashboard_Screen {
 			'A' => Site_Stats::anonymous( 'A' ),
 			'C' => Site_Stats::anonymous( 'C' ),
 		);
-		$users     = count_users();
 
 		printf( '<h2 id="easyq-figures-posts">%s</h2>', esc_html__( 'Posts', 'easyq' ) );
 		$this->render_table(
@@ -123,11 +124,16 @@ final class Dashboard_Screen {
 			)
 		);
 
+		if ( ! current_user_can( Capabilities::MANAGE ) ) {
+			echo '</div>';
+			return;
+		}
+
 		printf( '<h2 id="easyq-figures-users">%s</h2>', esc_html__( 'Users', 'easyq' ) );
 		$this->render_table(
 			'easyq-figures-users',
 			array(
-				__( 'Registered users', 'easyq' )  => $users['total_users'],
+				__( 'Registered users', 'easyq' )  => count_users()['total_users'],
 				__( 'Users with points', 'easyq' ) => Counts::get( Counts::USERS_WITH_POINTS ),
 				__( 'Users who posted', 'easyq' )  => Site_Stats::users_who_posted(),
 				__( 'Users who voted', 'easyq' )   => Site_Stats::users_who_voted(),

@@ -77,13 +77,14 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 		$this->assertStringContainsString( 'site-health.php?tab=debug', $html );
 	}
 
-	public function test_menu_leads_moderators_past_the_dashboard(): void {
+	public function test_the_menu_and_its_dashboard_are_for_moderators(): void {
 		global $menu, $submenu;
 
+		// Core links the menu item to its first entry, so both ask for the same capability (F-216).
 		( new Dashboard_Screen() )->add_menu();
 		$top = array_column( $menu ?? array(), 1, 2 );
 		$this->assertSame( Capabilities::MODERATE, $top[ Dashboard_Screen::PAGE ] ?? null );
-		$this->assertSame( Capabilities::MANAGE, array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 1, 2 )[ Dashboard_Screen::PAGE ] ?? null );
+		$this->assertSame( Capabilities::MODERATE, array_column( $submenu[ Dashboard_Screen::PAGE ] ?? array(), 1, 2 )[ Dashboard_Screen::PAGE ] ?? null );
 	}
 
 	public function test_widget_is_for_moderators_only(): void {
