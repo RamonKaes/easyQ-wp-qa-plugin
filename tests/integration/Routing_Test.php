@@ -294,4 +294,28 @@ final class Routing_Test extends Test_Case {
 		$this->assertNull( Block_Context::router()->current() );
 		$this->assertTrue( is_single() );
 	}
+
+	public function test_a_visitor_sees_their_own_waiting_question_on_its_page(): void {
+		global $wpdb;
+		$router = \EasyQ\Blocks\Block_Context::router();
+		$cookie = 4242;
+		$wpdb->insert(
+			\EasyQ\Database\Schema::table( 'cookies' ),
+			array(
+				'id'      => $cookie,
+				'created' => current_time( 'mysql', true ),
+			)
+		);
+		$question = $this->ask( new \EasyQ\Actor( null, $cookie ), 'A question of a visitor that waits', 'x', array(), null, true );
+		$name     = \EasyQ\Util\Cookies::name( \EasyQ\Users\Visitor_Cookie::NAME );
+
+		// As the REST API shows it (F-219): with the visitor cookie of the post, not without, not with another.
+		$_COOKIE[ $name ] = (string) $cookie;
+		$this->assertSame( $question->id, $router->resolve( 'question', (string) $question->id, null )->question()?->id );
+		unset( $_COOKIE[ $name ] );
+		$this->assertSame( 'not_found', $router->resolve( 'question', (string) $question->id, null )->name );
+		$_COOKIE[ $name ] = '4343';
+		$this->assertSame( 'not_found', $router->resolve( 'question', (string) $question->id, null )->name );
+		unset( $_COOKIE[ $name ] );
+	}
 }

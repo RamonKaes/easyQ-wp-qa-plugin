@@ -116,7 +116,19 @@ final class Router {
 	public function shown_question(): ?Post {
 		$question = $this->current?->question();
 
-		return null !== $question && Services::permissions()->shows( $question, Actor::current() ) ? $question : null;
+		return null !== $question && Services::permissions()->shows( $question, self::viewer() ) ? $question : null;
+	}
+
+	/**
+	 * Returns who views the page: the user, or a visitor with the cookie of their posts, so
+	 * that a visitor sees their own waiting post on its page, as the REST API shows it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return Actor
+	 */
+	private static function viewer(): Actor {
+		return Actor::current( \EasyQ\Users\Visitor_Cookie::current() );
 	}
 
 	/**
@@ -225,7 +237,7 @@ final class Router {
 			case 'question':
 				$post = is_numeric( $arg ) ? Services::posts()->find( (int) $arg ) : null;
 				// A hidden or queued question is not found for those who may not see it, as in the REST API and core.
-				return null !== $post && Post::QUESTION === $post->base_type() && Services::permissions()->post_rules( $post, Actor::current() )['viewable'] ? new Route( 'question', $post ) : Route::not_found();
+				return null !== $post && Post::QUESTION === $post->base_type() && Services::permissions()->post_rules( $post, self::viewer() )['viewable'] ? new Route( 'question', $post ) : Route::not_found();
 
 			case 'tag':
 				$tag = null === $arg ? '' : Text::query_text( wp_strip_all_tags( $arg, true ) );
