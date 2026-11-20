@@ -424,6 +424,21 @@ final class Avatars {
 	}
 
 	/**
+	 * Returns the address of the avatar of a user, or false while the site shows no avatars,
+	 * as core leaves `avatar_urls` out of its REST answers then: the address of a Gravatar is
+	 * a hash of the email address.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID, 0 for an author without an account.
+	 * @param int $size    Size in pixels.
+	 * @return string|false
+	 */
+	public static function url( int $user_id, int $size ): string|false {
+		return get_option( 'show_avatars' ) ? get_avatar_url( $user_id, array( 'size' => $size ) ) : false;
+	}
+
+	/**
 	 * Returns the attachment ID of the uploaded avatar of a user.
 	 *
 	 * @since 0.1.0

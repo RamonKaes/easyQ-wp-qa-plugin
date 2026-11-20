@@ -533,7 +533,7 @@ final class Users_Controller extends Controller {
 			'id'     => $user->ID,
 			'name'   => $user->display_name,
 			'link'   => URLs::user( $user ),
-			'avatar' => get_avatar_url( $user->ID, array( 'size' => 192 ) ),
+			'avatar' => Avatars::url( $user->ID, 192 ),
 			'level'  => Levels::labels()[ $level ] ?? '',
 			'title'  => Services::user_titles()->title( $user->ID ),
 			'points' => Services::points()->get( $user->ID ),

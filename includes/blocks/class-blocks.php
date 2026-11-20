@@ -14,6 +14,7 @@ use EasyQ\REST\Post_Input;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Assets;
+use EasyQ\Users\Avatars;
 use WP_Block;
 
 defined( 'ABSPATH' ) || exit;
@@ -193,7 +194,7 @@ final class Blocks {
 		return match ( $source_args['key'] ?? '' ) {
 			'name'        => esc_html( $user->display_name ),
 			'url'         => esc_url( \EasyQ\Frontend\URLs::user( $user ) ),
-			'avatar'      => esc_url( (string) get_avatar_url( $user->ID, array( 'size' => 192 ) ) ),
+			'avatar'      => esc_url( (string) Avatars::url( $user->ID, 192 ) ),
 			'points'      => esc_html( Render::number( Services::points()->get( $user->ID ) ) ),
 			'title'       => esc_html( Services::user_titles()->title( $user->ID ) ),
 			'description' => esc_html( $user->description ),

@@ -17,6 +17,7 @@ use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\IP;
 use EasyQ\Util\Text;
+use EasyQ\Users\Avatars;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -176,7 +177,7 @@ final class Post_Formatter {
 			return array(
 				'id'     => null,
 				'name'   => '' === (string) $post->author_name ? __( 'Anonymous', 'easyq' ) : (string) $post->author_name,
-				'avatar' => get_avatar_url( 0, array( 'size' => 96 ) ),
+				'avatar' => Avatars::url( 0, 96 ),
 				'points' => null,
 			);
 		}
@@ -184,7 +185,7 @@ final class Post_Formatter {
 		return array(
 			'id'     => $user->ID,
 			'name'   => $user->display_name,
-			'avatar' => get_avatar_url( $user->ID, array( 'size' => 96 ) ),
+			'avatar' => Avatars::url( $user->ID, 96 ),
 			'points' => Services::points()->get( $user->ID ),
 		);
 	}
