@@ -131,8 +131,8 @@ final class Lists_Render {
 			);
 		};
 
-		$previous = $result['page'] > 1 ? $link( 'previous', $result['page'] - 1, __( 'Previous', 'easyq' ), $arrow[0] ?? '' ) : '';
-		$next     = $result['page'] < $pages ? $link( 'next', $result['page'] + 1, __( 'Next', 'easyq' ), $arrow[1] ?? '' ) : '';
+		$previous = $result['page'] > 1 ? $link( 'previous', $result['page'] - 1, __( 'Previous Page', 'easyq' ), $arrow[0] ?? '' ) : '';
+		$next     = $result['page'] < $pages ? $link( 'next', $result['page'] + 1, __( 'Next Page', 'easyq' ), $arrow[1] ?? '' ) : '';
 
 		$numbers = '';
 		if ( $attributes['showNumbers'] ?? true ) {
@@ -153,7 +153,7 @@ final class Lists_Render {
 		return sprintf(
 			'<nav %s aria-label="%s">%s%s%s</nav>',
 			get_block_wrapper_attributes( array( 'class' => 'wp-block-query-pagination' ) ),
-			esc_attr__( 'Pages', 'easyq' ),
+			esc_attr__( 'Pagination', 'easyq' ),
 			$previous,
 			$numbers,
 			$next

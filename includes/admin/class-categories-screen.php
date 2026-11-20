@@ -408,7 +408,7 @@ final class Categories_Screen {
 				$this->render_category_select( 'parent', $categories->possible_parents( $category->id ), $saving ? self::id( $this->input['parent'] ) : $category->parent_id, __( 'None (top level)', 'easyq' ), 'easyq-category-parent-description' );
 				printf(
 					'<p class="description" id="easyq-category-parent-description">%s</p>',
-					esc_html( sprintf( /* translators: %d: maximum depth. */ __( 'Categories can be nested up to %d levels deep, so some categories are not offered. A moved category goes to the end of its new siblings.', 'easyq' ), Categories::MAX_DEPTH ) )
+					esc_html( sprintf( /* translators: %d: maximum depth. */ _n( 'Categories can be nested up to %d level deep, so some categories are not offered. A moved category goes to the end of its new siblings.', 'Categories can be nested up to %d levels deep, so some categories are not offered. A moved category goes to the end of its new siblings.', Categories::MAX_DEPTH, 'easyq' ), Categories::MAX_DEPTH ) )
 				);
 			}
 		);
@@ -588,7 +588,7 @@ final class Categories_Screen {
 	 * @param callable $control Renders the control.
 	 */
 	private function render_row( string $field, string $label, callable $control ): void {
-		echo '<tr><th scope="row">';
+		printf( '<tr class="%s"><th scope="row">', esc_attr( $this->field_classes( $field, 'title' === $field ) ) );
 		$this->render_label( $field, $label );
 		echo '</th><td>';
 		$control();
@@ -607,7 +607,7 @@ final class Categories_Screen {
 	 * @param string $description Description.
 	 */
 	private function render_input( string $field, string $label, string $value, bool $required, string $description = '' ): void {
-		printf( '<div class="form-field%s">', $required ? ' form-required' : '' );
+		printf( '<div class="%s">', esc_attr( $this->field_classes( $field, $required ) ) );
 		$this->render_label( $field, $label );
 		$this->render_text( $field, $value, $required, $description, false );
 		echo '</div>';
@@ -735,6 +735,20 @@ final class Categories_Screen {
 	}
 
 	/**
+	 * Returns the classes of the row of a field, with `form-invalid` after an error, as core
+	 * marks a field it refused (`wp-admin/css/forms.css`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $field    Field name.
+	 * @param bool   $required Whether the field is required.
+	 * @return string
+	 */
+	private function field_classes( string $field, bool $required = false ): string {
+		return 'form-field' . ( $required ? ' form-required' : '' ) . ( '' === $this->error( $field ) ? '' : ' form-invalid' );
+	}
+
+	/**
 	 * Renders the check box that confirms a deletion, with its error.
 	 *
 	 * @since 0.1.0
@@ -761,7 +775,7 @@ final class Categories_Screen {
 	private function render_error( string $field ): void {
 		$message = $this->error( $field );
 		if ( '' !== $message ) {
-			printf( '<p class="notice-error" id="easyq-category-%1$s-error"><strong>%2$s</strong></p>', esc_attr( $field ), esc_html( $message ) );
+			printf( '<p class="description" id="easyq-category-%1$s-error"><strong>%2$s</strong></p>', esc_attr( $field ), esc_html( $message ) );
 		}
 	}
 

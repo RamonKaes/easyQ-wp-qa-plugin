@@ -15,6 +15,7 @@ use EasyQ\Blocks\Render;
 use EasyQ\Frontend\Routes;
 use EasyQ\Frontend\URLs;
 use EasyQ\Points\Points;
+use EasyQ\Posts\Content_Renderer;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\User_Query;
@@ -254,7 +255,7 @@ final class Users_Render {
 
 		$items = '';
 		if ( '' !== $user->user_url && in_array( 'website', $rows, true ) ) {
-			$items .= self::item( __( 'Website', 'easyq' ), sprintf( '<a href="%1$s" rel="nofollow ugc">%2$s</a>', esc_url( $user->user_url ), esc_html( $user->user_url ) ) );
+			$items .= self::item( __( 'Website', 'easyq' ), sprintf( '<a href="%1$s" rel="%3$s">%2$s</a>', esc_url( $user->user_url ), esc_html( $user->user_url ), esc_attr( implode( ' ', Content_Renderer::rel( $user->user_url, array(), false ) ) ) ) );
 		}
 		if ( '' !== $user->description && in_array( 'about', $rows, true ) ) {
 			$items .= self::item( __( 'About', 'easyq' ), wpautop( esc_html( $user->description ) ) );
@@ -271,7 +272,7 @@ final class Users_Render {
 			}
 
 			$html = match ( true ) {
-				$field->is_link()       => sprintf( '<a href="%1$s" rel="nofollow ugc">%2$s</a>', esc_url( $value ), esc_html( $value ) ),
+				$field->is_link()       => sprintf( '<a href="%1$s" rel="%3$s">%2$s</a>', esc_url( $value ), esc_html( $value ), esc_attr( implode( ' ', Content_Renderer::rel( $value, array(), false ) ) ) ),
 				$field->is_multi_line() => wpautop( esc_html( $value ) ),
 				default                 => esc_html( $value ),
 			};

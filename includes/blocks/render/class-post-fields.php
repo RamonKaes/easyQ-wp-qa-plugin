@@ -298,15 +298,13 @@ final class Post_Fields {
 		$show_modified = ( $attributes['showModified'] ?? true ) && Options::get_bool( 'viewing', 'show_post_update_meta' );
 		if ( $show_modified && null !== $post->updated && Post::UPDATE_SELECTED !== $post->update_type ) {
 			$editor = null === $post->last_user_id ? false : get_userdata( $post->last_user_id );
-			$html  .= ' · ' . sprintf(
+			$time   = sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated, $display, $format ) ) );
+			// Whole sentences, so that translations can order them.
+			$html .= ' · ' . ( false !== $editor && $editor->ID !== $post->user_id
+				/* translators: 1: time of the change, 2: name of the user who changed the post. */
+				? sprintf( esc_html__( 'edited %1$s by %2$s', 'easyq' ), $time, esc_html( $editor->display_name ) )
 				/* translators: %s: time of the change. */
-				esc_html__( 'edited %s', 'easyq' ),
-				sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated, $display, $format ) ) )
-			);
-			if ( false !== $editor && $editor->ID !== $post->user_id ) {
-				/* translators: %s: name of the user who changed the post. */
-				$html .= ' ' . esc_html( sprintf( __( 'by %s', 'easyq' ), $editor->display_name ) );
-			}
+				: sprintf( esc_html__( 'edited %s', 'easyq' ), $time ) );
 		}
 
 		return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), $html );
@@ -398,7 +396,7 @@ final class Post_Fields {
 
 		$html = '' === $who
 			? $what . ' ' . $when
-			/* translators: 1: what happened, e.g. "answered", 2: when it happened, e.g. "5 minutes ago", 3: who did it. */
+			/* translators: 1: what happened, e.g. "answered", 2: when it happened, e.g. "5 minutes ago", 3: who did it. Reorder as the language needs. */
 			: sprintf( esc_html__( '%1$s %2$s by %3$s', 'easyq' ), $what, $when, $who );
 
 		return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), $html );
@@ -612,7 +610,7 @@ final class Post_Fields {
 		if ( $rules['reply_button'] && null !== $post->parent_id ) {
 			$parent = Services::posts()->find( $post->parent_id );
 			if ( null !== $parent ) {
-				$buttons[] = Forms::reply_button( $parent );
+				$buttons[] = Forms::reply_button( $parent, $post );
 			}
 		}
 

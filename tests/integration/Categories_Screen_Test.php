@@ -370,4 +370,24 @@ final class Categories_Screen_Test extends Test_Case {
 			)
 		);
 	}
+
+	public function test_a_refused_field_is_marked_as_core_marks_it(): void {
+		$screen = new Categories_Screen();
+		$this->assertNull(
+			$screen->handle(
+				array(
+					'easyq_action' => 'add',
+					'title'        => '',
+				)
+			)
+		);
+
+		// `form-invalid` on the field, as core marks a field it refused (F-230); the message describes it.
+		ob_start();
+		$screen->render();
+		$html = (string) ob_get_clean();
+		$this->assertMatchesRegularExpression( '/<div class="form-field form-required form-invalid">\s*<label for="easyq-category-title"/', $html );
+		$this->assertStringContainsString( '<p class="description" id="easyq-category-title-error">', $html );
+		$this->assertStringNotContainsString( '<p class="notice-error"', $html );
+	}
 }

@@ -264,7 +264,7 @@ final class Settings_Screen {
 		echo '<p>' . esc_html(
 			$progress['running']
 				/* translators: 1: users handled, 2: all users who get it. */
-				? sprintf( __( 'Sending: %1$s of %2$s users.', 'easyq' ), number_format_i18n( $progress['done'] ), number_format_i18n( $progress['total'] ) )
+				? sprintf( _n( 'Sending: %1$s of %2$s user.', 'Sending: %1$s of %2$s users.', $progress['total'], 'easyq' ), number_format_i18n( $progress['done'] ), number_format_i18n( $progress['total'] ) )
 				: __( 'The newsletter goes to the users who subscribed on their account page and confirmed it by email.', 'easyq' )
 		) . '</p>';
 

@@ -181,7 +181,7 @@ final class Block_Settings_Test extends Test_Case {
 
 		$default = $render( array() );
 		$this->assertStringContainsString( 'wp-block-query-pagination-numbers', $default );
-		$this->assertStringContainsString( '>Previous</a>', $default );
+		$this->assertStringContainsString( '>Previous Page</a>', $default );
 		$this->assertStringNotContainsString( '-arrow', $default );
 
 		$arrows = $render(
@@ -191,11 +191,11 @@ final class Block_Settings_Test extends Test_Case {
 				'showNumbers' => false,
 			)
 		);
-		$this->assertStringContainsString( 'is-arrow-chevron" aria-hidden="true">«</span><span class="screen-reader-text">Previous</span>', $arrows );
-		$this->assertStringContainsString( '<span class="screen-reader-text">Next</span><span class="wp-block-query-pagination-next-arrow is-arrow-chevron" aria-hidden="true">»</span>', $arrows );
+		$this->assertStringContainsString( 'is-arrow-chevron" aria-hidden="true">«</span><span class="screen-reader-text">Previous Page</span>', $arrows );
+		$this->assertStringContainsString( '<span class="screen-reader-text">Next Page</span><span class="wp-block-query-pagination-next-arrow is-arrow-chevron" aria-hidden="true">»</span>', $arrows );
 		$this->assertStringNotContainsString( 'wp-block-query-pagination-numbers', $arrows );
 
-		$this->assertStringContainsString( '>Previous</a>', $render( array( 'showLabel' => false ) ), 'Without arrows the labels stay visible.' );
+		$this->assertStringContainsString( '>Previous Page</a>', $render( array( 'showLabel' => false ) ), 'Without arrows the labels stay visible.' );
 	}
 
 	public function test_terms_have_a_prefix_and_suffix(): void {
@@ -648,7 +648,7 @@ final class Block_Settings_Test extends Test_Case {
 		$page = static fn (): string => do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-list --><!-- wp:easyq/answer-template --><!-- wp:easyq/post-actions /--><!-- wp:easyq/comment-list --><!-- wp:easyq/comment-template --><!-- wp:easyq/post-actions /--><!-- /wp:easyq/comment-template --><!-- /wp:easyq/comment-list --><!-- wp:easyq/comment-form /--><!-- /wp:easyq/answer-template --><!-- /wp:easyq/answer-list --><!-- /wp:easyq/question -->' );
 
 		$html = $page();
-		$this->assertMatchesRegularExpression( '~<a class="wp-block-button__link wp-element-button" rel="nofollow" href="[^"]*easyq_comment=' . $answer->id . '#easyq-comment-form-' . $answer->id . '" aria-controls="easyq-comment-form-' . $answer->id . '" aria-expanded="false"[^>]*>Reply</a>~', $html );
+		$this->assertMatchesRegularExpression( '~<a class="wp-block-button__link wp-element-button" rel="nofollow" href="[^"]*easyq_comment=' . $answer->id . '#easyq-comment-form-' . $answer->id . '" aria-label="Reply to [^"]+" aria-controls="easyq-comment-form-' . $answer->id . '" aria-expanded="false"[^>]*>Reply</a>~', $html );
 		$this->assertMatchesRegularExpression( '~<details [^>]*id="easyq-comment-form-' . $answer->id . '"(?![^>]* open)[^>]*>~', $html, 'The form stays closed.' );
 		// The addresses of answers have an anchor of their own, which gives way to the anchor of the form.
 		$this->assertMatchesRegularExpression( '~href="[^"]*easyq_edit=' . $answer->id . '#easyq-post-' . $answer->id . '"~', $html );

@@ -6,7 +6,16 @@
  *
  * @since 0.1.0
  */
-import { store, getContext, getElement } from '@wordpress/interactivity';
+import * as interactivity from '@wordpress/interactivity';
+
+const { store, getContext, getElement } = interactivity;
+
+// Actions that call `preventDefault()` say so, as core asks since WordPress 6.8; before it,
+// every action ran with the event at once, so the actions are used as they are.
+// Read at run time: a named import of a missing export would stop the whole module on 6.7.
+const withSyncEvent =
+	Reflect.get( interactivity, 'withSyncEvent' ) ||
+	( ( callback ) => callback );
 
 /**
  * Returns the form of a submit event, or null for any other event or element.
@@ -173,7 +182,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {MouseEvent} event Click event of the link.
 		 */
-		*navigate( event ) {
+		navigate: withSyncEvent( function* ( event ) {
 			if (
 				event.button !== 0 ||
 				event.metaKey ||
@@ -185,7 +194,7 @@ const { state } = store( 'easyq', {
 			}
 			event.preventDefault();
 			yield* navigateTo( getElement().ref.href );
-		},
+		} ),
 
 		/**
 		 * Opens the answer form in place of the Answer button, which without
@@ -195,7 +204,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {MouseEvent} event Click event of the button.
 		 */
-		openAnswer( event ) {
+		openAnswer: withSyncEvent( function ( event ) {
 			if (
 				event.button !== 0 ||
 				event.metaKey ||
@@ -207,7 +216,7 @@ const { state } = store( 'easyq', {
 			}
 			event.preventDefault();
 			getContext().answerOpen = true;
-		},
+		} ),
 
 		/**
 		 * Opens the comment form of the question or answer of a comment, from
@@ -218,7 +227,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {MouseEvent} event Click event of the button.
 		 */
-		openComment( event ) {
+		openComment: withSyncEvent( function ( event ) {
 			if (
 				event.button !== 0 ||
 				event.metaKey ||
@@ -232,7 +241,7 @@ const { state } = store( 'easyq', {
 			const key = getContext().commentForm;
 			state.commentForms[ key ] = true;
 			state.commentFocus = key;
-		},
+		} ),
 
 		/**
 		 * Keeps the state of a comment form in step when it is opened or closed by its summary.
@@ -313,7 +322,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {SubmitEvent} event Submit event of the form.
 		 */
-		*submit( event ) {
+		submit: withSyncEvent( function* ( event ) {
 			const form = submittedForm( event );
 			if ( ! form ) {
 				return;
@@ -378,7 +387,7 @@ const { state } = store( 'easyq', {
 			if ( ! form.querySelector( '[aria-invalid="true"]' ) ) {
 				form.reset();
 			}
-		},
+		} ),
 
 		/**
 		 * Sends a vote and updates the count. Without a usable answer, for
@@ -389,7 +398,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {SubmitEvent} event Submit event of the vote form.
 		 */
-		*vote( event ) {
+		vote: withSyncEvent( function* ( event ) {
 			const form = submittedForm( event );
 			if ( ! form ) {
 				return;
@@ -430,7 +439,7 @@ const { state } = store( 'easyq', {
 			context.up = post.votes.up;
 			context.down = post.votes.down;
 			context.vote = post.votes.user;
-		},
+		} ),
 
 		/**
 		 * Dismisses a notice. Without a usable answer the form is submitted normally.
@@ -439,7 +448,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {SubmitEvent} event Submit event of the notice form.
 		 */
-		*dismissNotice( event ) {
+		dismissNotice: withSyncEvent( function* ( event ) {
 			const form = submittedForm( event );
 			if ( ! form ) {
 				return;
@@ -467,7 +476,7 @@ const { state } = store( 'easyq', {
 			}
 
 			context.dismissed = true;
-		},
+		} ),
 
 		/**
 		 * Adds or removes a favorite. Without a usable answer the form is
@@ -477,7 +486,7 @@ const { state } = store( 'easyq', {
 		 *
 		 * @param {SubmitEvent} event Submit event of the favorite form.
 		 */
-		*favorite( event ) {
+		favorite: withSyncEvent( function* ( event ) {
 			const form = submittedForm( event );
 			if ( ! form ) {
 				return;
@@ -515,6 +524,6 @@ const { state } = store( 'easyq', {
 				? context.labels.remove
 				: context.labels.add;
 			form.elements.favorite.value = context.favorite ? '0' : '1';
-		},
+		} ),
 	},
 } );

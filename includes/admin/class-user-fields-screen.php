@@ -271,16 +271,16 @@ final class User_Fields_Screen {
 		wp_nonce_field( self::NONCE );
 		echo '<input type="hidden" name="easyq_action" value="add">';
 
-		echo '<div class="form-field form-required">';
+		printf( '<div class="%s">', esc_attr( $this->field_classes( 'label', true ) ) );
 		$this->render_label( 'label', __( 'Label', 'easyq' ) );
 		$this->render_text( 'label', $adding ? $this->input['label'] : '', true );
-		echo '</div><div class="form-field">';
+		printf( '</div><div class="%s">', esc_attr( $this->field_classes( 'name' ) ) );
 		$this->render_label( 'name', __( 'Name', 'easyq' ) );
 		$this->render_text( 'name', $adding ? $this->input['name'] : '', false, __( 'Lowercase letters, digits, hyphens and underscores; derived from the label if left empty. It cannot change later.', 'easyq' ) );
 		echo '</div><div class="form-field">';
 		$this->render_label( 'type', __( 'Type', 'easyq' ) );
 		$this->render_select( 'type', User_Fields_List_Table::type_labels(), $adding ? $this->input['type'] : 'text' );
-		echo '</div><div class="form-field">';
+		printf( '</div><div class="%s">', esc_attr( $this->field_classes( 'permit' ) ) );
 		$this->render_label( 'permit', __( 'Visible to', 'easyq' ) );
 		$this->render_select( 'permit', User_Fields::permit_choices(), $adding ? $this->input['permit'] : (string) Permits::ALL );
 		echo '</div><div class="form-field">';
@@ -317,7 +317,7 @@ final class User_Fields_Screen {
 		printf( '<input type="hidden" name="field" value="%d">', (int) $field->id );
 		echo '<table class="form-table" role="presentation"><tbody>';
 
-		echo '<tr><th scope="row">';
+		printf( '<tr class="%s"><th scope="row">', esc_attr( $this->field_classes( 'label', true ) ) );
 		$this->render_label( 'label', __( 'Label', 'easyq' ) );
 		echo '</th><td>';
 		$this->render_text( 'label', $saving ? $this->input['label'] : $field->display_label(), true );
@@ -329,7 +329,7 @@ final class User_Fields_Screen {
 		$this->render_label( 'type', __( 'Type', 'easyq' ) );
 		echo '</th><td>';
 		$this->render_select( 'type', User_Fields_List_Table::type_labels(), $saving ? $this->input['type'] : User_Fields_Controller::type( $field ) );
-		echo '</td></tr><tr><th scope="row">';
+		printf( '</td></tr><tr class="%s"><th scope="row">', esc_attr( $this->field_classes( 'permit' ) ) );
 		$this->render_label( 'permit', __( 'Visible to', 'easyq' ) );
 		echo '</th><td>';
 		$this->render_select( 'permit', User_Fields::permit_choices(), $saving ? $this->input['permit'] : (string) ( $field->permit ?? Permits::ALL ) );
@@ -356,7 +356,7 @@ final class User_Fields_Screen {
 			esc_html__( 'I understand that the field and its values are deleted for good.', 'easyq' )
 		);
 		if ( '' !== $message ) {
-			printf( '<p class="notice-error" id="easyq-user-field-confirm-error"><strong>%s</strong></p>', esc_html( $message ) );
+			printf( '<p class="description" id="easyq-user-field-confirm-error"><strong>%s</strong></p>', esc_html( $message ) );
 		}
 		// A name of its own: the edit form above has the button `submit`, and an ID must not repeat.
 		submit_button( __( 'Delete User Field', 'easyq' ), 'delete', 'easyq-delete', false );
@@ -450,7 +450,7 @@ final class User_Fields_Screen {
 			array() === $ids ? '' : ' aria-describedby="' . esc_attr( implode( ' ', $ids ) ) . '"'
 		);
 		if ( '' !== $message ) {
-			printf( '<p class="notice-error" id="%1$s-error"><strong>%2$s</strong></p>', esc_attr( $id ), esc_html( $message ) );
+			printf( '<p class="description" id="%1$s-error"><strong>%2$s</strong></p>', esc_attr( $id ), esc_html( $message ) );
 		}
 		if ( '' !== $description ) {
 			printf( '<p id="%1$s-description">%2$s</p>', esc_attr( $id ), esc_html( $description ) );
@@ -479,7 +479,7 @@ final class User_Fields_Screen {
 		}
 		echo '</select>';
 		if ( '' !== $message ) {
-			printf( '<p class="notice-error" id="easyq-user-field-%1$s-error"><strong>%2$s</strong></p>', esc_attr( $field ), esc_html( $message ) );
+			printf( '<p class="description" id="easyq-user-field-%1$s-error"><strong>%2$s</strong></p>', esc_attr( $field ), esc_html( $message ) );
 		}
 	}
 
@@ -496,6 +496,20 @@ final class User_Fields_Screen {
 			checked( $checked, true, false ),
 			esc_html__( 'Show on the registration form', 'easyq' )
 		);
+	}
+
+	/**
+	 * Returns the classes of the row of a field, with `form-invalid` after an error, as core
+	 * marks a field it refused (`wp-admin/css/forms.css`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $field    Field name.
+	 * @param bool   $required Whether the field is required.
+	 * @return string
+	 */
+	private function field_classes( string $field, bool $required = false ): string {
+		return 'form-field' . ( $required ? ' form-required' : '' ) . ( '' === $this->error( $field ) ? '' : ' form-invalid' );
 	}
 
 	/**

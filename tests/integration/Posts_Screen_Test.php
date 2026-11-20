@@ -211,6 +211,8 @@ final class Posts_Screen_Test extends Test_Case {
 		$this->assertStringContainsString( 'A question awaiting approval', $html );
 		$this->assertStringNotContainsString( 'A question by a visitor', $html );
 		$this->assertStringContainsString( esc_url( Posts_Screen::action_url( 'approve', $queued->id ) ), $html );
+		// Whole phrases as accessible names, as core names the actions of comments (F-230).
+		$this->assertStringContainsString( 'aria-label="Approve this post"', $html );
 		$this->assertStringContainsString( '<option value="approve">Approve</option>', $html );
 		$this->assertStringNotContainsString( '<option value="delete">', $html );
 		$this->assertStringContainsString( '>Software</option>', $html );

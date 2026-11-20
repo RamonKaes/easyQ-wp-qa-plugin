@@ -87,6 +87,26 @@ final class Posts_List_Table extends WP_List_Table {
 	}
 
 	/**
+	 * Returns the accessible names of the row actions, as core names those of comments
+	 * ("Approve this comment"): whole phrases, not a label put together with a number.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return array<string, string>
+	 */
+	private static function action_names(): array {
+		return array(
+			'approve'     => __( 'Approve this post', 'easyq' ),
+			'reject'      => __( 'Reject this post', 'easyq' ),
+			'clear-flags' => __( 'Clear the flags of this post', 'easyq' ),
+			'hide'        => __( 'Hide this post', 'easyq' ),
+			'reshow'      => __( 'Show this post again', 'easyq' ),
+			'reopen'      => __( 'Reopen this question', 'easyq' ),
+			'delete'      => __( 'Delete this post permanently', 'easyq' ),
+		);
+	}
+
+	/**
 	 * Returns the labels of the actions.
 	 *
 	 * @since 0.1.0
@@ -519,8 +539,7 @@ final class Posts_List_Table extends WP_List_Table {
 				'<a href="%1$s" class="%2$s" aria-label="%3$s">%4$s</a>',
 				esc_url( Posts_Screen::action_url( $action, $item->id ) ),
 				'delete' === $action || 'reject' === $action ? 'delete' : '',
-				/* translators: 1: action, 2: post ID. */
-				esc_attr( sprintf( __( '%1$s post %2$d', 'easyq' ), $labels[ $action ], $item->id ) ),
+				esc_attr( self::action_names()[ $action ] ?? $labels[ $action ] ),
 				esc_html( $labels[ $action ] )
 			);
 		}

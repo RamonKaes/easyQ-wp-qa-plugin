@@ -23,6 +23,16 @@ final class Content_Renderer_Test extends Test_Case {
 		$this->assertSame( 2, substr_count( $html, '<p>' ) );
 	}
 
+	public function test_links_to_the_site_itself_are_not_nofollow(): void {
+		// As wp_rel_callback(): `nofollow` only for links away from the site (F-230).
+		$internal = home_url( '/questions/1/' );
+		$renderer = new Content_Renderer();
+
+		$this->assertStringContainsString( '<a href="' . $internal . '" rel="ugc">', $renderer->html( 'See ' . $internal, '' ) );
+		$this->assertStringContainsString( 'rel="ugc"', $renderer->html( '<a href="' . $internal . '">here</a>', 'html' ) );
+		$this->assertStringContainsString( 'rel="nofollow ugc"', $renderer->html( '<a href="https://example.com/">there</a>', 'html' ) );
+	}
+
 	public function test_opens_links_in_new_windows_when_configured(): void {
 		Options::update( 'viewing', array( 'links_in_new_window' => true ) );
 

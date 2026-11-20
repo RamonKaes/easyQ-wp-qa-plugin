@@ -197,15 +197,18 @@ final class Newsletter {
 		);
 
 		// In the language of the recipient, as core writes emails to users (`wp_new_user_notification()`).
-		switch_to_user_locale( $user->ID );
-		$site = self::site_name();
+		// Restored only after a switch, as core does (`wp_new_user_notification()`) and as Mailer does.
+		$switched = switch_to_user_locale( $user->ID );
+		$site     = self::site_name();
 		/* translators: %s: site name. */
 		$subject = sprintf( __( '[%s] Confirm the newsletter', 'easyq' ), $site );
 		/* translators: 1: site name, 2: confirmation address. */
 		$body = sprintf( __( "Hello,\n\nyou asked for the newsletter of %1\$s. Please confirm it here:\n\n%2\$s\n\nIf you did not ask for it, ignore this email; you will get no newsletter.\n\n%1\$s", 'easyq' ), $site, $url );
 
 		$sent = Mailer::send_email( 'newsletter_confirm', new Recipient( $user->user_email, $user->ID ), $subject, $body );
-		restore_previous_locale();
+		if ( $switched ) {
+			restore_previous_locale();
+		}
 		if ( $sent ) {
 			return true;
 		}
@@ -534,15 +537,18 @@ final class Newsletter {
 			. "List-Unsubscribe-Post: List-Unsubscribe=One-Click\n";
 
 		// The text is the site owner's; what the plugin adds is in the language of the recipient.
-		switch_to_user_locale( $user->ID );
-		$sent = Mailer::send_email(
+		// Restored only after a switch, as core does (`wp_new_user_notification()`) and as Mailer does.
+		$switched = switch_to_user_locale( $user->ID );
+		$sent     = Mailer::send_email(
 			'newsletter',
 			new Recipient( $user->user_email, $user->ID ),
 			Options::get_string( 'newsletter', 'mailing_subject' ),
 			trim( Options::get_string( 'newsletter', 'mailing_body' ) ) . "\n\n\n" . __( 'To stop the newsletter:', 'easyq' ) . ' ' . $page,
 			$headers
 		);
-		restore_previous_locale();
+		if ( $switched ) {
+			restore_previous_locale();
+		}
 
 		return $sent;
 	}

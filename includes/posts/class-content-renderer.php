@@ -189,9 +189,37 @@ final class Content_Renderer {
 	 * @return string
 	 */
 	private function link_attributes( string $html ): string {
-		$attributes = Options::get_bool( 'viewing', 'links_in_new_window' ) ? ' target="_blank" rel="nofollow ugc noopener"' : ' rel="nofollow ugc"';
+		$new_window = Options::get_bool( 'viewing', 'links_in_new_window' );
 
-		return (string) preg_replace( '/<a href="([^"]*)" rel="nofollow">/', '<a href="$1"' . $attributes . '>', $html );
+		return (string) preg_replace_callback(
+			// make_clickable() marks links away from the site `nofollow` and links to it with no rel.
+			'/<a href="([^"]*)"(?: rel="nofollow")?>/',
+			static fn ( array $link ): string => sprintf(
+				'<a href="%1$s"%2$s rel="%3$s">',
+				$link[1],
+				$new_window ? ' target="_blank"' : '',
+				implode( ' ', self::rel( html_entity_decode( $link[1] ), array(), $new_window ) )
+			),
+			$html
+		);
+	}
+
+	/**
+	 * Returns the rel values of a link users wrote, as `wp_rel_ugc()` adds them: `ugc`, and
+	 * `nofollow` except for a link to the site itself (`wp_rel_callback()`), with `noopener`
+	 * for a new window.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string   $href       Address of the link.
+	 * @param string[] $existing   Values the link has.
+	 * @param bool     $new_window Whether the link opens a new window.
+	 * @return string[]
+	 */
+	public static function rel( string $href, array $existing, bool $new_window ): array {
+		$added = wp_is_internal_link( $href ) ? array( 'ugc' ) : array( 'nofollow', 'ugc' );
+
+		return array_values( array_unique( array_merge( $existing, $added, $new_window ? array( 'noopener' ) : array() ) ) );
 	}
 
 	/**
@@ -211,8 +239,7 @@ final class Content_Renderer {
 				continue;
 			}
 			$rel = preg_split( '/\s+/', strtolower( (string) $tags->get_attribute( 'rel' ) ), -1, PREG_SPLIT_NO_EMPTY );
-			$rel = array_merge( is_array( $rel ) ? $rel : array(), array( 'nofollow', 'ugc' ), $new_window ? array( 'noopener' ) : array() );
-			$tags->set_attribute( 'rel', implode( ' ', array_unique( $rel ) ) );
+			$tags->set_attribute( 'rel', implode( ' ', self::rel( (string) $tags->get_attribute( 'href' ), is_array( $rel ) ? $rel : array(), $new_window ) ) );
 			if ( $new_window ) {
 				$tags->set_attribute( 'target', '_blank' );
 			}

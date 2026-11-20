@@ -696,7 +696,7 @@ final class Fields {
 			if ( isset( $titles[ $points ] ) ) {
 				if ( function_exists( 'add_settings_error' ) ) {
 					/* translators: %s: number of points. */
-					add_settings_error( 'easyq_points', 'easyq-title-points', sprintf( __( 'Only one title can need %s points; the first one was kept.', 'easyq' ), number_format_i18n( $points ) ), 'warning' );
+					add_settings_error( 'easyq_points', 'easyq-title-points', sprintf( _n( 'Only one title can need %s point; the first one was kept.', 'Only one title can need %s points; the first one was kept.', $points, 'easyq' ), number_format_i18n( $points ) ), 'warning' );
 				}
 				continue;
 			}

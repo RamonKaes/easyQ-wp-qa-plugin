@@ -285,13 +285,14 @@ final class Tools_Screen {
 
 		if ( $confirm ) {
 			printf(
-				'<p><label for="%1$s-confirm"><input type="checkbox" id="%1$s-confirm" name="confirm" value="1" required%2$s> %3$s</label></p>',
+				'<p class="form-required%4$s"><label for="%1$s-confirm"><input type="checkbox" id="%1$s-confirm" name="confirm" value="1" required%2$s> %3$s</label></p>',
 				esc_attr( $id ),
 				$this->unconfirmed === $tool ? ' aria-invalid="true" aria-describedby="' . esc_attr( $id ) . '-error"' : '',
-				esc_html__( 'I understand that the posts are deleted for good.', 'easyq' )
+				esc_html__( 'I understand that the posts are deleted for good.', 'easyq' ),
+				$this->unconfirmed === $tool ? ' form-invalid' : ''
 			);
 			if ( $this->unconfirmed === $tool ) {
-				printf( '<p class="notice-error" id="%1$s-error"><strong>%2$s</strong></p>', esc_attr( $id ), esc_html__( 'Please confirm first.', 'easyq' ) );
+				printf( '<p class="description" id="%1$s-error"><strong>%2$s</strong></p>', esc_attr( $id ), esc_html__( 'Please confirm first.', 'easyq' ) );
 			}
 		}
 

@@ -66,6 +66,36 @@ test.describe( 'Question page in place', () => {
 		);
 	} );
 
+	test( 'the store actions raise no warning of core about synchronous events', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		const warnings = [];
+		page.on( 'console', ( message ) => {
+			if ( message.text().includes( 'withSyncEvent' ) ) {
+				warnings.push( message.text() );
+			}
+		} );
+		const question = await ask(
+			requestUtils,
+			'Clicked through the actions'
+		);
+		await page.goto( questionUrl( question.id ) );
+
+		// Actions that call preventDefault() are wrapped in withSyncEvent(), as core asks (F-230).
+		await openAnswerForm( page );
+		await page.getByRole( 'button', { name: 'Add to favorites' } ).click();
+		await expect(
+			page.getByRole( 'button', { name: 'Remove from favorites' } )
+		).toBeVisible();
+		expect( warnings ).toEqual( [] );
+		await requestUtils.rest( {
+			method: 'DELETE',
+			path: '/easyq/v1/favorites',
+			data: { type: 'question', id: question.id },
+		} );
+	} );
+
 	test( 'adds a favorite once with a double click and says so', async ( {
 		page,
 		requestUtils,
@@ -375,7 +405,7 @@ test.describe( 'Question page in place', () => {
 		await page.goto( questionUrl( question.id ) );
 		await page.evaluate( () => ( window.easyqNoReload = true ) );
 		const form = page.locator( `#easyq-comment-form-${ answer.id }` );
-		const reply = page.getByRole( 'link', { name: 'Reply', exact: true } );
+		const reply = page.getByRole( 'link', { name: /^Reply to / } );
 		await expect( form ).not.toHaveAttribute( 'open' );
 		await expect( reply ).toHaveAttribute( 'aria-expanded', 'false' );
 
@@ -399,7 +429,7 @@ test.describe( 'Question page in place', () => {
 		await plain.goto(
 			`${ requestUtils.baseURL }${ questionUrl( question.id ) }`
 		);
-		await plain.getByRole( 'link', { name: 'Reply', exact: true } ).click();
+		await plain.getByRole( 'link', { name: /^Reply to / } ).click();
 		await expect( plain ).toHaveURL(
 			new RegExp( `easyq_comment=${ answer.id }` )
 		);

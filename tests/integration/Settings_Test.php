@@ -659,4 +659,27 @@ final class Settings_Test extends Test_Case {
 		// A permission without points has no minimum to show.
 		$this->assertStringContainsString( '<select id="easyq-permissions-permit-view-q-page" name="easyq_settings_permissions[permit_view_q_page]" class="regular-text">', $html );
 	}
+
+	public function test_the_warning_about_titles_with_the_same_points_has_a_plural(): void {
+		global $wp_settings_errors;
+		$wp_settings_errors = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Only the messages of this call.
+		$titles             = new \ReflectionMethod( \EasyQ\Settings\Fields::class, 'titles' );
+
+		$titles->invoke(
+			null,
+			array(
+				array(
+					'points' => '1',
+					'title'  => 'First',
+				),
+				array(
+					'points' => '1',
+					'title'  => 'Second',
+				),
+			)
+		);
+
+		// One point in the singular (F-230), as _n() gives it.
+		$this->assertStringContainsString( 'need 1 point;', implode( ' ', array_column( get_settings_errors( 'easyq_points' ), 'message' ) ) );
+	}
 }

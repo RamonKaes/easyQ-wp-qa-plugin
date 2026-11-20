@@ -566,22 +566,26 @@ final class Forms {
 	 * @since 0.1.0
 	 *
 	 * @param Post $parent_post Question or answer the comment belongs to.
+	 * @param Post $comment     Comment the button belongs to; its author names the target, as
+	 *                          core's "Reply to %s" (`get_comment_reply_link()`).
 	 * @return string
 	 */
-	public static function reply_button( Post $parent_post ): string {
+	public static function reply_button( Post $parent_post, Post $comment ): string {
 		$key = self::comment_key( $parent_post->id );
 
 		return Render::link_button(
 			// The address of the post without its anchor, as the anchor of the form follows.
 			add_query_arg( self::COMMENT_VAR, $parent_post->id, strtok( URLs::post( $parent_post ), '#' ) ) . '#easyq-comment-form-' . $parent_post->id,
-			__( 'Reply', 'easyq' ),
+			_x( 'Reply', 'verb', 'easyq' ),
 			true,
 			sprintf(
-				'aria-controls="easyq-comment-form-%1$d" aria-expanded="%2$s" data-wp-bind--aria-expanded="state.commentForms.%3$s" data-wp-on--click="actions.openComment" %4$s',
+				'aria-label="%5$s" aria-controls="easyq-comment-form-%1$d" aria-expanded="%2$s" data-wp-bind--aria-expanded="state.commentForms.%3$s" data-wp-on--click="actions.openComment" %4$s',
 				$parent_post->id,
 				self::requested( self::COMMENT_VAR ) === $parent_post->id ? 'true' : 'false',
 				esc_attr( $key ),
-				wp_interactivity_data_wp_context( array( 'commentForm' => $key ) )
+				wp_interactivity_data_wp_context( array( 'commentForm' => $key ) ),
+				/* translators: %s: comment author name. */
+				esc_attr( sprintf( __( 'Reply to %s', 'easyq' ), Render::author_name( $comment ) ) )
 			)
 		);
 	}
