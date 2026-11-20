@@ -445,6 +445,11 @@ const { state } = store( 'easyq', {
 				return;
 			}
 			event.preventDefault();
+			// A second click while the first is on its way would find the notice gone (404).
+			if ( form.getAttribute( 'aria-busy' ) === 'true' ) {
+				return;
+			}
+			form.setAttribute( 'aria-busy', 'true' );
 			const context = getContext();
 
 			const result = yield* requestJson(
@@ -455,6 +460,7 @@ const { state } = store( 'easyq', {
 				}
 			);
 
+			form.removeAttribute( 'aria-busy' );
 			if ( ! result ) {
 				form.submit();
 				return;

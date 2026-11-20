@@ -60,4 +60,43 @@ test.describe( 'Notices', () => {
 			await context.close();
 		} );
 	}
+
+	test( 'a double click dismisses the notice once, in place', async ( {
+		browser,
+		requestUtils,
+	} ) => {
+		const context = await browser.newContext( {
+			baseURL: requestUtils.baseURL,
+			storageState: { cookies: [], origins: [] },
+		} );
+		const page = await context.newPage();
+		await page.goto( '/?easyq_route=questions' );
+		let deletes = 0;
+		let posts = 0;
+		await page.route( '**/*', async ( request ) => {
+			if ( request.request().method() === 'DELETE' ) {
+				deletes++;
+				await new Promise( ( resolve ) => setTimeout( resolve, 800 ) );
+			} else if ( request.request().method() === 'POST' ) {
+				posts++;
+			}
+			await request.continue();
+		} );
+
+		const button = page.getByRole( 'button', {
+			name: 'Dismiss this notice',
+		} );
+		await button.click();
+		await button.click( { force: true } );
+		await expect(
+			page.getByText( 'Welcome to our questions.' )
+		).toBeHidden();
+		await page.waitForTimeout( 1000 );
+		await page.unroute( '**/*' );
+
+		// One request, and no fallback to the form (F-166).
+		expect( deletes ).toBe( 1 );
+		expect( posts ).toBe( 0 );
+		await context.close();
+	} );
 } );
