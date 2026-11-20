@@ -75,13 +75,13 @@ final class Favorites_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
-					'permission_callback' => array( $this, 'logged_in' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => $item,
 				),
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
-					'permission_callback' => array( $this, 'logged_in' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 					'args'                => $item,
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
@@ -98,6 +98,54 @@ final class Favorites_Controller extends Controller {
 	 */
 	public function logged_in(): bool|WP_Error {
 		return is_user_logged_in() ? true : REST_Errors::permission( 'login' );
+	}
+
+	/**
+	 * Checks whether the user may add the favorite: it exists, may be seen and is not the user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function create_item_permissions_check( $request ): bool|WP_Error {
+		return $this->target_permissions_check( $request, true );
+	}
+
+	/**
+	 * Checks whether the user may remove the favorite: it exists.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ): bool|WP_Error {
+		return $this->target_permissions_check( $request, false );
+	}
+
+	/**
+	 * Checks the user and the target of a favorite.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request  Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @param bool            $favorite Whether to add or to remove it.
+	 * @return true|WP_Error
+	 */
+	private function target_permissions_check( WP_REST_Request $request, bool $favorite ): bool|WP_Error {
+		$logged_in = $this->logged_in();
+		if ( true !== $logged_in ) {
+			return $logged_in;
+		}
+
+		[ $type, $id ] = $this->target( $request );
+		$error         = Services::favorites()->target_error( $this->actor(), $type, $id, $favorite );
+
+		return null === $error ? true : REST_Errors::with_status( $error, 'easyq_favorite_self' === $error->get_error_code() ? 400 : 404 );
 	}
 
 	/**
@@ -156,6 +204,7 @@ final class Favorites_Controller extends Controller {
 
 		$result = Services::favorites()->set( $this->actor(), $type, $id, true );
 		if ( $result instanceof WP_Error ) {
+			// Not covered: the permission check found the target; this guards a change in between.
 			return REST_Errors::with_status( $result, 'easyq_favorite_self' === $result->get_error_code() ? 400 : 404 );
 		}
 
@@ -182,6 +231,7 @@ final class Favorites_Controller extends Controller {
 		$previous = $this->respond_with( (array) $this->item( $type, $id ), $request )->get_data();
 		$result   = Services::favorites()->set( $this->actor(), $type, $id, false );
 		if ( $result instanceof WP_Error ) {
+			// Not covered: the permission check found the target; this guards a change in between.
 			return REST_Errors::with_status( $result, 404 );
 		}
 

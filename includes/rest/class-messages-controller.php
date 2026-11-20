@@ -116,7 +116,7 @@ final class Messages_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'create_item' ),
-					'permission_callback' => array( $this, 'logged_in' ),
+					'permission_callback' => array( $this, 'create_item_permissions_check' ),
 					'args'                => $content + array(
 						'to' => array(
 							'description' => __( 'Recipient.', 'easyq' ),
@@ -136,7 +136,7 @@ final class Messages_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( $this, 'delete_item' ),
-					'permission_callback' => array( $this, 'logged_in' ),
+					'permission_callback' => array( $this, 'delete_item_permissions_check' ),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
 			)
@@ -318,6 +318,48 @@ final class Messages_Controller extends Controller {
 	}
 
 	/**
+	 * Checks whether the actor may send a private message to the recipient: as the message page
+	 * of that user (`Router`), only to a user whose profile the sender may see, and only while
+	 * messages are on, the recipient accepts them and the sender is not blocked or over the limit.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function create_item_permissions_check( $request ): bool|WP_Error {
+		$logged_in = $this->logged_in();
+		if ( true !== $logged_in ) {
+			return $logged_in;
+		}
+
+		$to = $this->recipient( $request );
+		if ( null === $to ) {
+			return REST_Errors::not_found();
+		}
+
+		$reason = Services::messages()->message_error( $this->actor(), $to );
+
+		return null === $reason ? true : Messages::refused( $reason );
+	}
+
+	/**
+	 * Returns the recipient of a request, if the sender may see the profile.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return \WP_User|null
+	 */
+	private function recipient( WP_REST_Request $request ): ?\WP_User {
+		$to = get_userdata( (int) self::int_param( $request, 'to' ) );
+
+		return false !== $to && Services::user_query()->is_shown( $to, $this->actor()->user_id ) ? $to : null;
+	}
+
+	/**
 	 * Sends a private message.
 	 *
 	 * @since 0.1.0
@@ -327,9 +369,9 @@ final class Messages_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_item( $request ): WP_REST_Response|WP_Error {
-		// Only to a user whose profile the sender may see, as the message page of that user (`Router`).
-		$to = get_userdata( (int) self::int_param( $request, 'to' ) );
-		if ( false === $to || ! Services::user_query()->is_shown( $to, $this->actor()->user_id ) ) {
+		$to = $this->recipient( $request );
+		if ( null === $to ) {
+			// Not covered: the permission check found the recipient; this guards a change in between.
 			return REST_Errors::not_found();
 		}
 
@@ -350,6 +392,29 @@ final class Messages_Controller extends Controller {
 		$response->set_status( 201 );
 
 		return $response;
+	}
+
+	/**
+	 * Checks whether the actor may delete a private message: only one they sent or received.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function delete_item_permissions_check( $request ): bool|WP_Error {
+		$logged_in = $this->logged_in();
+		if ( true !== $logged_in ) {
+			return $logged_in;
+		}
+
+		$message = Services::messages()->find( (int) self::int_param( $request, 'id' ) );
+		$user_id = $this->actor()->user_id;
+
+		return null !== $message && Messages::PRIVATE === $message->type && in_array( $user_id, array( $message->from_user_id, $message->to_user_id ), true )
+			? true
+			: REST_Errors::not_found();
 	}
 
 	/**

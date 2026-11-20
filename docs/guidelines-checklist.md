@@ -150,7 +150,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Namespace `vendor/v1`, routes on `rest_api_init` | Met | `easyq/v1`, `REST\REST_API` |
-| `permission_callback` on every route | Open (F-149, F-150: messages and favorites check in the handler) | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see; the unsubscribe and newsletter confirmation routes check the signed token or key of the email in theirs. `REST_Roles_Test` fails on a writing route with `__return_true` |
+| `permission_callback` on every route | Open (F-150: single reading routes check visibility in the handler) | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see; the unsubscribe and newsletter confirmation routes check the signed token or key of the email in theirs. `REST_Roles_Test` fails on a writing route with `__return_true`; `Permission_Callbacks_Test` runs the callbacks of messages and favorites without their handlers (F-149) |
 | Arguments with types and validation; `WP_Error` with a status | Met; F-30 | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
 | Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()`; a test checks real responses of all routes against them, both types and undocumented properties |

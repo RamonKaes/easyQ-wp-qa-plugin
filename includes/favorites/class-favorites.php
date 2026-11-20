@@ -132,17 +132,17 @@ final class Favorites {
 	}
 
 	/**
-	 * Adds or removes a favorite and reports the event, as `qa_user_favorite_set()` does.
+	 * Tells why a user may not add or remove a favorite.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param Actor      $actor    Logged in user.
+	 * @param Actor      $actor    User.
 	 * @param string     $type     Type name.
 	 * @param int|string $id       ID, for tags the name.
 	 * @param bool       $favorite Whether to add or to remove it.
-	 * @return true|WP_Error
+	 * @return WP_Error|null `easyq_favorite_not_found` or `easyq_favorite_self`; null if allowed.
 	 */
-	public function set( Actor $actor, string $type, int|string $id, bool $favorite ): bool|WP_Error {
+	public function target_error( Actor $actor, string $type, int|string $id, bool $favorite ): ?WP_Error {
 		$user_id = $actor->user_id;
 		$code    = self::TYPES[ $type ] ?? null;
 		$entity  = null === $code ? null : $this->entity_id( $type, $id, to_add: $favorite );
@@ -159,6 +159,30 @@ final class Favorites {
 		if ( false === $followed || ( null !== $followed && ! Services::user_query()->is_shown( $followed, $user_id ) ) ) {
 			return new WP_Error( 'easyq_favorite_not_found', __( 'This cannot be added to favorites.', 'easyq' ) );
 		}
+
+		return null;
+	}
+
+	/**
+	 * Adds or removes a favorite and reports the event, as `qa_user_favorite_set()` does.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Actor      $actor    Logged in user.
+	 * @param string     $type     Type name.
+	 * @param int|string $id       ID, for tags the name.
+	 * @param bool       $favorite Whether to add or to remove it.
+	 * @return true|WP_Error
+	 */
+	public function set( Actor $actor, string $type, int|string $id, bool $favorite ): bool|WP_Error {
+		$error = $this->target_error( $actor, $type, $id, $favorite );
+		if ( null !== $error ) {
+			return $error;
+		}
+
+		$user_id = (int) $actor->user_id;
+		$code    = self::TYPES[ $type ];
+		$entity  = (int) $this->entity_id( $type, $id, to_add: $favorite );
 
 		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'userfavorites' );
