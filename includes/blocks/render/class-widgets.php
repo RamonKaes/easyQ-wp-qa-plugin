@@ -35,6 +35,15 @@ defined( 'ABSPATH' ) || exit;
 final class Widgets {
 
 	/**
+	 * Characters of a question title in the breadcrumbs.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	private const BREADCRUMB_LENGTH = 30;
+
+	/**
 	 * Renders the title of the current Q&A page.
 	 *
 	 * @since 0.1.0
@@ -524,11 +533,13 @@ final class Widgets {
 			}
 		}
 
-		// The question itself, as block.json promises.
+		// The question itself, as block.json promises; shortened, as its heading follows in full
+		// and a long word would not fit a narrow screen (WCAG 1.4.10).
 		$question = null === $post ? null : Services::post_service()->question_of( $post );
 		if ( null !== $question && Services::permissions()->shows( $question, Block_Context::viewer() ) ) {
+			$title   = Services::content_renderer()->text( (string) $question->title );
 			$items[] = array(
-				'label' => Services::content_renderer()->text( (string) $question->title ),
+				'label' => Text::length( $title ) > self::BREADCRUMB_LENGTH ? mb_substr( $title, 0, self::BREADCRUMB_LENGTH - 1 ) . '…' : $title,
 				'url'   => URLs::question( $question ),
 			);
 		}

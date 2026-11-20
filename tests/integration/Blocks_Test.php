@@ -513,6 +513,11 @@ final class Blocks_Test extends Test_Case {
 		$html = $this->render( '<!-- wp:easyq/breadcrumbs /-->', new Route( 'category', $category ) );
 		$this->assertStringContainsString( '<li><span aria-current="page">Themes</span></li></ol>', $html );
 		$this->assertSame( 3, substr_count( $html, '<li>' ) );
+
+		// A long title is shortened: its heading follows in full, and a long word must fit 320 pixels.
+		$long = $this->ask( $this->user(), 'Donaudampfschifffahrtsgesellschaftskapitaensmuetzen' );
+		$html = $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/breadcrumbs /--><!-- /wp:easyq/question -->', new Route( 'question', $long ) );
+		$this->assertStringContainsString( '<span aria-current="page">Donaudampfschifffahrtsgesells…</span>', $html );
 	}
 
 	public function test_ask_form_follows_the_category_settings(): void {
