@@ -234,6 +234,33 @@ final class User_Status {
 	}
 
 	/**
+	 * Checks whether an actor may approve, block and unblock a user, as Question2Answer lets a
+	 * moderator do it on the profile page (`qa-include/pages/user-profile.php`): not themselves,
+	 * and only users below their own level, unless they are a super administrator. Who may edit
+	 * the user in WordPress may too, as on the screens of core.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Actor $actor   Moderator.
+	 * @param int   $user_id User ID.
+	 * @return bool
+	 */
+	public static function may_moderate( Actor $actor, int $user_id ): bool {
+		if ( null === $actor->user_id || $actor->user_id === $user_id || false === get_userdata( $user_id ) ) {
+			return false;
+		}
+		if ( user_can( $actor->user_id, 'edit_user', $user_id ) ) {
+			return true;
+		}
+
+		$levels = Services::user_levels();
+		$level  = $levels->maximum_level( $actor->user_id ) ?? Levels::BASIC;
+		$target = $levels->maximum_level( $user_id ) ?? Levels::BASIC;
+
+		return $level >= Levels::MODERATOR && ( $level >= Levels::SUPER || $level > $target ) && ! self::is_blocked( $actor->user_id );
+	}
+
+	/**
 	 * Blocks a user from posting, voting and changing anything.
 	 *
 	 * @since 0.1.0

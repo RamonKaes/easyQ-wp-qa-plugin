@@ -293,6 +293,24 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertSame( 1, (int) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare( 'SELECT to_hidden FROM %i WHERE id = %d', \EasyQ\Database\Schema::table( 'messages' ), $id ) ) );
 	}
 
+	public function test_moderators_block_users_without_javascript(): void {
+		$user = (int) $this->user()->user_id;
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+
+		$this->assertNotSame(
+			'',
+			$this->submit(
+				'user_action',
+				array(
+					'easyq_post'   => (string) $user,
+					'easyq_action' => 'block',
+				)
+			)
+		);
+		$this->assertSame( 'The user was updated.', Flash::current()['message'] ?? null );
+		$this->assertTrue( \EasyQ\Users\User_Status::is_blocked( $user ) );
+	}
+
 	public function test_the_nonce_of_a_form_holds_for_its_own_post_and_action_only(): void {
 		$this->login( 'editor' );
 		$first  = $this->ask( $this->user(), 'A first question to close' );

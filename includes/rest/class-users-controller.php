@@ -20,6 +20,7 @@ use EasyQ\Settings\Options;
 use EasyQ\Users\Avatars;
 use EasyQ\Users\Levels;
 use EasyQ\Users\User_Query;
+use EasyQ\Users\User_Status;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -153,6 +154,88 @@ final class Users_Controller extends Controller {
 					'args'                => $this->read_args(),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/users/(?P<id>\d+)/actions/(?P<action>approve|block|unblock)',
+			array(
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( $this, 'moderate' ),
+					'permission_callback' => array( $this, 'moderate_permissions_check' ),
+					'args'                => array(
+						'action' => array(
+							'description' => __( 'Approve, block or unblock the user.', 'easyq' ),
+							'type'        => 'string',
+							'enum'        => array( 'approve', 'block', 'unblock' ),
+						),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Checks whether the actor may approve, block or unblock the user, as a moderator may on
+	 * the profile page of Question2Answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function moderate_permissions_check( $request ): bool|WP_Error {
+		$actor = $this->actor();
+		if ( null === $actor->user_id ) {
+			return REST_Errors::permission( 'login' );
+		}
+
+		$user_id = (int) self::int_param( $request, 'id' );
+		if ( false === get_userdata( $user_id ) ) {
+			return REST_Errors::not_found();
+		}
+		if ( ! User_Status::may_moderate( $actor, $user_id ) ) {
+			return REST_Errors::permission( 'level' );
+		}
+
+		$action = (string) self::string_param( $request, 'action' );
+		if ( 'approve' === $action && ! Options::get_bool( 'spam', 'moderate_users' ) ) {
+			return new WP_Error( 'easyq_not_moderated', __( 'Users need no approval on this site.', 'easyq' ), array( 'status' => 400 ) );
+		}
+		if ( 'block' === $action && ! User_Status::may_be_blocked( $user_id ) ) {
+			return new WP_Error( 'easyq_not_blockable', __( 'Moderators and higher levels cannot be blocked.', 'easyq' ), array( 'status' => 403 ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Approves, blocks or unblocks a user.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return WP_REST_Response
+	 */
+	public function moderate( $request ): WP_REST_Response {
+		$actor   = $this->actor();
+		$user_id = (int) self::int_param( $request, 'id' );
+
+		match ( (string) self::string_param( $request, 'action' ) ) {
+			'approve' => User_Status::approve( $actor, $user_id ),
+			'block'   => User_Status::block( $actor, $user_id ),
+			default   => User_Status::unblock( $actor, $user_id ),
+		};
+
+		return new WP_REST_Response(
+			array(
+				'id'                => $user_id,
+				'awaiting_approval' => User_Status::awaits_approval( $user_id ),
+				'blocked'           => User_Status::is_blocked( $user_id ),
 			)
 		);
 	}

@@ -8,6 +8,7 @@
 
 namespace EasyQ\Blocks\Render;
 
+use EasyQ\Actor;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
 use EasyQ\Blocks\Render;
@@ -17,6 +18,7 @@ use EasyQ\Points\Points;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\User_Query;
+use EasyQ\Users\User_Status;
 use EasyQ\Util\Number;
 use WP_Block;
 use WP_User;
@@ -402,7 +404,35 @@ final class Users_Render {
 			/* translators: %s: user name. */
 			esc_attr( sprintf( __( 'Profile of %s', 'easyq' ), $user->display_name ) ),
 			$items
-		);
+		) . self::moderation_buttons( $user, $viewer );
+	}
+
+	/**
+	 * Renders the buttons to approve, block or unblock a user, for moderators, as on the
+	 * profile page of Question2Answer; they work without JavaScript, through the REST API.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_User $user   User of the profile.
+	 * @param Actor   $viewer Viewer.
+	 * @return string
+	 */
+	private static function moderation_buttons( WP_User $user, Actor $viewer ): string {
+		if ( ! User_Status::may_moderate( $viewer, $user->ID ) ) {
+			return '';
+		}
+
+		$buttons = array();
+		if ( Options::get_bool( 'spam', 'moderate_users' ) && User_Status::awaits_approval( $user->ID ) ) {
+			$buttons[] = Render::action_button( 'user_action', $user->ID, __( 'Approve user', 'easyq' ), array( 'easyq_action' => 'approve' ) );
+		}
+		if ( User_Status::is_blocked( $user->ID ) ) {
+			$buttons[] = Render::action_button( 'user_action', $user->ID, __( 'Unblock user', 'easyq' ), array( 'easyq_action' => 'unblock' ) );
+		} elseif ( User_Status::may_be_blocked( $user->ID ) ) {
+			$buttons[] = Render::action_button( 'user_action', $user->ID, __( 'Block user', 'easyq' ), array( 'easyq_action' => 'block' ) );
+		}
+
+		return array() === $buttons ? '' : Render::buttons( implode( '', $buttons ) );
 	}
 
 	/**

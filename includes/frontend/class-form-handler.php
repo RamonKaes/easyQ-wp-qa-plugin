@@ -54,6 +54,7 @@ final class Form_Handler {
 		'unsubscribe'        => array( 'post', 'token', 'user', 'notify' ),
 		'newsletter_confirm' => array( 'user', 'key' ),
 		'favorite'           => array( 'type', 'id', 'favorite' ),
+		'user_action'        => array(),
 		'notice'             => array(),
 		'wall'               => array( 'content' ),
 		'wall_delete'        => array(),
@@ -206,6 +207,7 @@ final class Form_Handler {
 			'message_delete' => array( 'DELETE', '/messages/' . $this->message_id() ),
 			'notice'   => array( 'DELETE', '/notices/' . ( isset( $_POST['easyq_notice'] ) && is_string( $_POST['easyq_notice'] ) ? sanitize_key( wp_unslash( $_POST['easyq_notice'] ) ) : '' ) ),
 			'favorite' => array( '1' === ( $values['favorite'] ?? '' ) ? 'POST' : 'DELETE', '/favorites' ),
+			'user_action' => array( 'POST', '/users/' . $target . '/actions/' . $action ),
 			default   => array( 'POST', '/posts/' . $target . '/actions/' . $action ),
 		};
 

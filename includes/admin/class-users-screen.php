@@ -323,7 +323,7 @@ final class Users_Screen {
 	public function perform( string $action, array $user_ids, Actor $actor ): int {
 		$count = 0;
 		foreach ( $user_ids as $user_id ) {
-			if ( $user_id === $actor->user_id || ! user_can( (int) $actor->user_id, 'edit_user', $user_id )
+			if ( ! User_Status::may_moderate( $actor, $user_id )
 				|| ( 'easyq_block' === $action && ( User_Status::is_blocked( $user_id ) || ! User_Status::may_be_blocked( $user_id ) ) ) ) {
 				continue;
 			}

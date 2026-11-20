@@ -78,6 +78,7 @@ final class Flash {
 			'wall_delete', 'message_delete' => __( 'Deleted.', 'easyq' ),
 			'message'                       => __( 'Your message has been sent.', 'easyq' ),
 			'feedback'                      => __( 'Thank you for your feedback.', 'easyq' ),
+			'user_action'                   => __( 'The user was updated.', 'easyq' ),
 			'vote', 'action'                => __( 'Done.', 'easyq' ),
 			default                         => null,
 		};
