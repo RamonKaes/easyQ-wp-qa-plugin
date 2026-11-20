@@ -500,7 +500,12 @@ final class Widgets {
 	 */
 	public static function breadcrumbs( array $attributes, string $content, WP_Block $block ): string {
 		$route = Block_Context::router()->current();
-		$items = array( sprintf( '<a href="%s">%s</a>', esc_url( Routes::url( 'home' ) ), esc_html__( 'Questions', 'easyq' ) ) );
+		$items = array(
+			array(
+				'label' => __( 'Questions', 'easyq' ),
+				'url'   => Routes::url( 'home' ),
+			),
+		);
 
 		$post     = Block_Context::post( $block );
 		$category = null;
@@ -512,20 +517,67 @@ final class Widgets {
 
 		if ( null !== $category ) {
 			foreach ( Services::categories()->path( $category->id ) as $ancestor ) {
-				$items[] = sprintf( '<a href="%s">%s</a>', esc_url( URLs::category( $ancestor ) ), esc_html( $ancestor->title ) );
+				$items[] = array(
+					'label' => $ancestor->title,
+					'url'   => URLs::category( $ancestor ),
+				);
 			}
+		}
+
+		// The question itself, as block.json promises.
+		$question = null === $post ? null : Services::post_service()->question_of( $post );
+		if ( null !== $question && Services::permissions()->shows( $question, Block_Context::viewer() ) ) {
+			$items[] = array(
+				'label' => Services::content_renderer()->text( (string) $question->title ),
+				'url'   => URLs::question( $question ),
+			);
 		}
 
 		if ( count( $items ) < 2 ) {
 			return '';
 		}
 
+		// As core/breadcrumbs: an ordered list, the last item is the current page; the separator
+		// comes from the style of core, so it follows the direction of the text.
+		self::enqueue_breadcrumbs_style();
+
+		$list = '';
+		$last = count( $items ) - 1;
+		foreach ( $items as $index => $item ) {
+			$list .= $last === $index
+				? '<li><span aria-current="page">' . esc_html( $item['label'] ) . '</span></li>'
+				: '<li><a href="' . esc_url( $item['url'] ) . '">' . esc_html( $item['label'] ) . '</a></li>';
+		}
+
 		return sprintf(
-			'<nav %s aria-label="%s">%s</nav>',
-			get_block_wrapper_attributes(),
-			esc_attr__( 'Breadcrumbs', 'easyq' ),
-			implode( '<span aria-hidden="true">›</span>', $items )
+			'<nav %s><ol>%s</ol></nav>',
+			get_block_wrapper_attributes(
+				array(
+					'class'      => 'wp-block-breadcrumbs',
+					'aria-label' => __( 'Breadcrumbs', 'easyq' ),
+				)
+			),
+			$list
 		);
+	}
+
+	/**
+	 * Loads the style of core/breadcrumbs (WordPress 7.0 and later), which lays out the list
+	 * and puts the separator between the items.
+	 *
+	 * Older versions have no such block; there the same rules of core are added under the
+	 * handle of core, so that the list does not show as a numbered column.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function enqueue_breadcrumbs_style(): void {
+		if ( ! wp_style_is( 'wp-block-breadcrumbs', 'registered' ) ) {
+			// Not covered: the test site runs WordPress 7, which registers the style of core/breadcrumbs.
+			wp_register_style( 'wp-block-breadcrumbs', false, array(), '7.0.0' );
+			wp_add_inline_style( 'wp-block-breadcrumbs', '.wp-block-breadcrumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center}.wp-block-breadcrumbs li{margin:0;padding:0;display:flex;align-items:center}.wp-block-breadcrumbs li:not(:last-child)::after{content:var(--separator,"/")/"";margin:0 .5em;opacity:.7}' );
+		}
+
+		wp_enqueue_style( 'wp-block-breadcrumbs' );
 	}
 
 	/**

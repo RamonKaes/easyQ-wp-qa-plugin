@@ -415,6 +415,30 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'name="tags"', $html );
 	}
 
+	public function test_breadcrumbs_follow_core_breadcrumbs(): void {
+		$parent = Services::categories()->create( null, 'Software' );
+		$this->assertIsInt( $parent );
+		$child = Services::categories()->create( $parent, 'Themes' );
+		$this->assertIsInt( $child );
+		$question = $this->ask( $this->user(), 'Which theme fits a <shop>?', 'Text.', array(), $child );
+
+		// As wp-includes/blocks/breadcrumbs.php: a list in a labelled navigation, the current page last.
+		$html = $this->render( '<!-- wp:easyq/question --><!-- wp:easyq/breadcrumbs /--><!-- /wp:easyq/question -->', new Route( 'question', $question ) );
+		$this->assertMatchesRegularExpression( '/<nav [^>]*class="[^"]*wp-block-breadcrumbs[^"]*"[^>]*aria-label="Breadcrumbs"[^>]*><ol>/', $html );
+		$this->assertSame( 4, substr_count( $html, '<li>' ) );
+		$this->assertStringContainsString( '<li><span aria-current="page">Which theme fits a &lt;shop&gt;?</span></li></ol>', $html );
+		$this->assertStringContainsString( '>Themes</a></li>', $html );
+		$this->assertStringNotContainsString( '›', $html, 'The separator comes from the style, so it follows the direction of the text.' );
+		$this->assertTrue( wp_style_is( 'wp-block-breadcrumbs', 'enqueued' ) );
+
+		// On a category page the category is the current page.
+		$category = Services::categories()->find( $child );
+		$this->assertNotNull( $category );
+		$html = $this->render( '<!-- wp:easyq/breadcrumbs /-->', new Route( 'category', $category ) );
+		$this->assertStringContainsString( '<li><span aria-current="page">Themes</span></li></ol>', $html );
+		$this->assertSame( 3, substr_count( $html, '<li>' ) );
+	}
+
 	public function test_ask_form_follows_the_category_settings(): void {
 		$parent = Services::categories()->create( null, 'Software' );
 		$this->assertIsInt( $parent );
