@@ -46,6 +46,15 @@ final class Users_Screen {
 	public const VIEW_ARG = 'easyq_status';
 
 	/**
+	 * The list table whose points are loaded.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var \WP_Users_List_Table|null
+	 */
+	private ?\WP_Users_List_Table $primed = null;
+
+	/**
 	 * Hooks the additions into the users screen.
 	 *
 	 * @since 0.1.0
@@ -116,6 +125,7 @@ final class Users_Screen {
 		}
 
 		if ( 'easyq_points' === $column ) {
+			$this->prime_points();
 			return esc_html( number_format_i18n( Services::points()->get( $user_id ) ) );
 		}
 
@@ -134,6 +144,25 @@ final class Users_Screen {
 		}
 
 		return esc_html( implode( ', ', $labels ) );
+	}
+
+	/**
+	 * Loads the points of every user of the list at once, at its first row.
+	 *
+	 * Core primes the meta of the users it lists (`cache_users()`), not the points of easyQ;
+	 * the list table is the global that `wp-admin/users.php` sets.
+	 *
+	 * @since 0.1.0
+	 */
+	private function prime_points(): void {
+		global $wp_list_table;
+
+		if ( ! $wp_list_table instanceof \WP_Users_List_Table || $this->primed === $wp_list_table ) {
+			return;
+		}
+
+		$this->primed = $wp_list_table;
+		Services::points()->prime( array_map( static fn ( mixed $user ): int => $user instanceof \WP_User ? $user->ID : 0, (array) $wp_list_table->items ) );
 	}
 
 	/**

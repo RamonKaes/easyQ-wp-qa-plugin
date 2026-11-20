@@ -121,12 +121,34 @@ final class Posts_List_Table extends WP_List_Table {
 		);
 
 		$this->items = $result['posts'];
+		$this->prime( $this->items );
 		$this->set_pagination_args(
 			array(
 				'total_items' => $result['total'],
 				'per_page'    => $per_page,
 			)
 		);
+	}
+
+	/**
+	 * Loads what the rows show at once, as core primes the caches of a list: the authors, the
+	 * questions of answers and comments, and the votes and flags of the moderator, which the
+	 * rules of the row actions read.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post[] $posts Posts of the page.
+	 */
+	private function prime( array $posts ): void {
+		cache_users( array_values( array_filter( array_map( static fn ( Post $post ): ?int => $post->user_id, $posts ) ) ) );
+
+		// Parents, then the questions of comments on answers.
+		$parents = Services::posts()->find_many( array_values( array_filter( array_map( static fn ( Post $post ): ?int => $post->parent_id, $posts ) ) ) );
+		Services::posts()->find_many( array_values( array_filter( array_map( static fn ( Post $post ): ?int => $post->parent_id, $parents ) ) ) );
+
+		if ( null !== $this->actor->user_id ) {
+			Services::votes()->prime( array_map( static fn ( Post $post ): int => $post->id, $posts ), $this->actor->user_id );
+		}
 	}
 
 	/**
