@@ -197,7 +197,29 @@ final class Router {
 
 		status_header( 200 );
 
+		// A post waiting for approval or hidden is shown only to who may see it, the author by
+		// their visitor cookie, which page caches do not know: such a page is never cached.
+		$question = $this->current->question();
+		if ( null !== $question && ! $question->is_visible() ) {
+			self::no_cache();
+		}
+
 		return true;
+	}
+
+	/**
+	 * Keeps a page out of browser, proxy and page caches.
+	 *
+	 * @since 0.1.0
+	 */
+	private static function no_cache(): void {
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			// The constant page cache plugins read, as WooCommerce sets it for the cart.
+			define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- The constant of the page caches, not one of easyQ.
+		}
+		if ( ! headers_sent() ) {
+			nocache_headers();
+		}
 	}
 
 	/**

@@ -318,4 +318,23 @@ final class Routing_Test extends Test_Case {
 		$this->assertSame( 'not_found', $router->resolve( 'question', (string) $question->id, null )->name );
 		unset( $_COOKIE[ $name ] );
 	}
+
+	public function test_the_page_of_a_waiting_question_is_never_cached(): void {
+		$router  = \EasyQ\Blocks\Block_Context::router();
+		$visible = $this->ask( $this->user() );
+		$queued  = $this->ask( $this->user(), 'A question that waits for approval', 'x', array(), null, true );
+		$defined = defined( 'DONOTCACHEPAGE' );
+
+		// A page cache does not know the visitor cookie that shows a waiting post to its author.
+		$router->set_current( new \EasyQ\Frontend\Route( 'question', $visible ) );
+		$this->assertTrue( $router->handle_404( false ) );
+		if ( ! $defined ) {
+			$this->assertFalse( defined( 'DONOTCACHEPAGE' ), 'A public question may be cached.' );
+		}
+
+		$router->set_current( new \EasyQ\Frontend\Route( 'question', $queued ) );
+		$this->assertTrue( $router->handle_404( false ) );
+		$this->assertTrue( defined( 'DONOTCACHEPAGE' ) );
+		$router->set_current( null );
+	}
 }
