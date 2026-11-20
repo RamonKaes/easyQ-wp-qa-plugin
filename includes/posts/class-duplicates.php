@@ -11,6 +11,7 @@ namespace EasyQ\Posts;
 use EasyQ\Actor;
 use EasyQ\Database\DB;
 use EasyQ\Database\Schema;
+use EasyQ\Services;
 use EasyQ\Util\Text;
 use WP_Error;
 
@@ -122,12 +123,42 @@ final class Duplicates {
 		$title = self::words( $title );
 		foreach ( $rows as $row ) {
 			$post = Post::from_row( $row );
+			// Another author's question counts only if the author may see it; the 409 must not tell what is hidden.
+			if ( Post::QUESTION === $type && ! self::is_own( $post, $actor ) && ! Services::permissions()->shows( $post, $actor ) ) {
+				continue;
+			}
 			if ( self::words( (string) $post->title ) === $title && self::words( $post->text() ) === $words ) {
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * Tells whether a post is the actor's own.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post  $post  Post.
+	 * @param Actor $actor Actor.
+	 * @return bool
+	 */
+	private static function is_own( Post $post, Actor $actor ): bool {
+		if ( null !== $actor->user_id ) {
+			return $post->user_id === $actor->user_id;
+		}
+		if ( null !== $post->user_id ) {
+			return false;
+		}
+		if ( null !== $actor->cookie_id ) {
+			return $post->cookie_id === $actor->cookie_id;
+		}
+
+		// A guest who declined the cookie, known by the address as in the query.
+		$ip = $actor->stored_ip();
+
+		return null === $post->cookie_id && null !== $ip && $post->created_ip === $ip;
 	}
 
 	/**

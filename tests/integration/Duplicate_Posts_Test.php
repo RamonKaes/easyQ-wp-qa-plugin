@@ -109,7 +109,7 @@ final class Duplicate_Posts_Test extends REST_Test_Case {
 			'content' => 'Starter or yeast?',
 		);
 
-		$first = $this->data( $this->request( 'POST', '/questions', $params ) );
+		$first = $this->data( $this->request( 'POST', '/questions', $params + array( 'remember' => true ) ) );
 		$this->assertTrue( $first['queued'] );
 
 		// The browser sends back the visitor cookie it was given.
@@ -159,5 +159,42 @@ final class Duplicate_Posts_Test extends REST_Test_Case {
 		$this->assertSame( 201, $this->request( 'POST', '/posts/' . $answer->id . '/comments', array( 'content' => 'A helpful comment.' ) )->get_status() );
 		$this->assertSame( 409, $this->request( 'POST', '/posts/' . $answer->id . '/comments', array( 'content' => 'A helpful comment.' ) )->get_status() );
 		$this->assertSame( 201, $this->request( 'POST', '/posts/' . $this->answer( $this->user(), $question, 'Another answer here.' )->id . '/comments', array( 'content' => 'A helpful comment.' ) )->get_status() );
+	}
+
+	public function test_a_question_the_author_may_not_see_is_no_duplicate(): void {
+		// Visitors may ask but not read: the 409 must not tell them what members asked.
+		Options::update(
+			'permissions',
+			array(
+				'permit_post_q'      => Permits::ALL,
+				'permit_view_q_page' => Permits::USERS,
+			)
+		);
+		$this->ask( $this->user(), 'A question only members can read', 'Members only.' );
+
+		$this->assertSame(
+			201,
+			$this->request(
+				'POST',
+				'/questions',
+				array(
+					'title'   => 'A question only members can read',
+					'content' => 'Members only.',
+				)
+			)->get_status()
+		);
+	}
+
+	public function test_a_waiting_question_of_a_visitor_who_declined_the_cookie_is_a_duplicate(): void {
+		Options::update( 'permissions', array( 'permit_post_q' => Permits::ALL ) );
+		Options::update( 'spam', array( 'moderate_anon_post' => true ) );
+		update_option( 'show_comments_cookies_opt_in', '1' );
+		$params = array(
+			'title'   => 'A visitor asks about rye bread',
+			'content' => 'Without a cookie.',
+		);
+
+		$this->assertTrue( $this->data( $this->request( 'POST', '/questions', $params ) )['queued'] );
+		$this->assertSame( 409, $this->request( 'POST', '/questions', $params )->get_status() );
 	}
 }
