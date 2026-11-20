@@ -229,7 +229,9 @@ final class Permissions {
 	 * @return bool
 	 */
 	public function is_by( Post $post, Actor $actor ): bool {
-		if ( null !== $post->user_id ) {
+		// As `qa_post_is_by_user()`: as soon as one side has an account, the accounts decide; a
+		// post written before logging in is the user's once claimed. The cookie counts between visitors.
+		if ( null !== $post->user_id || null !== $actor->user_id ) {
 			return $post->user_id === $actor->user_id;
 		}
 
