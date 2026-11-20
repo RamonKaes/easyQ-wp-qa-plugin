@@ -9,6 +9,7 @@
 namespace EasyQ\REST;
 
 use EasyQ\Limits\Limits;
+use EasyQ\Posts\Duplicates;
 use EasyQ\Posts\Post;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
@@ -215,7 +216,18 @@ final class Answers_Controller extends Controller {
 		$queued = null !== Services::permissions()->moderation_reason( $actor );
 		$author = Post_Input::author( $actor, $request );
 
-		$id     = Services::post_service()->create_answer( $author['actor'], $question, $input['content'], $input['format'], $author['notify'], $author['name'], $queued );
+		$id = Duplicates::create(
+			$author['actor'],
+			Post::ANSWER,
+			$question->id,
+			'',
+			$input['content'],
+			$input['format'],
+			fn (): int => Services::post_service()->create_answer( $author['actor'], $question, $input['content'], $input['format'], $author['notify'], $author['name'], $queued )
+		);
+		if ( $id instanceof WP_Error ) {
+			return $id;
+		}
 		$answer = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $answer ) {
 			// Not covered: needs a failing insert into the database, which the test site has no way to fake.

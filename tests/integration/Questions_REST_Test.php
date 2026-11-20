@@ -224,7 +224,7 @@ final class Questions_REST_Test extends REST_Test_Case {
 		$this->assertSame( 503, $this->request( 'POST', '/questions', $params )->get_status() );
 
 		$this->login( 'administrator' );
-		$this->assertSame( 201, $this->request( 'POST', '/questions', $params )->get_status() );
+		$this->assertSame( 201, $this->request( 'POST', '/questions', array( 'title' => 'An administrator asks in read-only mode' ) + $params )->get_status() );
 	}
 
 	public function test_anonymous_questions_when_allowed(): void {

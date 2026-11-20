@@ -139,6 +139,8 @@ final class Form_Handler_Test extends REST_Test_Case {
 		);
 		$this->submit( 'ask', wp_slash( $fields ) );
 		$from_form = $this->post( (int) Services::question_query()->find( array() )['posts'][0]->id );
+		// Hidden, so that the same question from the REST API is no duplicate (F-144).
+		Services::post_service()->set_question_status( \EasyQ\Actor::system(), $from_form, \EasyQ\Posts\Post::STATUS_HIDDEN );
 		$from_rest = $this->post( (int) $this->data( $this->request( 'POST', '/questions', $fields ) )['id'] );
 
 		$this->assertSame( self::TYPED, $from_form->content );

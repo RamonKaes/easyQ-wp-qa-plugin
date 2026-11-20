@@ -65,6 +65,7 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 | `easyq_userblock` | 403 | The user is blocked; a block stops changes, not reading, as in Q2A |
 | `easyq_ipblock` | 403 | The IP address is blocked; like a blocked user, it may still read |
 | `easyq_limit` | 429 | Rate limit reached for this hour |
+| `easyq_duplicate` | 409 | The same content was just posted (`POST /questions`, `/questions/{id}/answers`, `/posts/{id}/comments`): a question with the words of title and content of one of the five newest visible questions, or of a waiting one of the same author, as in Question2Answer; an answer or comment with the words of one of the same author on the same post, as core refuses comments (`comment_duplicate`). A guest is the visitor cookie, or the address without it. Two equal requests at the same moment pass once |
 | `easyq_read_only` | 503 | The Q&A area is read-only: every request that changes something answers this before its own checks, unless the user manages easyQ; reading stays open |
 | `easyq_not_found` | 404 | Missing, or not visible to the user |
 | `rest_invalid_param` | 400 | Invalid input, as core answers invalid parameters: `data.params` holds a message per field, `data.details` its error |

@@ -10,6 +10,7 @@ namespace EasyQ\REST;
 
 use EasyQ\Blocks\Render\Query_Resolver;
 use EasyQ\Limits\Limits;
+use EasyQ\Posts\Duplicates;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Question_Query;
 use EasyQ\Search\Search;
@@ -257,19 +258,30 @@ final class Questions_Controller extends Controller {
 		$author = Post_Input::author( $actor, $request );
 		$extra  = Post_Input::extra( $request );
 
-		$id = Services::post_service()->create_question(
+		$id = Duplicates::create(
 			$author['actor'],
+			Post::QUESTION,
+			null,
 			$title,
 			$input['content'],
 			$input['format'],
-			$tags,
-			$category_id,
-			$author['notify'],
-			$author['name'],
-			$follow,
-			$queued,
-			$extra
+			fn (): int => Services::post_service()->create_question(
+				$author['actor'],
+				$title,
+				$input['content'],
+				$input['format'],
+				$tags,
+				$category_id,
+				$author['notify'],
+				$author['name'],
+				$follow,
+				$queued,
+				$extra
+			)
 		);
+		if ( $id instanceof WP_Error ) {
+			return $id;
+		}
 
 		return $this->created( $id, $author['actor'], $queued, $request );
 	}

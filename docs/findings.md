@@ -35,7 +35,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
-| F-144 | should | No check for the same content posted twice: two equal questions at once, and a third right after, all answer 201. Question2Answer refuses it (`qa-include/pages/ask.php:148`, `app/post-create.php`), core answers `comment_duplicate` 409. | A × Abuse, A × Concurrency | Any user who may post, by a double submission or on purpose; old. | No test posts the same content twice. |
 | F-145 | should | Three `approve` actions on the same queued question at once answer 200, 200, 403 and fire `q_post` twice: the followers get two emails. | A × Concurrency | Two moderators, or a double click without JavaScript; old. | No test runs an action twice at the same moment. |
 | F-146 | should | Eight answers to the same question at once caused 13 deadlocks in `debug.log` (`update_hotness`, `Basic_Search::recount`); Question2Answer has the same form of query. | A × Concurrency | A busy question; old. | No test writes concurrently. |
 | F-149 | should | `POST`/`DELETE /messages` and `/favorites` check rights in the handler, their `permission_callback` only asks for a signed-in user, so `OPTIONS` and the target hints offer the method to a blocked user; `docs/guidelines-checklist.md` calls it "Met". | A × Guidelines, A × Identity | Read; old. | `REST_Roles_Test` compares the callback as a string (`'__return_true'`). |
