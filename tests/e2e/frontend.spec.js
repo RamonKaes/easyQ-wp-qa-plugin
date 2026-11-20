@@ -91,6 +91,65 @@ test.describe( 'Q&A frontend', () => {
 		await context.close();
 	} );
 
+	test( 'takes a vote back as meant when the request fails', async ( {
+		browser,
+		requestUtils,
+	} ) => {
+		const question = await requestUtils.rest( {
+			method: 'POST',
+			path: '/easyq/v1/questions',
+			data: {
+				title: `Question to vote on and back ${ Date.now() }`,
+				content: 'Please vote.',
+			},
+		} );
+		const username = `backvoter${ Date.now() }`;
+		await requestUtils.createUser( {
+			username,
+			email: `${ username }@example.com`,
+			password: 'password',
+			roles: [ 'subscriber' ],
+		} );
+		const context = await browser.newContext( {
+			storageState: { cookies: [], origins: [] },
+		} );
+		const page = await context.newPage();
+		await page.goto( `${ requestUtils.baseURL }/wp-login.php` );
+		await expect( page.locator( '#user_login' ) ).toBeFocused();
+		await page.locator( '#user_login' ).fill( username );
+		await page.locator( '#user_pass' ).fill( 'password' );
+		await page.locator( '#wp-submit' ).click();
+		await page.waitForURL( /wp-admin/ );
+		await page.goto(
+			`${ requestUtils.baseURL }${ route( 'question', question.id ) }`
+		);
+		const up = page
+			.locator( '.wp-block-easyq-post-votes' )
+			.first()
+			.getByRole( 'button', { name: 'Vote up' } );
+		await up.click();
+		await expect( up ).toHaveAttribute( 'aria-pressed', 'true' );
+
+		// The request of the store fails: the form takes over and must send 0, not the old vote (F-226).
+		await page.route( /\/vote/, ( request ) =>
+			request.fulfill( { status: 500, body: 'Server error' } )
+		);
+		await up.click();
+		await page.waitForLoadState();
+		await page.unroute( /\/vote/ );
+		await page.goto(
+			`${ requestUtils.baseURL }${ route( 'question', question.id ) }`
+		);
+		await expect(
+			page
+				.locator( '.wp-block-easyq-post-votes' )
+				.first()
+				.locator( '[data-wp-text="context.net"]' )
+		).toHaveText( '0' );
+
+		await context.close();
+	} );
+
 	test( 'question pages have no accessibility violations', async ( {
 		page,
 		requestUtils,

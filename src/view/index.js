@@ -330,6 +330,7 @@ const { state } = store( 'easyq', {
 
 			let url = null;
 			let html = null;
+			let answered = false;
 			try {
 				const response = yield fetch(
 					form.getAttribute( 'action' ) || window.location.href,
@@ -340,6 +341,7 @@ const { state } = store( 'easyq', {
 						headers: { 'X-EasyQ-In-Place': '1' },
 					}
 				);
+				answered = true;
 				const type = response.headers.get( 'Content-Type' ) || '';
 				if ( response.ok && type.includes( 'application/json' ) ) {
 					const data = yield response.json();
@@ -352,8 +354,19 @@ const { state } = store( 'easyq', {
 				html = null;
 			}
 
-			if ( ! url && ! html ) {
+			if ( ! url && ! html && ! answered ) {
+				// The request did not reach the server: the form goes as without JavaScript.
 				form.submit();
+				return;
+			}
+
+			if ( ! url && ! html ) {
+				// The server answered, but not usably (an error page, a broken answer): it may have
+				// stored the post, so it is not sent again; the page shows what it holds, and the
+				// form keeps what was typed.
+				yield* navigateTo( window.location.href );
+				form.removeAttribute( 'aria-busy' );
+				button?.removeAttribute( 'aria-disabled' );
 				return;
 			}
 
@@ -382,9 +395,14 @@ const { state } = store( 'easyq', {
 				return;
 			}
 			event.preventDefault();
+			// A second click while the vote is on its way would count from the old state.
+			if ( form.getAttribute( 'aria-busy' ) === 'true' ) {
+				return;
+			}
 			const context = getContext();
 			const vote =
 				context.vote === context.direction ? 0 : context.direction;
+			form.setAttribute( 'aria-busy', 'true' );
 
 			const post = yield* requestJson(
 				`${ state.restUrl }posts/${ context.postId }/vote`,
@@ -398,7 +416,12 @@ const { state } = store( 'easyq', {
 				}
 			);
 
+			form.removeAttribute( 'aria-busy' );
 			if ( ! post?.votes ) {
+				// The form asks the server for what was meant: taking a vote back sends 0.
+				if ( form.elements.vote ) {
+					form.elements.vote.value = String( vote );
+				}
 				form.submit();
 				return;
 			}
@@ -454,10 +477,16 @@ const { state } = store( 'easyq', {
 				return;
 			}
 			event.preventDefault();
+			// A second click while the first is on its way would turn the display around.
+			if ( form.getAttribute( 'aria-busy' ) === 'true' ) {
+				return;
+			}
+			form.setAttribute( 'aria-busy', 'true' );
 			const context = getContext();
+			const add = ! context.favorite;
 
 			const result = yield* requestJson( `${ state.restUrl }favorites`, {
-				method: context.favorite ? 'DELETE' : 'POST',
+				method: add ? 'POST' : 'DELETE',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': state.nonce,
@@ -468,12 +497,14 @@ const { state } = store( 'easyq', {
 				} ),
 			} );
 
+			form.removeAttribute( 'aria-busy' );
 			if ( ! result ) {
 				form.submit();
 				return;
 			}
 
-			context.favorite = ! context.favorite;
+			// What was sent and stored, not a toggle of what is shown.
+			context.favorite = add;
 			context.label = context.favorite
 				? context.labels.remove
 				: context.labels.add;

@@ -66,6 +66,95 @@ test.describe( 'Question page in place', () => {
 		);
 	} );
 
+	test( 'adds a favorite once with a double click and says so', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		const question = await ask(
+			requestUtils,
+			'Favorite with a double click'
+		);
+		await page.goto( questionUrl( question.id ) );
+		let sent = 0;
+		await page.route( /favorites/, async ( route ) => {
+			sent++;
+			await new Promise( ( resolve ) => setTimeout( resolve, 800 ) );
+			await route.continue();
+		} );
+
+		const button = page.getByRole( 'button', { name: 'Add to favorites' } );
+		await button.click();
+		await button.click( { force: true } );
+
+		// One request, and the button says what the server holds (F-226).
+		await expect(
+			page.getByRole( 'button', { name: 'Remove from favorites' } )
+		).toBeVisible();
+		await page.unroute( /favorites/ );
+		expect( sent ).toBe( 1 );
+		const held = (
+			await requestUtils.rest( { path: '/easyq/v1/favorites' } )
+		).some(
+			( item ) => item.type === 'question' && item.id === question.id
+		);
+		expect( held ).toBe( true );
+		await requestUtils.rest( {
+			method: 'DELETE',
+			path: '/easyq/v1/favorites',
+			data: { type: 'question', id: question.id },
+		} );
+	} );
+
+	test( 'does not send an answer again when the answer of the server breaks', async ( {
+		page,
+		requestUtils,
+	} ) => {
+		const question = await ask(
+			requestUtils,
+			'Answered while the server broke'
+		);
+		await page.goto( questionUrl( question.id ) );
+		let posts = 0;
+		// The server stores the answer, then the answer to the browser breaks.
+		await page.route( '**/*', async ( route ) => {
+			const request = route.request();
+			if ( request.method() !== 'POST' ) {
+				return route.continue();
+			}
+			posts++;
+			if ( request.headers()[ 'x-easyq-in-place' ] === '1' ) {
+				await route.fetch();
+				return route.fulfill( { status: 502, body: 'Bad gateway' } );
+			}
+			return route.continue();
+		} );
+
+		await openAnswerForm( page );
+		await page
+			.getByLabel( 'Your answer' )
+			.fill( 'This answer is stored once although the server broke.' );
+		await page.getByRole( 'button', { name: 'Answer' } ).click();
+		await expect
+			.poll(
+				async () =>
+					(
+						await requestUtils.rest( {
+							path: `/easyq/v1/questions/${ question.id }/answers`,
+						} )
+					).length
+			)
+			.toBe( 1 );
+		await page.waitForTimeout( 1500 );
+		await page.unroute( '**/*' );
+
+		// The store showed the page as the server holds it, and sent nothing again (F-226).
+		expect( posts ).toBe( 1 );
+		const answers = await requestUtils.rest( {
+			path: `/easyq/v1/questions/${ question.id }/answers`,
+		} );
+		expect( answers ).toHaveLength( 1 );
+	} );
+
 	test( 'sends a form once however often its button is pressed', async ( {
 		page,
 		requestUtils,
