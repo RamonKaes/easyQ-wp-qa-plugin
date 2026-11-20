@@ -580,8 +580,9 @@ final class Newsletter {
 	}
 
 	/**
-	 * Returns the next users who confirmed the newsletter, without blocked and, while users
-	 * are moderated, unapproved users, as `qa_mailing_perform_step()` skips them.
+	 * Returns the next users who confirmed the newsletter, without blocked users and, while users
+	 * are moderated, users who wait for approval, as `qa_mailing_perform_step()` skips the
+	 * levels below approved; users from before the moderation count as approved, as elsewhere.
 	 *
 	 * @since 0.1.0
 	 *
@@ -611,7 +612,7 @@ final class Newsletter {
 		foreach ( $ids as $id ) {
 			$user = get_userdata( $id );
 			// On a network, only members of the site get its newsletter.
-			if ( false === $user || ( is_multisite() && ! is_user_member_of_blog( $id ) ) || User_Status::is_blocked( $id ) || ( Options::get_bool( 'spam', 'moderate_users' ) && ! User_Status::is_approved( $id ) ) ) {
+			if ( false === $user || ( is_multisite() && ! is_user_member_of_blog( $id ) ) || User_Status::is_blocked( $id ) || ( Options::get_bool( 'spam', 'moderate_users' ) && User_Status::awaits_approval( $id ) ) ) {
 				continue;
 			}
 			$users[] = $user;

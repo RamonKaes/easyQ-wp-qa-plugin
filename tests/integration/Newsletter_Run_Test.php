@@ -320,4 +320,21 @@ final class Newsletter_Run_Test extends Test_Case {
 		$this->assertCount( 3, $this->sent );
 		$this->assertFalse( get_option( Newsletter::RUN_OPTION ) );
 	}
+
+	public function test_while_users_are_moderated_only_users_who_wait_for_approval_get_no_newsletter(): void {
+		Options::update( 'spam', array( 'moderate_users' => true ) );
+		[ $existing, $waiting, $approved ] = $this->subscribers( 3 );
+		Site_Meta::update( $waiting, \EasyQ\Users\User_Status::UNAPPROVED_META, 1 );
+		\EasyQ\Users\User_Status::approve( \EasyQ\Actor::system(), $approved );
+
+		Services::newsletter()->start();
+		Services::newsletter()->send_batch();
+
+		// A user from before the moderation counts as approved, as everywhere else (F-221).
+		$emails = array_map( static fn ( int $id ): string => (string) get_userdata( $id )->user_email, array( $existing, $approved ) );
+		sort( $emails );
+		$sent = $this->sent;
+		sort( $sent );
+		$this->assertSame( $emails, $sent );
+	}
 }
