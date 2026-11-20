@@ -1072,7 +1072,7 @@ final class Fields {
 				'label'       => __( 'Blocked IP addresses', 'easyq' ),
 				'description' => __( 'These addresses can read but not post or vote. Separate them with commas; use * as a wildcard or a hyphen for a range.', 'easyq' ),
 			),
-			'ip_anonymize'          => self::bool( __( 'Store IP addresses shortened', 'easyq' ), __( 'Removes the last part of each stored address.', 'easyq' ) ),
+			'ip_anonymize'          => self::bool( __( 'Store IP addresses shortened', 'easyq' ), __( 'Removes the last part of each stored address. Limits per IP address then count for the whole network of the address (/24 or /64).', 'easyq' ) ),
 			'ip_retention_days'     => self::int( __( 'Delete IP addresses after this many days', 'easyq' ), 1, IP_Retention::MAX_DAYS, __( 'Addresses of posts and visitors are removed once a day; rate limits keep them only for the current hour.', 'easyq' ) ),
 		);
 
