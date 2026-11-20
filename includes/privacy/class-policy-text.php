@@ -75,6 +75,11 @@ final class Policy_Text {
 		}
 		$strings[] = '<p>' . $profile . '</p>';
 
+		// The pictures come from Gravatar while the site shows avatars, as core says it for comments.
+		if ( get_option( 'show_avatars' ) ) {
+			$strings[] = '<p>' . __( 'Unless a profile picture was uploaded, the question and answer pages show the picture of the Gravatar service: an anonymized string created from the email address (also called a hash) is part of the address of the picture, and your browser loads it from Gravatar, which receives your IP address. The Gravatar service privacy policy is available here: https://automattic.com/privacy/.', 'easyq' ) . '</p>';
+		}
+
 		if ( Registration::asks_for_terms() ) {
 			$strings[] = '<p>' . __( 'When you register, we store the time at which you accepted our terms and the text you accepted, as proof of your consent. This record stays with your user account as long as it exists.', 'easyq' ) . '</p>';
 		}

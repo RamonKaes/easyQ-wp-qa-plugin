@@ -130,4 +130,20 @@ final class Policy_Text_Test extends Test_Case {
 		Options::update( 'general', array( 'erase_posts' => 'delete' ) );
 		$this->assertStringContainsString( 'your questions, answers and comments are deleted; those others have replied to stay', Policy_Text::content() );
 	}
+
+	public function test_names_gravatar_while_the_site_shows_avatars(): void {
+		// As core's suggested text for comments (F-228): the pictures come from Gravatar.
+		update_option( 'show_avatars', '1' );
+		$this->assertStringContainsString( 'Gravatar', Policy_Text::content() );
+		$this->assertStringContainsString( 'https://automattic.com/privacy/', Policy_Text::content() );
+
+		update_option( 'show_avatars', '0' );
+		$this->assertStringNotContainsString( 'Gravatar', Policy_Text::content() );
+	}
+
+	public function test_the_readme_names_gravatar_with_the_promise_of_no_external_requests(): void {
+		$readme = (string) file_get_contents( dirname( __DIR__, 2 ) . '/readme.txt' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file in a test.
+		$this->assertStringContainsString( 'makes no requests to external services', $readme );
+		$this->assertStringContainsString( 'Gravatar', $readme );
+	}
 }

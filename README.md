@@ -71,7 +71,7 @@ your theme decides how it looks.
 - Site Health tests of the database tables, the permalinks and the read-only mode,
   and an easyQ section on the Info tab
 - A REST API for every action and documented hooks for extensions
-- Privacy by design: no external requests, no tracking, suggested privacy policy text
+- Privacy by design: no external requests of its own, no tracking, suggested privacy policy text (which names Gravatar while the site shows avatars, as core's text for comments does)
   that follows the settings, IP addresses removed after a set number of days, and
   export and erasure of all Q&A data through the privacy tools of WordPress; consent to
   the registration terms stored as proof
