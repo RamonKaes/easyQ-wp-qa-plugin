@@ -23,6 +23,15 @@ defined( 'ABSPATH' ) || exit;
 final class DB {
 
 	/**
+	 * Attempts of a query of derived data that MySQL breaks off in a deadlock.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	private const DEADLOCK_ATTEMPTS = 3;
+
+	/**
 	 * Returns the WordPress database object.
 	 *
 	 * @since 0.1.0
@@ -106,5 +115,37 @@ final class DB {
 		}
 
 		return $wpdb->insert_id;
+	}
+
+	/**
+	 * Runs a prepared query that only recalculates derived data, once more if MySQL chose it as
+	 * the victim of a deadlock.
+	 *
+	 * Counts and the hotness are updated by many requests at once (a busy question); InnoDB then
+	 * breaks a lock cycle by rolling one statement back. Repeating the statement is what MySQL
+	 * advises for it (`Deadlock found when trying to get lock; try restarting transaction`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string|null $sql Prepared query, or null if preparing failed.
+	 */
+	public static function query_derived( ?string $sql ): void {
+		if ( null === $sql ) {
+			// Not reachable: the callers prepare with matching placeholders.
+			return;
+		}
+
+		$wpdb = self::wpdb();
+		for ( $attempt = 1; $attempt <= self::DEADLOCK_ATTEMPTS; $attempt++ ) {
+			// The error of an attempt that is repeated goes unreported; the last one is logged as usual.
+			$suppress = $wpdb->suppress_errors( $attempt < self::DEADLOCK_ATTEMPTS );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared by the caller; custom tables without a WordPress API.
+			$result = $wpdb->query( $sql );
+			$wpdb->suppress_errors( $suppress );
+
+			if ( false !== $result || ! str_contains( $wpdb->last_error, 'Deadlock' ) ) {
+				return;
+			}
+		}
 	}
 }

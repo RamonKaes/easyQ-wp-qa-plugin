@@ -376,15 +376,14 @@ final class Basic_Search implements Search_Provider {
 		}
 
 		$wpdb = DB::wpdb();
+		// The same order in every request, so that two requests lock the shared words in the same order.
+		sort( $word_ids );
 
 		$sql = $wpdb->prepare(
 			'UPDATE %i AS x, (SELECT w.id, COUNT(i.word_id) AS total FROM %i AS w LEFT JOIN %i AS i ON i.word_id = w.id WHERE w.id IN (' . implode( ',', array_fill( 0, count( $word_ids ), '%d' ) ) . ') GROUP BY w.id) AS a SET x.%i = a.total WHERE x.id = a.id',
 			array_merge( array( Schema::table( 'words' ), Schema::table( 'words' ), Schema::table( $index ) ), $word_ids, array( $count_column ) )
 		);
-		if ( null !== $sql ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-			$wpdb->query( $sql );
-		}
+		DB::query_derived( $sql );
 	}
 
 	/**

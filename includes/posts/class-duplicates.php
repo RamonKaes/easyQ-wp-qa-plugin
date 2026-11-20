@@ -23,8 +23,9 @@ defined( 'ABSPATH' ) || exit;
  * Questions are compared, as in Question2Answer (`qa-include/pages/ask.php`), with the
  * five newest questions by the words of their title and content. Answers and comments
  * are compared, as core compares comments (`wp_allow_comment()`), with those of the
- * same author on the same post. A lock per site and type makes the check and the insert
- * one step, so that a double submission does not pass twice.
+ * same author on the same post. One lock per site makes the check and the insert one
+ * step, so that a double submission does not pass twice; it also keeps posts created at
+ * once from locking the shared counts of words and the hotness in opposite orders.
  *
  * @since 0.1.0
  */
@@ -40,7 +41,7 @@ final class Duplicates {
 	public const RECENT_QUESTIONS = 5;
 
 	/**
-	 * Seconds to wait for a post of the same type in progress.
+	 * Seconds to wait for a post in progress.
 	 *
 	 * @since 0.1.0
 	 *
@@ -64,7 +65,7 @@ final class Duplicates {
 	 */
 	public static function create( Actor $actor, string $type, ?int $parent_id, string $title, string $content, string $format, callable $create ): int|WP_Error {
 		$wpdb   = DB::wpdb();
-		$lock   = $wpdb->prefix . 'easyq_post_' . $type;
+		$lock   = $wpdb->prefix . 'easyq_post';
 		$locked = '1' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, %d)', $lock, self::LOCK_WAIT ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A lock, not data.
 
 		try {

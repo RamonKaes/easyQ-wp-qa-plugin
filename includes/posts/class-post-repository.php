@@ -463,10 +463,7 @@ final class Post_Repository {
 			$first_id,
 			$last_id
 		);
-		if ( null !== $sql ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-			$wpdb->query( $sql );
-		}
+		DB::query_derived( $sql );
 
 		$this->forget_range( $first_id, $last_id );
 	}
