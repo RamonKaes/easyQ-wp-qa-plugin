@@ -212,30 +212,28 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertSame( $before, $count(), 'A refused request wrote to the options table.' );
 	}
 
-	public function test_the_message_after_a_success_is_found_in_a_persistent_object_cache(): void {
+	public function test_a_success_stores_nothing_either(): void {
+		global $wpdb;
+		$count    = static fn (): int => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->options}" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Counts the rows, in a test.
+		$question = $this->ask( $this->user() );
 		$this->login();
-		// Transients then go to the object cache, whose keys keep their case.
-		$previous = wp_using_ext_object_cache( true );
+		$before = $count();
 
-		try {
-			$checked = 0;
-			for ( $round = 0; $round < 10; $round++ ) {
-				$this->submit(
-					'ask',
-					array(
-						'title'   => "A question from the form, round $round",
-						'content' => 'Some text for the question.',
-					)
-				);
-				$this->assertSame( 'success', Flash::current()['type'] ?? null, "Round $round" );
-				++$checked;
-			}
-		} finally {
-			// The flag starts as null in the test suite, and passing null would change nothing.
-			wp_using_ext_object_cache( (bool) $previous );
+		// Toggled favorites: each success used to store its message as a transient (two rows).
+		for ( $round = 0; $round < 20; $round++ ) {
+			$url = $this->submit(
+				'favorite',
+				array(
+					'type'     => 'question',
+					'id'       => (string) $question->id,
+					'favorite' => 0 === $round % 2 ? '1' : '0',
+				)
+			);
+			$this->assertNotSame( '', $url, "Round $round" );
+			$this->assertSame( array( 'success', 'Your favorites have been saved.' ), array( Flash::current()['type'] ?? null, Flash::current()['message'] ?? null ), "Round $round" );
 		}
 
-		$this->assertSame( 10, $checked );
+		$this->assertSame( $before, $count(), 'A successful request wrote to the options table.' );
 	}
 
 	public function test_the_nonce_of_a_form_holds_for_its_own_post_and_action_only(): void {

@@ -248,10 +248,9 @@ final class Form_Handler {
 		if ( null !== $previous && is_numeric( $previous['question'] ?? null ) && (int) $previous['question'] !== $target ) {
 			$id = (int) $previous['question'];
 		}
-		$queued  = is_array( $data ) && true === ( $data['queued'] ?? false );
-		$message = $this->success_message( $form, $queued );
+		$queued = is_array( $data ) && true === ( $data['queued'] ?? false );
 
-		return $this->with_flash( $this->success_url( $form, $id, $this->back_url() ), Flash::store( 'success', $message, $form ) );
+		return $this->with_flash( $this->success_url( $form, $id, $this->back_url() ), Flash::code( $form, $queued ) );
 	}
 
 	/**
@@ -391,38 +390,6 @@ final class Form_Handler {
 	}
 
 	/**
-	 * Returns the message after a successful submission.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param string $form   Form name.
-	 * @param bool   $queued Whether the post waits for moderation.
-	 * @return string
-	 */
-	private function success_message( string $form, bool $queued ): string {
-		if ( $queued ) {
-			return __( 'Thank you! Your post will be published once a moderator approved it.', 'easyq' );
-		}
-
-		return match ( $form ) {
-			'ask'     => __( 'Your question has been published.', 'easyq' ),
-			'answer'  => __( 'Your answer has been published.', 'easyq' ),
-			'comment' => __( 'Your comment has been published.', 'easyq' ),
-			'edit'    => __( 'Your changes have been saved.', 'easyq' ),
-			'account' => __( 'Your profile has been saved.', 'easyq' ),
-			'unsubscribe' => __( 'You will no longer get emails about this post.', 'easyq' ),
-			'newsletter_confirm' => __( 'Thank you! You will get the newsletter.', 'easyq' ),
-			'favorite' => __( 'Your favorites have been saved.', 'easyq' ),
-			'notice'   => __( 'The notice was dismissed.', 'easyq' ),
-			'wall'     => __( 'Your post is on the wall.', 'easyq' ),
-			'wall_delete', 'message_delete' => __( 'Deleted.', 'easyq' ),
-			'message'  => __( 'Your message has been sent.', 'easyq' ),
-			'feedback' => __( 'Thank you for your feedback.', 'easyq' ),
-			default   => __( 'Done.', 'easyq' ),
-		};
-	}
-
-	/**
 	 * Returns the address of the page the form was submitted from.
 	 *
 	 * @since 0.1.0
@@ -439,12 +406,12 @@ final class Form_Handler {
 	}
 
 	/**
-	 * Adds the message token to an address.
+	 * Adds the code of the message to an address.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param string $url   Address, possibly with a fragment.
-	 * @param string $token Message token.
+	 * @param string $token Code of the message, see Flash::code().
 	 * @return string
 	 */
 	private function with_flash( string $url, string $token ): string {

@@ -10,7 +10,6 @@ namespace EasyQ\Tests\Integration;
 use EasyQ\Database\Installer;
 use EasyQ\Database\Schema;
 use EasyQ\Events\Activity_Tracker;
-use EasyQ\Frontend\Flash;
 use EasyQ\Mail\Templates;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
@@ -99,7 +98,6 @@ final class Uninstaller_Test extends Test_Case {
 		switch_to_blog( $site_id );
 		Templates::save( 'flagged', 'A subject', 'A text' );
 		$this->assertNotFalse( get_option( Templates::OPTION ) );
-		$flash = Flash::store( 'success', 'Saved.' );
 		set_transient( 'easyq_view_' . str_repeat( 'b', 32 ), 1, HOUR_IN_SECONDS );
 		Counts::get( Counts::QUESTIONS );
 		// Locks of runs that were stopped halfway: the tools in another tab, a batch of the newsletter.
@@ -116,7 +114,6 @@ final class Uninstaller_Test extends Test_Case {
 		$templates = get_option( Templates::OPTION, false );
 		restore_current_blog();
 
-		$this->assertContains( '_transient_easyq_flash_' . $flash, $options );
 		$this->assertContains( '_transient_timeout_easyq_view_' . str_repeat( 'b', 32 ), $options );
 		$this->assertContains( Counts::OPTION, $options );
 		$this->assertContains( \EasyQ\Tools\Tools::RUN_OPTION, $options );

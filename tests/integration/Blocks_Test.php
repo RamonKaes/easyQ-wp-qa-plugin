@@ -593,9 +593,14 @@ final class Blocks_Test extends Test_Case {
 	}
 
 	public function test_notices_show_the_message_of_a_submission(): void {
-		$_GET[ Flash::QUERY_VAR ] = Flash::store( 'success', 'All done.' );
+		$_GET[ Flash::QUERY_VAR ] = Flash::code( 'answer', true );
 
-		$this->assertStringContainsString( 'All done.', $this->render( '<!-- wp:easyq/notices /-->' ) );
+		$this->assertStringContainsString( 'Your post will be published once a moderator approved it.', $this->render( '<!-- wp:easyq/notices /-->' ) );
+
+		// Only the messages of the forms: another value shows nothing, and nothing the address says.
+		$_GET[ Flash::QUERY_VAR ] = 'Your account was deleted';
+		$this->assertStringNotContainsString( 'account was deleted', $this->render( '<!-- wp:easyq/notices /-->' ) );
+		$this->assertStringContainsString( ' hidden></div>', $this->render( '<!-- wp:easyq/notices /-->' ) );
 	}
 
 	public function test_core_blocks_can_show_post_data_through_bindings(): void {

@@ -235,7 +235,7 @@ final class User_Blocks_Test extends Test_Case {
 	}
 
 	public function test_success_messages_appear_on_every_page(): void {
-		$_GET[ Flash::QUERY_VAR ] = Flash::store( 'success', 'Your profile has been saved.', 'account' );
+		$_GET[ Flash::QUERY_VAR ] = Flash::code( 'account', false );
 
 		$template = \WP_Block_Templates_Registry::get_instance()->get_by_slug( 'easyq-tags' );
 		$this->assertNotNull( $template );
@@ -248,7 +248,7 @@ final class User_Blocks_Test extends Test_Case {
 	}
 
 	public function test_form_errors_are_shown_once(): void {
-		$_GET[ Flash::QUERY_VAR ] = Flash::store( 'error', 'Please check the form.', 'ask' );
+		Flash::keep( 'Please check the form.', 'ask', 0 );
 
 		$html = do_blocks( '<!-- wp:easyq/notices /-->' );
 

@@ -15,30 +15,22 @@ defined( 'ABSPATH' ) || exit;
  *
  * A failed submission is answered with the page itself, as `wp-login.php` answers a failed
  * login: the message and what the user typed live in this request only, so a refused
- * request stores nothing. A successful one redirects, and its message is stored for a few
- * minutes under a random token in the address of the next page.
+ * request stores nothing. A successful one redirects with the name of the form in the
+ * address of the next page, as core redirects with `updated=true` or `message=1`: the
+ * message is one of a fixed set, so nothing is stored for it either.
  *
  * @since 0.1.0
  */
 final class Flash {
 
 	/**
-	 * Query parameter with the token.
+	 * Query parameter with the form, and `-queued` for a post that waits for moderation.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @var string
 	 */
 	public const QUERY_VAR = 'easyq_notice';
-
-	/**
-	 * Length of a token: letters and digits from `wp_generate_password()`.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @var int
-	 */
-	private const TOKEN_LENGTH = 20;
 
 	/**
 	 * Message of a failed submission in this request.
@@ -50,29 +42,47 @@ final class Flash {
 	private static ?array $now = null;
 
 	/**
-	 * Stores the message of a successful submission for the next page and returns its token.
+	 * Returns the value of the query parameter for a successful submission of a form.
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $type    `success` or `error`.
-	 * @param string $message Message.
-	 * @param string $form    Form the message belongs to.
+	 * @param string $form   Form.
+	 * @param bool   $queued Whether the post waits for moderation.
 	 * @return string
 	 */
-	public static function store( string $type, string $message, string $form = '' ): string {
-		$token = wp_generate_password( self::TOKEN_LENGTH, false );
+	public static function code( string $form, bool $queued ): string {
+		return $form . ( $queued ? '-queued' : '' );
+	}
 
-		set_transient(
-			'easyq_flash_' . $token,
-			array(
-				'type'    => $type,
-				'message' => $message,
-				'form'    => $form,
-			),
-			5 * MINUTE_IN_SECONDS
-		);
+	/**
+	 * Returns the message of a successful submission of a form.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $form   Form.
+	 * @param bool   $queued Whether the post waits for moderation.
+	 * @return string|null Null for a name that is no form.
+	 */
+	public static function success_message( string $form, bool $queued ): ?string {
+		$message = match ( $form ) {
+			'ask'                           => __( 'Your question has been published.', 'easyq' ),
+			'answer'                        => __( 'Your answer has been published.', 'easyq' ),
+			'comment'                       => __( 'Your comment has been published.', 'easyq' ),
+			'edit'                          => __( 'Your changes have been saved.', 'easyq' ),
+			'account'                       => __( 'Your profile has been saved.', 'easyq' ),
+			'unsubscribe'                   => __( 'You will no longer get emails about this post.', 'easyq' ),
+			'newsletter_confirm'            => __( 'Thank you! You will get the newsletter.', 'easyq' ),
+			'favorite'                      => __( 'Your favorites have been saved.', 'easyq' ),
+			'notice'                        => __( 'The notice was dismissed.', 'easyq' ),
+			'wall'                          => __( 'Your post is on the wall.', 'easyq' ),
+			'wall_delete', 'message_delete' => __( 'Deleted.', 'easyq' ),
+			'message'                       => __( 'Your message has been sent.', 'easyq' ),
+			'feedback'                      => __( 'Thank you for your feedback.', 'easyq' ),
+			'vote', 'action'                => __( 'Done.', 'easyq' ),
+			default                         => null,
+		};
 
-		return $token;
+		return null !== $message && $queued ? __( 'Thank you! Your post will be published once a moderator approved it.', 'easyq' ) : $message;
 	}
 
 	/**
@@ -109,23 +119,18 @@ final class Flash {
 			return self::$now;
 		}
 
-		// The token is read as it was made: `sanitize_key()` would lower-case it, and only a store
-		// that compares without case, such as the options table, would find it again.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The token only reads a message stored for this visitor, and is checked against the form of a token below.
-		$token = isset( $_GET[ self::QUERY_VAR ] ) && is_string( $_GET[ self::QUERY_VAR ] ) ? wp_unslash( $_GET[ self::QUERY_VAR ] ) : '';
-		if ( 1 !== preg_match( '/^[A-Za-z0-9]{' . self::TOKEN_LENGTH . '}$/D', $token ) ) {
-			return null;
-		}
-
-		$data = get_transient( 'easyq_flash_' . $token );
-		if ( ! is_array( $data ) || ! is_string( $data['type'] ?? null ) || ! is_string( $data['message'] ?? null ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Only picks one of the fixed messages; nothing is changed.
+		$code = isset( $_GET[ self::QUERY_VAR ] ) && is_string( $_GET[ self::QUERY_VAR ] ) ? sanitize_key( wp_unslash( $_GET[ self::QUERY_VAR ] ) ) : '';
+		$form = str_ends_with( $code, '-queued' ) ? substr( $code, 0, -7 ) : $code;
+		$text = '' === $form ? null : self::success_message( $form, $form !== $code );
+		if ( null === $text ) {
 			return null;
 		}
 
 		return array(
-			'type'    => $data['type'],
-			'message' => $data['message'],
-			'form'    => is_string( $data['form'] ?? null ) ? $data['form'] : '',
+			'type'    => 'success',
+			'message' => $text,
+			'form'    => $form,
 			'target'  => 0,
 			'fields'  => array(),
 			'values'  => array(),
