@@ -311,12 +311,13 @@ final class Forms {
 		$token = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		if ( ! Unsubscribe::verify( $id, $token ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- The token in the address is checked below.
+		$confirm = isset( $_GET['notify'] ) && 'confirm' === $_GET['notify'];
+		if ( ! ( $confirm ? Unsubscribe::verify_confirm( Services::posts()->find( $id ), $token ) : Unsubscribe::verify( (int) $id, $token ) ) ) {
 			return sprintf( '<p %s>%s</p>', get_block_wrapper_attributes(), esc_html__( 'This link is not valid.', 'easyq' ) );
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- The token in the address is checked above.
-		if ( isset( $_GET['notify'] ) && 'confirm' === $_GET['notify'] ) {
+		if ( $confirm ) {
 			return self::form(
 				'unsubscribe',
 				0,

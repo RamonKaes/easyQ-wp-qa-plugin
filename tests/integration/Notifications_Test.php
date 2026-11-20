@@ -237,7 +237,7 @@ final class Notifications_Test extends Test_Case {
 		$_GET = array(
 			'notify' => 'confirm',
 			'post'   => (string) $question->id,
-			'token'  => Unsubscribe::token( $question->id ),
+			'token'  => Unsubscribe::confirm_token( $question ),
 		);
 		// Rendered as a block, as the page does; WordPress 6.7 has no block supports outside one.
 		$this->assertStringContainsString( 'name="notify" value="confirm"', do_blocks( '<!-- wp:easyq/unsubscribe /-->' ) );
@@ -246,7 +246,7 @@ final class Notifications_Test extends Test_Case {
 
 		$request = new \WP_REST_Request( 'POST', '/easyq/v1/unsubscribe' );
 		$request->set_param( 'post', $question->id );
-		$request->set_param( 'token', Unsubscribe::token( $question->id ) );
+		$request->set_param( 'token', Unsubscribe::confirm_token( $question ) );
 		$request->set_param( 'notify', 'confirm' );
 		$this->assertSame( 200, rest_do_request( $request )->get_status() );
 
@@ -288,6 +288,43 @@ final class Notifications_Test extends Test_Case {
 		Services::post_service()->edit_answer( $visitor, $answer, $this->post( $question->id ), 'An answer without an account.', '', 'victim@example.com' );
 		$this->assertFalse( Unsubscribe::is_confirmed( $this->post( $answer->id ) ) );
 		$this->assertSame( array( 'victim@example.com' ), $this->addresses() );
+	}
+
+	public function test_a_confirmation_link_holds_only_for_the_address_it_was_sent_to(): void {
+		$visitor  = new Actor( null, 4711, '192.0.2.9' );
+		$question = $this->post( Services::post_service()->create_question( $visitor, 'A question whose address changes', 'Text.', '', array(), null, 'attacker@example.com' ) );
+		$old_link = Unsubscribe::confirm_token( $question );
+
+		Services::post_service()->edit_question( $visitor, $question, (string) $question->title, 'Text.', '', array(), 'victim@example.com' );
+		$request = new \WP_REST_Request( 'POST', '/easyq/v1/unsubscribe' );
+		$request->set_param( 'post', $question->id );
+		$request->set_param( 'token', $old_link );
+		$request->set_param( 'notify', 'confirm' );
+
+		$this->assertSame( 403, rest_do_request( $request )->get_status() );
+		$this->assertFalse( Unsubscribe::is_confirmed( $this->post( $question->id ) ) );
+		// Nor does the token that stops the emails confirm anything.
+		$request->set_param( 'token', Unsubscribe::token( $question->id ) );
+		$this->assertSame( 403, rest_do_request( $request )->get_status() );
+	}
+
+	public function test_changing_the_address_asks_each_address_once_and_only_a_few(): void {
+		$visitor  = new Actor( null, 4711, '192.0.2.9' );
+		$question = $this->post( Services::post_service()->create_question( $visitor, 'A question whose address changes often', 'Text.', '', array(), null, 'first@example.com' ) );
+		Unsubscribe::confirm( $question );
+		reset_phpmailer_instance();
+
+		foreach ( array( 'second@example.com', 'first@example.com', 'second@example.com', 'third@example.com', 'fourth@example.com', 'fifth@example.com' ) as $address ) {
+			Services::post_service()->edit_question( $visitor, $this->post( $question->id ), (string) $question->title, 'Text.', '', array(), $address );
+		}
+		// The first address was asked when the question was posted: two more, each once.
+		$this->assertSame( array( 'second@example.com', 'third@example.com' ), $this->addresses() );
+
+		// Back to the confirmed address: confirmed again, without an email.
+		reset_phpmailer_instance();
+		Services::post_service()->edit_question( $visitor, $this->post( $question->id ), (string) $question->title, 'Text.', '', array(), 'first@example.com' );
+		$this->assertTrue( Unsubscribe::is_confirmed( $this->post( $question->id ) ) );
+		$this->assertSame( array(), $this->addresses() );
 	}
 
 	public function test_nobody_hears_about_comments_below_hidden_posts(): void {

@@ -92,9 +92,13 @@ final class Unsubscribe_Controller extends Controller {
 	public function create_item_permissions_check( $request ): bool|WP_Error {
 		$token = (string) self::string_param( $request, 'token' );
 		$user  = self::int_param( $request, 'user' );
-		$valid = null !== $user
-			? Newsletter::verify( $user, $token )
-			: Unsubscribe::verify( (int) self::int_param( $request, 'post' ), $token );
+		$post  = (int) self::int_param( $request, 'post' );
+		$valid = match ( true ) {
+			null !== $user                                           => Newsletter::verify( $user, $token ),
+			// The link of the confirmation holds for the address it was sent to.
+			'confirm' === self::string_param( $request, 'notify' ) => Unsubscribe::verify_confirm( Services::posts()->find( $post ), $token ),
+			default                                                  => Unsubscribe::verify( $post, $token ),
+		};
 
 		return $valid ? true : new WP_Error( 'easyq_invalid_token', __( 'This link is not valid.', 'easyq' ), array( 'status' => 403 ) );
 	}

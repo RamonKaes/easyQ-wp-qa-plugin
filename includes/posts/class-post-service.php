@@ -1281,10 +1281,10 @@ final class Post_Service {
 	}
 
 	/**
-	 * Forgets the confirmed address of an author without an account when the address changes.
+	 * Tells whether an author without an account set another address for notifications.
 	 *
-	 * The confirmation holds for the address that was confirmed: a new one is asked again, so
-	 * nobody gets emails for an address typed for someone else.
+	 * The confirmation holds for the address that was confirmed (Unsubscribe::is_confirmed()),
+	 * so a new one is asked again, so nobody gets emails for an address typed for someone else.
 	 *
 	 * @since 0.1.0
 	 *
@@ -1293,13 +1293,7 @@ final class Post_Service {
 	 * @return bool Whether the new address must be confirmed.
 	 */
 	private function forget_confirmation( Post $post, ?string $notify ): bool {
-		if ( null !== $post->user_id || $notify === $post->notify ) {
-			return false;
-		}
-
-		delete_metadata( 'easyq_post', $post->id, Unsubscribe::CONFIRMED_META );
-
-		return true;
+		return null === $post->user_id && $notify !== $post->notify;
 	}
 
 	/**

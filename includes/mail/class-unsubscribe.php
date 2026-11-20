@@ -123,7 +123,71 @@ final class Unsubscribe {
 	 * @return bool
 	 */
 	public static function is_confirmed( Post $post ): bool {
-		return null !== $post->user_id || '1' === get_metadata( 'easyq_post', $post->id, self::CONFIRMED_META, true );
+		if ( null !== $post->user_id ) {
+			return true;
+		}
+
+		// The confirmation holds for the address that was confirmed, not for one set later.
+		$confirmed = get_metadata( 'easyq_post', $post->id, self::CONFIRMED_META, true );
+
+		return null !== $post->notify && is_string( $confirmed ) && hash_equals( self::address_hash( $post->notify ), $confirmed );
+	}
+
+	/**
+	 * Meta key with the addresses of a post that were asked to confirm.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const ASKED_META = 'easyq_notify_asked';
+
+	/**
+	 * Addresses of a post that are asked to confirm at most, so that changing the address does
+	 * not send emails to anyone without end.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const MAX_ASKED = 3;
+
+	/**
+	 * Returns the stored form of an address: a keyed hash, so the meta does not hold it again.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $address Address.
+	 * @return string
+	 */
+	private static function address_hash( string $address ): string {
+		return wp_hash( 'easyq_notify|' . strtolower( trim( $address ) ) );
+	}
+
+	/**
+	 * Returns the token of the confirmation link: bound to the post and its address, so a link
+	 * sent for one address confirms no other, and apart from the token that stops the emails.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $post Post.
+	 * @return string
+	 */
+	public static function confirm_token( Post $post ): string {
+		return wp_hash( 'easyq_notify_confirm|' . get_current_blog_id() . '|' . $post->id . '|' . strtolower( trim( (string) $post->notify ) ) );
+	}
+
+	/**
+	 * Checks the token of a confirmation link against the current address of the post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post|null $post  Post.
+	 * @param string    $token Token.
+	 * @return bool
+	 */
+	public static function verify_confirm( ?Post $post, string $token ): bool {
+		return null !== $post && null === $post->user_id && null !== $post->notify && hash_equals( self::confirm_token( $post ), $token );
 	}
 
 	/**
@@ -134,7 +198,9 @@ final class Unsubscribe {
 	 * @param Post $post Post.
 	 */
 	public static function confirm( Post $post ): void {
-		update_metadata( 'easyq_post', $post->id, self::CONFIRMED_META, '1' );
+		if ( null !== $post->notify ) {
+			update_metadata( 'easyq_post', $post->id, self::CONFIRMED_META, self::address_hash( $post->notify ) );
+		}
 	}
 
 	/**
@@ -142,25 +208,25 @@ final class Unsubscribe {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $post_id Post ID.
+	 * @param Post $post Post.
 	 * @return string
 	 */
-	public static function confirm_url( int $post_id ): string {
+	public static function confirm_url( Post $post ): string {
 		return Routes::url(
 			'unsubscribe',
 			null,
 			null,
 			array(
 				'notify' => 'confirm',
-				'post'   => $post_id,
-				'token'  => self::token( $post_id ),
+				'post'   => $post->id,
+				'token'  => self::confirm_token( $post ),
 			)
 		);
 	}
 
 	/**
 	 * Asks an author without an account to confirm the address they gave for notifications,
-	 * once per post, as a double opt-in.
+	 * as a double opt-in: each address once per post, and at most MAX_ASKED addresses.
 	 *
 	 * @since 0.1.0
 	 *
@@ -168,18 +234,27 @@ final class Unsubscribe {
 	 * @return bool Whether an email was sent.
 	 */
 	public static function ask_for_confirmation( Post $post ): bool {
-		// Asked once per post: a queued post that is approved later is not asked again.
-		if ( null !== $post->user_id || null === $post->notify || ! is_email( $post->notify ) || metadata_exists( 'easyq_post', $post->id, self::CONFIRMED_META ) ) {
+		if ( null !== $post->user_id || null === $post->notify || ! is_email( $post->notify ) || self::is_confirmed( $post ) ) {
 			return false;
 		}
-		update_metadata( 'easyq_post', $post->id, self::CONFIRMED_META, '0' );
+
+		// Each address once: a queued post that is approved later is not asked again, nor an
+		// address set back; and not more than a few, as an edit could otherwise mail anyone.
+		$asked = get_metadata( 'easyq_post', $post->id, self::ASKED_META, true );
+		$asked = is_array( $asked ) ? array_values( array_filter( $asked, 'is_string' ) ) : array();
+		$hash  = self::address_hash( $post->notify );
+		if ( in_array( $hash, $asked, true ) || count( $asked ) >= self::MAX_ASKED ) {
+			return false;
+		}
+		$asked[] = $hash;
+		update_metadata( 'easyq_post', $post->id, self::ASKED_META, $asked );
 
 		$name = get_option( 'blogname' );
 		$site = wp_specialchars_decode( is_string( $name ) ? $name : '', ENT_QUOTES );
 		/* translators: %s: site name. */
 		$subject = sprintf( __( '[%s] Confirm the emails about your post', 'easyq' ), $site );
 		/* translators: 1: site name, 2: confirmation address. */
-		$body = sprintf( __( "Hello,\n\nyou posted on %1\$s without an account and asked for emails about the answers and comments. Please confirm your address here:\n\n%2\$s\n\nIf it was not you, ignore this email; you will get no further emails.\n\n%1\$s", 'easyq' ), $site, self::confirm_url( $post->id ) );
+		$body = sprintf( __( "Hello,\n\nyou posted on %1\$s without an account and asked for emails about the answers and comments. Please confirm your address here:\n\n%2\$s\n\nIf it was not you, ignore this email; you will get no further emails.\n\n%1\$s", 'easyq' ), $site, self::confirm_url( $post ) );
 
 		return Mailer::send_email( 'notify_confirm', new Recipient( $post->notify, null, null, $post ), $subject, $body );
 	}
