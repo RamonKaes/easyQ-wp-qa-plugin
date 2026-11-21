@@ -160,7 +160,7 @@ final class User_Fields_Controller extends Controller {
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$field = Services::user_fields()->find( (int) self::int_param( $request, 'id' ) );
 
-		return null === $field ? REST_Errors::not_found() : $this->prepare_item_for_response( $field, $request );
+		return null === $field ? REST_Errors::not_found( 'other' ) : $this->prepare_item_for_response( $field, $request );
 	}
 
 	/**
@@ -192,7 +192,7 @@ final class User_Fields_Controller extends Controller {
 		$field = $fields->find( $result );
 		if ( null === $field ) {
 			// Not covered: the field was just created; this guards its deletion before it is read back.
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$response = $this->prepare_item_for_response( $field, $request );
@@ -219,7 +219,7 @@ final class User_Fields_Controller extends Controller {
 		$fields = Services::user_fields();
 		$field  = $fields->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $field ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$type   = $request->has_param( 'type' ) ? (string) self::string_param( $request, 'type' ) : self::type( $field );
@@ -240,7 +240,7 @@ final class User_Fields_Controller extends Controller {
 
 		$updated = $fields->find( $field->id );
 
-		return null === $updated ? REST_Errors::not_found() : $this->prepare_item_for_response( $updated, $request );
+		return null === $updated ? REST_Errors::not_found( 'other' ) : $this->prepare_item_for_response( $updated, $request );
 	}
 
 	/**
@@ -260,7 +260,7 @@ final class User_Fields_Controller extends Controller {
 
 		$field = Services::user_fields()->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $field ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$previous = $this->prepare_item_for_response( $field, $request );

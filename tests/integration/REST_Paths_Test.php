@@ -115,4 +115,24 @@ final class REST_Paths_Test extends REST_Test_Case {
 		$this->assertSame( 400, $this->request( 'PUT', '/comments/' . $comment->id, array( 'content' => str_repeat( 'x', 20000 ) ) )->get_status() );
 		$this->assertSame( 'A comment to edit later.', $this->post( $comment->id )->content );
 	}
+
+	public function test_errors_have_the_codes_of_core_where_core_has_the_case(): void {
+		$code = fn ( string $method, string $route, array $params = array() ): string => (string) $this->request( $method, $route, $params )->as_error()?->get_error_code();
+
+		// Missing items, as core's controllers of posts, users and terms answer.
+		$this->assertSame( 'rest_post_invalid_id', $code( 'GET', '/questions/999999' ) );
+		$this->assertSame( 'rest_user_invalid_id', $code( 'GET', '/users/999999' ) );
+		$this->assertSame( 'rest_term_invalid', $code( 'GET', '/categories/999999' ) );
+
+		// Visitors who have to log in, and users who may not, as core.
+		wp_set_current_user( 0 );
+		$this->assertSame( 'rest_not_logged_in', $code( 'POST', '/questions', array( 'title' => 'A question from a visitor' ) ) );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertSame( 'rest_forbidden', $code( 'POST', '/categories', array( 'title' => 'A category' ) ) );
+		$this->assertSame( 'rest_forbidden', \EasyQ\REST\REST_Errors::permission( 'level' )->get_error_code() );
+
+		// What core does not have keeps the code of easyQ.
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( 'easyq_not_found', $code( 'DELETE', '/messages/999999' ) );
+	}
 }

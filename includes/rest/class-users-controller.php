@@ -201,7 +201,7 @@ final class Users_Controller extends Controller {
 
 		$user_id = (int) self::int_param( $request, 'id' );
 		if ( false === get_userdata( $user_id ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 		if ( ! User_Status::may_moderate( $actor, $user_id ) ) {
 			return REST_Errors::permission( 'level' );
@@ -359,7 +359,7 @@ final class Users_Controller extends Controller {
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$user = get_userdata( (int) self::int_param( $request, 'id' ) );
 		if ( false === $user || ! Services::user_query()->is_shown( $user, $this->actor()->user_id ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 
 		// As core: the edit context, which holds the date of the registration, for the user and
@@ -397,7 +397,7 @@ final class Users_Controller extends Controller {
 		// Not reachable: the route asks for a signed-in user, so the user exists; the check below keeps the type.
 		$user = get_userdata( (int) $this->actor()->user_id );
 		if ( false === $user ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 
 		return $this->respond_with( $this->format( $user, ! self::embedded( $request ), all_fields: true ), $request );
@@ -436,7 +436,7 @@ final class Users_Controller extends Controller {
 		$user    = get_userdata( $user_id );
 		// Not reachable: the route asks for a signed-in user, so the user exists; the check keeps the type.
 		if ( false === $user ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 
 		$file = $this->avatar_file( $request );

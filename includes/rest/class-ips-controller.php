@@ -171,7 +171,7 @@ final class IPs_Controller extends Controller {
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$ip = self::ip( $request );
 
-		return null === $ip ? REST_Errors::not_found() : $this->respond_with( $this->describe( $ip ), $request );
+		return null === $ip ? REST_Errors::not_found( 'other' ) : $this->respond_with( $this->describe( $ip ), $request );
 	}
 
 	/**
@@ -186,7 +186,7 @@ final class IPs_Controller extends Controller {
 	public function block( $request ): WP_REST_Response|WP_Error {
 		$ip = self::ip( $request );
 		if ( null === $ip ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		( new IP_Blocks() )->block( $this->actor(), $ip );
@@ -206,7 +206,7 @@ final class IPs_Controller extends Controller {
 	public function unblock( $request ): WP_REST_Response|WP_Error {
 		$ip = self::ip( $request );
 		if ( null === $ip ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$removed = ( new IP_Blocks() )->unblock( $this->actor(), $ip );
@@ -228,7 +228,7 @@ final class IPs_Controller extends Controller {
 	public function hide_all( $request ): WP_REST_Response|WP_Error {
 		$ip = self::ip( $request );
 		if ( null === $ip ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$hidden = 0;

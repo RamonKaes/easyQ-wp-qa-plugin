@@ -515,7 +515,7 @@ final class REST_Roles_Test extends REST_Test_Case {
 				}
 				foreach ( $posts as $post ) {
 					$codes[ $route ] = (string) $this->request( 'GET', $this->filled( substr( $route, strlen( '/easyq/v1' ) ), $post ), $params )->as_error()?->get_error_code();
-					if ( 'easyq_not_found' !== $codes[ $route ] ) {
+					if ( ! in_array( $codes[ $route ], array( 'rest_post_invalid_id', 'rest_user_invalid_id', 'rest_term_invalid', 'easyq_not_found' ), true ) ) {
 						break;
 					}
 				}
@@ -561,7 +561,7 @@ final class REST_Roles_Test extends REST_Test_Case {
 		wp_set_current_user( 0 );
 		$shown = array();
 		foreach ( $this->reading_codes( ...$posts ) as $route => $code ) {
-			if ( 'easyq_login' !== $code && 'rest_forbidden' !== $code && ! in_array( $route, $own, true ) ) {
+			if ( 'rest_not_logged_in' !== $code && 'rest_forbidden' !== $code && ! in_array( $route, $own, true ) ) {
 				$shown[] = "$route: $code";
 			}
 		}
@@ -572,7 +572,7 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertSame( '', $this->reading_codes( ...$posts )['/easyq/v1/questions/(?P<id>\\d+)'] );
 		$this->assertSame( 200, $this->request( 'GET', "/users/$reader/wall" )->get_status() );
 		wp_set_current_user( 0 );
-		$this->assertSame( 'easyq_login', $this->request( 'GET', "/users/$reader/wall" )->as_error()?->get_error_code() );
+		$this->assertSame( 'rest_not_logged_in', $this->request( 'GET', "/users/$reader/wall" )->as_error()?->get_error_code() );
 	}
 
 	public function test_every_rate_limit_stops_the_action_through_the_rest_api(): void {

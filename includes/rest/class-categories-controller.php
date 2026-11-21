@@ -205,7 +205,7 @@ final class Categories_Controller extends Controller {
 	public function get_item( $request ): WP_REST_Response|WP_Error {
 		$category = Services::categories()->find( (int) self::int_param( $request, 'id' ) );
 
-		return null === $category ? REST_Errors::not_found() : $this->prepare_item_for_response( $category, $request );
+		return null === $category ? REST_Errors::not_found( 'category' ) : $this->prepare_item_for_response( $category, $request );
 	}
 
 	/**
@@ -233,7 +233,7 @@ final class Categories_Controller extends Controller {
 		$category = $categories->find( $result );
 		if ( null === $category ) {
 			// Not covered: the category was just created; this guards its deletion before it is read back.
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'category' );
 		}
 
 		$response = $this->prepare_item_for_response( $category, $request );
@@ -261,7 +261,7 @@ final class Categories_Controller extends Controller {
 		$id         = (int) self::int_param( $request, 'id' );
 		$category   = $categories->find( $id );
 		if ( null === $category ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'category' );
 		}
 
 		$result = $categories->save(
@@ -278,7 +278,7 @@ final class Categories_Controller extends Controller {
 
 		$updated = $categories->find( $id );
 
-		return null === $updated ? REST_Errors::not_found() : $this->prepare_item_for_response( $updated, $request );
+		return null === $updated ? REST_Errors::not_found( 'category' ) : $this->prepare_item_for_response( $updated, $request );
 	}
 
 	/**
@@ -299,7 +299,7 @@ final class Categories_Controller extends Controller {
 		$categories = Services::categories();
 		$category   = $categories->find( (int) self::int_param( $request, 'id' ) );
 		if ( null === $category ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'category' );
 		}
 
 		$previous = $this->prepare_item_for_response( $category, $request );
@@ -329,7 +329,7 @@ final class Categories_Controller extends Controller {
 		$categories = Services::categories();
 		$from       = self::parent_param( $request, 'id' );
 		if ( null !== $from && null === $categories->find( $from ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'category' );
 		}
 
 		$moved  = $categories->count_direct_questions( $from );

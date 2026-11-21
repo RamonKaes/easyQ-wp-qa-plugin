@@ -247,7 +247,7 @@ final class Messages_Controller extends Controller {
 	public function delete_wall_post_permissions_check( $request ): bool|WP_Error {
 		$post = Services::messages()->find( (int) self::int_param( $request, 'message' ) );
 		if ( null === $post || Messages::WALL !== $post->type || (int) self::int_param( $request, 'id' ) !== $post->to_user_id ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		return Services::messages()->can_delete_wall_post( $this->actor(), $post )
@@ -273,7 +273,7 @@ final class Messages_Controller extends Controller {
 		$id   = (int) self::int_param( $request, 'message' );
 		$post = Services::messages()->find( $id );
 		if ( null === $post || (int) self::int_param( $request, 'id' ) !== $post->to_user_id ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$previous = $this->prepare_item_for_response( $post, $request )->get_data();
@@ -302,7 +302,7 @@ final class Messages_Controller extends Controller {
 	 */
 	public function get_items( $request ): WP_REST_Response|WP_Error {
 		if ( ! Options::get_bool( 'users', 'allow_private_messages' ) || ! Options::get_bool( 'users', 'show_message_history' ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		$user_id = get_current_user_id();
@@ -338,7 +338,7 @@ final class Messages_Controller extends Controller {
 
 		$to = $this->recipient( $request );
 		if ( null === $to ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 
 		$reason = Services::messages()->message_error( $this->actor(), $to );
@@ -374,7 +374,7 @@ final class Messages_Controller extends Controller {
 		$to = $this->recipient( $request );
 		if ( null === $to ) {
 			// Not covered: the permission check found the recipient; this guards a change in between.
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 
 		$id = Services::messages()->send( $this->actor(), $to, (string) self::string_param( $request, 'content' ) );
@@ -416,7 +416,7 @@ final class Messages_Controller extends Controller {
 
 		return null !== $message && Messages::PRIVATE === $message->type && in_array( $user_id, array( $message->from_user_id, $message->to_user_id ), true )
 			? true
-			: REST_Errors::not_found();
+			: REST_Errors::not_found( 'other' );
 	}
 
 	/**
@@ -490,7 +490,7 @@ final class Messages_Controller extends Controller {
 	private function owner( WP_REST_Request $request ): WP_User|WP_Error {
 		$owner = get_userdata( (int) self::int_param( $request, 'id' ) );
 		if ( ! Options::get_bool( 'users', 'allow_user_walls' ) || false === $owner || ! Services::user_query()->is_shown( $owner, $this->actor()->user_id ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'user' );
 		}
 
 		return $owner;

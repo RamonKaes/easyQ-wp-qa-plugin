@@ -38,6 +38,6 @@ test.describe( 'REST API', () => {
 		);
 
 		expect( response.status() ).toBe( 401 );
-		expect( ( await response.json() ).code ).toBe( 'easyq_login' );
+		expect( ( await response.json() ).code ).toBe( 'rest_not_logged_in' );
 	} );
 } );

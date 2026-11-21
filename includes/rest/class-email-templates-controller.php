@@ -184,7 +184,7 @@ final class Email_Templates_Controller extends Controller {
 	public function update_item( $request ): WP_REST_Response|WP_Error {
 		$name = (string) self::string_param( $request, 'name' );
 		if ( null === Templates::get( $name ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		if ( ! Templates::save( $name, (string) self::string_param( $request, 'subject' ), (string) self::string_param( $request, 'body' ) ) ) {
@@ -232,7 +232,7 @@ final class Email_Templates_Controller extends Controller {
 	public function send_test( $request ): WP_REST_Response|WP_Error {
 		$name = (string) self::string_param( $request, 'name' );
 		if ( null === Templates::get( $name ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		return new WP_REST_Response(
@@ -258,7 +258,7 @@ final class Email_Templates_Controller extends Controller {
 		$template = Templates::get( $name );
 		$info     = Templates::info()[ $name ] ?? null;
 		if ( null === $template || null === $info ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		return $this->respond_with(

@@ -57,10 +57,10 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 
 | Code | Status | Meaning |
 | --- | --- | --- |
-| `easyq_login` | 401 | Log in first |
+| `rest_not_logged_in` | 401 | Log in first, with core's code for it (as `/wp/v2/users/me`) |
 | `easyq_confirm` | 403 | Confirm the email address first |
 | `easyq_approve` | 403 | The account must be approved first |
-| `easyq_level` | 401 or 403 | Not allowed: 401 for visitors, who may be allowed once logged in, 403 for users, as core decides (`rest_authorization_required_code()`) |
+| `rest_forbidden` | 401 or 403 | Not allowed: 401 for visitors, who may be allowed once logged in, 403 for users, as core decides (`rest_authorization_required_code()`) |
 | `easyq_author` | 403 | Only the author can change the notification settings of a post |
 | `easyq_userblock` | 403 | The user is blocked; a block stops changes, not reading, as in Q2A |
 | `easyq_ipblock` | 403 | The IP address is blocked; like a blocked user, it may still read |
@@ -68,7 +68,8 @@ Errors use the usual WordPress format with `code`, `message` and `data.status`.
 | `easyq_duplicate` | 409 | The same content was just posted (`POST /questions`, `/questions/{id}/answers`, `/posts/{id}/comments`): a question with the words of title and content of one of the five newest visible questions, or of a waiting one of the same author, as in Question2Answer; an answer or comment with the words of one of the same author on the same post, as core refuses comments (`comment_duplicate`). A guest is the visitor cookie, or the address without it. Two equal requests at the same moment pass once |
 | `easyq_changed` | 409 | Someone else changed the status of the post first (`hide`, `reject`, `approve`, `reshow` read the post as it was before): only the first of two moderators acting at once goes through, so its events and emails happen once |
 | `easyq_read_only` | 503 | The Q&A area is read-only: every request that changes something answers this before its own checks, unless the user manages easyQ; reading stays open |
-| `easyq_not_found` | 404 | Missing, or not visible to the user |
+| `rest_post_invalid_id`, `rest_user_invalid_id`, `rest_term_invalid` | 404 | A post (question, answer, comment), user or category that is missing or not visible to the user, with core's codes for them |
+| `easyq_not_found` | 404 | Another item that is missing or not visible to the user: a user field, email template, IP address, notice or message, which core does not have |
 | `rest_invalid_param` | 400 | Invalid input, as core answers invalid parameters: `data.params` holds a message per field, `data.details` its error |
 
 ## Posts

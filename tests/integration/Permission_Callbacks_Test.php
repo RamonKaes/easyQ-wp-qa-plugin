@@ -60,7 +60,7 @@ final class Permission_Callbacks_Test extends REST_Test_Case {
 		$sender = $this->take_part( $this->login() );
 
 		$this->assertTrue( $this->permission( 'POST', '/messages', array( 'to' => $to ) ) );
-		$this->assertSame( 'easyq_not_found', $this->permission( 'POST', '/messages', array( 'to' => 999999 ) )->get_error_code() );
+		$this->assertSame( 'rest_user_invalid_id', $this->permission( 'POST', '/messages', array( 'to' => 999999 ) )->get_error_code() );
 		$this->assertSame( 'easyq_self', $this->permission( 'POST', '/messages', array( 'to' => $sender ) )->get_error_code() );
 
 		User_Status::block( Actor::system(), $sender );

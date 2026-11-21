@@ -97,7 +97,7 @@ final class Notices_Controller extends Controller {
 	 */
 	public function delete_item_permissions_check( $request ): bool|WP_Error {
 		// Visitors dismiss the notice for first-time visitors; the notices of users need their account.
-		return Notices::VISITOR === (string) self::string_param( $request, 'id' ) || null !== $this->actor()->user_id ? true : REST_Errors::not_found();
+		return Notices::VISITOR === (string) self::string_param( $request, 'id' ) || null !== $this->actor()->user_id ? true : REST_Errors::not_found( 'other' );
 	}
 
 	/**
@@ -111,7 +111,7 @@ final class Notices_Controller extends Controller {
 	 */
 	public function delete_item( $request ): WP_REST_Response|WP_Error {
 		if ( ! Services::notices()->dismiss( $this->actor(), (string) self::string_param( $request, 'id' ) ) ) {
-			return REST_Errors::not_found();
+			return REST_Errors::not_found( 'other' );
 		}
 
 		return new WP_REST_Response( array( 'deleted' => true ) );

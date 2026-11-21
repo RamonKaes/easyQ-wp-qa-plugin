@@ -41,18 +41,36 @@ final class REST_Errors {
 			default     => array( rest_authorization_required_code(), __( 'Sorry, you are not allowed to do this.', 'easyq' ) ),
 		};
 
-		return new WP_Error( 'easyq_' . $reason, $message, array( 'status' => $status ) );
+		// The codes of core where core has the case: `rest_not_logged_in` (as `/wp/v2/users/me`)
+		// and `rest_forbidden`; the reasons only easyQ has keep its prefix.
+		$code = match ( $reason ) {
+			'login'                                                                     => 'rest_not_logged_in',
+			'confirm', 'approve', 'userblock', 'ipblock', 'limit', 'author', 'read_only' => 'easyq_' . $reason,
+			default                                                                     => 'rest_forbidden',
+		};
+
+		return new WP_Error( $code, $message, array( 'status' => $status ) );
 	}
 
 	/**
-	 * Returns the error for a missing or invisible resource.
+	 * Returns the error for a missing or invisible resource, with the code and message core
+	 * gives for its kind (`WP_REST_Posts_Controller::get_post()`, `WP_REST_Users_Controller::get_user()`,
+	 * `WP_REST_Terms_Controller::get_term()`). Kinds core does not have keep the code of easyQ.
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param string $kind `post` (questions, answers, comments), `user`, `category`, or `other`.
 	 * @return WP_Error
 	 */
-	public static function not_found(): WP_Error {
-		return new WP_Error( 'easyq_not_found', __( 'The requested item does not exist.', 'easyq' ), array( 'status' => 404 ) );
+	public static function not_found( string $kind = 'post' ): WP_Error {
+		[ $code, $message ] = match ( $kind ) {
+			'post'     => array( 'rest_post_invalid_id', __( 'Invalid post ID.', 'easyq' ) ),
+			'user'     => array( 'rest_user_invalid_id', __( 'Invalid user ID.', 'easyq' ) ),
+			'category' => array( 'rest_term_invalid', __( 'Term does not exist.', 'easyq' ) ),
+			default    => array( 'easyq_not_found', __( 'The requested item does not exist.', 'easyq' ) ),
+		};
+
+		return new WP_Error( $code, $message, array( 'status' => 404 ) );
 	}
 
 	/**

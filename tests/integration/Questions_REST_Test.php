@@ -120,7 +120,7 @@ final class Questions_REST_Test extends REST_Test_Case {
 		);
 
 		$this->assertSame( 401, $response->get_status() );
-		$this->assertSame( 'easyq_login', $response->as_error()->get_error_code() );
+		$this->assertSame( 'rest_not_logged_in', $response->as_error()->get_error_code() );
 	}
 
 	public function test_asks_a_question(): void {
