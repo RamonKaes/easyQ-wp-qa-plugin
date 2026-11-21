@@ -383,9 +383,8 @@ final class Categories_Screen_Test extends Test_Case {
 		);
 
 		// `form-invalid` on the field, as core marks a field it refused (F-230); the message describes it.
-		ob_start();
-		$screen->render();
-		$html = (string) ob_get_clean();
+		// The helper sets the screen, as wp-admin/admin.php does; core keeps the columns of a list per screen.
+		$html = $this->render( $screen );
 		$this->assertMatchesRegularExpression( '/<div class="form-field form-required form-invalid">\s*<label for="easyq-category-title"/', $html );
 		$this->assertStringContainsString( '<p class="description" id="easyq-category-title-error">', $html );
 		$this->assertStringNotContainsString( '<p class="notice-error"', $html );
