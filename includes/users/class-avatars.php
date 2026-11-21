@@ -8,6 +8,7 @@
 
 namespace EasyQ\Users;
 
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Number;
 use WP_Comment;
@@ -406,6 +407,22 @@ final class Avatars {
 		}
 
 		return $editor->resize( $target, $target, true );
+	}
+
+	/**
+	 * Tells whether a user must confirm the email address before uploading an avatar, as
+	 * Question2Answer hides the upload until then (`qa-include/pages/account.php`: while email
+	 * addresses are confirmed, for users below the level of experts).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $user_id User ID.
+	 * @return bool
+	 */
+	public static function needs_confirmation( int $user_id ): bool {
+		return Options::get_bool( 'spam', 'confirm_user_emails' )
+			&& ( Services::user_levels()->level( $user_id ) ?? 0 ) < Levels::EXPERT
+			&& ! User_Status::is_confirmed( $user_id );
 	}
 
 	/**

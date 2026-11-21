@@ -443,6 +443,9 @@ final class Users_Controller extends Controller {
 		if ( null !== $file && ! Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
 			return REST_Errors::permission( 'avatar' );
 		}
+		if ( null !== $file && Avatars::needs_confirmation( $user_id ) ) {
+			return REST_Errors::permission( 'confirm' );
+		}
 
 		// Refusals come before anything is saved, as core validates before `wp_update_user()`.
 		$subscribe = $request->has_param( 'newsletter' ) && self::bool_param( $request, 'newsletter' ) && '' === Newsletter::state( $user_id );

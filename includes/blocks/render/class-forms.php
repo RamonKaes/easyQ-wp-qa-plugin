@@ -179,7 +179,10 @@ final class Forms {
 		}
 
 		if ( Options::get_bool( 'users', 'avatar_allow_upload' ) ) {
-			$fields .= self::avatar_fields( $viewer->user_id );
+			// Until the email address is confirmed, the form says so instead, as Question2Answer hides the upload.
+			$fields .= Avatars::needs_confirmation( $viewer->user_id )
+				? sprintf( '<p>%s</p>', esc_html__( 'You can upload a profile picture once you have confirmed your email address.', 'easyq' ) )
+				: self::avatar_fields( $viewer->user_id );
 		}
 
 		$fields .= sprintf(

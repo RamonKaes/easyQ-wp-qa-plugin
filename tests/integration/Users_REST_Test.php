@@ -490,4 +490,27 @@ final class Users_REST_Test extends REST_Test_Case {
 		wp_set_current_user( $this->administrator() );
 		$this->assertSame( 205, (int) $search( 1 )->get_headers()['X-WP-Total'] );
 	}
+
+	public function test_an_avatar_is_uploaded_once_the_email_address_is_confirmed(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		Options::update( 'spam', array( 'confirm_user_emails' => true ) );
+		$user = (int) $this->user()->user_id;
+		update_user_meta( $user, \EasyQ\Users\User_Status::UNCONFIRMED_META, 1 );
+		wp_set_current_user( $user );
+
+		// As Question2Answer hides the upload until then.
+		$refused = $this->upload( DIR_TESTDATA . '/images/canola.jpg' );
+		$this->assertSame( 403, $refused->get_status() );
+		$this->assertSame( 'easyq_confirm', $refused->as_error()?->get_error_code() );
+		$form = do_blocks( '<!-- wp:easyq/account /-->' );
+		$this->assertStringContainsString( 'once you have confirmed your email address', $form );
+		$this->assertStringNotContainsString( 'type="file"', $form );
+
+		// Experts and above need no confirmation, as in Question2Answer; nor does anyone while addresses are not confirmed.
+		Services::user_levels()->set_level( Actor::system(), $user, \EasyQ\Users\Levels::EXPERT );
+		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
+		Services::user_levels()->set_level( Actor::system(), $user, null );
+		Options::update( 'spam', array( 'confirm_user_emails' => false ) );
+		$this->assertSame( 200, $this->upload( DIR_TESTDATA . '/images/canola.jpg' )->get_status() );
+	}
 }
