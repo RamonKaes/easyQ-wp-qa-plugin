@@ -191,6 +191,14 @@ final class Uninstaller {
 	 */
 	public static function delete_user_meta(): void {
 		self::delete_meta_with_prefix( self::USER_META_PREFIX );
+
+		// What core keeps per user for the screens of easyQ, named after the screens
+		// (`get_plugin_page_hookname()`): hidden columns (`wp_ajax_hidden_columns()`), closed,
+		// hidden and ordered boxes, and the layout.
+		foreach ( array( 'manage', 'closedpostboxes_', 'metaboxhidden_', 'meta-box-order_', 'screen_layout_' ) as $setting ) {
+			self::delete_meta_with_prefix( $setting . 'easyq_page_' );
+			delete_metadata( 'user', 0, $setting . 'toplevel_page_easyq' . ( 'manage' === $setting ? 'columnshidden' : '' ), '', true );
+		}
 	}
 
 	/**

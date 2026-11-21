@@ -64,11 +64,21 @@ final class Uninstaller_Test extends Test_Case {
 		$user_id = self::factory()->user->create();
 		update_user_meta( $user_id, 'easyq_points', 10 );
 		update_user_meta( $user_id, 'other_plugin_meta', 'keep' );
+		// What core keeps for the screens of easyQ, as their screen options write it.
+		$screens = array( 'manageeasyq_page_easyq-postscolumnshidden', 'managetoplevel_page_easyqcolumnshidden', 'closedpostboxes_toplevel_page_easyq', 'meta-box-order_easyq_page_easyq-settings' );
+		foreach ( $screens as $key ) {
+			update_user_meta( $user_id, $key, array( 'ip' ) );
+		}
+		update_user_meta( $user_id, 'manageeditcolumnshidden', array( 'author' ) );
 
 		Uninstaller::delete_user_meta();
 
 		$this->assertSame( '', get_user_meta( $user_id, 'easyq_points', true ) );
 		$this->assertSame( 'keep', get_user_meta( $user_id, 'other_plugin_meta', true ) );
+		foreach ( $screens as $key ) {
+			$this->assertSame( '', get_user_meta( $user_id, $key, true ), $key );
+		}
+		$this->assertSame( array( 'author' ), get_user_meta( $user_id, 'manageeditcolumnshidden', true ), 'The screens of core keep theirs.' );
 	}
 
 	public function test_deletes_the_user_meta_of_the_site(): void {
