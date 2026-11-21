@@ -48,7 +48,7 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| Capability checks with `current_user_can()` for every action | Met; F-22 | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
+| Capability checks with `current_user_can()` for every action | Met | REST `permission_callback`s, admin screens, `Capabilities` (meta capabilities) |
 | Sanitize input, validate before saving | Met | Settings API through `sanitize_option_{option}` with a named callback, REST argument schemas, services validate; the forms hand on what was typed and the REST API sanitizes (F-5) |
 | Escape late, on output | Met | PHPCS `EscapeOutput` |
 | Nonces on forms and links that change something | Met | Admin forms and row actions, site forms, each per action and post as core's `delete-comment_{id}` (`Form_Handler::nonce_action()`, `easyq-post-{action}_{id}`); REST uses the core `wp_rest` nonce. Evidence: `Form_Handler_Test`, `Posts_Screen_Test`, `Users_Screen_Test` |
@@ -150,7 +150,7 @@ code, and known vulnerabilities of the dependencies.
 | Rule | Status | Where |
 | --- | --- | --- |
 | Namespace `vendor/v1`, routes on `rest_api_init` | Met | `easyq/v1`, `REST\REST_API` |
-| `permission_callback` on every route | Open (F-150: single reading routes check visibility in the handler) | All controllers; writing routes check in `*_permissions_check()` methods. `__return_true` only on reading routes, whose items check what the viewer may see; the unsubscribe and newsletter confirmation routes check the signed token or key of the email in theirs. `REST_Roles_Test` fails on a writing route with `__return_true`; `Permission_Callbacks_Test` runs the callbacks of messages and favorites without their handlers (F-149) |
+| `permission_callback` on every route | Met (`REST_Paths_Test`, `REST_Roles_Test`) | Every route checks in its permission callback; the reading routes of a post check that it exists and is visible, as `get_item_permissions_check()` of core (F-150) |
 | Arguments with types and validation; `WP_Error` with a status | Met; F-30 | Argument schemas, `REST\REST_Errors` |
 | Controllers extend `WP_REST_Controller` | Met | `REST\Controller` |
 | Response schema for each endpoint | Met | Every route names its schema in `register_rest_route()`; a test checks real responses of all routes against them, both types and undocumented properties |
@@ -181,29 +181,29 @@ code, and known vulnerabilities of the dependencies.
 
 | Rule | Status | Where |
 | --- | --- | --- |
-| REST: links of a resource (`_links`, `prepare_links()`) and filters of the response (`rest_prepare_{type}`) | F-26 | Core: `prepare_item_for_response()` of the posts, users and comments controllers. Plugin: none in `includes/rest/` |
-| REST: pagination as core (`X-WP-Total`, `X-WP-TotalPages`, `Link`, 400 beyond the last page) | F-27 | Totals on eight collections through `REST\Controller`; no `Link`, no 400, six collections without totals |
-| REST: `DELETE` with `force` where nothing can be trashed | F-28 | Seven routes delete without the argument |
-| REST: `context` on every reading route, `rest_forbidden_context` | F-29 | Five reading routes without the argument (read from the server) |
-| REST: 201 with `Location` on create, 401 for visitors and 403 for users, 404 for what is missing | Met for posts, categories and user fields; F-30 | `REST\Controller`, `REST\REST_Errors` |
+| REST: links of a resource (`_links`, `prepare_links()`) and filters of the response (`rest_prepare_{type}`) | Met | `REST\Controller`: links prepared as core prepares them and added when `_fields` asks for them; `easyq_rest_prepare_{object}` filters every response (`Filter_Values_Test`) |
+| REST: pagination as core (`X-WP-Total`, `X-WP-TotalPages`, `Link`, 400 beyond the last page) | Met | `REST\Controller::paginated()`: both totals, `Link` with `prev` and `next`, `rest_invalid_page_number` beyond the last page; the totals of a search are a lower bound (F-147, ledger) |
+| REST: `DELETE` with `force` where nothing can be trashed | Met | Categories, user fields and wall posts ask for `force`; dismissing a notice, removing a favorite, deleting a message from one's own box and resetting an email template remove nothing for good |
+| REST: `context` on every reading route, `rest_forbidden_context` | Met | `REST\Controller` adds `context` to the reading routes; the edit context needs the right to edit (`edit_context_error()`) |
+| REST: 201 with `Location` on create, 401 for visitors and 403 for users, 404 for what is missing | Met | `REST\Controller`, `REST\REST_Errors`, with core's codes where core has the case (`rest_not_logged_in`, `rest_forbidden`, `rest_post_invalid_id`, `rest_user_invalid_id`, `rest_term_invalid`; `REST_Paths_Test`) |
 | REST: `_fields` and `register_rest_field()` | Met | `REST\Controller` (`get_fields_for_response()`, `add_additional_fields_to_object()`) |
 | Forms: handled on `template_redirect`, `wp_safe_redirect()` and `exit` | Met | `Frontend\Form_Handler` |
-| Forms: whole sentences for translators | F-31 | `includes/blocks/render/class-forms.php` |
+| Forms: whole sentences for translators | Met | `includes/blocks/render/class-forms.php`; the activity of a post is one sentence per kind (`Posts\Activity_Item::sentence()`) |
 | Forms: nonce action as specific as possible; required fields marked as the comment form does (`wp_required_field_indicator()`, `wp_required_field_message()`); fields kept after a failure, also on the registration form | Met | `Frontend\Form_Handler`, `includes/blocks/render/class-forms.php`, `Users\Registration`; a failure shows the page again (decision 81). Evidence: `Blocks_Test`, `Registration_Test` |
 | Registration: `register_form`, `registration_errors`, `user_register`; markup of `wp-login.php` | Met on a single site | `Users\Registration` |
-| Registration on a multisite: `signup_extra_fields`, `wpmu_validate_user_signup` | F-32 | `Users\Blocked_Names` and `Limits\Account_Limits` cover the sign-up, `Users\Registration` does not |
+| Registration on a multisite: `signup_extra_fields`, `wpmu_validate_user_signup` | Met | `Users\Registration` on both hooks and `add_signup_meta`, activated on the site the sign-up came from; `Users\Blocked_Names` and `Limits\Account_Limits` cover the sign-up as well (`Registration_Test`, `Model_Paths_Test`) |
 | Uploads: `wp_handle_upload()` with the allowed types, `wp_get_image_editor()` and the file its `save()` writes, `wp_delete_file()`, no direct file functions | Met | `Users\Avatars`; evidence: `Users_REST_Test`, `Avatars_Test` |
 | Avatar uploads without `upload_files` | Kept, decided by the site owner of the project on 2026-11-15 | Question2Answer lets every user upload an avatar, and so do common avatar plugins; the image is the user's own and goes with them (F-20). The setting is off by default (decision 84), so a site owner allows it on purpose |
-| Uploads: capability `upload_files` | F-34, to decide | Login and the setting instead |
+| Uploads: capability `upload_files` | Kept, see the row above | Login, the setting and a confirmed email address while addresses are confirmed (F-163) instead |
 | Avatars through `pre_get_avatar_data` | Met | `Users\Avatars` |
 | Admin notices through `wp_admin_notice()` | Met | Every notice of the screens; field errors stay next to their fields |
 | List screens: hidden headings (`set_screen_reader_content()`), columns in Screen Options, clean address after a filter | Met | The four list tables are built when their screen loads, as in `wp-admin/edit.php`; the posts screen drops `_wpnonce` and `_wp_http_referer` after a filter. Evidence: `Admin_Capabilities_Test` |
-| Users list of core: columns, views, bulk actions through the hooks of core | Hooks Met; F-23 | `Admin\Users_Screen` |
-| Profile screen: the four hooks with `edit_user` | Met; F-22 | `Admin\Profile_Screen` |
-| Help tabs as the core screens have them | Met | An overview on each screen with a `load()` handler. Evidence: `Admin_Capabilities_Test` |
+| Users list of core: columns, views, bulk actions through the hooks of core | Met | `Admin\Users_Screen` (`User_Moderation_Test`, `Users_Admin_Screens_Test`) |
+| Profile screen: the four hooks with `edit_user` | Met | `Admin\Profile_Screen` (`Profile_Screen_Test`) |
+| Help tabs as the core screens have them | Met | An overview on each screen with a `load()` handler, and the help sidebar of core's screens (`Admin\Help`). Evidence: `Admin_Capabilities_Test` |
 | No inline styles, no duplicate IDs | Met | The newsletter buttons are one form; delete and move buttons have names of their own. Evidence: `Admin_Capabilities_Test` (no `style` attribute under `includes/admin/`) |
 | Inline documentation: `@since` on classes, methods, properties, constants and hooks | Met | Checked on 2026-11-15 for every constant |
-| Readme: a plugin that is ready, source and build named | F-25 | `readme.txt` |
+| Readme: a plugin that is ready, source and build named | Open, phase 9 (F-25) | `readme.txt` |
 | WP-CLI, Site Health, privacy tools | Read on 2026-11-15, see "Chapters added on 2026-11-15" | `CLI\Command`, `Health\Site_Health`, `Privacy\Privacy` |
 
 ## Evidence of 2026-11-14
@@ -264,9 +264,9 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | Links built from `home_url()` or the permalink, not from `HTTP_HOST` | Met (`Cookies_IP_Test`) | `includes/blocks/render/class-forms.php` |
 | Mass mailing: language per recipient, batches that survive a broken request, recipients still members | Met (`Newsletter_Run_Test`: one batch at a time, position written before sending) | `Newsletter\Newsletter` |
 | WP-CLI: synopsis with options and examples, `WP_CLI::confirm()` with `--yes`, `WP_CLI::error()`, progress bar, `wp_clear_object_cache()`, registered only under `WP_CLI` | Met (`Tools_Test` compares the synopsis with `Tools::STEPS`) | `CLI\Command` |
-| Site Health: result as core builds it, direct tests, private fields marked `private`, actions that work on a network | Met (`Site_Health_Test`): the address `private`, the action on the Plugins screen of the network, the missing tables named | `Health\Site_Health` |
+| Site Health: result as core builds it, direct tests, private fields marked `private`, actions that work on a network | Partly (`Site_Health_Test`): the address `private`, the action on the Plugins screen of the network, the missing tables named; the repair repairs the main site only (F-189) | `Health\Site_Health` |
 | Privacy tools: exporter and eraser through the filters, pages of a fixed size for every kind of data, addresses compared as core compares them, everything stored is exported | Met (`Personal_Data_Test`) | `Privacy\Privacy`, `Post_Data`, `Profile_Data` |
-| Multisite lifecycle: network activation in steps as `network/upgrade.php` (five sites, no spam, deleted or archived sites); data of a deleted site removed with the site | Met (`Lifecycle_Test`): the current site in the request, every other on its own next request; user meta of deleted sites removed with the site and on uninstall | `Database\Installer`, `Uninstaller` |
+| Multisite lifecycle: network activation site by site as `network/upgrade.php` upgrades a network (the current site in the request, every other on its own next request; spam, deleted and archived sites serve no requests and are left alone); data of a deleted site removed with the site | Met (`Lifecycle_Test`): the current site in the request, every other on its own next request; user meta of deleted sites removed with the site and on uninstall | `Database\Installer`, `Uninstaller` |
 | Upgrade path: the version saved only when the schema is in place; defaults not brought back | Met (`Lifecycle_Test`) | `Database\Installer` |
 | Feeds through `add_feed()`, the hooks and fields of `feed-rss2.php`, conditional requests | Met (`Feeds_Test`): `rss_tag_pre`, `rss2_ns`, `rss2_head`, `rss2_item`, `lastBuildDate`, `sy:` with the filters of core, `ETag` and `Last-Modified` with 304, no characters XML forbids | `Feeds\Feeds` |
 | Sitemaps: `WP_Sitemaps_Provider`, registered with `wp_register_sitemap_provider()`, the filters of the core providers, no empty terms, users with posts | Met (`Sitemap_Provider_Test`): registered on `wp_sitemaps_init`, `easyq_sitemaps_pre_url_list` and `easyq_sitemaps_entry` as the filters of the core providers, `wp_sitemaps_max_urls` | `Frontend\Sitemap_Provider` |
