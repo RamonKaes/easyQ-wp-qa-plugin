@@ -225,6 +225,8 @@ final class Avatars {
 		if ( ! is_wp_error( $editor ) ) {
 			$editor->maybe_exif_rotate();
 		}
+		// Not covered on the test site: its ImageMagick reads no image formats, so core takes GD;
+		// Avatars_Test checks the stripping where ImageMagick handles PNG.
 		$ready = ! is_wp_error( $editor ) && ! is_wp_error( self::crop( $editor, $side ) )
 			&& ! ( $editor instanceof Avatar_Editor_Imagick && is_wp_error( $editor->strip_profiles() ) );
 		$saved = $ready ? $editor->save( $path ) : null;

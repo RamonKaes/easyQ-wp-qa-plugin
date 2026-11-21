@@ -155,6 +155,26 @@ final class Uninstaller_Test extends Test_Case {
 		}
 	}
 
+	/**
+	 * @group ms-required
+	 */
+	public function test_the_user_meta_of_a_network_stays_while_a_site_keeps_its_data(): void {
+		$this->activate_network_wide();
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'easyq_points', 10 );
+		// The main site has easyQ and keeps its data; another site asked to delete it.
+		$site_id = self::factory()->blog->create();
+		switch_to_blog( $site_id );
+		Installer::install_site();
+		update_option( Options::option_name( 'general' ), array( 'delete_data_on_uninstall' => true ) );
+		restore_current_blog();
+
+		Uninstaller::run();
+
+		// User meta is shared by the sites of a network (F-231).
+		$this->assertSame( '10', get_user_meta( $user_id, 'easyq_points', true ) );
+	}
+
 	public function test_the_readme_names_the_setting_that_removes_the_data(): void {
 		// The FAQ answers whether deleting the plugin deletes the data; the answer is this setting.
 		$label  = \EasyQ\Settings\Fields::section( 'general' )['delete_data_on_uninstall']['label'] ?? '';

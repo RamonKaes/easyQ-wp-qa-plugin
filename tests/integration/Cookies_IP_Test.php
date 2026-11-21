@@ -65,6 +65,8 @@ final class Cookies_IP_Test extends REST_Test_Case {
 		Visitor_Cookie::ensure( new Actor() );
 		$this->assertTrue( self::cookies()[0]['secure'] );
 		$this->assertTrue( self::cookies()[0]['httponly'] );
+		// Sent along with links from other sites, not with their requests in the background (F-231).
+		$this->assertSame( 'Lax', self::cookies()[0]['samesite'] );
 		$this->assertSame( COOKIEPATH, self::cookies()[0]['path'] );
 
 		// As `wp_set_comment_cookies()`: the scheme of `home_url()`, which follows the request over HTTPS too.
@@ -166,5 +168,25 @@ final class Cookies_IP_Test extends REST_Test_Case {
 		$limits->increment( Limits::QUESTIONS, $actor );
 		$limits->increment( Limits::QUESTIONS, new Actor( null, null, null ) );
 		$this->assertSame( 0, $limits->remaining( Limits::QUESTIONS, $actor ) );
+	}
+
+	public function test_a_visitor_cookie_with_more_than_digits_is_no_cookie(): void {
+		global $wpdb;
+		$wpdb->insert(
+			\EasyQ\Database\Schema::table( 'cookies' ),
+			array(
+				'id'      => 12,
+				'created' => current_time( 'mysql', true ),
+			)
+		);
+		$name = Cookies::name( Visitor_Cookie::NAME );
+
+		$_COOKIE[ $name ] = '12';
+		$this->assertSame( 12, Visitor_Cookie::current() );
+
+		// Read as a number by the query, '12abc' would be cookie 12 (F-231).
+		$_COOKIE[ $name ] = '12abc';
+		$this->assertNull( Visitor_Cookie::current() );
+		unset( $_COOKIE[ $name ] );
 	}
 }

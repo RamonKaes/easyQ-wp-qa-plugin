@@ -42,6 +42,10 @@ final class Avatars_Test extends Test_Case {
 			$result = Avatars::upload( $user, $entry );
 			$this->assertInstanceOf( \WP_Error::class, $result, "Error $error" );
 			$this->assertSame( $code, $result->get_error_code(), "Error $error" );
+			if ( UPLOAD_ERR_PARTIAL === $error ) {
+				// A broken connection says to try again (F-231).
+				$this->assertStringContainsString( 'arrived only in part', $result->get_error_message() );
+			}
 		}
 
 		$this->assertStringContainsString(
@@ -150,5 +154,38 @@ final class Avatars_Test extends Test_Case {
 		$document = self::factory()->attachment->create( array( 'post_mime_type' => 'application/pdf' ) );
 
 		$this->assertFalse( Avatars::set( $user, $document ) );
+	}
+
+	public function test_an_uploaded_avatar_keeps_no_metadata_of_the_photo(): void {
+		if ( ! \WP_Image_Editor_Imagick::test() || ! \WP_Image_Editor_Imagick::supports_mime_type( 'image/png' ) ) {
+			// The ImageMagick of wp-env reads no image formats, so core takes GD, which keeps no profiles.
+			$this->markTestSkipped( 'Needs ImageMagick with PNG, as the editor that removes the profiles.' );
+		}
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		// A photo with a camera profile, which the image editor of core keeps when it crops.
+		$image = new \Imagick();
+		$image->newImage( 64, 64, new \ImagickPixel( 'white' ) );
+		$image->setImageFormat( 'png' );
+		$image->setImageProfile( 'xmp', '<x:xmpmeta xmlns:x="adobe:ns:meta/"><x:location>home</x:location></x:xmpmeta>' );
+		$tmp = wp_tempnam( 'avatar' );
+		$image->writeImage( $tmp );
+		$this->assertArrayHasKey( 'xmp', ( new \Imagick( $tmp ) )->getImageProfiles( '*', false ) );
+
+		$id = Avatars::upload(
+			(int) $this->user()->user_id,
+			array(
+				'name'     => 'portrait.png',
+				'type'     => 'image/png',
+				'tmp_name' => $tmp,
+				'size'     => (int) filesize( $tmp ),
+				'error'    => UPLOAD_ERR_OK,
+			)
+		);
+
+		$this->assertIsInt( $id );
+		$file = get_attached_file( $id );
+		$this->assertIsString( $file );
+		$this->assertSame( array(), array_keys( ( new \Imagick( $file ) )->getImageProfiles( '*', false ) ) );
+		wp_delete_attachment( $id, true );
 	}
 }
