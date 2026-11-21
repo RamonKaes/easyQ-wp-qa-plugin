@@ -333,6 +333,30 @@ final class Docs_Test extends Test_Case {
 
 		$this->assertGreaterThan( 15, count( $lines ) );
 		$this->assertSame( array(), $empty );
+
+		// Every way into the plugin that core registers is searched for: each function of core
+		// named register_* the plugin calls (but registering a user, which is no way in).
+		$called = array();
+		foreach ( new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( self::root() . 'includes', \FilesystemIterator::SKIP_DOTS ) ) as $file ) {
+			if ( 'php' === $file->getExtension() && preg_match_all( '/(?<![>:\w$])(register_\w+)\s*\(/', $this->read( $file->getPathname() ), $found ) ) {
+				$called = array_merge( $called, $found[1] );
+			}
+		}
+		// Functions of core, not of the plugin and not of PHP.
+		$core = array_filter(
+			array_unique( $called ),
+			static fn ( string $name ): bool => function_exists( $name ) && ( new \ReflectionFunction( $name ) )->isUserDefined() && ! str_contains( (string) ( new \ReflectionFunction( $name ) )->getFileName(), '/plugins/' )
+		);
+		// `grep -F` finds a name that starts with a searched string.
+		preg_match_all( "/-e '([^']+)'/", $block, $searched );
+		$missing = array_values(
+			array_filter(
+				array_diff( $core, array( 'register_new_user' ) ),
+				static fn ( string $name ): bool => array() === array_filter( $searched[1], static fn ( string $text ): bool => str_starts_with( $name . '(', $text ) )
+			)
+		);
+		$this->assertContains( 'register_block_bindings_source', $core );
+		$this->assertSame( array(), $missing );
 	}
 
 	public function test_templates_are_in_the_feature_mapping(): void {

@@ -67,10 +67,10 @@ but the last must print at least one line; an empty result is a broken command, 
 empty class.
 
 ```bash
-grep -rnF -e 'register_rest_route(' includes                                        # A
+grep -rnF -e 'register_rest_route(' -e 'register_rest_field(' includes                # A
 grep -rnF -e 'easyq_action' -e '$_POST' -e '$_FILES' includes/frontend includes/users   # B, I
 grep -rnF -e '$_GET' -e '$_REQUEST' -e 'get_query_var(' includes                     # C, F
-ls blocks && grep -rnF -e 'register_block_pattern' includes                         # D
+ls blocks && grep -rnF -e 'register_block_type' -e 'register_block_pattern' -e 'register_block_template' -e 'register_block_bindings_source' includes   # D
 grep -rlnF -e 'wp_kses' -e 'Content_Renderer' includes                               # E
 grep -rnF -e 'add_menu_page' -e 'add_submenu_page' -e 'admin_post_' includes         # F
 grep -rnF -e 'register_setting(' includes                                            # G
