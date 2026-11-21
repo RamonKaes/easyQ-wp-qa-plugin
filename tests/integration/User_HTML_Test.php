@@ -231,4 +231,13 @@ final class User_HTML_Test extends REST_Test_Case {
 		}
 		$this->assertGreaterThan( 100, $read );
 	}
+
+	public function test_filtering_stored_html_again_changes_nothing(): void {
+		// kses keeps comments, and filtering a comment with `>` again made its inside markup.
+		foreach ( array( Post::QUESTION, Post::COMMENT ) as $type ) {
+			$stored = \EasyQ\Posts\Content_Renderer::kses( '<!-- a > <p>c</p> --> <p>Text</p>', $type );
+			$this->assertStringNotContainsString( '<!--', $stored, $type );
+			$this->assertSame( $stored, \EasyQ\Posts\Content_Renderer::kses( $stored, $type ), $type );
+		}
+	}
 }

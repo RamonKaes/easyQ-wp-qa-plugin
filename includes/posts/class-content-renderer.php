@@ -72,6 +72,11 @@ final class Content_Renderer {
 	 * @return string
 	 */
 	public static function kses( string $content, string $type ): string {
+		// An HTML comment is text, as Question2Answer treats it (htmLawed with `safe`): kses
+		// keeps comments, but filtering a comment with `>` again turns its inside into markup,
+		// and easyQ filters on saving and on showing.
+		$content = str_replace( '<!--', '&lt;!--', $content );
+
 		return Post::COMMENT === $type ? self::without_directives( wp_kses( $content, 'data' ) ) : self::kses_post( $content );
 	}
 
