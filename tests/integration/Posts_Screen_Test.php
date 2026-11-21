@@ -283,4 +283,20 @@ final class Posts_Screen_Test extends Test_Case {
 			$this->assertStringContainsString( 'scope="row" aria-label="A question with a short name"', $this->render() );
 		}
 	}
+
+	public function test_a_post_offers_only_the_row_actions_the_moderator_may_use(): void {
+		wp_set_current_user( $this->administrator() );
+		set_current_screen( 'easyq_page_easyq-posts' );
+		$visible = $this->ask( $this->user(), 'A visible question in the list' );
+		$hidden  = $this->ask( $this->user(), 'A hidden question in the list' );
+		Services::post_service()->set_question_status( Actor::system(), $hidden, Post::STATUS_HIDDEN );
+		$row = fn ( Post $post ): string => ( new \EasyQ\Admin\Posts_List_Table( array() ) )->column_content( $this->post( $post->id ) );
+
+		// What the rules of the post allow, as the buttons of the question page.
+		$this->assertStringContainsString( 'action=hide', $row( $visible ) );
+		$this->assertStringNotContainsString( 'action=reshow', $row( $visible ) );
+		$this->assertStringNotContainsString( 'action=delete', $row( $visible ) );
+		$this->assertStringContainsString( 'action=reshow', $row( $hidden ) );
+		$this->assertStringNotContainsString( 'action=hide', $row( $hidden ) );
+	}
 }

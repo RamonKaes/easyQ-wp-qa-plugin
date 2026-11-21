@@ -750,4 +750,12 @@ final class Settings_Test extends Test_Case {
 		$this->assertSame( 'off', $autoload( 'newsletter' ) );
 		$this->assertSame( 'auto', $autoload( 'points' ), 'As core adds its options: large values are not loaded on every request.' );
 	}
+
+	public function test_a_user_title_is_saved_at_most_as_long_as_it_may_be(): void {
+		wp_set_current_user( $this->administrator() );
+
+		$saved = \EasyQ\Settings\Registry::sanitize( array( 'user_titles' => array( 100 => str_repeat( 'x', Fields::MAX_TITLE_LENGTH + 20 ) ) ), Options::option_name( 'points' ) );
+
+		$this->assertSame( Fields::MAX_TITLE_LENGTH, mb_strlen( (string) ( $saved['user_titles'][100] ?? '' ) ) );
+	}
 }
