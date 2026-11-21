@@ -693,7 +693,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | Newsletter | Explicit opt-in (checkbox in account and on the registration form, default off), consent timestamp stored, double opt-in for the first subscription, `List-Unsubscribe` and one-click unsubscribe headers |
 | Registration | Optional terms checkbox (`EasyQ\Users\Registration`); time and text of the consent stored with the user, in the profile export, kept on erasure as proof; described in the suggested privacy policy text when on |
 | Public profile | Visibility per profile field; users can hide themselves from user lists if the site owner allows it |
-| Avatars | Gravatar governed by the core setting; local upload as an alternative. An uploaded avatar is turned upright and keeps no metadata: GD writes none, and with ImageMagick `EasyQ\Users\Avatar_Editor_Imagick` removes every profile but the colour profiles, where core keeps EXIF, IPTC and XMP in its sizes (F-53) |
+| Avatars | Gravatar governed by the core setting; local upload as an alternative. An uploaded avatar is turned upright and keeps no metadata: GD writes none, and with ImageMagick `EasyQ\Users\Avatar_Editor_Imagick` removes every profile but the colour profiles, the comment and the text chunks of PNG, where core keeps EXIF, IPTC and XMP in its sizes (F-53, F-234) |
 | Cookies | Documented in the privacy guide; easyQ sets no cookies for visitors who only read |
 | Fonts, scripts, assets | All bundled locally; no CDNs |
 

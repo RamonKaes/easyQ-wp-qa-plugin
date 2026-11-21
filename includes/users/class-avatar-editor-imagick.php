@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * The image editor of core, with one more step: removing every profile but the colour
- * profiles.
+ * profiles, the comment and the text chunks.
  *
  * Core keeps the EXIF, IPTC and XMP profiles in the sizes it makes, for the orientation and
  * the rights of the image (`WP_Image_Editor_Imagick::strip_meta()`). An avatar is the public
@@ -40,7 +40,7 @@ final class Avatar_Editor_Imagick extends WP_Image_Editor_Imagick {
 	public const KEPT_PROFILES = array( 'icc', 'icm' );
 
 	/**
-	 * Removes every profile but the colour profiles.
+	 * Removes every profile but the colour profiles, the comment and the text chunks of PNG.
 	 *
 	 * @since 0.1.0
 	 *
@@ -53,6 +53,11 @@ final class Avatar_Editor_Imagick extends WP_Image_Editor_Imagick {
 					$this->image->removeImageProfile( $profile );
 				}
 			}
+			// The comment is no profile: JPEG and GIF write it back, as a COM segment or an extension.
+			$this->image->deleteImageProperty( 'comment' );
+			// PNG writes properties as text chunks, and the times of the file; core leaves them out
+			// only when it resizes (`thumbnail_image()`), not for an image already of its size.
+			$this->image->setOption( 'png:exclude-chunk', 'tEXt,zTXt,iTXt,date,time' );
 		} catch ( Exception $e ) {
 			// Not covered: needs ImageMagick to throw while reading the profiles, which the test site cannot provoke.
 			return new WP_Error( 'image_strip_meta_error', $e->getMessage() );

@@ -407,6 +407,9 @@ final class Users_REST_Test extends REST_Test_Case {
 	}
 
 	public function test_the_avatar_editor_keeps_only_the_colour_profiles(): void {
+		// Core loads its editors when it first needs one, as Avatars::upload() does.
+		require_once ABSPATH . WPINC . '/class-wp-image-editor.php';
+		require_once ABSPATH . WPINC . '/class-wp-image-editor-imagick.php';
 		$image = new \Imagick();
 		$image->newImage( 4, 4, new \ImagickPixel( 'white' ) );
 		foreach ( array(
@@ -420,8 +423,13 @@ final class Users_REST_Test extends REST_Test_Case {
 		$editor = new \EasyQ\Users\Avatar_Editor_Imagick( 'avatar.png' );
 		( new \ReflectionProperty( \WP_Image_Editor_Imagick::class, 'image' ) )->setValue( $editor, $image );
 
+		$image->setImageProperty( 'comment', 'Taken at home' );
+
 		$this->assertTrue( $editor->strip_profiles() );
 		$this->assertSame( array( 'icm' ), array_keys( $image->getImageProfiles( '*', true ) ) );
+		// The comment of JPEG and GIF, and the text chunks PNG would write from the properties.
+		$this->assertFalse( $image->getImageProperty( 'comment' ) );
+		$this->assertStringContainsString( 'tEXt', $image->getOption( 'png:exclude-chunk' ) );
 	}
 
 	public function test_an_upload_that_did_not_arrive_is_refused_with_its_reason(): void {
