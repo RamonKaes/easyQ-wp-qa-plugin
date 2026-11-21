@@ -231,4 +231,63 @@ final class Filter_Values_Test extends REST_Test_Case {
 		\EasyQ\Blocks\Lists::reset();
 		$router->set_current( null );
 	}
+
+	public function test_a_value_of_another_type_from_a_filter_easyq_applies_changes_nothing(): void {
+		$question = $this->ask( $this->user() );
+		$nothing  = static fn (): string => 'not what was asked for';
+
+		// The responses of the REST API.
+		add_filter( 'easyq_rest_prepare_question', $nothing );
+		$response = $this->request( 'GET', '/questions/' . $question->id );
+		remove_filter( 'easyq_rest_prepare_question', $nothing );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( $question->id, $this->data( $response )['id'] ?? null );
+
+		// The emails.
+		$email = array(
+			'to'      => 'someone@example.org',
+			'subject' => 'Subject',
+			'message' => 'Text',
+			'headers' => '',
+		);
+		add_filter( 'easyq_email_u_approved', $nothing );
+		$this->assertSame( $email, \EasyQ\Mail\Mailer::filter_email( 'u_approved', $email ) );
+		remove_filter( 'easyq_email_u_approved', $nothing );
+
+		// The entries of the sitemap.
+		add_filter( 'easyq_sitemaps_entry', $nothing );
+		$entries = ( new \EasyQ\Frontend\Sitemap_Provider() )->get_url_list( 1, 'questions' );
+		remove_filter( 'easyq_sitemaps_entry', $nothing );
+		$this->assertSame( array( \EasyQ\Frontend\URLs::question( $question ) ), array_column( $entries, 'loc' ) );
+
+		// The life of the key of the newsletter confirmation: a day, as core keeps its keys.
+		$user = (int) $this->user()->user_id;
+		\EasyQ\Users\Site_Meta::update(
+			$user,
+			\EasyQ\Newsletter\Newsletter::KEY_META,
+			array(
+				'hash' => wp_hash_password( 'the-key' ),
+				'time' => time() - 60,
+			)
+		);
+		add_filter( 'user_request_key_expiration', $nothing );
+		$checked = \EasyQ\Newsletter\Newsletter::check_key( $user, 'the-key' );
+		remove_filter( 'user_request_key_expiration', $nothing );
+		$this->assertTrue( $checked );
+
+		// The translation of an edited email template.
+		\EasyQ\Mail\Templates::save( 'u_approved', 'Edited subject', 'Edited body' );
+		$list     = static fn (): array => array( 'not a translation' );
+		add_filter( 'wpml_translate_single_string', $list );
+		$template = \EasyQ\Mail\Templates::get( 'u_approved' );
+		remove_filter( 'wpml_translate_single_string', $list );
+		$this->assertSame( 'Edited subject', $template['subject'] ?? null );
+
+		// The defaults of the settings: a section that is no list of settings is left out.
+		$defaults = static fn (): array => array( 'general' => 'not a section' );
+		add_filter( 'easyq_default_settings', $defaults );
+		$section  = Options::defaults()['general'] ?? null;
+		remove_filter( 'easyq_default_settings', $defaults );
+		$this->assertIsArray( $section );
+	}
 }
