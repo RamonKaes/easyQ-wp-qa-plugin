@@ -309,7 +309,7 @@ final class Comments_Controller extends Controller {
 		$remoderate = Options::get_bool( 'spam', 'moderate_edited_again' ) && null !== Services::permissions()->moderation_reason( $actor );
 		$notify     = $request->has_param( 'notify' ) ? Post_Input::author( $actor, $request )['notify'] : $comment->notify;
 
-		Services::post_service()->edit_comment( $actor, $comment, $question, $parent, $content, $format, $notify, null, $remoderate, self::bool_param( $request, 'silent' ) );
+		Services::post_service()->edit_comment( $actor, $comment, $question, $parent, $content, $format, $notify, Post_Input::edited_name( $request, $comment, $actor ), $remoderate, self::bool_param( $request, 'silent' ) );
 
 		$updated = Services::posts()->find( $comment->id );
 		$request->set_param( 'context', 'edit' );

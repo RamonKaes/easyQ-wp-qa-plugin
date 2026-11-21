@@ -12,6 +12,7 @@ use EasyQ\Actor;
 use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Visitor_Cookie;
 use EasyQ\Util\Text;
@@ -100,10 +101,47 @@ final class Post_Input {
 	public static function edit_args(): array {
 		$args = self::content_args( required: false );
 		// As core builds the arguments of an update (`get_endpoint_args_for_item_schema()` with
-		// `EDITABLE`): no defaults, so a field left out keeps its stored value.
-		unset( $args['name'], $args['remember'], $args['format']['default'] );
+		// `EDITABLE`): no defaults, so a field left out keeps its stored value. The name stays for
+		// the author without an account, see edited_name().
+		unset( $args['remember'], $args['format']['default'] );
 
 		return $args;
+	}
+
+	/**
+	 * Returns the name an author without an account gives when editing their post, as
+	 * Question2Answer offers the field to them (`qa-include/pages/question-post.php`), or null to
+	 * keep the stored name.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @param Post            $post    The post as stored.
+	 * @param Actor           $actor   Who edits.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return string|null
+	 */
+	public static function edited_name( WP_REST_Request $request, Post $post, Actor $actor ): ?string {
+		$name = $request->get_param( 'name' );
+		if ( ! is_string( $name ) || ! self::may_rename( $post, $actor ) ) {
+			return null;
+		}
+
+		return sanitize_text_field( $name );
+	}
+
+	/**
+	 * Tells whether an actor may give the name of a post when editing it: its author without an
+	 * account, while authors without an account may name themselves.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post  $post  Post.
+	 * @param Actor $actor Who edits.
+	 * @return bool
+	 */
+	public static function may_rename( Post $post, Actor $actor ): bool {
+		return null === $actor->user_id && null === $post->user_id && Options::get_bool( 'posting', 'allow_anonymous_naming' ) && Services::permissions()->is_by( $post, $actor );
 	}
 
 	/**

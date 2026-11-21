@@ -657,6 +657,10 @@ final class Forms {
 		}
 
 		$viewer = Block_Context::viewer();
+		// The author without an account names themselves again, as when posting.
+		if ( Post_Input::may_rename( $post, $viewer ) ) {
+			$fields .= self::field( 'edit', 'name', __( 'Your name (optional)', 'easyq' ), 'text', $value( 'name', (string) $post->author_name ), array(), '', '', $post->id );
+		}
 		if ( null !== $viewer->user_id && user_can( $viewer->user_id, 'easyq_edit_silently' ) ) {
 			$fields .= sprintf(
 				'<p><label><input type="checkbox" name="silent" value="1"%s /> %s</label></p>',

@@ -256,4 +256,37 @@ final class Posts_REST_Test extends REST_Test_Case {
 
 		$this->assertSame( 404, $this->request( 'POST', '/posts/' . $question->id . '/vote', array( 'vote' => 1 ) )->get_status() );
 	}
+
+	public function test_an_author_without_an_account_names_themselves_again_when_editing(): void {
+		\EasyQ\Settings\Options::update( 'posting', array( 'allow_anonymous_naming' => true ) );
+		remove_all_filters( 'sanitize_option_' . \EasyQ\Settings\Options::option_name( 'permissions' ) );
+		\EasyQ\Settings\Options::update( 'permissions', array( 'permit_edit_q' => \EasyQ\Users\Permits::ALL ) );
+		$question = $this->post( Services::post_service()->create_question( new Actor( null, 4242, '192.0.2.9' ), 'A question without an account', 'Text of the question.', '', array(), null, null, 'Guest' ) );
+		$GLOBALS['wpdb']->insert(
+			\EasyQ\Database\Schema::table( 'cookies' ),
+			array(
+				'id'      => 4242,
+				'created' => current_time( 'mysql', true ),
+			)
+		);
+		$cookie             = \EasyQ\Util\Cookies::name( \EasyQ\Users\Visitor_Cookie::NAME );
+		$_COOKIE[ $cookie ] = '4242';
+		wp_set_current_user( 0 );
+
+		// As Question2Answer offers the field to the author (pages/question-post.php).
+		\EasyQ\Blocks\Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'question', $question ) );
+		$this->assertStringContainsString( 'name="name"', \EasyQ\Blocks\Render\Forms::edit_form( $question ) );
+		$this->assertSame( 200, $this->request( 'PUT', '/questions/' . $question->id, array( 'name' => 'Ada' ) )->get_status() );
+		Services::posts()->forget( $question->id );
+		$this->assertSame( 'Ada', $this->post( $question->id )->author_name );
+
+		// Not someone else, who edits with an account.
+		unset( $_COOKIE[ $cookie ] );
+		wp_set_current_user( $this->administrator() );
+		$this->assertStringNotContainsString( 'name="name"', \EasyQ\Blocks\Render\Forms::edit_form( $this->post( $question->id ) ) );
+		$this->request( 'PUT', '/questions/' . $question->id, array( 'name' => 'Not the author' ) );
+		Services::posts()->forget( $question->id );
+		$this->assertSame( 'Ada', $this->post( $question->id )->author_name );
+		\EasyQ\Blocks\Block_Context::router()->set_current( null );
+	}
 }
