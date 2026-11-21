@@ -135,4 +135,32 @@ final class REST_Paths_Test extends REST_Test_Case {
 		wp_set_current_user( $this->administrator() );
 		$this->assertSame( 'easyq_not_found', $code( 'DELETE', '/messages/999999' ) );
 	}
+
+	public function test_reading_a_post_is_checked_before_the_handler_as_core_checks(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$comment  = $this->comment( $this->user(), $question, $answer );
+		Services::post_service()->set_question_status( \EasyQ\Actor::system(), $this->post( $question->id ), \EasyQ\Posts\Post::STATUS_HIDDEN );
+		wp_set_current_user( 0 );
+		$routes = rest_get_server()->get_routes( 'easyq/v1' );
+
+		// As `get_item_permissions_check()` of core: the permission callback refuses what the handler would.
+		foreach ( array(
+			'/easyq/v1/questions/(?P<id>\\d+)'          => array( 'id' => $question->id ),
+			'/easyq/v1/questions/(?P<question>\\d+)/answers' => array( 'question' => $question->id ),
+			'/easyq/v1/answers/(?P<id>\\d+)'            => array( 'id' => $answer->id ),
+			'/easyq/v1/posts/(?P<parent>\\d+)/comments' => array( 'parent' => $question->id ),
+			'/easyq/v1/comments/(?P<id>\\d+)'           => array( 'id' => $comment->id ),
+			'/easyq/v1/posts/(?P<id>\\d+)'              => array( 'id' => $question->id ),
+		) as $route => $params ) {
+			$this->assertArrayHasKey( $route, $routes );
+			$handler = $routes[ $route ][0];
+			$this->assertNotSame( '__return_true', $handler['permission_callback'], $route );
+			$request = new \WP_REST_Request( 'GET', $route );
+			$request->set_url_params( $params );
+			$checked = call_user_func( $handler['permission_callback'], $request );
+			$this->assertInstanceOf( \WP_Error::class, $checked, $route );
+			$this->assertSame( 404, $checked->get_error_data()['status'] ?? null, $route );
+		}
+	}
 }

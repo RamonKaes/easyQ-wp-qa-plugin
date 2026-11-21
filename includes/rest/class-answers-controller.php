@@ -56,7 +56,7 @@ final class Answers_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_items' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'get_items_permissions_check' ),
 					'args'                => $this->read_args() + $this->pagination_args( Options::get_int( 'viewing', 'page_size_q_as' ) ),
 				),
 				array(
@@ -76,7 +76,7 @@ final class Answers_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => array( 'context' => $this->get_context_param( array( 'default' => 'view' ) ) ),
 				),
 				array(
@@ -139,6 +139,32 @@ final class Answers_Controller extends Controller {
 		$items    = $this->collection( array_slice( $answers, ( $page - 1 ) * $per_page, $per_page ), $request );
 
 		return $this->paginated( $items, count( $answers ), $per_page, $request );
+	}
+
+	/**
+	 * Checks whether the request may read the answers of the question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function get_items_permissions_check( $request ): bool|WP_Error {
+		return $this->read_permissions_check( $request, 'question', Post::QUESTION, true );
+	}
+
+	/**
+	 * Checks whether the request may read the answer.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function get_item_permissions_check( $request ): bool|WP_Error {
+		return $this->read_permissions_check( $request, 'id', Post::ANSWER );
 	}
 
 	/**

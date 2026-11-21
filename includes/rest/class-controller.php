@@ -266,6 +266,30 @@ abstract class Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Checks whether the request may read a post or the replies of a post, before the handler
+	 * runs, as core checks in `get_item_permissions_check()`: the post must exist and be visible
+	 * to the actor, and the edit context needs the right to edit it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request      $request Request.
+	 * @param string               $param   Parameter that holds the post ID.
+	 * @param string|string[]|null $type    Allowed base types, see visible_post().
+	 * @param bool                 $replies Whether the replies are read, which the edit context of a list decides.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	protected function read_permissions_check( WP_REST_Request $request, string $param, string|array|null $type, bool $replies = false ): bool|WP_Error {
+		$actor = $this->actor();
+		$post  = $this->visible_post( (int) self::int_param( $request, $param ), $actor, $type );
+		if ( $post instanceof WP_Error ) {
+			return $post;
+		}
+
+		return $this->edit_context_error( $request, $actor, $replies ? null : $post ) ?? true;
+	}
+
+	/**
 	 * Returns the posts of a list the actor may see, with the actor's votes and flags, which the
 	 * rules read, loaded for the whole list at once.
 	 *

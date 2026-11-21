@@ -142,7 +142,7 @@ final class Posts_Controller extends Controller {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( $this, 'get_item' ),
-					'permission_callback' => '__return_true',
+					'permission_callback' => array( $this, 'get_item_permissions_check' ),
 					'args'                => $this->read_args(),
 				),
 				'schema' => array( $this, 'get_public_item_schema' ),
@@ -257,6 +257,19 @@ final class Posts_Controller extends Controller {
 		);
 
 		return $this->paginated( $this->collection( $result['posts'], $request ), $result['total'], $per_page, $request );
+	}
+
+	/**
+	 * Checks whether the request may read the post.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @phpstan-param WP_REST_Request<array<string, mixed>> $request
+	 * @return true|WP_Error
+	 */
+	public function get_item_permissions_check( $request ): bool|WP_Error {
+		return $this->read_permissions_check( $request, 'id', null );
 	}
 
 	/**
