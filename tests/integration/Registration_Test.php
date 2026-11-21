@@ -21,7 +21,7 @@ use EasyQ\Users\User_Field;
 final class Registration_Test extends Test_Case {
 
 	public function tear_down(): void {
-		unset( $_POST['easyq_fields'], $_POST['easyq_register'], $_POST['easyq_terms'], $_POST['easyq_newsletter'] );
+		unset( $_POST['easyq_fields'], $_POST['easyq_register'], $_POST['easyq_terms'], $_POST['easyq_newsletter'], $_POST['stage'] );
 		remove_all_filters( 'login_message' );
 		parent::tear_down();
 	}
@@ -357,5 +357,28 @@ final class Registration_Test extends Test_Case {
 		$this->assertWPError( $result );
 
 		return array_map( 'strval', $result->get_error_codes() );
+	}
+
+	public function test_only_the_sign_up_form_of_the_network_asks_for_the_terms(): void {
+		Options::update( 'users', array( 'show_register_terms' => true ) );
+		$check = static fn (): array => ( new Registration() )->validate_signup( array( 'errors' => new \WP_Error() ) )['errors']->get_error_codes();
+
+		// A network administrator adding a user sends no stage of `wp-signup.php`.
+		$this->assertSame( array(), $check() );
+
+		$_POST['stage'] = 'validate-user-signup';
+		$this->assertContains( 'easyq_terms', $check() );
+	}
+
+	public function test_the_sign_up_of_a_network_keeps_the_fields_sanitized_until_the_activation(): void {
+		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
+		$this->assertIsInt( $field );
+		$_POST['easyq_register'] = wp_create_nonce( 'easyq_register' );
+		$_POST['easyq_fields']   = array( $field => 'Lovelace <script>alert(1)</script>Ltd' );
+
+		// The table of sign-ups holds the input until the account is activated: sanitized as it arrives.
+		$meta = ( new Registration() )->add_signup_meta( array() );
+
+		$this->assertSame( 'Lovelace Ltd', $meta['easyq_registration']['fields'][ $field ] ?? null );
 	}
 }

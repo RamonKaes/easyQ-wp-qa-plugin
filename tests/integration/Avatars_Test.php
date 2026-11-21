@@ -188,4 +188,81 @@ final class Avatars_Test extends Test_Case {
 		$this->assertSame( array(), array_keys( ( new \Imagick( $file ) )->getImageProfiles( '*', false ) ) );
 		wp_delete_attachment( $id, true );
 	}
+
+	public function test_an_entry_php_never_sends_is_no_file_and_a_file_without_its_parts_did_not_arrive(): void {
+		$entry = array(
+			'name'     => 'portrait.png',
+			'type'     => 'image/png',
+			'tmp_name' => '/tmp/php123',
+			'size'     => 10,
+		);
+
+		// No error, or one PHP does not know: no file.
+		$this->assertNull( Avatars::file_entry( $entry ) );
+		$this->assertNull( Avatars::file_entry( $entry + array( 'error' => -1 ) ) );
+		$this->assertNull( Avatars::file_entry( $entry + array( 'error' => 9 ) ) );
+
+		// No type: the file did not arrive whole.
+		$this->assertSame( UPLOAD_ERR_PARTIAL, Avatars::file_entry( array( 'type' => '' ) + $entry + array( 'error' => UPLOAD_ERR_OK ) )['error'] ?? null );
+	}
+
+	public function test_a_file_larger_than_the_site_takes_is_refused_for_its_size(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$tmp = wp_tempnam( 'avatar' );
+		copy( DIR_TESTDATA . '/images/canola.jpg', $tmp );
+		$limit = static fn (): int => 100;
+		add_filter( 'upload_size_limit', $limit );
+
+		$result = Avatars::upload(
+			(int) $this->user()->user_id,
+			array(
+				'name'     => 'canola.jpg',
+				'type'     => 'image/jpeg',
+				'tmp_name' => $tmp,
+				'size'     => (int) filesize( $tmp ),
+				'error'    => UPLOAD_ERR_OK,
+			)
+		);
+		remove_filter( 'upload_size_limit', $limit );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'easyq_avatar_size', $result->get_error_code() );
+	}
+
+	public function test_the_avatar_the_user_points_to_stays_when_two_uploads_meet(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$user   = (int) $this->user()->user_id;
+		$upload = function () use ( $user ): int {
+			$tmp = wp_tempnam( 'avatar' );
+			copy( DIR_TESTDATA . '/images/canola.jpg', $tmp );
+			$id = Avatars::upload(
+				$user,
+				array(
+					'name'     => 'canola.jpg',
+					'type'     => 'image/jpeg',
+					'tmp_name' => $tmp,
+					'size'     => (int) filesize( $tmp ),
+					'error'    => UPLOAD_ERR_OK,
+				)
+			);
+			$this->assertIsInt( $id );
+			return $id;
+		};
+		$other  = $upload();
+		// The other upload sets its avatar last, after this one set its own.
+		$late = static function ( $meta_id, $object_id, $key ) use ( $user, $other, &$late ): void {
+			if ( $user === $object_id && str_ends_with( (string) $key, Avatars::META ) ) {
+				remove_action( 'updated_user_meta', $late );
+				\EasyQ\Users\Site_Meta::update( $user, Avatars::META, $other );
+			}
+		};
+		add_action( 'updated_user_meta', $late, 10, 3 );
+
+		$mine = $upload();
+		remove_action( 'updated_user_meta', $late );
+
+		$this->assertSame( $other, Avatars::attachment_id( $user ) );
+		$this->assertNotNull( get_post( $other ), 'The avatar the user points to stays.' );
+		$this->assertNull( get_post( $mine ), 'The one nobody points to goes.' );
+	}
 }

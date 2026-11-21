@@ -601,4 +601,60 @@ final class Form_Handler_Test extends REST_Test_Case {
 		$this->assertSame( 'error', Flash::current()['type'] ?? '' );
 		$this->assertStringContainsString( 'log in', strtolower( Flash::current()['message'] ?? '' ) );
 	}
+
+	public function test_a_form_name_or_a_field_that_is_no_text_is_not_taken(): void {
+		$this->login();
+		$sent = array();
+		$spy  = static function ( $result, $server, \WP_REST_Request $request ) use ( &$sent ) {
+			$sent[] = $request->get_params();
+			return $result;
+		};
+		add_filter( 'rest_pre_dispatch', $spy, 10, 3 );
+
+		// A name in brackets makes PHP send an array, which names no form.
+		$_POST = array( Form_Handler::FIELD => array( 'ask' ) );
+		$this->assertNull( ( new Form_Handler() )->process() );
+		$this->assertSame( array(), $sent );
+
+		// A field sent as an array is left out, as if the form had not sent it.
+		$this->submit(
+			'ask',
+			array(
+				'title'   => array( 'A title in brackets' ),
+				'content' => 'The content of a question sent with a title in brackets.',
+			)
+		);
+		remove_filter( 'rest_pre_dispatch', $spy, 10 );
+		$this->assertCount( 1, $sent );
+		$this->assertArrayNotHasKey( 'title', $sent[0] );
+	}
+
+	public function test_an_unknown_form_is_left_to_others(): void {
+		$this->login();
+		$_POST = array(
+			Form_Handler::FIELD => 'nonsense',
+			'_easyq_nonce'      => wp_create_nonce( Form_Handler::nonce_action( 'nonsense' ) ),
+			'title'             => 'A question from a form that does not exist',
+		);
+		( new \ReflectionProperty( Flash::class, 'now' ) )->setValue( null, null );
+
+		$this->assertNull( ( new Form_Handler() )->process() );
+		$this->assertNull( Flash::current(), 'No message: the request was for another plugin.' );
+	}
+
+	public function test_invalid_values_ask_to_check_the_form(): void {
+		$question = $this->ask( $this->user() );
+		$this->login();
+
+		$this->submit(
+			'vote',
+			array(
+				'easyq_post' => (string) $question->id,
+				'vote'       => '5',
+			)
+		);
+
+		// Not core's "Invalid parameter(s): vote", which names the parameter, not the field.
+		$this->assertSame( 'Please check the form.', Flash::current()['message'] ?? '' );
+	}
 }
