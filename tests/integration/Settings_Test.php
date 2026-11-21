@@ -74,7 +74,10 @@ final class Settings_Test extends Test_Case {
 		global $title;
 		// Set by the admin header from the menu entry.
 		$title = 'Q&A Settings'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Admin screen context.
-		wp_set_current_user( $this->administrator() );
+		// The same administrator across renders, as what the screen keeps per user stays theirs.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_set_current_user( $this->administrator() );
+		}
 		$_GET['tab'] = $tab;
 
 		$screen = new Settings_Screen();
@@ -124,6 +127,66 @@ final class Settings_Test extends Test_Case {
 			$_POST    = array();
 			$_REQUEST = array();
 		}
+	}
+
+	/**
+	 * Presses a newsletter button of the settings screen and returns where it leads.
+	 *
+	 * @param string $action Button.
+	 * @return string Query argument `easyq_newsletter` of the redirect.
+	 */
+	private function press_newsletter_button( string $action ): string {
+		$_POST    = array(
+			'do'       => $action,
+			'_wpnonce' => wp_create_nonce( 'easyq_newsletter' ),
+		);
+		$_REQUEST = $_POST; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Builds the request of the test.
+		$redirect = static function ( string $location ): never {
+			throw new \RuntimeException( $location ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Carries the address back to the test, not to output.
+		};
+		add_filter( 'wp_redirect', $redirect );
+		try {
+			( new Settings_Screen() )->newsletter_action();
+			$this->fail( 'The handler did not redirect.' );
+		} catch ( \RuntimeException $redirected ) {
+			wp_parse_str( (string) wp_parse_url( $redirected->getMessage(), PHP_URL_QUERY ), $query );
+			return is_string( $query['easyq_newsletter'] ?? null ) ? $query['easyq_newsletter'] : '';
+		} finally {
+			remove_filter( 'wp_redirect', $redirect );
+			$_POST    = array();
+			$_REQUEST = array();
+		}
+	}
+
+	public function test_the_newsletter_buttons_start_cancel_and_report_errors(): void {
+		wp_set_current_user( $this->administrator() );
+		global $wp_rest_server;
+		$wp_rest_server = new \Spy_REST_Server();
+		do_action( 'rest_api_init', $wp_rest_server );
+		Options::update(
+			'newsletter',
+			array(
+				'mailing_enabled' => true,
+				'mailing_subject' => 'News',
+				'mailing_body'    => 'Some news.',
+			)
+		);
+
+		$this->assertSame( 'started', $this->press_newsletter_button( 'start' ) );
+		$this->assertStringContainsString( 'name="do" value="cancel" class="button">Cancel sending</button>', $this->render( 'newsletter' ) );
+
+		$this->assertSame( 'cancelled', $this->press_newsletter_button( 'cancel' ) );
+		$this->assertFalse( \EasyQ\Newsletter\Newsletter::progress()['running'] );
+		$_GET['easyq_newsletter'] = 'cancelled';
+		$this->assertStringContainsString( 'Sending was cancelled.', $this->render( 'newsletter' ) );
+
+		// The text of an error comes from the server, not from the address.
+		add_filter( 'pre_wp_mail', '__return_false' );
+		$this->assertSame( 'error', $this->press_newsletter_button( 'test' ) );
+		$_GET['easyq_newsletter'] = 'error';
+		$this->assertStringContainsString( 'The test email could not be sent.', $this->render( 'newsletter' ) );
+		unset( $_GET['easyq_newsletter'] );
+		$wp_rest_server = null;
 	}
 
 	public function test_every_field_belongs_to_a_setting_and_accepts_its_default(): void {

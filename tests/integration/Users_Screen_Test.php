@@ -53,12 +53,13 @@ final class Users_Screen_Test extends Test_Case {
 	 * @param string       $action Bulk action.
 	 * @param int[]        $users  Selected users.
 	 * @param string|false $nonce  Nonce, or false for a form without one.
+	 * @param bool         $below  Whether the action is chosen below the list (`action2`).
 	 * @return string|null
 	 */
-	private function send_bulk_form( string $action, array $users, string|false $nonce ): ?string {
+	private function send_bulk_form( string $action, array $users, string|false $nonce, bool $below = false ): ?string {
 		$_GET = array(
-			'action'           => $action,
-			'action2'          => '-1',
+			'action'           => $below ? '-1' : $action,
+			'action2'          => $below ? $action : '-1',
 			'users'            => array_map( 'strval', $users ),
 			'_wp_http_referer' => '/wp-admin/users.php?orderby=login',
 		);
@@ -100,6 +101,24 @@ final class Users_Screen_Test extends Test_Case {
 		$this->assertTrue( User_Status::is_blocked( $users[0] ) );
 		// The actions of core go on to core.
 		$this->assertNull( $this->send_bulk_form( 'delete', $users, wp_create_nonce( 'bulk-users' ) ) );
+	}
+
+	public function test_the_bulk_action_below_the_list_counts_as_the_one_above(): void {
+		$user = self::factory()->user->create();
+
+		$redirect = $this->send_bulk_form( 'easyq_block', array( $user ), wp_create_nonce( 'bulk-users' ), true );
+
+		$this->assertStringContainsString( 'easyq_count=1', (string) $redirect );
+		$this->assertTrue( User_Status::is_blocked( $user ) );
+	}
+
+	public function test_views_and_query_stay_as_core_made_them_for_users_who_do_not_moderate(): void {
+		User_Status::block( \EasyQ\Actor::system(), self::factory()->user->create() );
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'author' ) ) );
+		$_GET[ Users_Screen::VIEW_ARG ] = 'blocked';
+
+		$this->assertSame( array( 'all' => 'All' ), $this->screen->views( array( 'all' => 'All' ) ) );
+		$this->assertSame( array( 'number' => 20 ), $this->screen->list_query_args( array( 'number' => 20 ) ) );
 	}
 
 	public function test_bulk_actions_need_the_nonce_of_the_users_list(): void {

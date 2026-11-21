@@ -189,6 +189,29 @@ final class Avatars_Test extends Test_Case {
 		wp_delete_attachment( $id, true );
 	}
 
+	public function test_an_uploaded_avatar_is_found_by_the_email_address_as_core_passes_it(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$user = (int) $this->user()->user_id;
+		$tmp  = wp_tempnam( 'avatar' );
+		copy( DIR_TESTDATA . '/images/canola.jpg', $tmp );
+		$id = Avatars::upload(
+			$user,
+			array(
+				'name'     => 'canola.jpg',
+				'type'     => 'image/jpeg',
+				'tmp_name' => $tmp,
+				'size'     => (int) filesize( $tmp ),
+				'error'    => UPLOAD_ERR_OK,
+			)
+		);
+		$this->assertIsInt( $id );
+
+		// Comments of core pass the address of their author.
+		$url = (string) get_avatar_url( get_userdata( $user )->user_email );
+		$this->assertStringContainsString( wp_upload_dir()['baseurl'], $url );
+		wp_delete_attachment( $id, true );
+	}
+
 	public function test_an_entry_php_never_sends_is_no_file_and_a_file_without_its_parts_did_not_arrive(): void {
 		$entry = array(
 			'name'     => 'portrait.png',

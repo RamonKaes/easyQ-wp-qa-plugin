@@ -8,6 +8,7 @@
 namespace EasyQ\Tests\Integration;
 
 use EasyQ\Admin\Categories_Screen;
+use EasyQ\Categories\Categories;
 use EasyQ\Admin\Dashboard_Screen;
 use EasyQ\Capabilities;
 use EasyQ\Services;
@@ -357,6 +358,93 @@ final class Categories_Screen_Test extends Test_Case {
 			)
 		);
 		$this->assertStringNotContainsString( 'notice-warning', $this->render( $screen ) );
+	}
+
+	public function test_refused_requests_say_why(): void {
+		$screen = new Categories_Screen();
+		$id     = $this->create( null, 'Only' );
+
+		// A category deleted in the meantime.
+		$this->assertSame(
+			Categories_Screen::url( array( 'message' => 'missing' ) ),
+			$screen->handle(
+				array(
+					'easyq_action' => 'save',
+					'category'     => (string) ( $id + 1000 ),
+					'title'        => 'Gone',
+				)
+			)
+		);
+		$this->assertStringContainsString( 'The category does not exist.', $this->render( $screen, array( 'message' => 'missing' ) ) );
+
+		// Questions cannot be moved into the category they are in.
+		$this->assertNull(
+			$screen->handle(
+				array(
+					'easyq_action' => 'reassign',
+					'category'     => (string) $id,
+					'reassign'     => (string) $id,
+				)
+			)
+		);
+		unset( $_GET['message'] );
+		$this->assertStringContainsString(
+			'The posts cannot be moved to this category.',
+			$this->render(
+				$screen,
+				array(
+					'action'   => 'edit',
+					'category' => $id,
+				)
+			)
+		);
+
+		$this->assertNull( $screen->handle( array( 'easyq_action' => 'rename' ) ) );
+		unset( $_GET['action'], $_GET['category'] );
+		$this->assertStringContainsString( 'Unknown action.', $this->render( $screen ) );
+	}
+
+	public function test_reports_moved_questions_and_the_deepest_level(): void {
+		$screen = new Categories_Screen();
+		$this->assertStringContainsString( 'Questions moved.', $this->render( $screen, array( 'message' => 'moved' ) ) );
+
+		$parent = null;
+		for ( $depth = 1; $depth <= Categories::MAX_DEPTH; $depth++ ) {
+			$parent = $this->create( $parent, 'Level ' . $depth );
+		}
+		$html = $this->render(
+			new Categories_Screen(),
+			array(
+				'action'   => 'edit',
+				'category' => (int) $parent,
+			)
+		);
+		$this->assertStringContainsString( 'This category cannot have subcategories because it is already ' . Categories::MAX_DEPTH . ' levels down.', $html );
+	}
+
+	public function test_the_service_refuses_categories_that_do_not_exist_and_overlong_text(): void {
+		$categories = Services::categories();
+		$missing    = $this->create( null, 'Missing soon' );
+		$categories->delete( $missing );
+
+		foreach ( array(
+			'update' => $categories->update( $missing, 'Title' ),
+			'move'   => $categories->move( $missing, null ),
+			'delete' => $categories->delete( $missing ),
+		) as $call => $result ) {
+			$this->assertInstanceOf( \WP_Error::class, $result, $call );
+			$this->assertSame( 'not_found', $result->get_error_code(), $call );
+		}
+		$categories->set_position( $missing, 1 );
+		$this->assertNull( $categories->find( $missing ), 'Moving a missing category creates nothing.' );
+
+		$long_description = $categories->create( null, 'Long description', '', str_repeat( 'd', Categories::MAX_DESCRIPTION_LENGTH + 1 ) );
+		$this->assertInstanceOf( \WP_Error::class, $long_description );
+		$this->assertSame( array( 'The description can have at most ' . Categories::MAX_DESCRIPTION_LENGTH . ' characters.' ), $long_description->get_error_messages( 'description' ) );
+
+		$long_slug = $categories->create( null, 'Long slug', str_repeat( 's', Categories::MAX_SLUG_LENGTH + 1 ) );
+		$this->assertInstanceOf( \WP_Error::class, $long_slug );
+		$this->assertContains( 'The slug can have at most ' . Categories::MAX_SLUG_LENGTH . ' characters.', $long_slug->get_error_messages() );
 	}
 
 	public function test_only_users_who_manage_easyq_may_submit(): void {

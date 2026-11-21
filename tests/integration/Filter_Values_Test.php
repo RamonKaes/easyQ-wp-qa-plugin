@@ -93,6 +93,37 @@ final class Filter_Values_Test extends REST_Test_Case {
 		$this->assertSame( array(), $failures );
 	}
 
+	public function test_the_filters_added_only_on_some_pages_hand_on_what_they_do_not_know(): void {
+		// These are added only for classic themes, while an avatar is cropped, or take arguments the
+		// test above cannot make; each is called here with a value of a type it does not expect.
+		$foreign = new \stdClass();
+		$router  = Block_Context::router();
+		$query   = new \WP_Query();
+		$calls   = array(
+			'variations'            => static fn () => ( new \EasyQ\Frontend\Navigation( $router ) )->variations( $foreign, new \WP_Block_Type( 'core/navigation-link' ) ),
+			'skip_posts_query'      => static fn () => $router->skip_posts_query( $foreign, $query ),
+			'without_main_heading'  => static fn () => \EasyQ\Frontend\Templates::without_main_heading( $foreign, array() ),
+			'classic_content'       => static fn () => \EasyQ\Frontend\Templates::classic_content( $foreign ),
+			'classic_comments'      => static fn () => \EasyQ\Frontend\Templates::classic_comments( $foreign ),
+			'classic_comment_query' => static fn () => \EasyQ\Frontend\Templates::classic_comment_query( $foreign ),
+			'classic_edit_link'     => static fn () => \EasyQ\Frontend\Templates::classic_edit_link( $foreign, 1 ),
+			'image_editors'         => static fn () => \EasyQ\Users\Avatars::image_editors( $foreign ),
+			'rest_value'            => static fn () => ( new \EasyQ\Settings\Registry() )->rest_value( $foreign, 'easyq_settings_unknown' ),
+		);
+		foreach ( $calls as $name => $call ) {
+			$this->assertSame( $foreign, $call(), $name );
+		}
+		// A setting of the prefix that is no section is left to core.
+		$this->assertNull( ( new \EasyQ\Settings\Registry() )->rest_value( null, 'easyq_settings_unknown' ) );
+	}
+
+	public function test_the_avatar_of_an_address_without_an_account_is_left_to_core(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$args = array( 'size' => 96 );
+
+		$this->assertSame( $args, ( new \EasyQ\Users\Avatars() )->avatar_data( $args, 'nobody-' . wp_generate_password( 6, false ) . '@example.org' ) );
+	}
+
 	public function test_emails_keep_their_headers_when_a_filter_returns_lines(): void {
 		$sent = array();
 		add_filter(

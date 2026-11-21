@@ -112,6 +112,35 @@ final class Profile_Screen_Test extends Test_Case {
 		$this->assertSame( 'Bremen', Services::user_fields()->value( $other, $location ) );
 	}
 
+	public function test_a_field_of_several_lines_is_a_text_area(): void {
+		$user  = self::factory()->user->create();
+		$about = Services::user_fields()->create( 'about-me', 'About me', \EasyQ\Users\User_Field::FLAG_MULTI_LINE, null );
+		$this->assertIsInt( $about );
+
+		$this->assertMatchesRegularExpression( '/<textarea id="[^"]*" name="easyq_fields\[' . $about . '\]"/', $this->render( $user, $user ) );
+	}
+
+	public function test_levels_of_categories_that_do_not_exist_are_left_out(): void {
+		$admin    = $this->administrator();
+		$user     = self::factory()->user->create();
+		$category = Services::categories()->create( null, 'Topic' );
+		$this->assertIsInt( $category );
+
+		$this->screen->save(
+			$user,
+			array(
+				'easyq_category_levels' => array(
+					$category + 1000 => (string) Levels::EDITOR,
+					'not a number'   => (string) Levels::EDITOR,
+					$category        => (string) Levels::EXPERT,
+				),
+			),
+			new Actor( $admin )
+		);
+
+		$this->assertSame( array( $category => Levels::EXPERT ), Services::user_levels()->category_levels( $user ) );
+	}
+
 	public function test_administrators_set_levels_and_bonus_points(): void {
 		$admin    = $this->administrator();
 		$user     = self::factory()->user->create();

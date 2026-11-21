@@ -243,6 +243,47 @@ final class Users_Admin_Screens_Test extends Test_Case {
 		$this->assertCount( 1, Services::user_fields()->all() );
 	}
 
+	public function test_refused_field_requests_say_why(): void {
+		$screen = new User_Fields_Screen();
+
+		// A choice that is not offered is marked at its list.
+		$this->assertNull(
+			$screen->handle(
+				array(
+					'easyq_action' => 'add',
+					'label'        => 'Shoe size',
+					'permit'       => '7',
+				)
+			)
+		);
+		$this->assertStringContainsString( 'id="easyq-user-field-permit-error"><strong>Please choose who may see the field.</strong>', $this->render( array( $screen, 'render' ), array(), 'User Fields' ) );
+
+		// A field deleted in the meantime.
+		$this->assertSame(
+			User_Fields_Screen::url( array( 'message' => 'missing' ) ),
+			$screen->handle(
+				array(
+					'easyq_action' => 'save',
+					'field'        => '99999',
+					'label'        => 'Gone',
+				)
+			)
+		);
+		$this->assertStringContainsString( 'The field does not exist.', $this->render( array( new User_Fields_Screen(), 'render' ), array( 'message' => 'missing' ), 'User Fields' ) );
+
+		// An action the screen does not know is refused, not passed over.
+		$this->assertNull( $screen->handle( array( 'easyq_action' => 'rename' ) ) );
+		$this->assertStringContainsString( 'The field could not be saved.', $this->render( array( $screen, 'render' ), array(), 'User Fields' ) );
+	}
+
+	public function test_the_list_of_fields_says_when_there_is_none(): void {
+		foreach ( Services::user_fields()->all() as $field ) {
+			Services::user_fields()->delete( $field->id );
+		}
+
+		$this->assertStringContainsString( 'No profile fields yet.', $this->render( array( new User_Fields_Screen(), 'render' ), array(), 'User Fields' ) );
+	}
+
 	public function test_only_users_who_manage_easyq_may_change_fields(): void {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 

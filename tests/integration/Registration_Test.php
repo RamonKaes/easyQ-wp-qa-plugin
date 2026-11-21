@@ -337,6 +337,24 @@ final class Registration_Test extends Test_Case {
 		$this->fail( 'The registration form is not hooked.' );
 	}
 
+	public function test_a_field_of_several_lines_is_a_text_area_on_the_form(): void {
+		$about = Services::user_fields()->create( 'about-me', 'About me', User_Field::FLAG_MULTI_LINE | User_Field::FLAG_ON_REGISTER, null );
+		$this->assertIsInt( $about );
+
+		$this->assertMatchesRegularExpression( '/<textarea name="easyq_fields\[' . $about . '\]"/', $this->render() );
+	}
+
+	public function test_an_activation_without_input_of_the_form_changes_nothing(): void {
+		$user   = self::factory()->user->create();
+		$before = get_user_meta( $user );
+		$blog   = get_current_blog_id();
+		( new Registration() )->activate( $user, 'password', array( 'other' => 'meta' ) );
+		( new Registration() )->activate( 'not a user', 'password', array( 'easyq_registration' => array( 'site' => $blog + 1000 ) ) );
+
+		$this->assertSame( $before, get_user_meta( $user ) );
+		$this->assertSame( $blog, get_current_blog_id(), 'No site was switched to.' );
+	}
+
 	/**
 	 * Renders the parts of the registration form.
 	 */

@@ -77,6 +77,13 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 		$this->assertStringContainsString( 'site-health.php?tab=debug', $html );
 	}
 
+	public function test_the_dashboard_links_flagged_posts(): void {
+		$question = $this->ask( $this->user() );
+		$this->assertNotInstanceOf( \WP_Error::class, Services::votes()->flag( $this->user(), $question, $question ) );
+
+		$this->assertStringContainsString( '>1 flagged post</a>', $this->render( array( new Dashboard_Screen(), 'render' ) ) );
+	}
+
 	public function test_the_menu_and_its_dashboard_are_for_moderators(): void {
 		global $menu, $submenu;
 
@@ -142,6 +149,20 @@ final class Dashboard_Tools_Screens_Test extends Test_Case {
 				)
 			)
 		);
+	}
+
+	public function test_a_tool_waits_while_another_run_goes_on(): void {
+		add_option( \EasyQ\Tools\Tools::RUN_OPTION, 'another-run|' . time(), '', false );
+		$screen = new Tools_Screen();
+
+		$this->assertNull( $screen->handle( array( 'easyq_tool' => 'reindex' ) ) );
+		$this->assertStringContainsString( 'The tools are running already, from another screen or the command line.', $this->render( array( $screen, 'render' ), 'Q&A Tools' ) );
+	}
+
+	public function test_a_finished_tool_is_named(): void {
+		$_GET['easyq_done'] = 'reindex';
+
+		$this->assertStringContainsString( 'Finished: ' . \EasyQ\Tools\Tools::labels()['reindex'][0] . '.', $this->render( array( new Tools_Screen(), 'render' ), 'Q&A Tools' ) );
 	}
 
 	public function test_deleting_hidden_posts_needs_a_confirmation(): void {

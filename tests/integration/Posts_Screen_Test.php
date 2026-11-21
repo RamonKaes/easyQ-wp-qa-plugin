@@ -245,6 +245,87 @@ final class Posts_Screen_Test extends Test_Case {
 		$this->assertStringContainsString( 'value="unblock">Unblock this IP address</button>', $this->render() );
 	}
 
+	public function test_the_bulk_action_below_the_list_counts_as_the_one_above(): void {
+		$visible = $this->ask( $this->user(), 'A question hidden from below' );
+		$this->request(
+			array(
+				'action'           => '-1',
+				'action2'          => 'hide',
+				'post'             => array( (string) $visible->id ),
+				'_wpnonce'         => wp_create_nonce( 'bulk-easyq-posts' ),
+				'_wp_http_referer' => '/wp-admin/admin.php?page=easyq-posts',
+			)
+		);
+
+		$this->assertStringContainsString( 'easyq_did=hide&easyq_done=1', (string) ( new Posts_Screen() )->handle() );
+		$this->assertTrue( $this->post( $visible->id )->is_hidden() );
+	}
+
+	public function test_a_search_names_its_terms_as_core_does(): void {
+		$this->request( array( 's' => 'widget' ) );
+
+		$this->assertStringContainsString( '<span class="subtitle">Search results for: widget</span>', $this->render() );
+	}
+
+	public function test_each_action_reports_what_it_did(): void {
+		foreach ( array(
+			'approve'     => '2 posts approved.',
+			'reject'      => '2 posts rejected.',
+			'clear-flags' => 'Flags cleared from 2 posts.',
+			'hide'        => '2 posts hidden.',
+			'reshow'      => '2 posts shown again.',
+			'reopen'      => '2 questions reopened.',
+			'delete'      => '2 posts deleted permanently.',
+			'hide-all'    => '2 posts from this IP address hidden.',
+		) as $did => $text ) {
+			$this->request(
+				array(
+					'easyq_did'  => $did,
+					'easyq_done' => '2',
+				)
+			);
+			$this->assertStringContainsString( $text, $this->render(), $did );
+		}
+	}
+
+	public function test_the_ip_panel_offers_its_buttons_only_to_those_who_may_use_them(): void {
+		$visitor = new Actor( null, null, '192.0.2.45' );
+		$this->ask( $visitor, 'A question from a blocked address' );
+		Options::update( 'spam', array( 'block_ips_write' => '192.0.2.45' ) );
+		$this->request( array( 'ip' => '192.0.2.45' ) );
+
+		// A moderator may block and hide all posts of the address.
+		$this->assertStringContainsString( 'value="hide-all">Hide all posts from this IP address</button>', $this->render() );
+
+		// A Q&A editor sees addresses (default of `permit_anon_view_ips`) but may not block them.
+		Options::update(
+			'general',
+			array(
+				'role_levels' => array(
+					'administrator' => \EasyQ\Users\Levels::ADMIN,
+					'author'        => \EasyQ\Users\Levels::EDITOR,
+				),
+			)
+		);
+		wp_set_current_user( (int) $this->user( 'author' )->user_id );
+		$html = $this->render();
+		$this->assertStringContainsString( 'This address is blocked by: 192.0.2.45', $html );
+		$this->assertStringNotContainsString( 'easyq_ip_action', $html );
+	}
+
+	public function test_the_list_names_closed_questions_and_links_their_category(): void {
+		Options::update( 'general', array( 'tags_or_categories' => 'c' ) );
+		$category = Services::categories()->create( null, 'Hardware' );
+		$this->assertIsInt( $category );
+		$question = $this->ask( $this->user(), 'A closed question in a category', 'x', array(), $category );
+		Services::post_service()->close_with_note( Actor::current(), $question, 'Answered elsewhere.' );
+		$this->request( array() );
+
+		$html = $this->render();
+		$this->assertMatchesRegularExpression( '/A closed question in a category.*?Closed/s', $html );
+		$this->assertStringContainsString( '<a href="' . esc_url( Posts_Screen::url( array( 'category' => $category ) ) ) . '">Hardware</a>', $html );
+	}
+
 	public function test_counts_posts_awaiting_approval_in_the_menu_and_admin_bar(): void {
 		global $submenu;
 

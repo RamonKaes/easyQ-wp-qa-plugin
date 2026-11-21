@@ -243,6 +243,30 @@ final class Email_Templates_Test extends REST_Test_Case {
 		);
 	}
 
+	public function test_the_screen_says_when_a_test_email_could_not_be_sent(): void {
+		wp_set_current_user( $this->administrator() );
+		set_current_screen( 'dashboard' );
+		add_filter( 'pre_wp_mail', '__return_false' );
+
+		$url = ( new Email_Templates_Screen() )->handle(
+			array(
+				'easyq_action' => 'test',
+				'template'     => 'flagged',
+			)
+		);
+
+		$this->assertStringContainsString( 'message=failed', $url );
+		$this->assertStringContainsString(
+			'The test email could not be sent.',
+			$this->render_screen(
+				array(
+					'template' => 'flagged',
+					'message'  => 'failed',
+				)
+			)
+		);
+	}
+
 	public function test_only_managers_use_the_screen_and_the_settings_form(): void {
 		$this->assertSame( 'easyq_manage', apply_filters( 'option_page_capability_' . Templates::OPTION, 'manage_options' ) );
 
