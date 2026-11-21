@@ -61,6 +61,38 @@ test.describe( 'Notices', () => {
 		} );
 	}
 
+	test( 'a notice whose request fails is dismissed by its form', async ( {
+		browser,
+		requestUtils,
+	} ) => {
+		const context = await browser.newContext( {
+			baseURL: requestUtils.baseURL,
+			storageState: { cookies: [], origins: [] },
+		} );
+		const page = await context.newPage();
+		await page.goto( '/?easyq_route=questions' );
+		// The request of the store fails: the form takes over (F-134 for the favorites).
+		await page.route( /notices/, ( request ) =>
+			request.request().method() === 'DELETE'
+				? request.fulfill( { status: 500, body: 'Server error' } )
+				: request.continue()
+		);
+
+		const sent = page.waitForEvent( 'framenavigated' );
+		await page
+			.getByRole( 'button', { name: 'Dismiss this notice' } )
+			.click();
+		await sent;
+		await page.waitForLoadState();
+		await page.unroute( /notices/ );
+
+		await page.goto( '/?easyq_route=questions' );
+		await expect(
+			page.getByText( 'Welcome to our questions.' )
+		).toHaveCount( 0 );
+		await context.close();
+	} );
+
 	test( 'a double click dismisses the notice once, in place', async ( {
 		browser,
 		requestUtils,

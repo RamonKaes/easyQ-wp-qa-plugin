@@ -36,7 +36,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
 | F-234 | low | Cross-check 2026-11-19, low findings of the part auditors, each with its evidence in the audit notes: `languages/easyq.pot` is stale (6 strings missing). | several | old; Cross-check 2026-11-19 on `76f1989`. | Not guarded; deferred like the other low findings unless the owner decides otherwise. |
-| F-190 | low | The guard of F-134 measures the fallback of the store for `favorite` only; `vote` and `dismissNotice` share `requestJson()` but no test makes their request fail. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-191 | low | A user who never took part sends a private message; the recipient cannot answer, because the message page of the sender answers 404 (F-140 made the route answer the same). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-194 | low | The start of a search is not bounded by any test (`Query_Resolver::MAX_SEARCH_START` in `GET /questions?search=`). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-197 | low | No test holds the length of user titles on save (`MAX_TITLE_LENGTH`) nor that the posts list offers only the row actions the moderator may use. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
