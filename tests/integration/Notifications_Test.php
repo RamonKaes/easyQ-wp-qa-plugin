@@ -183,7 +183,7 @@ final class Notifications_Test extends Test_Case {
 	/**
 	 * @group ms-required
 	 */
-	public function test_people_who_left_the_site_are_not_notified(): void {
+	public function test_people_who_left_the_site_without_points_of_it_are_not_notified(): void {
 		$this->skipWithoutMultisite();
 		$author   = $this->member( 'asker' );
 		$question = $this->question_with_emails( $author );

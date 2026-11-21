@@ -79,7 +79,7 @@ final class Policy_Text_Test extends Test_Case {
 		$this->assertStringContainsString( 'by the daily clean-up after the hour they count for', $text );
 		$this->assertStringNotContainsString( 'after one hour.', $text );
 		// Page_Meta::count_view() keeps a hash of the address for an hour.
-		$this->assertStringContainsString( 'a hash of your IP address is kept with the question for at most one hour', $text );
+		$this->assertStringContainsString( 'a hash of your IP address is kept with the question for one hour, and WordPress removes it within a day after that', $text );
 		$this->assertStringNotContainsString( 'without storing your IP address', $text );
 	}
 

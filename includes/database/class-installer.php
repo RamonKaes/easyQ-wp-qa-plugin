@@ -83,11 +83,8 @@ final class Installer {
 	 * @param bool $network_wide Whether the plugin is being activated for the whole network.
 	 */
 	public static function activate( bool $network_wide = false ): void {
-		if ( ! is_multisite() || ! $network_wide ) {
-			self::install_site();
-			return;
-		}
-
+		// The same on a network: the other sites install themselves, see above.
+		unset( $network_wide );
 		self::install_site();
 	}
 

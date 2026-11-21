@@ -76,7 +76,7 @@ final class Policy_Text {
 			: __( 'To prevent abuse, we also store the IP address from which a post was written or last changed.', 'easyq' ) ) . '</p>';
 
 		if ( $anonymous ) {
-			$strings[] = '<p>' . __( 'If you post without an account, we store the name you enter, if any, and your email address only if you ask to be notified of answers or comments. We then send one request to confirm the address at most every hour; for that hour a hash of the address is kept, not the address itself.', 'easyq' ) . '</p>';
+			$strings[] = '<p>' . __( 'If you post without an account, we store the name you enter, if any, and your email address only if you ask to be notified of answers or comments. We then send one request to confirm the address at most every hour; for that hour a hash of the address is kept, which WordPress removes within a day after that, not the address itself.', 'easyq' ) . '</p>';
 		}
 
 		$profile = __( 'If you have an account, your profile on the question and answer pages shows your user name, your points, your activity and the profile fields you fill in.', 'easyq' );
@@ -123,7 +123,7 @@ final class Policy_Text {
 		if ( $notice ) {
 			$strings[] = '<p>' . ( $anonymous ? '' : $suggested ) . __( 'If you log in on a question and answer page or close the notice for new visitors, we set a cookie so that the notice is not shown again. It contains no personal data and lasts for ten years.', 'easyq' ) . '</p>';
 		}
-		$strings[] = '<p>' . ( $anonymous || $notice ? '' : $suggested ) . __( 'Views of questions are counted without cookies. So that a second view in a row does not count, a hash of your IP address is kept with the question for at most one hour; the address itself is not stored.', 'easyq' ) . '</p>';
+		$strings[] = '<p>' . ( $anonymous || $notice ? '' : $suggested ) . __( 'Views of questions are counted without cookies. So that a second view in a row does not count, a hash of your IP address is kept with the question for one hour, and WordPress removes it within a day after that; the address itself is not stored.', 'easyq' ) . '</p>';
 
 		$strings[] = '<h3 class="wp-block-heading">' . __( 'How long we keep the data of the question and answer pages', 'easyq' ) . '</h3>';
 		$strings[] = '<p>' . $suggested . sprintf(

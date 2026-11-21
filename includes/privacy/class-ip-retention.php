@@ -20,8 +20,9 @@ defined( 'ABSPATH' ) || exit;
  * Removes the IP addresses of posts, visitor cookies and rate limits once a day.
  *
  * The plugin stores IP addresses only to prevent abuse. After `ip_retention_days`
- * days they are removed: from posts and visitor cookies by date, while the
- * counters of the rate limits go as soon as their hour is over. Scheduled like
+ * days they are removed: from posts and visitor cookies by date, and the counters
+ * of the rate limits, which count the current hour only, with the next daily run once their
+ * hour is over. Scheduled like
  * `wp_schedule_delete_old_privacy_export_files()`.
  *
  * @since 0.1.0

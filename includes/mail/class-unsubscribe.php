@@ -20,8 +20,8 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Signs the links in notification emails, which work without logging in.
  *
- * A token only allows stopping the emails about one post, so it needs no expiry
- * and no storage.
+ * A token only allows stopping the emails about one post, or confirming the one address it
+ * was sent to (confirm_token()), so it needs no expiry and no storage.
  *
  * @since 0.1.0
  */
