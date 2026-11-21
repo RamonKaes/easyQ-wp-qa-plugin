@@ -131,7 +131,8 @@ final class Render {
 	}
 
 	/**
-	 * Forgets the element IDs handed out, for a new page.
+	 * Forgets the element IDs handed out, for a new page. Only the tests call it: a
+	 * request renders one page.
 	 *
 	 * @since 0.1.0
 	 */

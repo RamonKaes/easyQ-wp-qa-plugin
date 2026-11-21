@@ -227,6 +227,26 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array(), array_values( array_filter( $own, static fn ( string $name ): bool => ! str_contains( $hooks, "binding source `$name`" ) ) ), 'Binding sources without documentation.' );
 	}
 
+	public function test_methods_said_to_be_called_by_tests_only_have_no_caller_in_the_plugin(): void {
+		$sources = array_merge( $this->sources( 'includes' ), array( $this->read( self::root() . 'easyq.php' ), $this->read( self::root() . 'uninstall.php' ) ) );
+		$methods = array();
+		foreach ( $sources as $source ) {
+			preg_match_all( '/\* [^\n]*Only the tests call it.*?\*\/\s*public (?:static )?function (\w+)\(/s', $source, $found );
+			$methods = array_merge( $methods, $found[1] );
+		}
+		$this->assertContains( 'set_current', $methods, 'The docblocks are read.' );
+
+		$called = array();
+		foreach ( $methods as $method ) {
+			foreach ( $sources as $source ) {
+				if ( preg_match( '/(?:->|::)' . $method . '\(/', $source ) ) {
+					$called[] = $method;
+				}
+			}
+		}
+		$this->assertSame( array(), $called );
+	}
+
 	public function test_the_readme_names_every_settings_tab(): void {
 		preg_match( '/^In the admin menu under easyQ → Settings\. The tabs are (.*)$/m', $this->read( self::root() . 'readme.txt' ), $faq );
 		$this->assertNotEmpty( $faq, 'The FAQ names the settings tabs.' );

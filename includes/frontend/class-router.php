@@ -236,7 +236,8 @@ final class Router {
 	}
 
 	/**
-	 * Sets the current route, e.g. for tests or blocks previewed in the editor.
+	 * Sets the current route. Only the tests call it; a request gets its route in
+	 * `parse_request()`.
 	 *
 	 * @since 0.1.0
 	 *
