@@ -155,15 +155,28 @@ final class Block_Settings_Test extends Test_Case {
 		Block_Context::router()->set_current( new Route( 'question', $this->post( $question->id ) ) );
 
 		$net = do_blocks( '<!-- wp:easyq/post-votes {"display":"net"} /-->' );
-		$this->assertStringContainsString( 'data-wp-text="context.net"', $net );
+		$this->assertStringContainsString( 'data-wp-text="context.netText"', $net );
 		$this->assertStringNotContainsString( 'context.down', $net );
 
 		$separated = do_blocks( '<!-- wp:easyq/post-votes {"display":"separated"} /-->' );
-		$this->assertStringContainsString( 'Upvotes: </span><span data-wp-text="context.up">1<', $separated );
-		$this->assertStringContainsString( 'Downvotes: </span><span data-wp-text="context.down">0<', $separated );
+		$this->assertStringContainsString( 'Upvotes: </span><span data-wp-text="context.upText">1<', $separated );
+		$this->assertStringContainsString( 'Downvotes: </span><span data-wp-text="context.downText">0<', $separated );
 
 		Options::update( 'viewing', array( 'votes_separated' => true ) );
 		$this->assertStringContainsString( 'context.up', do_blocks( '<!-- wp:easyq/post-votes /-->' ), 'The site setting applies without a block setting.' );
+	}
+
+	public function test_the_counts_of_votes_keep_the_number_format_of_the_site(): void {
+		$question = $this->ask( $this->user() );
+		$GLOBALS['wpdb']->update( \EasyQ\Database\Schema::table( 'posts' ), array( 'net_votes' => 12345 ), array( 'id' => $question->id ) );
+		Services::posts()->forget( $question->id );
+		Block_Context::router()->set_current( new Route( 'question', $this->post( $question->id ) ) );
+
+		// The server processes the directive as the browser does, which printed the bare number.
+		$html = do_blocks( '<!-- wp:easyq/post-votes {"display":"net"} /-->' );
+
+		$this->assertStringContainsString( '>' . number_format_i18n( 12345 ) . '<', $html );
+		$this->assertSame( ',', wp_interactivity_state( 'easyq' )['thousandsSeparator'] ?? null, 'The store writes the counts it changes alike.' );
 	}
 
 	public function test_pagination_offers_arrows_labels_and_numbers(): void {

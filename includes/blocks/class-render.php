@@ -145,11 +145,14 @@ final class Render {
 	 * @since 0.1.0
 	 */
 	public static function rest_state(): void {
+		global $wp_locale;
 		wp_interactivity_state(
 			'easyq',
 			array(
-				'restUrl' => esc_url_raw( rest_url( 'easyq/v1/' ) ),
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'restUrl'            => esc_url_raw( rest_url( 'easyq/v1/' ) ),
+				'nonce'              => wp_create_nonce( 'wp_rest' ),
+				// For counts the store changes, written as number_format_i18n() writes them.
+				'thousandsSeparator' => $wp_locale instanceof \WP_Locale && is_string( $wp_locale->number_format['thousands_sep'] ?? null ) ? $wp_locale->number_format['thousands_sep'] : ',',
 			)
 		);
 	}

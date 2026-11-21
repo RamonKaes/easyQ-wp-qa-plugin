@@ -114,6 +114,22 @@ function* navigateTo( url, html = null ) {
 	}
 }
 
+/**
+ * Writes a count as number_format_i18n() does: groups of three digits with the thousands
+ * separator of the site.
+ *
+ * @param {number} count Count.
+ * @return {string} Text.
+ */
+function formatCount( count ) {
+	const digits = String( Math.abs( count ) ).replace(
+		/\B(?=(\d{3})+(?!\d))/g,
+		state.thousandsSeparator ?? ','
+	);
+
+	return count < 0 ? `-${ digits }` : digits;
+}
+
 const { state } = store( 'easyq', {
 	state: {
 		/**
@@ -438,6 +454,9 @@ const { state } = store( 'easyq', {
 			context.net = post.votes.net;
 			context.up = post.votes.up;
 			context.down = post.votes.down;
+			context.netText = formatCount( post.votes.net );
+			context.upText = formatCount( post.votes.up );
+			context.downText = formatCount( post.votes.down );
 			context.vote = post.votes.user;
 		} ),
 

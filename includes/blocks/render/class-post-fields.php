@@ -150,12 +150,17 @@ final class Post_Fields {
 
 		Render::rest_state();
 
+		// The counts as numbers for the store, and as text in the format of the site, which the
+		// directives print: the server processes them as well, and would print the bare number.
 		$context = array(
-			'postId' => $post->id,
-			'net'    => $post->net_votes,
-			'up'     => $post->upvotes,
-			'down'   => $post->downvotes,
-			'vote'   => $user,
+			'postId'   => $post->id,
+			'net'      => $post->net_votes,
+			'up'       => $post->upvotes,
+			'down'     => $post->downvotes,
+			'netText'  => number_format_i18n( $post->net_votes ),
+			'upText'   => number_format_i18n( $post->upvotes ),
+			'downText' => number_format_i18n( $post->downvotes ),
+			'vote'     => $user,
 		);
 
 		$up   = $can_vote ? self::vote_button( $post->id, 1, 1 === $user, __( 'Vote up', 'easyq' ), '▲' ) : '';
@@ -166,7 +171,7 @@ final class Post_Fields {
 		$separated = in_array( $display, array( 'net', 'separated' ), true ) ? 'separated' === $display : Options::get_bool( 'viewing', 'votes_separated' );
 		// The label is for screen readers; ARIA does not allow aria-label on a plain span.
 		$count = static fn ( string $key, int $value, string $label ): string => sprintf(
-			'<span><span class="screen-reader-text">%s </span><span data-wp-text="context.%s">%s</span></span>',
+			'<span><span class="screen-reader-text">%s </span><span data-wp-text="context.%sText">%s</span></span>',
 			esc_html( $label ),
 			esc_attr( $key ),
 			esc_html( number_format_i18n( $value ) )

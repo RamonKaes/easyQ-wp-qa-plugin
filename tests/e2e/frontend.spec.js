@@ -2,7 +2,7 @@
  * Q&A pages in the browser: asking, voting and accessibility.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
-const { activatePlugin } = require( './plugin' );
+const { activatePlugin, evalPhp } = require( './plugin' );
 const AxeBuilder = require( '@axe-core/playwright' ).default;
 
 const route = ( name, arg ) =>
@@ -46,6 +46,11 @@ test.describe( 'Q&A frontend', () => {
 			},
 		} );
 
+		// 1,233 votes before, so that the count after the vote shows the number format of the site.
+		evalPhp(
+			`global $wpdb; for ( $i = 1; $i <= 1233; $i++ ) { $wpdb->insert( EasyQ\\Database\\Schema::table( 'uservotes' ), array( 'post_id' => ${ question.id }, 'user_id' => 900000 + $i, 'vote' => 1 ) ); } EasyQ\\Services::posts()->recount_votes( ${ question.id } );`
+		);
+
 		const username = `voter${ Date.now() }`;
 		await requestUtils.createUser( {
 			username,
@@ -74,10 +79,13 @@ test.describe( 'Q&A frontend', () => {
 		const up = votes.getByRole( 'button', { name: 'Vote up' } );
 
 		await expect( up ).toHaveAttribute( 'aria-pressed', 'false' );
+		await expect(
+			votes.locator( '[data-wp-text="context.netText"]' )
+		).toHaveText( '1,233' );
 		await up.click();
 		await expect(
-			votes.locator( '[data-wp-text="context.net"]' )
-		).toHaveText( '1' );
+			votes.locator( '[data-wp-text="context.netText"]' )
+		).toHaveText( '1,234' );
 		await expect( up ).toHaveAttribute( 'aria-pressed', 'true' );
 
 		await page.reload();
@@ -85,8 +93,8 @@ test.describe( 'Q&A frontend', () => {
 			page
 				.locator( '.wp-block-easyq-post-votes' )
 				.first()
-				.locator( '[data-wp-text="context.net"]' )
-		).toHaveText( '1' );
+				.locator( '[data-wp-text="context.netText"]' )
+		).toHaveText( '1,234' );
 
 		await context.close();
 	} );
@@ -144,7 +152,7 @@ test.describe( 'Q&A frontend', () => {
 			page
 				.locator( '.wp-block-easyq-post-votes' )
 				.first()
-				.locator( '[data-wp-text="context.net"]' )
+				.locator( '[data-wp-text="context.netText"]' )
 		).toHaveText( '0' );
 
 		await context.close();

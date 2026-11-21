@@ -11,6 +11,27 @@
 const PLUGIN_NAME = 'easyQ Questions and Answers';
 
 /**
+ * Runs PHP in the test site through WP-CLI, for data no route of the REST API writes.
+ *
+ * @param {string} code PHP code.
+ * @return {string} Output.
+ */
+const evalPhp = ( code ) =>
+	require( 'child_process' ).spawnSync(
+		'npx',
+		[
+			'wp-env',
+			'run',
+			'--config=.wp-env.test.json',
+			'cli',
+			'wp',
+			'eval',
+			code,
+		],
+		{ encoding: 'utf8' }
+	).stdout;
+
+/**
  * Sets the status of the plugin.
  *
  * @param {Object} requestUtils Request utilities of the test.
@@ -25,6 +46,7 @@ const setStatus = ( requestUtils, status ) =>
 
 module.exports = {
 	PLUGIN_NAME,
+	evalPhp,
 	activatePlugin: ( requestUtils ) => setStatus( requestUtils, 'active' ),
 	deactivatePlugin: ( requestUtils ) => setStatus( requestUtils, 'inactive' ),
 };
