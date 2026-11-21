@@ -458,6 +458,18 @@ const { state } = store( 'easyq', {
 			context.upText = formatCount( post.votes.up );
 			context.downText = formatCount( post.votes.down );
 			context.vote = post.votes.user;
+
+			// The count changes in place; screen readers hear the new one (WCAG 4.1.3).
+			if ( context.announce ) {
+				const { speak } = yield import( '@wordpress/a11y' );
+				speak(
+					context.announce
+						.replace( '%1$s', context.upText )
+						.replace( '%2$s', context.downText )
+						.replace( '%s', context.netText ),
+					'polite'
+				);
+			}
 		} ),
 
 		/**

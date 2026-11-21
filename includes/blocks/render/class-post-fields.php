@@ -171,6 +171,14 @@ final class Post_Fields {
 		$display   = is_string( $attributes['display'] ?? null ) ? $attributes['display'] : '';
 		$separated = in_array( $display, array( 'net', 'separated' ), true ) ? 'separated' === $display : Options::get_bool( 'viewing', 'votes_separated' );
 
+		// What the store announces after a vote, with the counts in the format of the site
+		// (WCAG 4.1.3): the count changes in place, which screen readers do not notice.
+		$context['announce'] = $separated
+			/* translators: 1: number of upvotes, 2: number of downvotes. */
+			? __( 'Upvotes: %1$s, downvotes: %2$s.', 'easyq' )
+			/* translators: %s: number of votes. */
+			: __( 'Votes: %s.', 'easyq' );
+
 		// Who voted, for those who may view voters and flaggers: on the count as Question2Answer
 		// shows it (`qa-layer-voters-flaggers.php`), and as text, which a mouse is not needed for.
 		$who = array();

@@ -87,6 +87,10 @@ test.describe( 'Q&A frontend', () => {
 			votes.locator( '[data-wp-text="context.netText"]' )
 		).toHaveText( '1,234' );
 		await expect( up ).toHaveAttribute( 'aria-pressed', 'true' );
+		// Screen readers hear the new count, through the live region of core (WCAG 4.1.3).
+		await expect( page.locator( '#a11y-speak-polite' ) ).toHaveText(
+			/Votes: 1,234\./
+		);
 
 		await page.reload();
 		await expect(
