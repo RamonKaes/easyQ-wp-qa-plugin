@@ -166,6 +166,7 @@ final class Command {
 			}
 
 			// Long runs would otherwise keep every post and user they read in memory.
+			// Not covered: it changes only the memory of the process, which no test reads.
 			Utils\wp_clear_object_cache();
 
 			$step  = $result['step'];
