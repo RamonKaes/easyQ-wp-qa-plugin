@@ -215,6 +215,7 @@ final class User_Events {
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
 				$wpdb->query( $sql );
 			}
+			$this->remove_own_votes( $reassign, $own_ids );
 		} else {
 			$sql = $wpdb->prepare( 'UPDATE %i SET user_id = NULL WHERE user_id = %d', $posts, $user_id );
 			if ( null !== $sql ) {
@@ -305,9 +306,31 @@ final class User_Events {
 		}
 		Votes::forget();
 
+		$authors = $this->recount_voted( $voted_ids );
+
+		foreach ( array_keys( $authors ) as $author_id ) {
+			$this->points->update( $author_id, array( Points::QUESTION_VOTE_POINTS, Points::ANSWER_VOTE_POINTS, Points::COMMENT_VOTE_POINTS, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ) );
+		}
+		$this->points->update( $user_id, array( Points::QUESTION_UPVOTES, Points::QUESTION_DOWNVOTES, Points::ANSWER_UPVOTES, Points::ANSWER_DOWNVOTES, Points::COMMENT_UPVOTES, Points::COMMENT_DOWNVOTES ) );
+		Counts::invalidate( Counts::FLAGGED );
+		Counts::invalidate( Counts::UNUPVOTED );
+
+		return count( $voted_ids );
+	}
+
+	/**
+	 * Recounts posts after votes or flags on them were removed, as a vote does: the votes and
+	 * flags, the highest vote of the answers of a question, and the hotness of a question.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $post_ids Posts.
+	 * @return array<int, true> The authors of the posts, keyed by user ID.
+	 */
+	private function recount_voted( array $post_ids ): array {
 		$authors   = array();
 		$questions = array();
-		foreach ( $voted_ids as $post_id ) {
+		foreach ( $post_ids as $post_id ) {
 			$this->posts->forget( $post_id );
 			$this->posts->recount_votes( $post_id );
 			$this->posts->recount_flags( $post_id );
@@ -329,13 +352,37 @@ final class User_Events {
 			$this->posts->update_hotness( $question_id );
 		}
 
-		foreach ( array_keys( $authors ) as $author_id ) {
-			$this->points->update( $author_id, array( Points::QUESTION_VOTE_POINTS, Points::ANSWER_VOTE_POINTS, Points::COMMENT_VOTE_POINTS, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ) );
-		}
-		$this->points->update( $user_id, array( Points::QUESTION_UPVOTES, Points::QUESTION_DOWNVOTES, Points::ANSWER_UPVOTES, Points::ANSWER_DOWNVOTES, Points::COMMENT_UPVOTES, Points::COMMENT_DOWNVOTES ) );
-		Counts::invalidate( Counts::FLAGGED );
-		Counts::invalidate( Counts::UNUPVOTED );
+		return $authors;
+	}
 
-		return count( $voted_ids );
+	/**
+	 * Removes the votes and flags of a user on posts that became their own, as claim() does:
+	 * users cannot vote on their own posts, nor change such a vote any more.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int   $user_id  User ID.
+	 * @param int[] $post_ids Posts the user received.
+	 */
+	public function remove_own_votes( int $user_id, array $post_ids ): void {
+		if ( array() === $post_ids ) {
+			return;
+		}
+
+		$wpdb  = DB::wpdb();
+		$votes = Schema::table( 'uservotes' );
+		$in    = implode( ',', array_fill( 0, count( $post_ids ), '%d' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One placeholder per post; custom tables without a WordPress API.
+		$voted = DB::int_col( $wpdb->get_col( $wpdb->prepare( "SELECT post_id FROM %i WHERE user_id = %d AND (vote != 0 OR flag != 0) AND post_id IN ($in)", array_merge( array( $votes, $user_id ), $post_ids ) ) ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- One placeholder per post.
+		$sql = $wpdb->prepare( "DELETE FROM %i WHERE user_id = %d AND post_id IN ($in)", array_merge( array( $votes, $user_id ), $post_ids ) );
+		if ( null !== $sql ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+			$wpdb->query( $sql );
+		}
+		Votes::forget();
+
+		$this->recount_voted( $voted );
+		Counts::invalidate( Counts::FLAGGED, Counts::UNUPVOTED );
 	}
 }

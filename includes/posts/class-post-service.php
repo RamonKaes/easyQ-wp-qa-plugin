@@ -19,9 +19,9 @@ use EasyQ\Points\Points;
 use EasyQ\Search\Search;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
+use EasyQ\Users\User_Events;
 use EasyQ\Util\Text;
 use WP_Error;
-use EasyQ\Votes\Votes;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -1152,19 +1152,16 @@ final class Post_Service {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
 			$wpdb->query( $sql );
 		}
-		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d AND user_id = %d', Schema::table( 'uservotes' ), $post->id, $actor->user_id );
-		if ( null !== $sql ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-			$wpdb->query( $sql );
-		}
-		Votes::forget();
-
 		$this->posts->forget( $post->id );
-		$this->posts->recount_votes( $post->id );
+		// The own vote goes, with what follows it: the counts of the post, the highest vote of the
+		// answers of its question, the hotness.
+		( new User_Events( $this->posts, $this->points ) )->remove_own_votes( $actor->user_id, array( $post->id ) );
 
 		$prefix  = strtolower( $post->base_type() );
 		$columns = match ( $prefix ) {
-			'q'     => array( Points::QUESTIONS, Points::SELECTIONS, Points::QUESTION_VOTE_POINTS, Points::QUESTION_UPVOTES, Points::QUESTION_DOWNVOTES, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ),
+			// A selected answer of the claimer on their own question no longer counts, as the
+			// points count answers selected by others only.
+			'q'     => array( Points::QUESTIONS, Points::SELECTIONS, Points::ANSWERS_SELECTED, Points::QUESTION_VOTE_POINTS, Points::QUESTION_UPVOTES, Points::QUESTION_DOWNVOTES, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ),
 			'a'     => array( Points::ANSWERS, Points::ANSWERS_SELECTED, Points::ANSWER_VOTE_POINTS, Points::ANSWER_UPVOTES, Points::ANSWER_DOWNVOTES, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ),
 			default => array( Points::COMMENTS, Points::COMMENT_VOTE_POINTS, Points::COMMENT_UPVOTES, Points::COMMENT_DOWNVOTES, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ),
 		};

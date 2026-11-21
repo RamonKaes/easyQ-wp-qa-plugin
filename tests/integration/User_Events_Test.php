@@ -115,4 +115,21 @@ final class User_Events_Test extends Test_Case {
 		$this->assertSame( $before, array( $this->post( $question->id )->hotness, $this->post( $other->id )->hotness ), 'The hotness counts the votes of the question, not of its answers.' );
 		$this->assertSame( $unupvoted + 1, \EasyQ\Stats\Counts::get( \EasyQ\Stats\Counts::UNUPVOTED ), 'The question has no upvote again.' );
 	}
+
+	public function test_the_heir_of_the_posts_keeps_no_vote_on_them(): void {
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+		$author   = $this->user();
+		$heir     = $this->user();
+		$question = $this->ask( $author );
+		Services::votes()->vote( $heir, $question, -1 );
+		$this->assertSame( 1, $this->post( $question->id )->downvotes );
+
+		wp_delete_user( (int) $author->user_id, (int) $heir->user_id );
+
+		// Users cannot vote on their own posts, nor change such a vote, as claim() removes it.
+		Services::posts()->forget( $question->id );
+		$this->assertSame( (int) $heir->user_id, $this->post( $question->id )->user_id );
+		$this->assertSame( 0, $this->post( $question->id )->downvotes );
+		$this->assertSame( 0, Services::votes()->vote_of( $question->id, (int) $heir->user_id ) );
+	}
 }

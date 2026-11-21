@@ -437,6 +437,29 @@ final class Post_Service_Test extends Test_Case {
 		$this->assertContains( 'q_claim', $this->event_names() );
 	}
 
+	public function test_claiming_leaves_every_count_as_a_recalculation_finds_it(): void {
+		$guest    = new Actor( null, 4711, '192.0.2.9' );
+		$question = $this->post( Services::post_service()->create_question( $guest, 'Anonymous question to claim', 'Text.', '', array(), null, null, 'Guest' ) );
+		$user     = $this->user();
+		$answer   = $this->answer( $user, $question );
+		Services::post_service()->select_answer( $guest, $this->post( $question->id ), $answer->id );
+
+		// The answer was selected by someone else; once the question is the user's own, no longer.
+		Services::post_service()->claim( $user, $this->post( $question->id ) );
+		$claimed = Services::points()->get( (int) $user->user_id );
+		Services::points()->update_all( (int) $user->user_id );
+		$this->assertSame( Services::points()->get( (int) $user->user_id ), $claimed );
+
+		// An answer the user voted on: the highest vote of the answers of its question follows.
+		$other  = $this->ask( $this->user(), 'A question with an anonymous answer' );
+		$guests = $this->post( Services::post_service()->create_answer( new Actor( null, 4712, '192.0.2.10' ), $other, 'An anonymous answer to claim.', '', null, 'Guest' ) );
+		Services::votes()->vote( $user, $guests, 1 );
+		$this->assertSame( 1, $this->post( $other->id )->answer_max_votes );
+		Services::post_service()->claim( $user, $this->post( $guests->id ) );
+		Services::posts()->forget( $other->id );
+		$this->assertSame( 0, $this->post( $other->id )->answer_max_votes );
+	}
+
 	public function test_counts_views(): void {
 		$question = $this->ask( $this->user() );
 
