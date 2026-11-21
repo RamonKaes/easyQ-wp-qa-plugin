@@ -84,6 +84,24 @@ final class Text_Test extends TestCase {
 		$this->assertSame( '**** this **** and hello', Text::block_words_replace( 'Damn this hell and hello', $regex ) );
 	}
 
+	public function test_block_words_with_several_stars_match_as_before_and_stay_within_the_limits_of_pcre(): void {
+		$regex = Text::block_words_to_regex( 'a*b*b, *x*y*, s*' );
+
+		$this->assertSame( '*** ***** ***** ab', Text::block_words_replace( 'abb axbyb zxqyz ab', $regex ) );
+		$this->assertSame( 'try ****', Text::block_words_replace( 'try spam', $regex ) );
+
+		// Three stars and a long word: the plain pattern reached the backtrack limit, and the
+		// censoring stopped without a word. Without the JIT of PCRE, as some hosts run it.
+		$jit = (string) ini_get( 'pcre.jit' );
+		ini_set( 'pcre.jit', '0' ); // phpcs:ignore WordPress.PHP.IniSet.Risky -- The limit some hosts run with.
+		$long  = 'a' . str_repeat( 'b', 5000 ) . 'c';
+		$found = Text::block_words_match_all( $long . ' ' . $long . 'd', Text::block_words_to_regex( 'a*b*b*c' ) );
+		$error = preg_last_error();
+		ini_set( 'pcre.jit', $jit ); // phpcs:ignore WordPress.PHP.IniSet.Risky -- Restores the setting.
+		$this->assertSame( PREG_NO_ERROR, $error );
+		$this->assertSame( array( 0 => strlen( $long ) ), $found );
+	}
+
 	public function test_finds_block_word_positions(): void {
 		$regex = Text::block_words_to_regex( 'spam' );
 

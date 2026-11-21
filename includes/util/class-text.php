@@ -307,7 +307,7 @@ final class Text {
 		$patterns = array();
 
 		foreach ( self::block_words_explode( $words ) as $word ) {
-			$pattern = str_replace( '\\*', '[^ ]*', preg_quote( self::lowercase( $word ), '/' ) );
+			$pattern = self::wildcard_pattern( self::lowercase( $word ) );
 
 			// Require word boundaries unless the word starts or ends with an ideograph.
 			if ( ! preg_match( '/^(' . self::CJK_IDEOGRAPHS . ')/', $word ) ) {
@@ -321,6 +321,35 @@ final class Text {
 		}
 
 		return implode( '|', $patterns );
+	}
+
+	/**
+	 * Turns a block word with `*` into a pattern that matches within one word.
+	 *
+	 * Each part between stars but the last is matched at its first place, in an atomic group:
+	 * for a pattern of stars only, the first place of a middle part always does if any does,
+	 * and nothing is tried twice. With `[^ ]*` between all parts, as Question2Answer has it
+	 * (`qa_block_words_to_preg()`), three stars and a long word reach the backtrack limit of
+	 * PCRE, and the censoring stops without a word.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $word Lowercase block word.
+	 * @return string
+	 */
+	private static function wildcard_pattern( string $word ): string {
+		$parts = array_map( static fn ( string $part ): string => preg_quote( $part, '/' ), explode( '*', $word ) );
+		$last  = array_pop( $parts );
+		if ( array() === $parts ) {
+			return $last;
+		}
+
+		$pattern = array_shift( $parts );
+		foreach ( $parts as $part ) {
+			$pattern .= '' === $part ? '' : '(?>[^ ]*?' . $part . ')';
+		}
+
+		return $pattern . '[^ ]*' . $last;
 	}
 
 	/**
