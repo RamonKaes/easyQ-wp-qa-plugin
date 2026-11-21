@@ -256,7 +256,7 @@ final class Answers_Controller extends Controller {
 		}
 		$answer = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $answer ) {
-			// Not covered: needs a failing insert into the database, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return new WP_Error( 'easyq_not_created', __( 'The answer could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 

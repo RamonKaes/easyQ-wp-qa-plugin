@@ -140,7 +140,7 @@ final class Post_Service {
 		$id         = $this->posts->insert( $queued ? 'Q_QUEUED' : 'Q', $follow_answer?->id, $category_id, $actor, $title, $content, $format, $tag_string, $notify, $name );
 
 		if ( 0 === $id ) {
-			// Not covered: needs a failing database insert, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return 0;
 		}
 
@@ -198,7 +198,7 @@ final class Post_Service {
 		$id = $this->posts->insert( $queued ? 'A_QUEUED' : 'A', $question->id, $question->category_id, $actor, null, $content, $format, null, $notify, $name );
 
 		if ( 0 === $id ) {
-			// Not covered: needs a failing database insert, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return 0;
 		}
 
@@ -253,7 +253,7 @@ final class Post_Service {
 		$id = $this->posts->insert( $queued ? 'C_QUEUED' : 'C', $parent_post->id, $question->category_id, $actor, null, $content, $format, null, $notify, $name );
 
 		if ( 0 === $id ) {
-			// Not covered: needs a failing database insert, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return 0;
 		}
 
@@ -937,7 +937,7 @@ final class Post_Service {
 
 		$note_id = $this->posts->insert( Post::NOTE, $question->id, $question->category_id, $actor, null, $note, '', null, null, null );
 		if ( 0 === $note_id ) {
-			// Not covered: needs a failing database insert, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return;
 		}
 

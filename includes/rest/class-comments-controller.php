@@ -244,7 +244,7 @@ final class Comments_Controller extends Controller {
 		}
 		$comment = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $comment ) {
-			// Not covered: needs a failing insert into the database, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return new WP_Error( 'easyq_not_created', __( 'The comment could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 

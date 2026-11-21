@@ -560,7 +560,7 @@ final class Questions_Controller extends Controller {
 	private function created( int $id, \EasyQ\Actor $actor, bool $queued, WP_REST_Request $request ): WP_REST_Response|WP_Error {
 		$post = 0 === $id ? null : Services::posts()->find( $id );
 		if ( null === $post ) {
-			// Not covered: needs a failing insert into the database, which the test site has no way to fake.
+			// The database refused the post (Failed_Insert_Test).
 			return new WP_Error( 'easyq_not_created', __( 'The question could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 

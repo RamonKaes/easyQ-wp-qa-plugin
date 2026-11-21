@@ -41,7 +41,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 | F-236 | low | `docs/hooks.md` says the services do not check permissions, which is not true for all of them. | P (prose) | Hygiene H-2. | No guard reads sentences. |
 | F-237 | low | `docs/rest-api.md` is incomplete: parameters, setting sections, object types. | A × Guidelines (prose) | Hygiene H-3. | `Docs_Test` compares routes, not every parameter. |
 | F-238 | low | The FAQ of `readme.txt` lists the setting tabs without Email and Newsletter. | O (prose) | Hygiene H-4. | No guard reads the readme. |
-| F-239 | low | Eight `// Not covered:` comments give a wrong reason (a failing insert can be faked, e.g. through a filter on the query). | All rows (prose) | Hygiene H-5. | No guard reads comments. |
 | F-240 | low | The docblock of `Router::set_current()` names a caller that does not exist. | C (prose) | Hygiene H-6. | No guard reads docblocks. |
 | F-241 | low | Four docblocks put the description after `@since`, against the inline documentation standard. | Guidelines | Hygiene H-7. | PHPCS does not check the order. |
 | F-242 | low | `.gitattributes` speaks of release archives built with `git archive`; the release archive is built by `plugin-zip`. | O (prose) | Hygiene H-8. | No guard reads it. |
