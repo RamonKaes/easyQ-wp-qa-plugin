@@ -71,7 +71,11 @@ final class Rendering_Test extends Test_Case {
 		$page     = implode( '', $html );
 		$registry = WP_Block_Type_Registry::get_instance();
 
-		// Each block alone, without inner blocks, so the region is its own.
+		// Each block alone, without inner blocks, so the region is its own; as an administrator
+		// with comments on and the question in edit mode, so that every form and action shows.
+		\EasyQ\Settings\Options::update( 'posting', array( 'comment_on_qs' => true ) );
+		wp_set_current_user( $this->administrator() );
+		$_GET[ \EasyQ\Blocks\Render\Forms::EDIT_VAR ] = (string) $question->id;
 		foreach ( array_keys( $html ) as $name ) {
 			Lists::reset();
 			$markup = ( new WP_Block(
@@ -84,10 +88,12 @@ final class Rendering_Test extends Test_Case {
 				),
 				array( 'easyq/postId' => $question->id )
 			) )->render();
-			if ( str_contains( $markup, 'data-wp-interactive' ) ) {
+			// Any directive, not only the region: the handbook asks every block with directives to say so.
+			if ( 1 === preg_match( '/\sdata-wp-[a-z]/', $markup ) ) {
 				$this->assertTrue( ! empty( $registry->get_registered( $name )->supports['interactivity'] ), "$name prints directives and declares supports.interactivity" );
 			}
 		}
+		unset( $_GET[ \EasyQ\Blocks\Render\Forms::EDIT_VAR ] );
 
 		preg_match_all( '/\sid="([^"]+)"/', $page, $ids );
 		$counts = array_count_values( $ids[1] );

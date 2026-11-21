@@ -365,7 +365,7 @@ final class Lists_Render {
 			);
 		}
 
-		return self::loop( $block, $ids, 'li', $earlier );
+		return self::loop( $block, $ids, 'li', $earlier, interactive: true );
 	}
 
 	/**
@@ -373,13 +373,14 @@ final class Lists_Render {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param WP_Block $block  Template block.
-	 * @param int[]    $ids    Post IDs.
-	 * @param string   $tag    Element of each item.
-	 * @param string   $before Markup of an extra first item, already escaped.
+	 * @param WP_Block $block       Template block.
+	 * @param int[]    $ids         Post IDs.
+	 * @param string   $tag         Element of each item.
+	 * @param string   $before      Markup of an extra first item, already escaped.
+	 * @param bool     $interactive Whether the list is a region of the store of its own.
 	 * @return string
 	 */
-	private static function loop( WP_Block $block, array $ids, string $tag, string $before = '' ): string {
+	private static function loop( WP_Block $block, array $ids, string $tag, string $before = '', bool $interactive = false ): string {
 		return self::render_items(
 			$block,
 			array_map(
@@ -390,7 +391,8 @@ final class Lists_Render {
 				$ids
 			),
 			$tag,
-			$before
+			$before,
+			$interactive
 		);
 	}
 
@@ -403,9 +405,10 @@ final class Lists_Render {
 	 * @param array<array{id: int, context: array<string, mixed>}> $items Items with the post ID of the element and the block context.
 	 * @param string                                               $tag    Element of each item.
 	 * @param string                                               $before Markup of an extra first item, already escaped.
+	 * @param bool                                                 $interactive Whether the list is a region of the store of its own.
 	 * @return string
 	 */
-	private static function render_items( WP_Block $block, array $items, string $tag = 'li', string $before = '' ): string {
+	private static function render_items( WP_Block $block, array $items, string $tag = 'li', string $before = '', bool $interactive = false ): string {
 		if ( array() === $items ) {
 			return '';
 		}
@@ -420,7 +423,13 @@ final class Lists_Render {
 			);
 		}
 
-		return sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes( array( 'class' => 'wp-block-post-template' ) ), $html );
+		$attributes = array( 'class' => 'wp-block-post-template' );
+		if ( $interactive ) {
+			// The list has directives of its own, e.g. the link to earlier comments.
+			$attributes['data-wp-interactive'] = 'easyq';
+		}
+
+		return sprintf( '<ul %s>%s</ul>', get_block_wrapper_attributes( $attributes ), $html );
 	}
 
 	/**

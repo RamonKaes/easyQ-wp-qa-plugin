@@ -113,7 +113,7 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( 'Comment number three here.', $html );
 		$this->assertStringNotContainsString( 'Comment number one here.', $html );
 		// The link is part of the list, so the layout classes of the block land on the list.
-		$this->assertMatchesRegularExpression( '~<ul class="[^"]*wp-block-easyq-comment-template[^"]*is-layout-flow[^"]*"><li><a [^>]*>Show 2 previous comments</a></li><li id="easyq-post-~', $html );
+		$this->assertMatchesRegularExpression( '~<ul class="[^"]*wp-block-easyq-comment-template[^"]*is-layout-flow[^"]*"[^>]*><li><a [^>]*>Show 2 previous comments</a></li><li id="easyq-post-~', $html );
 	}
 
 	public function test_two_fixed_lists_on_one_page_are_paginated_separately(): void {
@@ -512,7 +512,7 @@ final class Block_Settings_Test extends Test_Case {
 		$this->assertStringContainsString( '<p class="comment-form-cookies-consent"><label><input type="checkbox" name="notify"', $html );
 		$this->assertStringContainsString( '<p class="comment-notes"><small>', $html );
 		$this->assertStringContainsString( '<p class="form-submit wp-block-button"><button type="submit" class="wp-block-button__link wp-element-button">Answer</button></p>', $html );
-		$this->assertMatchesRegularExpression( '/<details class="wp-block-details wp-block-easyq-comment-form[^"]*" id="easyq-comment-form-' . $answer->id . '"[ >]/', $html );
+		$this->assertMatchesRegularExpression( '/<details class="wp-block-details wp-block-easyq-comment-form[^"]*"[^>]* id="easyq-comment-form-' . $answer->id . '"[ >]/', $html );
 	}
 
 	public function test_the_date_has_a_format_of_its_own(): void {

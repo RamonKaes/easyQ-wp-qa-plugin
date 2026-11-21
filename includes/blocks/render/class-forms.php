@@ -540,7 +540,13 @@ final class Forms {
 
 		return sprintf(
 			'<details %s id="easyq-comment-form-%d"%s data-wp-bind--open="state.commentForms.%s" data-wp-on--toggle="actions.toggleComment" data-wp-watch="callbacks.focusComment">%s</details>',
-			get_block_wrapper_attributes( array( 'class' => 'wp-block-details' ) ),
+			// A region of its own where it stands outside the question, e.g. below an answer.
+			get_block_wrapper_attributes(
+				array(
+					'class'               => 'wp-block-details',
+					'data-wp-interactive' => 'easyq',
+				)
+			),
 			$post->id,
 			$open ? ' open' : '',
 			esc_attr( $key ),

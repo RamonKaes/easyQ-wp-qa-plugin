@@ -79,7 +79,7 @@ final class Post_Fields {
 		}
 
 		if ( Forms::editing( $post ) && Render::rules( $post )['editable'] ) {
-			return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), Forms::edit_form( $post ) );
+			return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes( array( 'data-wp-interactive' => 'easyq' ) ), Forms::edit_form( $post ) );
 		}
 
 		return sprintf(
@@ -656,7 +656,16 @@ final class Post_Fields {
 			return '';
 		}
 
-		return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes( array( 'class' => 'wp-block-buttons' ) ), implode( '', $buttons ) );
+		return sprintf(
+			'<div %s>%s</div>',
+			get_block_wrapper_attributes(
+				array(
+					'class'               => 'wp-block-buttons',
+					'data-wp-interactive' => 'easyq',
+				)
+			),
+			implode( '', $buttons )
+		);
 	}
 
 	/**

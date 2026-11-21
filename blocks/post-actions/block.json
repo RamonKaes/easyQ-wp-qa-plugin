@@ -67,7 +67,8 @@
 			"allowSwitching": false,
 			"allowInheriting": false,
 			"allowOrientation": true
-		}
+		},
+		"interactivity": true
 	},
 	"example": {},
 	"editorScript": "easyq-editor",

@@ -57,7 +57,8 @@
 				"width": true,
 				"style": true
 			}
-		}
+		},
+		"interactivity": true
 	},
 	"example": {},
 	"editorScript": "easyq-editor",

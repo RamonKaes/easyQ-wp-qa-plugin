@@ -61,7 +61,8 @@
 			"margin": true,
 			"padding": true
 		},
-		"layout": true
+		"layout": true,
+		"interactivity": true
 	},
 	"example": {
 		"viewportWidth": 350

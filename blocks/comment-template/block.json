@@ -67,7 +67,8 @@
 				"style": true
 			}
 		},
-		"layout": true
+		"layout": true,
+		"interactivity": true
 	},
 	"editorScript": "easyq-editor",
 	"style": "wp-block-post-template"

@@ -248,7 +248,7 @@ Read for the rows C, D, E, H and J to Q of the review, against the handbooks and
 | A page out of range or of a hidden post answers 404 | Met (`Page_State_Test`, `Visibility_Test`) | `Frontend\Router`, `Frontend\Templates` |
 | Login redirect as `auth_redirect()` | Met | `Frontend\Templates::require_login()` |
 | Block metadata: `$schema`, `apiVersion` 3, namespaced name, text domain, category, keywords; `parent` and `ancestor` for child blocks; block supports instead of own options | Met | `blocks/*/block.json` |
-| `supports.interactivity` on blocks that print directives | Open (F-192: four blocks print directives without the flag; `Rendering_Test` looks for `data-wp-interactive` only) | `blocks/ask-form/block.json` |
+| `supports.interactivity` on blocks that print directives | Met (`Rendering_Test` renders every block alone, as an administrator with comments on and in edit mode, and looks for any directive) | Each block with directives declares the flag and names its region (`data-wp-interactive`), also where it stands outside the question |
 | Block context instead of globals | Met | `providesContext` and `usesContext`; the router is the fallback where core falls back to the global post |
 | Block bindings: label, `get_value_callback`, `uses_context`, values escaped as core; only what the viewer may read | Form Met; F-61 | `Blocks\Blocks` |
 | Patterns: `register_block_pattern()` on `init`, category, translated titles | Met | `Blocks\Patterns` |
