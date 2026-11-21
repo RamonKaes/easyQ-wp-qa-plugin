@@ -8,6 +8,8 @@
 
 namespace EasyQ\Mail;
 
+use EasyQ\Database\DB;
+use EasyQ\Database\Schema;
 use EasyQ\Frontend\Routes;
 use EasyQ\Posts\Post;
 use EasyQ\REST\Controller;
@@ -153,6 +155,16 @@ final class Unsubscribe {
 	public const MAX_ASKED = 3;
 
 	/**
+	 * Prefix of the transient that pauses the requests to confirm an address for an hour,
+	 * named after a hash of the address, see ask_for_confirmation().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const PAUSE_PREFIX = 'easyq_notify_pause_';
+
+	/**
 	 * Returns the stored form of an address: a keyed hash, so the meta does not hold it again.
 	 *
 	 * @since 0.1.0
@@ -198,9 +210,35 @@ final class Unsubscribe {
 	 * @param Post $post Post.
 	 */
 	public static function confirm( Post $post ): void {
-		if ( null !== $post->notify ) {
-			update_metadata( 'easyq_post', $post->id, self::CONFIRMED_META, self::address_hash( $post->notify ) );
+		if ( null === $post->notify ) {
+			return;
 		}
+
+		// The guest confirmed the address: for each of their posts that asks for emails to it.
+		foreach ( array_merge( array( $post ), self::posts_of_guest( $post ) ) as $own ) {
+			update_metadata( 'easyq_post', $own->id, self::CONFIRMED_META, self::address_hash( $post->notify ) );
+		}
+	}
+
+	/**
+	 * Returns the other posts of the same guest, by the visitor cookie, that ask for emails to
+	 * the same address.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $post Post of a guest.
+	 * @return Post[]
+	 */
+	private static function posts_of_guest( Post $post ): array {
+		if ( null !== $post->user_id || null === $post->cookie_id || null === $post->notify ) {
+			return array();
+		}
+
+		$wpdb = DB::wpdb();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+		$ids = DB::int_col( $wpdb->get_col( $wpdb->prepare( 'SELECT id FROM %i WHERE user_id IS NULL AND cookie_id = %d AND LOWER(notify) = %s AND id <> %d', Schema::table( 'posts' ), $post->cookie_id, strtolower( trim( $post->notify ) ), $post->id ) ) );
+
+		return array_values( Services::posts()->find_many( $ids ) );
 	}
 
 	/**
@@ -238,6 +276,15 @@ final class Unsubscribe {
 			return false;
 		}
 
+		// An address the guest confirmed on another post holds for this one, without an email.
+		foreach ( self::posts_of_guest( $post ) as $own ) {
+			if ( self::is_confirmed( $own ) ) {
+				self::confirm( $post );
+
+				return false;
+			}
+		}
+
 		// Each address once: a queued post that is approved later is not asked again, nor an
 		// address set back; and not more than a few, as an edit could otherwise mail anyone.
 		$asked = get_metadata( 'easyq_post', $post->id, self::ASKED_META, true );
@@ -246,6 +293,14 @@ final class Unsubscribe {
 		if ( in_array( $hash, $asked, true ) || count( $asked ) >= self::MAX_ASKED ) {
 			return false;
 		}
+		// And each address once an hour, whatever the post: posting again and again would
+		// otherwise send a request to any address with each post. The link of the request
+		// confirms the address for every post of the guest that asks for it (confirm()).
+		$pause = self::PAUSE_PREFIX . md5( $hash );
+		if ( false !== get_transient( $pause ) ) {
+			return false;
+		}
+		set_transient( $pause, 1, HOUR_IN_SECONDS );
 		$asked[] = $hash;
 		update_metadata( 'easyq_post', $post->id, self::ASKED_META, $asked );
 

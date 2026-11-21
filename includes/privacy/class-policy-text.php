@@ -76,7 +76,7 @@ final class Policy_Text {
 			: __( 'To prevent abuse, we also store the IP address from which a post was written or last changed.', 'easyq' ) ) . '</p>';
 
 		if ( $anonymous ) {
-			$strings[] = '<p>' . __( 'If you post without an account, we store the name you enter, if any, and your email address only if you ask to be notified of answers or comments.', 'easyq' ) . '</p>';
+			$strings[] = '<p>' . __( 'If you post without an account, we store the name you enter, if any, and your email address only if you ask to be notified of answers or comments. We then send one request to confirm the address at most every hour; for that hour a hash of the address is kept, not the address itself.', 'easyq' ) . '</p>';
 		}
 
 		$profile = __( 'If you have an account, your profile on the question and answer pages shows your user name, your points, your activity and the profile fields you fill in.', 'easyq' );

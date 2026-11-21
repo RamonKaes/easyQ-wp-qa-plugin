@@ -253,16 +253,18 @@ final class Notifications_Test extends Test_Case {
 		$this->answer_with_emails( $this->member( 'second' ), $question );
 		$this->assertSame( array( 'someone@example.com' ), $this->addresses() );
 
+		// The address the guest confirmed holds for their next post, without another request.
 		reset_phpmailer_instance();
-		Services::post_service()->create_question( $visitor, 'Another question without an account', 'Text.', '', array(), null, 'someone@example.com' );
+		$another = $this->post( Services::post_service()->create_question( $visitor, 'Another question without an account', 'Text.', '', array(), null, 'someone@example.com' ) );
 		Services::post_service()->create_question( $visitor, 'A third question without an account', 'Text.', '', array(), null, '' );
-		$this->assertCount( 1, $this->addresses(), 'Each post asks once, a post without an address never.' );
+		$this->assertSame( array(), $this->addresses(), 'No request for a confirmed address, none for a post without one.' );
+		$this->assertTrue( Unsubscribe::is_confirmed( $another ) );
 
 		// A queued post asks when it is queued, not again when it is approved.
 		reset_phpmailer_instance();
-		$queued = $this->post( Services::post_service()->create_question( $visitor, 'A queued question without an account', 'Text.', '', array(), null, 'someone@example.com', null, null, true ) );
+		$queued = $this->post( Services::post_service()->create_question( new Actor( null, 4712, '192.0.2.10' ), 'A queued question without an account', 'Text.', '', array(), null, 'queued@example.com', null, null, true ) );
 		Services::post_service()->set_question_status( Actor::system(), $queued, Post::STATUS_NORMAL );
-		$this->assertSame( array( 'someone@example.com' ), array_values( array_intersect( $this->addresses(), array( 'someone@example.com' ) ) ), 'The moderators hear about the queue; the author is asked once.' );
+		$this->assertSame( array( 'queued@example.com' ), array_values( array_intersect( $this->addresses(), array( 'queued@example.com' ) ) ), 'The moderators hear about the queue; the author is asked once.' );
 	}
 
 	public function test_a_changed_address_of_an_author_without_an_account_is_confirmed_again(): void {
@@ -281,13 +283,16 @@ final class Notifications_Test extends Test_Case {
 		$this->answer_with_emails( $this->member( 'helper' ), $this->post( $question->id ) );
 		$this->assertSame( array(), $this->addresses() );
 
-		// The same for an answer.
+		// The same for an answer; the address was asked within the hour, so it gets no second request.
 		$answer = $this->post( Services::post_service()->create_answer( $visitor, $this->post( $question->id ), 'An answer without an account.', '', 'attacker@example.com' ) );
-		Unsubscribe::confirm( $answer );
 		reset_phpmailer_instance();
 		Services::post_service()->edit_answer( $visitor, $answer, $this->post( $question->id ), 'An answer without an account.', '', 'victim@example.com' );
 		$this->assertFalse( Unsubscribe::is_confirmed( $this->post( $answer->id ) ) );
-		$this->assertSame( array( 'victim@example.com' ), $this->addresses() );
+		$this->assertSame( array(), $this->addresses() );
+
+		// The link of the one request confirms the address for each post of the guest that asks for it.
+		Unsubscribe::confirm( $this->post( $question->id ) );
+		$this->assertTrue( Unsubscribe::is_confirmed( $this->post( $answer->id ) ) );
 	}
 
 	public function test_a_confirmation_link_holds_only_for_the_address_it_was_sent_to(): void {
@@ -707,5 +712,17 @@ final class Notifications_Test extends Test_Case {
 		$this->assertSame( '@', $this->post( $question->id )->notify, 'Mail scanners open links, so opening the page changes nothing.' );
 
 		$this->assertTrue( ( new Page_Meta( Block_Context::router() ) )->robots( array() )['noindex'] );
+	}
+
+	public function test_an_address_is_asked_to_confirm_at_most_once_an_hour(): void {
+		$ask = static fn ( string $title, string $email ): int => Services::post_service()->create_question( new Actor( null, 4242, '192.0.2.9' ), $title, 'Text of a question without an account.', '', array(), null, $email, 'Guest' );
+		reset_phpmailer_instance();
+
+		// Posting again and again sent a request to the same address with each post.
+		$ask( 'First question without an account', 'guest@example.com' );
+		$ask( 'Second question without an account', 'guest@example.com' );
+		$ask( 'A question with another address', 'other@example.com' );
+
+		$this->assertSame( array( 'guest@example.com', 'other@example.com' ), $this->addresses() );
 	}
 }
