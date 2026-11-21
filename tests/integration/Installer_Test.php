@@ -41,6 +41,25 @@ final class Installer_Test extends Test_Case {
 		$this->assertSame( Installer::DB_VERSION, (int) get_option( Installer::DB_VERSION_OPTION ) );
 	}
 
+	public function test_an_upgrade_waits_for_init_where_translations_load(): void {
+		global $wp_actions;
+		update_option( Installer::DB_VERSION_OPTION, 0 );
+		$init = $wp_actions['init'];
+		unset( $wp_actions['init'] );
+		try {
+			( new Installer() )->register();
+			$this->assertSame( '0', (string) get_option( Installer::DB_VERSION_OPTION ), 'Not before init.' );
+			$this->assertSame( 0, has_action( 'init', array( Installer::class, 'maybe_upgrade' ) ) );
+		} finally {
+			$wp_actions['init'] = $init; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restores what the test removed.
+			remove_action( 'init', array( Installer::class, 'maybe_upgrade' ), 0 );
+		}
+
+		// Once init ran, at once.
+		( new Installer() )->register();
+		$this->assertSame( Installer::DB_VERSION, (int) get_option( Installer::DB_VERSION_OPTION ) );
+	}
+
 	public function test_installs_default_settings(): void {
 		$this->assertSame( Options::defaults()['general'], get_option( Options::option_name( 'general' ) ) );
 	}

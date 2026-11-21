@@ -46,6 +46,21 @@ test.describe( 'WP-CLI', () => {
 		await activatePlugin( requestUtils );
 	} );
 
+	test( 'upgrades without loading translations too early', async () => {
+		// The first request after an update installs the new schema and the defaults.
+		wp( [ 'option', 'update', 'easyq_db_version', '0' ] );
+
+		const result = wp( [
+			'eval',
+			'echo get_option( "easyq_db_version" );',
+		] );
+
+		expect( result.stdout + result.stderr ).not.toContain(
+			'triggered too early'
+		);
+		expect( result.stdout.trim() ).toMatch( /[1-9]\d*$/ );
+	} );
+
 	test( 'runs the tools named, in their order', async ( {
 		requestUtils,
 	} ) => {

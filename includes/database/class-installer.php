@@ -67,7 +67,13 @@ final class Installer {
 		add_filter( 'wpmu_drop_tables', array( self::class, 'filter_drop_tables' ), 10, 2 );
 		add_action( 'wp_uninitialize_site', array( self::class, 'uninitialize_site' ) );
 
-		self::maybe_upgrade();
+		// The defaults of the settings are translated: not before `init`, where core loads
+		// translations (`_load_textdomain_just_in_time()` warns before `after_setup_theme`).
+		if ( did_action( 'init' ) ) {
+			self::maybe_upgrade();
+		} else {
+			add_action( 'init', array( self::class, 'maybe_upgrade' ), 0 );
+		}
 	}
 
 	/**
