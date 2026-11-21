@@ -305,7 +305,8 @@ final class User_Events {
 		}
 		Votes::forget();
 
-		$authors = array();
+		$authors   = array();
+		$questions = array();
 		foreach ( $voted_ids as $post_id ) {
 			$this->posts->forget( $post_id );
 			$this->posts->recount_votes( $post_id );
@@ -319,6 +320,13 @@ final class User_Events {
 			if ( null !== $post && Post::ANSWER === $post->base_type() && null !== $post->parent_id ) {
 				$this->posts->recount_answers( $post->parent_id );
 			}
+			// And the hotness of a question, which counts its own votes.
+			if ( null !== $post && Post::QUESTION === $post->base_type() ) {
+				$questions[ $post->id ] = true;
+			}
+		}
+		foreach ( array_keys( $questions ) as $question_id ) {
+			$this->posts->update_hotness( $question_id );
 		}
 
 		foreach ( array_keys( $authors ) as $author_id ) {
@@ -326,6 +334,7 @@ final class User_Events {
 		}
 		$this->points->update( $user_id, array( Points::QUESTION_UPVOTES, Points::QUESTION_DOWNVOTES, Points::ANSWER_UPVOTES, Points::ANSWER_DOWNVOTES, Points::COMMENT_UPVOTES, Points::COMMENT_DOWNVOTES ) );
 		Counts::invalidate( Counts::FLAGGED );
+		Counts::invalidate( Counts::UNUPVOTED );
 
 		return count( $voted_ids );
 	}

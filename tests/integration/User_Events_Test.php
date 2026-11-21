@@ -93,4 +93,26 @@ final class User_Events_Test extends Test_Case {
 
 		$this->assertNull( $this->post( $question->id )->user_id );
 	}
+
+	public function test_deleting_a_voter_brings_the_hotness_back(): void {
+		require_once ABSPATH . 'wp-admin/includes/user.php';
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$other    = $this->ask( $this->user(), 'Another question to vote on' );
+		$before   = array( $this->post( $question->id )->hotness, $this->post( $other->id )->hotness );
+		$voter    = $this->user();
+		Services::votes()->vote( $voter, $answer, 1 );
+		Services::votes()->vote( $voter, $other, 1 );
+		$unupvoted = \EasyQ\Stats\Counts::get( \EasyQ\Stats\Counts::UNUPVOTED );
+		Services::posts()->forget( $question->id );
+		Services::posts()->forget( $other->id );
+		$this->assertNotSame( $before, array( $this->post( $question->id )->hotness, $this->post( $other->id )->hotness ) );
+
+		wp_delete_user( (int) $voter->user_id );
+
+		Services::posts()->forget( $question->id );
+		Services::posts()->forget( $other->id );
+		$this->assertSame( $before, array( $this->post( $question->id )->hotness, $this->post( $other->id )->hotness ), 'The hotness counts the votes of the question, not of its answers.' );
+		$this->assertSame( $unupvoted + 1, \EasyQ\Stats\Counts::get( \EasyQ\Stats\Counts::UNUPVOTED ), 'The question has no upvote again.' );
+	}
 }
