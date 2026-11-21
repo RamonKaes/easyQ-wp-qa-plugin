@@ -30,6 +30,15 @@ defined( 'ABSPATH' ) || exit;
 final class Fields {
 
 	/**
+	 * Key of the fingerprints of the values as the settings screen loaded them, see fingerprint().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const LOADED = '_loaded';
+
+	/**
 	 * Longest user title in characters.
 	 *
 	 * @since 0.1.0
@@ -155,13 +164,26 @@ final class Fields {
 		}
 
 		$fields = self::section( $section );
+		$loaded = is_array( $input[ self::LOADED ] ?? null ) ? $input[ self::LOADED ] : array();
 		foreach ( $values as $key => $current ) {
 			if ( ! array_key_exists( $key, $input ) || ( isset( $fields[ $key ] ) && ! self::may_change( $fields[ $key ] ) ) ) {
 				continue;
 			}
 
 			if ( isset( $fields[ $key ] ) ) {
-				$values[ $key ] = self::sanitize_value( $fields[ $key ], $input[ $key ], $current );
+				$sanitized = self::sanitize_value( $fields[ $key ], $input[ $key ], $current );
+				// A value changed elsewhere since the screen was loaded, e.g. an IP address blocked on
+				// the posts screen: a form that leaves it as it was loaded keeps the newer value, and
+				// a form that changes it too says that it replaced it.
+				$as_loaded = is_string( $loaded[ $key ] ?? null ) ? $loaded[ $key ] : null;
+				if ( null !== $as_loaded && self::fingerprint( $current ) !== $as_loaded ) {
+					if ( self::fingerprint( $sanitized ) === $as_loaded ) {
+						continue;
+					}
+					/* translators: %s: label of the setting. */
+					add_settings_error( Options::option_name( $section ), 'easyq_changed_' . $key, sprintf( __( '%s was changed elsewhere after this page was opened; the value saved now replaced that change.', 'easyq' ), $fields[ $key ]['label'] ), 'warning' );
+				}
+				$values[ $key ] = $sanitized;
 				// As core reports a value it could not take (`sanitize_option()`), so the screen does
 				// not say "Settings saved." over a value that was dropped or changed.
 				$problem = self::problem( $fields[ $key ], $input[ $key ], $values[ $key ] );
@@ -176,6 +198,19 @@ final class Fields {
 		}
 
 		return $values;
+	}
+
+	/**
+	 * Returns the fingerprint of a value, which the settings screen sends with each field as
+	 * it loaded it (`LOADED`), so that saving can tell what changed elsewhere meanwhile.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $value Value of a setting.
+	 * @return string
+	 */
+	public static function fingerprint( mixed $value ): string {
+		return md5( (string) wp_json_encode( $value ) );
 	}
 
 	/**

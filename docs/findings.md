@@ -36,7 +36,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
 | F-234 | low | Cross-check 2026-11-19, low findings of the part auditors, each with its evidence in the audit notes: `languages/easyq.pot` is stale (6 strings missing). | several | old; Cross-check 2026-11-19 on `76f1989`. | Not guarded; deferred like the other low findings unless the owner decides otherwise. |
-| F-169 | low | A stale Spam tab saved after a moderator blocked an IP on the posts screen takes the block back without a word (both write `block_ips_write`). Question2Answer has the same gap. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-172 | low | A double click on "Add User Field" creates two fields with the same label (`fg-twice`, `fg-twice-2`). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-174 | low | A value of the wrong type for `bool`, `lines`, `html` or `text` settings is stored or dropped without a message (`Fields::problem()` reports `int`, `choice`, `slug` and `email` only). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-175 | low | The sections of the settings are added with `autoload` on, also with large texts (newsletter, lists of IPs). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |

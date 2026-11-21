@@ -230,6 +230,10 @@ final class Settings_Screen {
 
 		echo '<form method="post" action="' . esc_url( admin_url( 'options.php' ) ) . '">';
 		settings_fields( Registry::group( $tab ) );
+		// The values as loaded, so that saving keeps what another screen changed meanwhile.
+		foreach ( array_keys( Fields::section( $tab ) ) as $key ) {
+			printf( '<input type="hidden" name="%s" value="%s">', esc_attr( Options::option_name( $tab ) . '[' . Fields::LOADED . '][' . $key . ']' ), esc_attr( Fields::fingerprint( Options::get( $tab, $key ) ) ) );
+		}
 		do_settings_sections( self::page( $tab ) );
 		submit_button();
 		echo '</form>';

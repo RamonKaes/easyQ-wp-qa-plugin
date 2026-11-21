@@ -450,7 +450,7 @@ final class Settings_Test extends Test_Case {
 		$this->assertStringNotContainsString( 'name="easyq_settings_permissions[permit_view_q_page_points]"', $html );
 		$this->assertStringNotContainsString( 'easyq_settings_posting[', $html );
 		// Only the thresholds offered for closing questions.
-		$close = (string) strstr( explode( 'permit_close_q]', $html )[1] ?? '', '</select>', true );
+		$close = (string) strstr( explode( 'name="easyq_settings_permissions[permit_close_q]"', $html )[1] ?? '', '</select>', true );
 		$this->assertStringContainsString( '<option value="' . Permits::EDITORS . '"', $close );
 		$this->assertStringNotContainsString( '<option value="' . Permits::USERS . '"', $close );
 	}
@@ -681,5 +681,39 @@ final class Settings_Test extends Test_Case {
 
 		// One point in the singular (F-230), as _n() gives it.
 		$this->assertStringContainsString( 'need 1 point;', implode( ' ', array_column( get_settings_errors( 'easyq_points' ), 'message' ) ) );
+	}
+
+	public function test_a_tab_saved_as_loaded_keeps_what_another_screen_changed_meanwhile(): void {
+		wp_set_current_user( $this->administrator() );
+		Options::update( 'spam', array( 'block_ips_write' => '192.0.2.1' ) );
+		$option = \EasyQ\Settings\Options::option_name( 'spam' );
+
+		// The Spam tab as loaded, with its fingerprint of each value.
+		$loaded = array( 'block_ips_write' => \EasyQ\Settings\Fields::fingerprint( Options::get( 'spam', 'block_ips_write' ) ) );
+		$this->assertStringContainsString( 'name="' . $option . '[_loaded][block_ips_write]" value="' . $loaded['block_ips_write'] . '"', $this->render( 'spam' ) );
+
+		// A moderator blocks an address on the posts screen meanwhile.
+		Options::update( 'spam', array( 'block_ips_write' => '192.0.2.1, 203.0.113.7' ) );
+
+		// The tab sent unchanged keeps the block.
+		$saved = \EasyQ\Settings\Registry::sanitize(
+			array(
+				'block_ips_write'              => '192.0.2.1',
+				\EasyQ\Settings\Fields::LOADED => $loaded,
+			),
+			$option
+		);
+		$this->assertSame( '192.0.2.1, 203.0.113.7', $saved['block_ips_write'] );
+
+		// A tab that changes it too wins, and says that it replaced the other change.
+		$saved = \EasyQ\Settings\Registry::sanitize(
+			array(
+				'block_ips_write'              => '198.51.100.9',
+				\EasyQ\Settings\Fields::LOADED => $loaded,
+			),
+			$option
+		);
+		$this->assertSame( '198.51.100.9', $saved['block_ips_write'] );
+		$this->assertContains( 'easyq_changed_block_ips_write', array_column( get_settings_errors( $option ), 'code' ) );
 	}
 }
