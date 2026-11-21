@@ -234,7 +234,12 @@ $results  = EasyQ\Services::search()->search( 'block themes', 0, 10 );
 | `Services::permissions()` | `EasyQ\Users\Permissions`: permission checks with reasons |
 | `Services::user_fields()` | `EasyQ\Users\User_Fields`: profile fields |
 
-The services do not check permissions; the REST API and the blocks do that.
+Most services do not check permissions: posts, votes, categories, points and the others do
+what they are asked, and the REST API and the blocks check first with
+`Services::permissions()`. Some check what belongs to them: `Services::messages()` refuses
+a message or a wall post the sender may not write (`message_error()`, `wall_error()`,
+`can_delete_wall_post()`), and `Services::search()->search()` returns only the questions the
+searching user may see.
 
 ## Notices for single users
 
