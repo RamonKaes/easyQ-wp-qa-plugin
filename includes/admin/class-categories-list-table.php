@@ -195,7 +195,7 @@ final class Categories_List_Table extends WP_List_Table {
 			'edit' => sprintf(
 				'<a href="%s" aria-label="%s">%s</a>',
 				esc_url( Categories_Screen::edit_url( $category->id ) ),
-				/* translators: %s: category name. */
+				/* translators: %s: name of the item, e.g. a category, an email or a field. */
 				esc_attr( sprintf( __( 'Edit “%s”', 'easyq' ), $category->title ) ),
 				esc_html__( 'Edit', 'easyq' )
 			),

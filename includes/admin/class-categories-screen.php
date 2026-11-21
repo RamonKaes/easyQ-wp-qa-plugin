@@ -728,7 +728,7 @@ final class Categories_Screen {
 				'<option value="%1$d"%2$s>%3$s</option>',
 				(int) $index + 2,
 				selected( $index + 2, $category->position, false ),
-				/* translators: %s: category name. */
+				/* translators: %s: name of the item it comes after, e.g. a category or a field. */
 				esc_html( sprintf( __( 'After “%s”', 'easyq' ), $sibling->title ) )
 			);
 		}

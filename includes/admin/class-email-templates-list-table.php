@@ -110,7 +110,7 @@ final class Email_Templates_List_Table extends WP_List_Table {
 					'edit' => sprintf(
 						'<a href="%1$s" aria-label="%2$s">%3$s</a>',
 						esc_url( $url ),
-						/* translators: %s: name of the email. */
+						/* translators: %s: name of the item, e.g. a category, an email or a field. */
 						esc_attr( sprintf( __( 'Edit “%s”', 'easyq' ), $item['label'] ) ),
 						esc_html__( 'Edit', 'easyq' )
 					),

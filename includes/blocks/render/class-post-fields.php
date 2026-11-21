@@ -336,9 +336,9 @@ final class Post_Fields {
 			$time   = sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $post->updated ) ), esc_html( Render::date( $post->updated, $display, $format ) ) );
 			// Whole sentences, so that translations can order them.
 			$html .= ' · ' . ( false !== $editor && $editor->ID !== $post->user_id
-				/* translators: 1: time of the change, 2: name of the user who changed the post. */
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
 				? sprintf( esc_html__( 'edited %1$s by %2$s', 'easyq' ), $time, esc_html( $editor->display_name ) )
-				/* translators: %s: time of the change. */
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
 				: sprintf( esc_html__( 'edited %s', 'easyq' ), $time ) );
 		}
 

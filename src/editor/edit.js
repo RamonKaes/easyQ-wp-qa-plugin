@@ -224,13 +224,13 @@ function FieldPreview( { name, attributes, context, title } ) {
 				<div { ...blockProps }>
 					{ attributes.showAuthor
 						? sprintf(
-								/* translators: 1: date, 2: author name. */
+								/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
 								__( 'asked %1$s by %2$s', 'easyq' ),
 								new Date( post.date_gmt ).toLocaleDateString(),
 								post.author.name
 							)
 						: sprintf(
-								/* translators: %s: date. */
+								/* translators: %s: when it happened, e.g. "5 minutes ago". */
 								__( 'asked %s', 'easyq' ),
 								new Date( post.date_gmt ).toLocaleDateString()
 							) }

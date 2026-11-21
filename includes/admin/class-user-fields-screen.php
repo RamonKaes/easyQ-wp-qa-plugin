@@ -376,7 +376,7 @@ final class User_Fields_Screen {
 		$choices = array( 1 => __( 'First', 'easyq' ) );
 		$others  = array_values( array_filter( Services::user_fields()->all(), static fn ( User_Field $other ): bool => $other->id !== $field->id ) );
 		foreach ( $others as $index => $other ) {
-			/* translators: %s: field label. */
+			/* translators: %s: name of the item it comes after, e.g. a category or a field. */
 			$choices[ $index + 2 ] = sprintf( __( 'After “%s”', 'easyq' ), $other->display_label() );
 		}
 

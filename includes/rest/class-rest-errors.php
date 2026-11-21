@@ -97,7 +97,7 @@ final class REST_Errors {
 
 		return new WP_Error(
 			'rest_invalid_param',
-			/* translators: %s: list of invalid parameters. */
+			/* translators: %s: List of invalid parameters. */
 			sprintf( __( 'Invalid parameter(s): %s', 'easyq' ), implode( ', ', array_keys( $params ) ) ),
 			array(
 				'status'  => 400,

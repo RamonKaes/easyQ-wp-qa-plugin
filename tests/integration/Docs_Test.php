@@ -258,6 +258,26 @@ final class Docs_Test extends Test_Case {
 		$this->assertStringContainsString( 'plugin-zip', $this->read( self::root() . '.gitattributes' ) );
 	}
 
+	public function test_each_string_has_one_comment_for_translators(): void {
+		// make-pot warns of a string with several comments; translators then see only one of them.
+		$sources = $this->sources( 'includes' );
+		foreach ( new RecursiveIteratorIterator( new RecursiveDirectoryIterator( self::root() . 'src', RecursiveDirectoryIterator::SKIP_DOTS ) ) as $file ) {
+			if ( in_array( $file->getExtension(), array( 'js', 'jsx' ), true ) ) {
+				$sources[ $file->getPathname() ] = $this->read( $file->getPathname() );
+			}
+		}
+		$comments = array();
+		foreach ( $sources as $source ) {
+			preg_match_all( "#/\\* translators: ([^\\n]*?) \\*/\\s*(?:[\\w\\s(,]*?)\\b(?:__|_e|_x|_n|esc_html__|esc_html_e|esc_attr__|esc_attr_e)\\(\\s*'((?:[^'\\\\]|\\\\.)*)'#s", $source, $found, PREG_SET_ORDER );
+			foreach ( $found as [ , $comment, $text ] ) {
+				$comments[ $text ][ $comment ] = true;
+			}
+		}
+		$this->assertGreaterThan( 100, count( $comments ), 'The comments are read.' );
+
+		$this->assertSame( array(), array_map( 'array_keys', array_filter( $comments, static fn ( array $seen ): bool => count( $seen ) > 1 ) ) );
+	}
+
 	public function test_docblocks_put_the_description_before_the_tags(): void {
 		$sources = array_merge( $this->sources( 'includes' ), array( 'easyq.php' => $this->read( self::root() . 'easyq.php' ) ) );
 		$late    = array();
