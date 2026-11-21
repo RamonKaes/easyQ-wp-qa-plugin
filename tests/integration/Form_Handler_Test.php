@@ -627,6 +627,9 @@ final class Form_Handler_Test extends REST_Test_Case {
 		remove_filter( 'rest_pre_dispatch', $spy, 10 );
 		$this->assertCount( 1, $sent );
 		$this->assertArrayNotHasKey( 'title', $sent[0] );
+		// The page asks to check the form, at the field, not with core's names of parameters (F-161).
+		$this->assertSame( 'Please check the form.', Flash::current()['message'] ?? '' );
+		$this->assertSame( 'Please fill in this field.', Flash::current()['fields']['title'] ?? '' );
 	}
 
 	public function test_an_unknown_form_is_left_to_others(): void {

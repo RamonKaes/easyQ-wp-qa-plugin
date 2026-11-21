@@ -230,17 +230,21 @@ final class Form_Handler {
 
 		$error = $response->as_error();
 		if ( null !== $error ) {
-			$data   = $error->get_error_data();
-			$fields = array();
+			$data    = $error->get_error_data();
+			$fields  = array();
+			$missing = 'rest_missing_callback_param' === $error->get_error_code();
 			foreach ( is_array( $data ) && is_array( $data['params'] ?? null ) ? $data['params'] : array() as $field => $message ) {
 				if ( is_string( $field ) && is_string( $message ) ) {
 					$fields[ $field ] = $message;
+				} elseif ( $missing && is_string( $message ) ) {
+					// Core lists the names of missing parameters, e.g. of a field sent as a list.
+					$fields[ $message ] = __( 'Please fill in this field.', 'easyq' );
 				}
 			}
 
-			// The names core puts into the message of invalid parameters mean nothing to the user;
-			// the fields show their own messages.
-			$message = 'rest_invalid_param' === $error->get_error_code() ? __( 'Please check the form.', 'easyq' ) : $error->get_error_message();
+			// The names core puts into the message of invalid or missing parameters mean nothing
+			// to the user; the fields show their own messages.
+			$message = 'rest_invalid_param' === $error->get_error_code() || $missing ? __( 'Please check the form.', 'easyq' ) : $error->get_error_message();
 			Flash::keep( $message, $form, $target, $fields, $values );
 			return null;
 		}
