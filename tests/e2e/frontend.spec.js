@@ -142,7 +142,11 @@ test.describe( 'Q&A frontend', () => {
 		await page.route( /\/vote/, ( request ) =>
 			request.fulfill( { status: 500, body: 'Server error' } )
 		);
+		// The form is sent once the request has failed: wait for that page, not for the one
+		// still shown, which would let the next address cut the form off.
+		const sent = page.waitForEvent( 'framenavigated' );
 		await up.click();
+		await sent;
 		await page.waitForLoadState();
 		await page.unroute( /\/vote/ );
 		await page.goto(
