@@ -108,4 +108,23 @@ final class Sitemap_Provider_Test extends Test_Case {
 		add_filter( 'easyq_sitemaps_pre_url_list', static fn (): array => array( array( 'loc' => 'https://example.org/custom' ) ) );
 		$this->assertSame( array( array( 'loc' => 'https://example.org/custom' ) ), $provider->get_url_list( 1, 'questions' ) );
 	}
+
+	/**
+	 * @group ms-required
+	 */
+	public function test_profiles_of_users_who_left_the_site_are_not_listed(): void {
+		Options::update( 'viewing', array( 'sitemap_users' => true ) );
+		$author = $this->user();
+		$this->ask( $author, 'A question of a user who leaves' );
+		$user = get_userdata( (int) $author->user_id );
+		$this->assertInstanceOf( \WP_User::class, $user );
+		$this->assertContains( URLs::user( $user ), array_column( ( new Sitemap_Provider() )->get_url_list( 1, 'users' ), 'loc' ) );
+
+		// Removed from the site, without points of it: no longer a member, as the user lists count.
+		remove_user_from_blog( $user->ID, get_current_blog_id() );
+		$GLOBALS['wpdb']->delete( \EasyQ\Database\Schema::table( 'userpoints' ), array( 'user_id' => $user->ID ) );
+		clean_user_cache( $user->ID );
+
+		$this->assertNotContains( URLs::user( $user ), array_column( ( new Sitemap_Provider() )->get_url_list( 1, 'users' ), 'loc' ) );
+	}
 }

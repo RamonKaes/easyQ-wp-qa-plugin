@@ -351,4 +351,45 @@ final class Feeds_Test extends Test_Case {
 
 		$this->assertSame( 'This feed does not exist.', $output );
 	}
+
+	public function test_a_feed_asks_for_at_most_100_items(): void {
+		remove_all_filters( 'sanitize_option_' . Options::option_name( 'feeds' ) );
+		Options::update(
+			'feeds',
+			array(
+				'feed_number_items' => 500,
+				'feed_for_search'   => true,
+			)
+		);
+		$spy = new class() implements \EasyQ\Search\Search_Provider {
+			/**
+			 * Number of results asked for.
+			 *
+			 * @var int
+			 */
+			public int $count = 0;
+			public function id(): string {
+				return 'spy';
+			}
+			public function label(): string {
+				return 'Spy';
+			}
+			public function index_post( \EasyQ\Search\Indexed_Post $post ): void {
+			}
+			public function unindex_post( int $post_id ): void {
+			}
+			public function move_post( int $post_id, ?int $category_id ): void {
+			}
+			public function search( string $query, int $start, int $count, ?int $user_id ): array {
+				$this->count = $count;
+				return array();
+			}
+		};
+		add_filter( 'easyq_search_providers', static fn ( array $providers ): array => array_merge( $providers, array( $spy ) ) );
+		Options::update( 'lists', array( 'search_provider' => 'spy' ) );
+		Services::reset();
+
+		$this->assertNotNull( $this->feeds->channel( 'search', 'widget', new Actor() ) );
+		$this->assertSame( 100, $spy->count );
+	}
 }

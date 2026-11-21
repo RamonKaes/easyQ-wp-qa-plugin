@@ -187,6 +187,29 @@ final class Cookies_IP_Test extends REST_Test_Case {
 		// Read as a number by the query, '12abc' would be cookie 12 (F-231).
 		$_COOKIE[ $name ] = '12abc';
 		$this->assertNull( Visitor_Cookie::current() );
+
+		// Digits without a row are no cookie either: the row went with the retention or never was.
+		$_COOKIE[ $name ] = '13';
+		$this->assertNull( Visitor_Cookie::current() );
 		unset( $_COOKIE[ $name ] );
+	}
+
+	public function test_only_a_valid_ipv4_address_mapped_into_ipv6_is_taken_as_ipv4(): void {
+		$this->assertSame( '203.0.113.7', IP::normalize( '::ffff:203.0.113.7' ) );
+		$this->assertSame( '::ffff:999.0.113.7', IP::normalize( '::ffff:999.0.113.7' ) );
+	}
+
+	public function test_users_who_log_in_on_a_q_and_a_page_are_remembered_there_only(): void {
+		$name = Cookies::name( 'easyq_noticed' );
+		unset( $_COOKIE[ $name ] );
+		wp_set_current_user( (int) $this->user()->user_id );
+
+		\EasyQ\Notices\Notices::remember_logged_in();
+		$this->assertArrayNotHasKey( $name, $_COOKIE, 'Not on other pages of the site.' );
+
+		\EasyQ\Blocks\Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'questions' ) );
+		\EasyQ\Notices\Notices::remember_logged_in();
+		\EasyQ\Blocks\Block_Context::router()->set_current( null );
+		$this->assertSame( '1', Cookies::get( 'easyq_noticed' ) );
 	}
 }

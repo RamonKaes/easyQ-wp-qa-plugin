@@ -632,8 +632,16 @@ final class Notifications_Test extends Test_Case {
 		$this->assertStringContainsString( 'from@example.com', $this->sent()[0]['header'] );
 
 		reset_phpmailer_instance();
+		$tried = 0;
+		$count = static function ( $result ) use ( &$tried ) {
+			++$tried;
+			return $result;
+		};
+		add_filter( 'pre_wp_mail', $count );
 		$mailer->send( 'u_approved', array( new Recipient( 'not an address' ) ), static fn (): array => array() );
+		remove_filter( 'pre_wp_mail', $count );
 		$this->assertSame( array(), $this->addresses() );
+		$this->assertSame( 0, $tried, 'An address that is none is not handed to wp_mail().' );
 	}
 
 	public function test_anonymous_authors_get_emails_at_their_address(): void {

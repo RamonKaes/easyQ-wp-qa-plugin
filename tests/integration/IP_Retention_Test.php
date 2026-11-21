@@ -30,6 +30,12 @@ final class IP_Retention_Test extends Test_Case {
 		$this->assertSame( 10, has_action( IP_Retention::CRON_HOOK, array( IP_Retention::class, 'run' ) ) );
 
 		wp_clear_scheduled_hook( IP_Retention::CRON_HOOK );
+		// Not while WordPress installs, when core schedules nothing either.
+		wp_installing( true );
+		IP_Retention::schedule();
+		wp_installing( false );
+		$this->assertFalse( wp_next_scheduled( IP_Retention::CRON_HOOK ) );
+
 		IP_Retention::schedule();
 		IP_Retention::schedule();
 
