@@ -453,8 +453,9 @@ final class Avatars {
 			return null;
 		}
 
-		// A file without its parts did not arrive, whatever the error says.
-		if ( UPLOAD_ERR_OK === $error && ( '' === $name || '' === $type || '' === $tmp_name ) ) {
+		// A file without its name or its temporary file did not arrive, whatever the error says. The
+		// type a client sends may be missing: core reads it from the file (`wp_check_filetype_and_ext()`).
+		if ( UPLOAD_ERR_OK === $error && ( '' === $name || '' === $tmp_name ) ) {
 			$error = UPLOAD_ERR_PARTIAL;
 		}
 

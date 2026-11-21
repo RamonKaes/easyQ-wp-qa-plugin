@@ -202,8 +202,10 @@ final class Avatars_Test extends Test_Case {
 		$this->assertNull( Avatars::file_entry( $entry + array( 'error' => -1 ) ) );
 		$this->assertNull( Avatars::file_entry( $entry + array( 'error' => 9 ) ) );
 
-		// No type: the file did not arrive whole.
-		$this->assertSame( UPLOAD_ERR_PARTIAL, Avatars::file_entry( array( 'type' => '' ) + $entry + array( 'error' => UPLOAD_ERR_OK ) )['error'] ?? null );
+		// No temporary file: the file did not arrive whole. No type: the client sent none, which
+		// core reads from the file (F-158).
+		$this->assertSame( UPLOAD_ERR_PARTIAL, Avatars::file_entry( array( 'tmp_name' => '' ) + $entry + array( 'error' => UPLOAD_ERR_OK ) )['error'] ?? null );
+		$this->assertSame( UPLOAD_ERR_OK, Avatars::file_entry( array( 'type' => '' ) + $entry + array( 'error' => UPLOAD_ERR_OK ) )['error'] ?? null );
 	}
 
 	public function test_a_file_larger_than_the_site_takes_is_refused_for_its_size(): void {
@@ -361,5 +363,24 @@ final class Avatars_Test extends Test_Case {
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 		$this->assertSame( 'easyq_avatar_type', $result->get_error_code(), 'Not "too many pixels".' );
+	}
+
+	public function test_a_whole_image_without_a_type_from_the_client_is_taken(): void {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		$tmp = wp_tempnam( 'avatar' );
+		copy( DIR_TESTDATA . '/images/canola.jpg', $tmp );
+
+		// A client may send a part without Content-Type; core reads the type from the file.
+		$entry = Avatars::file_entry(
+			array(
+				'name'     => 'canola.jpg',
+				'type'     => '',
+				'tmp_name' => $tmp,
+				'size'     => (int) filesize( $tmp ),
+				'error'    => UPLOAD_ERR_OK,
+			)
+		);
+		$this->assertNotNull( $entry );
+		$this->assertIsInt( Avatars::upload( (int) $this->user()->user_id, $entry ) );
 	}
 }
