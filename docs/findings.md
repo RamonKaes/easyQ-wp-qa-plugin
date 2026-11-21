@@ -21,7 +21,7 @@ for good. The rules of the reviews and the matrix the findings refer to are in
   measurement or a reading that shows the opposite, never because an attempt to
   reproduce it failed.
 
-The next free number is F-248.
+The next free number is F-249.
 
 ## Open
 

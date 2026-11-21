@@ -447,23 +447,28 @@ final class Post_Repository {
 		$posts      = Schema::table( 'posts' );
 		$categories = Schema::table( 'categories' );
 
-		$sql = $wpdb->prepare(
-			'UPDATE %i AS x, (SELECT p.id, '
-				. 'COALESCE(c2.parent_id, c1.parent_id, c0.parent_id, c0.id) AS path_1, '
-				. 'IF(c2.parent_id IS NOT NULL, c1.parent_id, IF(c1.parent_id IS NOT NULL, c0.parent_id, IF(c0.parent_id IS NOT NULL, c0.id, NULL))) AS path_2, '
-				. 'IF(c2.parent_id IS NOT NULL, c0.parent_id, IF(c1.parent_id IS NOT NULL, c0.id, NULL)) AS path_3 '
-				. 'FROM %i AS p LEFT JOIN %i AS c0 ON p.category_id = c0.id LEFT JOIN %i AS c1 ON c0.parent_id = c1.id LEFT JOIN %i AS c2 ON c1.parent_id = c2.id '
-				. 'WHERE p.id BETWEEN %d AND %d) AS a '
-				. 'SET x.category_path_1 = a.path_1, x.category_path_2 = a.path_2, x.category_path_3 = a.path_3 WHERE x.id = a.id',
-			$posts,
-			$posts,
-			$categories,
-			$categories,
-			$categories,
-			$first_id,
-			$last_id
+		DB::query_derived(
+			static function () use ( $wpdb, $posts, $categories, $first_id, $last_id ): int|bool {
+				$sql = $wpdb->prepare(
+					'UPDATE %i AS x, (SELECT p.id, '
+					. 'COALESCE(c2.parent_id, c1.parent_id, c0.parent_id, c0.id) AS path_1, '
+					. 'IF(c2.parent_id IS NOT NULL, c1.parent_id, IF(c1.parent_id IS NOT NULL, c0.parent_id, IF(c0.parent_id IS NOT NULL, c0.id, NULL))) AS path_2, '
+					. 'IF(c2.parent_id IS NOT NULL, c0.parent_id, IF(c1.parent_id IS NOT NULL, c0.id, NULL)) AS path_3 '
+					. 'FROM %i AS p LEFT JOIN %i AS c0 ON p.category_id = c0.id LEFT JOIN %i AS c1 ON c0.parent_id = c1.id LEFT JOIN %i AS c2 ON c1.parent_id = c2.id '
+					. 'WHERE p.id BETWEEN %d AND %d) AS a '
+					. 'SET x.category_path_1 = a.path_1, x.category_path_2 = a.path_2, x.category_path_3 = a.path_3 WHERE x.id = a.id',
+					$posts,
+					$posts,
+					$categories,
+					$categories,
+					$categories,
+					$first_id,
+					$last_id
+				);
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				return null === $sql ? false : $wpdb->query( $sql );
+			}
 		);
-		DB::query_derived( $sql );
 
 		$this->forget_range( $first_id, $last_id );
 	}

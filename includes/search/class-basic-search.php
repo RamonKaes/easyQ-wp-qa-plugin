@@ -379,11 +379,16 @@ final class Basic_Search implements Search_Provider {
 		// The same order in every request, so that two requests lock the shared words in the same order.
 		sort( $word_ids );
 
-		$sql = $wpdb->prepare(
-			'UPDATE %i AS x, (SELECT w.id, COUNT(i.word_id) AS total FROM %i AS w LEFT JOIN %i AS i ON i.word_id = w.id WHERE w.id IN (' . implode( ',', array_fill( 0, count( $word_ids ), '%d' ) ) . ') GROUP BY w.id) AS a SET x.%i = a.total WHERE x.id = a.id',
-			array_merge( array( Schema::table( 'words' ), Schema::table( 'words' ), Schema::table( $index ) ), $word_ids, array( $count_column ) )
+		DB::query_derived(
+			static function () use ( $wpdb, $index, $count_column, $word_ids ): int|bool {
+				$sql = $wpdb->prepare(
+					'UPDATE %i AS x, (SELECT w.id, COUNT(i.word_id) AS total FROM %i AS w LEFT JOIN %i AS i ON i.word_id = w.id WHERE w.id IN (' . implode( ',', array_fill( 0, count( $word_ids ), '%d' ) ) . ') GROUP BY w.id) AS a SET x.%i = a.total WHERE x.id = a.id',
+					array_merge( array( Schema::table( 'words' ), Schema::table( 'words' ), Schema::table( $index ) ), $word_ids, array( $count_column ) )
+				);
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+				return null === $sql ? false : $wpdb->query( $sql );
+			}
 		);
-		DB::query_derived( $sql );
 	}
 
 	/**

@@ -59,7 +59,7 @@ final class Deadlock_Retry_Test extends Test_Case {
 	public function test_a_query_broken_off_in_a_deadlock_runs_again(): void {
 		$log = $this->deadlocking( 1 );
 
-		DB::query_derived( 'UPDATE t SET x = 1' );
+		DB::query_derived( static fn (): int|bool => DB::wpdb()->query( 'UPDATE t SET x = 1' ) );
 
 		$this->assertSame( 2, $log->calls );
 		$this->assertSame( array( true, true ), $log->suppressed, 'The error of an attempt that is repeated is not logged.' );
@@ -68,7 +68,7 @@ final class Deadlock_Retry_Test extends Test_Case {
 	public function test_it_gives_up_after_three_attempts_and_logs_the_last_error(): void {
 		$log = $this->deadlocking( 5 );
 
-		DB::query_derived( 'UPDATE t SET x = 1' );
+		DB::query_derived( static fn (): int|bool => DB::wpdb()->query( 'UPDATE t SET x = 1' ) );
 
 		$this->assertSame( 3, $log->calls );
 		$this->assertSame( array( true, true, false ), $log->suppressed );
@@ -77,7 +77,7 @@ final class Deadlock_Retry_Test extends Test_Case {
 	public function test_other_errors_are_not_repeated(): void {
 		$log = $this->deadlocking( 0, true );
 
-		DB::query_derived( 'UPDATE t SET x = 1' );
+		DB::query_derived( static fn (): int|bool => DB::wpdb()->query( 'UPDATE t SET x = 1' ) );
 
 		$this->assertSame( 1, $log->calls );
 	}
