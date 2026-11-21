@@ -39,8 +39,10 @@ final class Blocked_Names {
 	 * @var array<string, string>
 	 */
 	private const NAME_FIELDS = array(
-		'display_name' => 'name',
-		'nickname'     => 'nickname',
+		'display_name'  => 'name',
+		'nickname'      => 'nickname',
+		// The name in the address of the profile, which `/wp/v2/users` sets as `slug`.
+		'user_nicename' => 'slug',
 	);
 
 	/**
@@ -158,6 +160,11 @@ final class Blocked_Names {
 		if ( self::is_new_blocked_name( $user_id, 'display_name', $data['display_name'] ) ) {
 			$current              = $user_id > 0 ? get_userdata( $user_id ) : false;
 			$data['display_name'] = false !== $current ? $current->display_name : ( is_string( $data['user_login'] ?? null ) ? $data['user_login'] : '' );
+		}
+		// Likewise the name in the address of the profile of an existing user.
+		$current = $user_id > 0 ? get_userdata( $user_id ) : false;
+		if ( false !== $current && is_string( $data['user_nicename'] ?? null ) && self::is_new_blocked_name( $user_id, 'user_nicename', $data['user_nicename'] ) ) {
+			$data['user_nicename'] = $current->user_nicename;
 		}
 
 		return $data;

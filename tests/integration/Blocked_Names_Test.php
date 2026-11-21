@@ -241,4 +241,30 @@ final class Blocked_Names_Test extends Test_Case {
 
 		$this->fail( 'The name checks are not hooked.' );
 	}
+
+	public function test_the_address_of_a_profile_takes_no_blocked_name(): void {
+		$user_id = self::factory()->user->create(
+			array(
+				'role'          => 'subscriber',
+				'user_nicename' => 'ada',
+			)
+		);
+		wp_set_current_user( $user_id );
+
+		// Core's REST API sets the address as slug (measured: /questions/user/anonymous/).
+		$request = new WP_REST_Request( 'PUT', '/wp/v2/users/me' );
+		$request->set_param( 'slug', 'anonymous' );
+		$error = rest_get_server()->dispatch( $request )->as_error();
+		$this->assertInstanceOf( \WP_Error::class, $error );
+		$this->assertArrayHasKey( 'slug', $error->get_error_data()['params'] ?? array() );
+
+		// Every other way keeps the address as it was.
+		wp_update_user(
+			array(
+				'ID'            => $user_id,
+				'user_nicename' => 'anonymous',
+			)
+		);
+		$this->assertSame( 'ada', get_userdata( $user_id )->user_nicename );
+	}
 }
