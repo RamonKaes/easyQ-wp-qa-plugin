@@ -7,10 +7,12 @@
 
 namespace EasyQ\Tests\Integration;
 
+use EasyQ\Actor;
 use EasyQ\Blocks\Block_Context;
 use EasyQ\Blocks\Lists;
 use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Templates;
+use EasyQ\Posts\Post;
 use EasyQ\Services;
 
 /**
@@ -259,5 +261,39 @@ final class Favorites_Test extends REST_Test_Case {
 		Services::post_service()->set_question_status( \EasyQ\Actor::system(), $this->post( $question->id ), \EasyQ\Posts\Post::STATUS_HIDDEN );
 		Services::post_service()->delete_question( \EasyQ\Actor::system(), $this->post( $question->id ) );
 		$this->assertSame( array(), ( new \EasyQ\Favorites\Favorites( Services::posts(), Services::categories() ) )->ids( (int) $fan->user_id, 'question' ) );
+	}
+
+	public function test_only_tags_of_visible_questions_can_be_added(): void {
+		$author  = $this->user();
+		$visible = $this->ask( $author, 'A visible question', 'It mentions zanzibar in its text.', array( 'visible-tag' ) );
+		$hidden  = $this->ask( $author, 'A question to hide', 'Text.', array( 'hidden-tag' ) );
+		Services::post_service()->set_question_status( Actor::system(), $hidden, Post::STATUS_HIDDEN );
+		$user = $this->user();
+		wp_set_current_user( (int) $user->user_id );
+		$add = fn ( string $tag ): int => $this->request(
+			'POST',
+			'/favorites',
+			array(
+				'type' => 'tag',
+				'id'   => $tag,
+			)
+		)->get_status();
+
+		// The index holds every word of the posts; only tags of visible questions answer.
+		$this->assertSame( 404, $add( 'zanzibar' ), 'A word of the text.' );
+		$this->assertSame( 404, $add( 'hidden-tag' ), 'A tag of a hidden question.' );
+		$this->assertSame( 201, $add( 'visible-tag' ) );
+
+		// A favorite whose questions were hidden since can still be removed.
+		Services::post_service()->set_question_status( Actor::system(), $visible, Post::STATUS_HIDDEN );
+		$removed = $this->request(
+			'DELETE',
+			'/favorites',
+			array(
+				'type' => 'tag',
+				'id'   => 'visible-tag',
+			)
+		);
+		$this->assertSame( 200, $removed->get_status() );
 	}
 }

@@ -116,8 +116,18 @@ final class Favorites {
 		if ( 'tag' === $type ) {
 			$tag      = (string) $id;
 			$word_ids = ( new Basic_Search() )->word_ids( array( $tag ), create: false );
+			$word_id  = $word_ids[ $tag ] ?? null;
+			if ( null === $word_id || ! $to_add ) {
+				return $word_id;
+			}
 
-			return $word_ids[ $tag ] ?? null;
+			// Only a tag of visible questions, as the tag pages list it: the index also holds the
+			// words of hidden and deleted posts, which no answer may give away.
+			$wpdb = DB::wpdb();
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+			$count = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT tag_count FROM %i WHERE id = %d', Schema::table( 'words' ), $word_id ) );
+
+			return $count > 0 ? $word_id : null;
 		}
 
 		$number   = (int) $id;
