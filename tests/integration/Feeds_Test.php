@@ -215,7 +215,15 @@ final class Feeds_Test extends Test_Case {
 	}
 
 	public function test_has_the_elements_and_hooks_of_the_feeds_of_core(): void {
-		$this->ask( $this->user(), 'A question for the feed', 'Content' );
+		$author = $this->user();
+		wp_update_user(
+			array(
+				'ID'           => (int) $author->user_id,
+				'display_name' => 'Tom & Jerry',
+			)
+		);
+		$this->assertSame( 'Tom &amp; Jerry', get_userdata( (int) $author->user_id )->display_name, 'Core stores the name with entities.' );
+		$this->ask( $author, 'A question for the feed', 'Content' );
 		add_action( 'rss2_ns', static fn () => print( ' xmlns:test="https://example.org/ns"' ) );
 		add_action( 'rss2_head', static fn () => print( '<test:head>1</test:head>' ) );
 		add_action( 'rss2_item', static fn () => print( '<test:item>1</test:item>' ) );
@@ -227,6 +235,8 @@ final class Feeds_Test extends Test_Case {
 		$this->assertSame( 'hourly', (string) $xml->channel->children( 'http://purl.org/rss/1.0/modules/syndication/' )->updatePeriod );
 		$this->assertSame( '1', (string) $xml->channel->children( 'https://example.org/ns' )->head );
 		$this->assertSame( '1', (string) $xml->channel->item[0]->children( 'https://example.org/ns' )->item );
+		// The author, as `feed-rss2.php` prints it, as written.
+		$this->assertSame( 'Tom & Jerry', (string) $xml->channel->item[0]->children( 'http://purl.org/dc/elements/1.1/' )->creator );
 	}
 
 	public function test_answers_a_reader_who_has_the_feed_with_not_modified(): void {
@@ -325,7 +335,8 @@ final class Feeds_Test extends Test_Case {
 		$this->feeds->discovery_link();
 		$html = (string) ob_get_clean();
 
-		$this->assertStringContainsString( 'rel="alternate" type="application/rss+xml" title="Recent questions and answers"', $html );
+		// As `feed_links_extra()` titles the feeds of core: the site, a separator, the feed.
+		$this->assertStringContainsString( 'rel="alternate" type="application/rss+xml" title="' . esc_attr( get_bloginfo( 'name' ) ) . ' &raquo; Recent questions and answers Feed"', $html );
 	}
 
 	public function test_does_not_send_cache_headers_of_wordpress_posts(): void {

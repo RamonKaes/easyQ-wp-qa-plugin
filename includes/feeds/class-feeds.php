@@ -9,6 +9,7 @@
 namespace EasyQ\Feeds;
 
 use EasyQ\Actor;
+use EasyQ\Blocks\Render;
 use EasyQ\Categories\Category;
 use EasyQ\Frontend\Route;
 use EasyQ\Frontend\Router;
@@ -28,7 +29,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * Addresses are `/{base}/feed/{type}/{argument}`, e.g. `/questions/feed/questions/cooking`
  * for a category or `/questions/feed/tag/pasta`. Feeds contain only what visitors may see,
- * and no author names.
+ * with the name of each author, as the feeds of core (`dc:creator`).
  *
  * Ported from Question2Answer `qa-feed.php`.
  *
@@ -271,7 +272,16 @@ final class Feeds {
 		printf(
 			'<link rel="alternate" type="%s" title="%s" href="%s" />' . "\n",
 			esc_attr( feed_content_type( 'rss2' ) ),
-			esc_attr( $channel['title'] ),
+			// The title as `feed_links_extra()` writes it: the site, a separator, the feed.
+			esc_attr(
+				sprintf(
+					/* translators: 1: Site name, 2: Separator (raquo), 3: Name of the feed, such as "Recent questions". */
+					__( '%1$s %2$s %3$s Feed', 'easyq' ),
+					get_bloginfo( 'name' ),
+					_x( '&raquo;', 'feed link', 'easyq' ),
+					$channel['title']
+				)
+			),
 			esc_url( self::url( $feed[0], $feed[1] ) )
 		);
 	}
@@ -285,7 +295,7 @@ final class Feeds {
 	 * @param string|null $argument Tag, search terms or category path.
 	 * @param Actor       $viewer   Who reads the feed; feeds are built for visitors.
 	 * @param bool        $items    Whether to build the items; the discovery link needs the title only.
-	 * @return array{title: string, link: string, items: list<array{title: string, link: string, description: string|null, category: string|null, date: string}>}|null
+	 * @return array{title: string, link: string, items: list<array{title: string, link: string, description: string|null, category: string|null, author: string, date: string}>}|null
 	 *         Null if the feed does not exist, is disabled or the viewer may not see the Q&A area.
 	 */
 	public function channel( string $type, ?string $argument, Actor $viewer, bool $items = true ): ?array {
@@ -365,7 +375,7 @@ final class Feeds {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param array{title: string, link: string, items: list<array{title: string, link: string, description: string|null, category: string|null, date: string}>} $channel Feed, see channel().
+	 * @param array{title: string, link: string, items: list<array{title: string, link: string, description: string|null, category: string|null, author: string, date: string}>} $channel Feed, see channel().
 	 * @return string
 	 */
 	public function xml( array $channel ): string {
@@ -381,7 +391,7 @@ final class Feeds {
 		$lines = array(
 			'<?xml version="1.0" encoding="' . self::xml_text( get_bloginfo( 'charset' ) ) . '"?>',
 			self::output( 'rss_tag_pre', 'rss2' ),
-			'<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"' . ( '' === $namespaces ? '' : ' ' . $namespaces ) . '>',
+			'<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"' . ( '' === $namespaces ? '' : ' ' . $namespaces ) . '>',
 			'<channel>',
 			'<title>' . self::xml_text( '' === $site ? $channel['title'] : $site . ' – ' . $channel['title'] ) . '</title>',
 			'<link>' . self::xml_text( $channel['link'] ) . '</link>',
@@ -398,6 +408,8 @@ final class Feeds {
 			$lines[] = '<item>';
 			$lines[] = '<title>' . self::xml_text( $item['title'] ) . '</title>';
 			$lines[] = '<link>' . self::xml_text( $item['link'] ) . '</link>';
+			// As `feed-rss2.php` prints the author.
+			$lines[] = '<dc:creator>' . self::xml_text( $item['author'] ) . '</dc:creator>';
 			if ( null !== $item['description'] ) {
 				$lines[] = '<description>' . self::xml_text( $item['description'] ) . '</description>';
 			}
@@ -526,7 +538,7 @@ final class Feeds {
 	 * @param array<string, mixed> $args     Question query arguments.
 	 * @param Category|null        $category Category.
 	 * @param int                  $count    Number of items.
-	 * @return list<array{title: string, link: string, description: string|null, category: string|null, date: string}>
+	 * @return list<array{title: string, link: string, description: string|null, category: string|null, author: string, date: string}>
 	 */
 	private function question_items( array $args, ?Category $category, int $count ): array {
 		if ( null !== $category ) {
@@ -546,7 +558,7 @@ final class Feeds {
 	 * @param string[]      $kinds    Kinds of activity.
 	 * @param Category|null $category Category.
 	 * @param int           $count    Number of items.
-	 * @return list<array{title: string, link: string, description: string|null, category: string|null, date: string}>
+	 * @return list<array{title: string, link: string, description: string|null, category: string|null, author: string, date: string}>
 	 */
 	private function activity_items( array $kinds, ?Category $category, int $count ): array {
 		$query = Services::activity_query();
@@ -572,7 +584,7 @@ final class Feeds {
 	 *
 	 * @param string $query Search terms.
 	 * @param int    $count Number of items.
-	 * @return list<array{title: string, link: string, description: string|null, category: string|null, date: string}>
+	 * @return list<array{title: string, link: string, description: string|null, category: string|null, author: string, date: string}>
 	 */
 	private function search_items( string $query, int $count ): array {
 		$result = array();
@@ -594,7 +606,7 @@ final class Feeds {
 	 * @param Post               $question Question.
 	 * @param Post               $post     Question, answer or comment the item is about.
 	 * @param Activity_Item|null $activity What happened, for activity feeds.
-	 * @return array{title: string, link: string, description: string|null, category: string|null, date: string}
+	 * @return array{title: string, link: string, description: string|null, category: string|null, author: string, date: string}
 	 */
 	private function item( Post $question, Post $post, ?Activity_Item $activity ): array {
 		$renderer = Services::content_renderer();
@@ -613,6 +625,7 @@ final class Feeds {
 			'link'        => $post->id === $question->id ? URLs::question( $question ) : URLs::post( $post ),
 			'description' => Options::get_bool( 'feeds', 'feed_full_text' ) ? $renderer->html( (string) $post->content, $post->format, $post->base_type() ) : null,
 			'category'    => $category?->title,
+			'author'      => Render::author_name( $post ),
 			'date'        => null === $activity ? $question->created : $activity->time,
 		);
 	}

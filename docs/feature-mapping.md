@@ -499,8 +499,9 @@ Addresses: `/{base}/feed/{type}/{argument}` with the types `questions`, `hot`,
 `unanswered`, `answers`, `comments`, `activity`, `qa`, `tag` and `search`; the argument
 is a category path, a tag or search terms. Without pretty permalinks:
 `?feed=easyq&easyq_route=feed&easyq_arg={type}&easyq_section={argument}`. Q&A list pages
-link to their feed (`<link rel="alternate">`). Feeds show only what visitors may see,
-contain no author names, and are not available when visitors may not view the Q&A area.
+link to their feed (`<link rel="alternate">`, titled as `feed_links_extra()` titles core's).
+Feeds show only what visitors may see, name each author as core's feeds do (`dc:creator`),
+and are not available when visitors may not view the Q&A area.
 WordPress's conditional GET (based on its own posts) is turned off for these feeds.
 
 ### 5.11 Settings → Spam (`admin/spam`)
@@ -761,7 +762,7 @@ All public hooks and interfaces are documented in `docs/hooks.md`.
 | 22 | The account page is excluded from search engines; profile sections have their own canonical address | 2026-10-26 |
 | 23 | Q&A pages are added to menus as variations of the core Navigation Link block instead of a REST search handler, which the link search does not query | 2026-10-26 |
 | 24 | User profiles are left out of the sitemaps unless the site owner enables `sitemap_users` (privacy by default; Q2A lists them by default) | 2026-10-26 |
-| 25 | Feeds contain no author names and are not available when visitors may not view the Q&A area | 2026-10-26 |
+| 25 | Feeds are not available when visitors may not view the Q&A area; they name each author as core's feeds do (first without author names, changed on the owner's word of 2026-11-21: as close to core as possible, F-234) | 2026-10-26 |
 | 26 | The rewrite rules are rebuilt whenever they change (hash of the rules), not only when the base slug changes, so updates that add routes work without saving the permalinks | 2026-10-26 |
 | 27 | Classic themes get the same block templates, rendered between the theme's header and footer, instead of separate PHP templates | 2026-10-26 |
 | 28 | Answer and comment forms are sent in the background to the regular form handler and the page is updated with the Interactivity Router, so both ways share one implementation | 2026-10-26 |
