@@ -376,4 +376,20 @@ final class Messages_Test extends REST_Test_Case {
 			$this->assertArrayHasKey( 'content', $error->get_error_data()['params'] ?? array(), $route );
 		}
 	}
+
+	public function test_the_emails_of_messages_name_the_switch_of_the_account_that_stops_them(): void {
+		$owner = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
+		$this->assertInstanceOf( \WP_User::class, $owner );
+		Services::messages()->send( $this->user(), $owner, 'A private message.' );
+		Services::messages()->post_on_wall( $this->user(), $owner, 'A post on the wall.' );
+		$bodies = implode( "\n", array_column( tests_retrieve_phpmailer_instance()->mock_sent, 'body' ) );
+
+		// The labels of the account page, which has no other setting for these emails.
+		wp_set_current_user( $owner->ID );
+		$account = do_blocks( '<!-- wp:easyq/account /-->' );
+		foreach ( array( 'Allow other users to send me private messages', 'Allow other users to post on my wall' ) as $label ) {
+			$this->assertStringContainsString( $label, $account );
+			$this->assertStringContainsString( 'turn off "' . $label . '" in your account', $bodies );
+		}
+	}
 }

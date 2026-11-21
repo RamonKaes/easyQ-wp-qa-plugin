@@ -262,7 +262,7 @@ final class Mailer {
 			array(
 				'to'      => $recipient->email,
 				'subject' => $content['subject'],
-				'message' => $salutation . $content['message'] . $this->footer( $recipient ),
+				'message' => $salutation . $content['message'] . $this->footer( $name, $recipient ),
 				'headers' => $this->headers( $recipient ),
 			)
 		);
@@ -279,16 +279,26 @@ final class Mailer {
 	 *
 	 * @since 0.1.0
 	 *
+	 * @param string    $name      Name of the email, see send().
 	 * @param Recipient $recipient Recipient.
 	 * @return string
 	 */
-	private function footer( Recipient $recipient ): string {
+	private function footer( string $name, Recipient $recipient ): string {
 		if ( null === $recipient->post ) {
-			// Emails about messages and the wall: the account turns them off.
-			return null === $recipient->user_id
-				? ''
+			// Emails about messages and the wall come with what the account allows: the switch
+			// that allows them is the way to stop them, as the account page names it.
+			if ( null === $recipient->user_id ) {
+				return '';
+			}
+
+			return "\n\n-- \n" . match ( $name ) {
 				/* translators: %s: address of the account page. */
-				: "\n\n-- \n" . sprintf( __( 'To stop these emails, change the settings of your account: %s', 'easyq' ), Routes::url( 'account' ) );
+				'private_message' => sprintf( __( 'To stop these emails, turn off "Allow other users to send me private messages" in your account: %s', 'easyq' ), Routes::url( 'account' ) ),
+				/* translators: %s: address of the account page. */
+				'wall_post'       => sprintf( __( 'To stop these emails, turn off "Allow other users to post on my wall" in your account: %s', 'easyq' ), Routes::url( 'account' ) ),
+				/* translators: %s: address of the account page. */
+				default           => sprintf( __( 'Your account: %s', 'easyq' ), Routes::url( 'account' ) ),
+			};
 		}
 
 		/* translators: %s: address of the page. */
