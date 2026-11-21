@@ -95,7 +95,8 @@ final class Notices {
 	 * @since 0.1.0
 	 */
 	public static function remember_logged_in(): void {
-		if ( is_user_logged_in() && null !== Block_Context::router()->current() && '' === Cookies::get( self::COOKIE ) ) {
+		// Only while there is a notice for visitors to keep from them: the cookie is for nothing else.
+		if ( Options::get_bool( 'users', 'show_notice_visitor' ) && is_user_logged_in() && null !== Block_Context::router()->current() && '' === Cookies::get( self::COOKIE ) ) {
 			self::remember_visitor();
 		}
 	}

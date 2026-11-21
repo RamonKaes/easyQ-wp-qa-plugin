@@ -203,6 +203,14 @@ final class Cookies_IP_Test extends REST_Test_Case {
 		$name = Cookies::name( 'easyq_noticed' );
 		unset( $_COOKIE[ $name ] );
 		wp_set_current_user( (int) $this->user()->user_id );
+		\EasyQ\Blocks\Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'questions' ) );
+
+		// Without a notice for visitors, as by default, there is nothing to remember.
+		Options::update( 'users', array( 'show_notice_visitor' => false ) );
+		\EasyQ\Notices\Notices::remember_logged_in();
+		$this->assertArrayNotHasKey( $name, $_COOKIE, 'No notice for visitors.' );
+		Options::update( 'users', array( 'show_notice_visitor' => true ) );
+		\EasyQ\Blocks\Block_Context::router()->set_current( null );
 
 		\EasyQ\Notices\Notices::remember_logged_in();
 		$this->assertArrayNotHasKey( $name, $_COOKIE, 'Not on other pages of the site.' );
