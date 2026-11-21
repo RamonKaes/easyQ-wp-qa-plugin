@@ -125,10 +125,10 @@ final class DB {
 	 * breaks a lock cycle by rolling one statement back. Repeating the statement is what MySQL
 	 * advises for it (`Deadlock found when trying to get lock; try restarting transaction`).
 	 *
-	 * @since 0.1.0
-	 *
 	 * The callers run `wpdb::query()` with `wpdb::prepare()` themselves, in the callback, so
 	 * that the statement and its placeholders stay in one place.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param callable(): (int|bool) $query Runs the query and returns what `wpdb::query()` returns.
 	 */
