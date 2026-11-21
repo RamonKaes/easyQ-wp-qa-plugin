@@ -734,4 +734,20 @@ final class Settings_Test extends Test_Case {
 		$this->assertContains( 'easyq_allow_close_questions', $codes );
 		$this->assertContains( 'easyq_block_ips_write', $codes );
 	}
+
+	public function test_the_sections_are_loaded_as_core_loads_its_options_but_the_newsletter(): void {
+		global $wpdb;
+		$autoload = static fn ( string $section ): string => (string) $wpdb->get_var( $wpdb->prepare( "SELECT autoload FROM {$wpdb->options} WHERE option_name = %s", Options::option_name( $section ) ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The column core writes.
+		// A site that added the newsletter section loaded, and one without the section of points yet.
+		// With a subject of its own: a section equal to its defaults core adds again anyway.
+		update_option( Options::option_name( 'newsletter' ), array( 'mailing_subject' => 'News of the site' ) + Options::get_section( 'newsletter' ), true );
+		wp_set_options_autoload( array( Options::option_name( 'newsletter' ) ), true );
+		$this->assertSame( 'on', $autoload( 'newsletter' ) );
+		delete_option( Options::option_name( 'points' ) );
+
+		Options::install();
+
+		$this->assertSame( 'off', $autoload( 'newsletter' ) );
+		$this->assertSame( 'auto', $autoload( 'points' ), 'As core adds its options: large values are not loaded on every request.' );
+	}
 }

@@ -26,6 +26,15 @@ defined( 'ABSPATH' ) || exit;
 final class Options {
 
 	/**
+	 * Sections that are not loaded on every request: read on a few screens only.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string[]
+	 */
+	public const NOT_AUTOLOADED = array( 'newsletter' );
+
+	/**
 	 * Prefix of the option names; the section name is appended.
 	 *
 	 * @since 0.1.0
@@ -517,8 +526,12 @@ final class Options {
 	 */
 	public static function install(): void {
 		foreach ( self::defaults() as $section => $values ) {
-			add_option( self::option_name( $section ), $values, '', true );
+			// Core decides as for its own options ('auto': large values are not loaded on every
+			// request); the newsletter, with its text, is read on a few screens only.
+			add_option( self::option_name( $section ), $values, '', in_array( $section, self::NOT_AUTOLOADED, true ) ? false : null );
 		}
+		// Sites that added the sections before keep no section loaded that needs not be.
+		wp_set_options_autoload( array_map( array( self::class, 'option_name' ), self::NOT_AUTOLOADED ), false );
 	}
 
 	/**
