@@ -108,8 +108,12 @@ final class Policy_Text {
 				? __( 'If you post without an account and agree to it, we set a cookie that lets you edit your posts later. It contains a random number and lasts for one year from your last post.', 'easyq' )
 				: __( 'If you post without an account, we set a cookie that lets you edit your posts later. It contains a random number and lasts for one year from your last post.', 'easyq' ) ) . '</p>';
 		}
-		$strings[] = '<p>' . ( $anonymous ? '' : $suggested ) . __( 'If you log in on a question and answer page or close the notice for new visitors, we set a cookie so that the notice is not shown again. It contains no personal data and lasts for ten years.', 'easyq' ) . '</p>';
-		$strings[] = '<p>' . __( 'Views of questions are counted without cookies. So that a second view in a row does not count, a hash of your IP address is kept with the question for at most one hour; the address itself is not stored.', 'easyq' ) . '</p>';
+		// The label goes before the first paragraph of the section, as core marks suggested text.
+		$notice = Options::get_bool( 'users', 'show_notice_visitor' );
+		if ( $notice ) {
+			$strings[] = '<p>' . ( $anonymous ? '' : $suggested ) . __( 'If you log in on a question and answer page or close the notice for new visitors, we set a cookie so that the notice is not shown again. It contains no personal data and lasts for ten years.', 'easyq' ) . '</p>';
+		}
+		$strings[] = '<p>' . ( $anonymous || $notice ? '' : $suggested ) . __( 'Views of questions are counted without cookies. So that a second view in a row does not count, a hash of your IP address is kept with the question for at most one hour; the address itself is not stored.', 'easyq' ) . '</p>';
 
 		$strings[] = '<h3 class="wp-block-heading">' . __( 'How long we keep the data of the question and answer pages', 'easyq' ) . '</h3>';
 		$strings[] = '<p>' . $suggested . sprintf(
@@ -124,10 +128,29 @@ final class Policy_Text {
 		) . '</p>';
 
 		$strings[] = '<h3 class="wp-block-heading">' . __( 'Your data on the question and answer pages', 'easyq' ) . '</h3>';
-		$strings[] = '<p>' . $suggested . __( 'If you request an export of your personal data, it includes your questions, answers, comments, votes, flags and your profile on the question and answer pages.', 'easyq' ) . '</p>';
+		// The groups of the exporters and erasers of Privacy, of the features that are on.
+		$messages = Options::get_bool( 'users', 'allow_private_messages' );
+		$walls    = Options::get_bool( 'users', 'allow_user_walls' );
+		$letter   = Options::get_bool( 'newsletter', 'mailing_enabled' );
+		$exported = array_merge(
+			array( __( 'your questions, answers and comments', 'easyq' ), __( 'votes and flags', 'easyq' ), __( 'your profile', 'easyq' ), __( 'favorites', 'easyq' ), __( 'updates', 'easyq' ), __( 'notices', 'easyq' ) ),
+			$messages ? array( __( 'private messages', 'easyq' ) ) : array(),
+			$walls ? array( __( 'posts on walls', 'easyq' ) ) : array(),
+			$letter ? array( __( 'your newsletter subscription', 'easyq' ) ) : array()
+		);
+		$erased   = array_merge(
+			array( __( 'your votes, flags, profile fields and uploaded profile picture', 'easyq' ), __( 'your favorites, updates and notices', 'easyq' ) ),
+			$messages ? array( __( 'the private messages you wrote or received', 'easyq' ) ) : array(),
+			$walls ? array( __( 'the posts on your wall', 'easyq' ) ) : array(),
+			$letter ? array( __( 'your newsletter subscription', 'easyq' ) ) : array()
+		);
+		/* translators: %l: list of kinds of data, such as "your questions, answers and comments, votes and flags, and your profile". */
+		$strings[] = '<p>' . $suggested . wp_sprintf( __( 'If you request an export of your personal data, it includes %l on the question and answer pages.', 'easyq' ), $exported ) . '</p>';
 		$strings[] = '<p>' . ( 'delete' === Options::get_string( 'general', 'erase_posts' )
-			? __( 'If you request the erasure of your personal data, your questions, answers and comments are deleted; those others have replied to stay without your name and with shortened IP addresses. Your votes, flags, profile fields and uploaded profile picture are deleted.', 'easyq' )
-			: __( 'If you request the erasure of your personal data, your questions, answers and comments stay without your name and with shortened IP addresses. Your votes, flags, profile fields and uploaded profile picture are deleted.', 'easyq' ) ) . '</p>';
+			? __( 'If you request the erasure of your personal data, your questions, answers and comments are deleted; those others have replied to stay without your name and with shortened IP addresses.', 'easyq' )
+			: __( 'If you request the erasure of your personal data, your questions, answers and comments stay without your name and with shortened IP addresses.', 'easyq' ) )
+			/* translators: %l: list of kinds of data, such as "your votes, flags, profile fields and uploaded profile picture, and your favorites". */
+			. ' ' . wp_sprintf( __( 'We delete %l.', 'easyq' ), $erased ) . '</p>';
 
 		return implode( "\n", $strings );
 	}

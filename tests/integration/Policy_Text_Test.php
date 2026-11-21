@@ -50,6 +50,7 @@ final class Policy_Text_Test extends Test_Case {
 
 	public function test_names_the_cookies_and_the_retention_period_of_the_settings(): void {
 		$this->assertStringContainsString( 'after 30 days', Policy_Text::content() );
+		Options::update( 'users', array( 'show_notice_visitor' => true ) );
 		$this->assertStringContainsString( 'ten years', Policy_Text::content() );
 		$this->assertStringNotContainsString( 'shortened by its last part', Policy_Text::content() );
 
@@ -95,6 +96,23 @@ final class Policy_Text_Test extends Test_Case {
 		}
 	}
 
+	public function test_names_every_group_the_tools_of_core_export_and_erase(): void {
+		Options::update( 'users', array( 'allow_private_messages' => true ) );
+		Options::update( 'newsletter', array( 'mailing_enabled' => true ) );
+		$content = Policy_Text::content();
+
+		// The groups easyQ registers with core's exporters and erasers.
+		foreach ( array( 'favorites', 'updates', 'notices', 'private messages', 'posts on walls', 'your newsletter subscription' ) as $group ) {
+			$this->assertStringContainsString( $group, $content, $group );
+		}
+		$this->assertStringContainsString( 'We delete your votes, flags, profile fields and uploaded profile picture, your favorites, updates and notices, the private messages you wrote or received', $content );
+
+		// The cookie of the notice only while there is a notice, as the cookie is set only then.
+		$this->assertStringNotContainsString( 'close the notice for new visitors', $content );
+		Options::update( 'users', array( 'show_notice_visitor' => true ) );
+		$this->assertStringContainsString( 'close the notice for new visitors', Policy_Text::content() );
+	}
+
 	public function test_describes_only_the_features_that_are_on(): void {
 		$features = array(
 			array( 'users', 'avatar_allow_upload', false, 'media library' ),
@@ -125,7 +143,7 @@ final class Policy_Text_Test extends Test_Case {
 
 	public function test_describes_what_erasing_does_with_the_setting_of_the_site(): void {
 		$this->assertStringContainsString( 'your questions, answers and comments stay without your name', Policy_Text::content() );
-		$this->assertStringContainsString( 'votes, flags and your profile', Policy_Text::content() );
+		$this->assertStringContainsString( 'votes and flags, your profile, favorites, updates', Policy_Text::content() );
 
 		Options::update( 'general', array( 'erase_posts' => 'delete' ) );
 		$this->assertStringContainsString( 'your questions, answers and comments are deleted; those others have replied to stay', Policy_Text::content() );
