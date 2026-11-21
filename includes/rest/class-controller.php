@@ -304,7 +304,6 @@ abstract class Controller extends WP_REST_Controller {
 		// Load the authors and the viewer's votes of posts, and both sides of messages, at once, so
 		// that a longer list costs no more queries, as core primes the caches of its collections.
 		$posts   = array_filter( $items, static fn ( $item ): bool => $item instanceof Post );
-		$viewer  = $this->actor()->user_id;
 		$authors = array();
 		foreach ( $posts as $post ) {
 			$authors[] = $post->user_id;
@@ -317,13 +316,7 @@ abstract class Controller extends WP_REST_Controller {
 			}
 		}
 		Services::user_query()->prime( $authors );
-		if ( array() !== $posts && null !== $viewer ) {
-			Services::votes()->prime( array_map( static fn ( Post $post ): int => $post->id, $posts ), $viewer );
-			// Who voted and flagged, where the viewer may see it somewhere.
-			if ( array() !== Services::permissions()->category_scope( 'permit_view_voters_flaggers', $this->actor() ) ) {
-				Services::votes()->voters_flaggers( array_map( static fn ( Post $post ): int => $post->id, $posts ) );
-			}
-		}
+		Services::votes()->prime_page( array_map( static fn ( Post $post ): int => $post->id, $posts ), $this->actor() );
 
 		$data = array();
 		foreach ( $items as $item ) {

@@ -66,9 +66,7 @@ final class Lists_Render {
 
 		// The blocks of every item ask for the votes and flags of the viewer and for the authors; load them at once.
 		$viewer = Block_Context::viewer();
-		if ( null !== $viewer->user_id ) {
-			Services::votes()->prime( $result['ids'], $viewer->user_id );
-		}
+		Services::votes()->prime_page( $result['ids'], $viewer );
 		$shown = $result['ids'];
 		$users = array();
 		foreach ( $result['activity'] as $activity ) {
@@ -216,10 +214,7 @@ final class Lists_Render {
 		}
 		Render::prime_authors( $shown );
 
-		$viewer = Block_Context::viewer();
-		if ( null !== $viewer->user_id ) {
-			Services::votes()->prime( array_keys( $shown ), $viewer->user_id );
-		}
+		Services::votes()->prime_page( array_keys( $shown ), Block_Context::viewer() );
 
 		// A router region: answering and loading comments update it in place, see src/view.
 		return sprintf(

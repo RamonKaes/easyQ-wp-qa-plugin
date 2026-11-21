@@ -17,6 +17,7 @@ use EasyQ\Points\Points;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Repository;
 use EasyQ\Posts\Post_Service;
+use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Stats\Counts;
 use WP_Error;
@@ -166,6 +167,26 @@ final class Votes {
 				'vote' => Row::int( $row, 'vote' ),
 				'flag' => Row::int( $row, 'flag' ),
 			);
+		}
+	}
+
+	/**
+	 * Loads what the posts of a page show the viewer at once: the votes and flags of the viewer,
+	 * which the rules read, and who voted and flagged where the viewer may see it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $post_ids Post IDs.
+	 * @param Actor $viewer   Viewer.
+	 */
+	public function prime_page( array $post_ids, Actor $viewer ): void {
+		if ( null === $viewer->user_id || array() === $post_ids ) {
+			return;
+		}
+
+		$this->prime( $post_ids, $viewer->user_id );
+		if ( array() !== Services::permissions()->category_scope( 'permit_view_voters_flaggers', $viewer ) ) {
+			$this->voters_flaggers( $post_ids );
 		}
 	}
 
