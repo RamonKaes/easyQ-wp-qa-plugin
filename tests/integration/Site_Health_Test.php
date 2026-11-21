@@ -173,4 +173,16 @@ final class Site_Health_Test extends Test_Case {
 		$this->assertSame( '30', $fields['ip_retention_days']['value'] );
 		$this->assertSame( 'No', $fields['show_register_terms']['value'] );
 	}
+
+	public function test_every_change_of_dbdelta_is_named_in_words(): void {
+		$describe = new \ReflectionMethod( Site_Health::class, 'describe_change' );
+		$table    = Schema::table( 'posts' );
+
+		// The messages of dbDelta() (wp-admin/includes/upgrade.php), which are not translated.
+		$this->assertSame( 'Missing table: ' . $table, $describe->invoke( null, 'Created table ' . $table ) );
+		$this->assertSame( 'Missing column: ' . $table . '.views', $describe->invoke( null, 'Added column ' . $table . '.views' ) );
+		$this->assertSame( 'Missing index: ' . $table . ' KEY type_created (type,created)', $describe->invoke( null, 'Added index ' . $table . ' KEY type_created (type,created)' ) );
+		$this->assertSame( 'Column of another type: ' . $table . '.views', $describe->invoke( null, 'Changed type of ' . $table . '.views from int(10) to bigint(20)' ) );
+		$this->assertSame( 'Column with another default value: ' . $table . '.views', $describe->invoke( null, 'Changed default value of ' . $table . '.views from 1 to 0' ) );
+	}
 }

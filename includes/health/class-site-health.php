@@ -367,13 +367,15 @@ final class Site_Health {
 	private static function describe_change( string $change ): string {
 		$patterns = array(
 			/* translators: %s: name of a database table. */
-			'/^Created table (.+)$/'            => __( 'Missing table: %s', 'easyq' ),
+			'/^Created table (.+)$/'                     => __( 'Missing table: %s', 'easyq' ),
 			/* translators: %s: column of a database table. */
-			'/^Added column (.+)$/'             => __( 'Missing column: %s', 'easyq' ),
+			'/^Added column (.+)$/'                      => __( 'Missing column: %s', 'easyq' ),
 			/* translators: %s: index of a database table. */
-			'/^Added index (.+)$/'              => __( 'Missing index: %s', 'easyq' ),
+			'/^Added index (.+)$/'                       => __( 'Missing index: %s', 'easyq' ),
 			/* translators: %s: column of a database table. */
-			'/^Changed type of (.+?) from .*$/' => __( 'Column of another type: %s', 'easyq' ),
+			'/^Changed type of (.+?) from .*$/'          => __( 'Column of another type: %s', 'easyq' ),
+			/* translators: %s: column of a database table. */
+			'/^Changed default value of (.+?) from .*$/' => __( 'Column with another default value: %s', 'easyq' ),
 		);
 		foreach ( $patterns as $pattern => $text ) {
 			if ( 1 === preg_match( $pattern, $change, $match ) ) {
