@@ -265,4 +265,101 @@ final class Avatars_Test extends Test_Case {
 		$this->assertNotNull( get_post( $other ), 'The avatar the user points to stays.' );
 		$this->assertNull( get_post( $mine ), 'The one nobody points to goes.' );
 	}
+
+	/**
+	 * Writes a GIF of frames of a size, with image data no editor needs for these tests.
+	 *
+	 * @param int $frames Number of frames.
+	 * @param int $side   Width and height.
+	 * @return string Path of the file.
+	 */
+	private static function gif( int $frames, int $side ): string {
+		$size = pack( 'vv', $side, $side );
+		// A global colour table of two colours, which the count has to step over.
+		$data = 'GIF89a' . $size . "\x80\x00\x00" . str_repeat( "\x00", 6 );
+		for ( $i = 0; $i < $frames; $i++ ) {
+			// A graphic control extension, then an image without a colour table.
+			$data .= "\x21\xF9\x04\x00\x0A\x00\x00\x00\x2C\x00\x00\x00\x00" . $size . "\x00\x02\x02\x4C\x01\x00";
+		}
+		$path = wp_tempnam( 'avatar' );
+		file_put_contents( $path, $data . "\x3B" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A file of the test.
+		return $path;
+	}
+
+	/**
+	 * Uploads a file as an avatar.
+	 *
+	 * @param string $path File.
+	 * @param string $name Name.
+	 * @return int|\WP_Error
+	 */
+	private function upload_file( string $path, string $name ): int|\WP_Error {
+		Options::update( 'users', array( 'avatar_allow_upload' => true ) );
+		return Avatars::upload(
+			(int) $this->user()->user_id,
+			array(
+				'name'     => $name,
+				'type'     => 'image/gif',
+				'tmp_name' => $path,
+				'size'     => (int) filesize( $path ),
+				'error'    => UPLOAD_ERR_OK,
+			)
+		);
+	}
+
+	/**
+	 * Runs a check with about 64 MB left for images, as on a small host. PHP accepts no limit
+	 * below what it uses, and `wp_raise_memory_limit()` takes the filtered limit only above the
+	 * current one.
+	 *
+	 * @param callable $run Check.
+	 * @return mixed What the check returns.
+	 */
+	private static function with_little_memory( callable $run ): mixed {
+		$limit = (string) ini_get( 'memory_limit' );
+		$used  = (int) ceil( memory_get_usage() / MB_IN_BYTES );
+		$small = static fn (): string => $used + 65 . 'M';
+		ini_set( 'memory_limit', $used + 64 . 'M' ); // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- The limit the check reads.
+		add_filter( 'image_memory_limit', $small );
+		try {
+			return $run();
+		} finally {
+			remove_filter( 'image_memory_limit', $small );
+			ini_set( 'memory_limit', $limit ); // phpcs:ignore WordPress.PHP.IniSet.memory_limit_Disallowed -- Restores the limit.
+		}
+	}
+
+	public function test_every_frame_of_an_animation_counts_toward_the_pixels(): void {
+		$frames = new \ReflectionMethod( Avatars::class, 'frames' );
+		$this->assertSame( 300, $frames->invoke( null, self::gif( 300, 10 ) ) );
+		$this->assertSame( 1, $frames->invoke( null, DIR_TESTDATA . '/images/canola.jpg' ) );
+		$this->assertSame( 0, $frames->invoke( null, self::gif( 0, 10 ) ), 'A GIF without an image.' );
+		$this->assertSame( 1, $frames->invoke( null, DIR_TESTDATA . '/images/webp-lossy.webp' ) );
+		$this->assertSame( 1, $frames->invoke( null, DIR_TESTDATA . '/images/webp-lossless.webp' ) );
+		$this->assertGreaterThan( 1, $frames->invoke( null, DIR_TESTDATA . '/images/webp-animated.webp' ) );
+		$chunk = static fn ( string $name, string $body ): string => $name . pack( 'V', strlen( $body ) ) . $body . ( strlen( $body ) % 2 ? "\x00" : '' );
+		$webp  = $chunk( 'VP8X', str_repeat( "\x00", 10 ) ) . $chunk( 'ANIM', str_repeat( "\x00", 6 ) ) . $chunk( 'ANMF', str_repeat( "\x00", 17 ) ) . $chunk( 'ANMF', str_repeat( "\x00", 17 ) );
+		$path  = wp_tempnam( 'avatar' );
+		file_put_contents( $path, 'RIFF' . pack( 'V', 4 + strlen( $webp ) ) . 'WEBP' . $webp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A file of the test.
+		$this->assertSame( 2, $frames->invoke( null, $path ) );
+
+		// One frame of 2000 x 2000 pixels fits into about 64 MB, three hundred do not, as
+		// ImageMagick reads them all.
+		$result = self::with_little_memory( fn () => $this->upload_file( self::gif( 300, 2000 ), 'animation.gif' ) );
+		$single = self::with_little_memory( fn () => $this->upload_file( self::gif( 1, 2000 ), 'still.gif' ) );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'easyq_avatar_size', $result->get_error_code() );
+		$this->assertNotSame( 'easyq_avatar_size', $single instanceof \WP_Error ? $single->get_error_code() : '' );
+	}
+
+	public function test_a_file_that_only_starts_like_an_image_is_refused_for_its_type(): void {
+		$path = wp_tempnam( 'avatar' );
+		file_put_contents( $path, 'GIF89a<script>alert(1)</script>' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- A file of the test.
+
+		// Its header claims 29,500 x 29,283 pixels.
+		$result = self::with_little_memory( fn () => $this->upload_file( $path, 'portrait.gif' ) );
+
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'easyq_avatar_type', $result->get_error_code(), 'Not "too many pixels".' );
+	}
 }

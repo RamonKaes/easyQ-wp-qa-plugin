@@ -193,15 +193,6 @@ final class Avatars {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
-		$scale = self::fits_into_memory( $file['tmp_name'] );
-		if ( $scale < 1 ) {
-			return new WP_Error(
-				'easyq_avatar_size',
-				/* translators: %d: percentage, such as 50. */
-				sprintf( __( 'The image has too many pixels to be processed. Please scale it down to %d%% and try again.', 'easyq' ), (int) floor( $scale * 100 ) )
-			);
-		}
-
 		$overrides = array(
 			'test_form' => false,
 			'mimes'     => self::MIME_TYPES,
@@ -218,6 +209,18 @@ final class Avatars {
 		}
 
 		$path = $uploaded['file'];
+		// Measured once core read the type from the first bytes. A GIF or WebP file without an
+		// image counts no pixels, whatever its header claims, and the editor refuses it.
+		$scale = self::fits_into_memory( $path, self::frames( $path ) );
+		if ( $scale < 1 ) {
+			wp_delete_file( $path );
+			return new WP_Error(
+				'easyq_avatar_size',
+				/* translators: %d: percentage, such as 50. */
+				sprintf( __( 'The image has too many pixels to be processed. Please scale it down to %d%% and try again.', 'easyq' ), (int) floor( $scale * 100 ) )
+			);
+		}
+
 		$side = max( 16, Options::get_int( 'users', 'avatar_store_size' ) );
 		add_filter( 'wp_image_editors', array( self::class, 'image_editors' ) );
 		$editor = wp_get_image_editor( $path );
@@ -280,10 +283,11 @@ final class Avatars {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string $path Image file.
+	 * @param string $path   Image file.
+	 * @param int    $frames Frames of the image, see frames().
 	 * @return float 1 if it fits or cannot be measured, else the factor to scale both sides by.
 	 */
-	private static function fits_into_memory( string $path ): float {
+	private static function fits_into_memory( string $path, int $frames ): float {
 		$size = wp_getimagesize( $path );
 		if ( ! is_array( $size ) ) {
 			return 1.0;
@@ -296,10 +300,70 @@ final class Avatars {
 			return 1.0;
 		}
 
+		// ImageMagick reads every frame of an animation, where the size is that of the first.
 		$available = ( $limit - memory_get_usage() ) * 0.9;
-		$needed    = (int) filesize( $path ) + $size[0] * $size[1] * self::BYTES_PER_PIXEL;
+		$needed    = (int) filesize( $path ) + $size[0] * $size[1] * self::BYTES_PER_PIXEL * $frames;
 
 		return $needed <= $available ? 1.0 : sqrt( max( 0, $available ) / $needed );
+	}
+
+	/**
+	 * Counts the frames of a GIF or WebP image without decoding it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string $path Image file.
+	 * @return int The frames; 0 for a GIF or WebP file without an image, 1 for other formats.
+	 */
+	private static function frames( string $path ): int {
+		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+		$data   = (string) ( new \WP_Filesystem_Direct( null ) )->get_contents( $path );
+		$length = strlen( $data );
+		$frames = 0;
+
+		if ( str_starts_with( $data, 'GIF' ) && $length > 13 ) {
+			// The blocks of the format: extensions (0x21), images (0x2C), each with sub-blocks, and the trailer.
+			$skip_table = static fn ( int $flags ): int => ( $flags & 0x80 ) ? 3 * ( 2 << ( $flags & 7 ) ) : 0;
+			$position   = 13 + $skip_table( ord( $data[10] ) );
+			while ( $position < $length && 0x3B !== ord( $data[ $position ] ) ) {
+				$block = ord( $data[ $position ] );
+				if ( 0x2C === $block && $position + 10 < $length ) {
+					++$frames;
+					$position += 11 + $skip_table( ord( $data[ $position + 9 ] ) );
+				} elseif ( 0x21 === $block ) {
+					$position += 2;
+				} else {
+					break;
+				}
+				while ( $position < $length ) {
+					$size      = ord( $data[ $position ] );
+					$position += 1 + $size;
+					if ( 0 === $size ) {
+						break;
+					}
+				}
+			}
+			return $frames;
+		}
+
+		if ( str_starts_with( $data, 'RIFF' ) && 'WEBP' === substr( $data, 8, 4 ) ) {
+			// The chunks of the format, each with its size: an animation has one ANMF chunk per
+			// frame, a still image one VP8 or VP8L chunk.
+			$still = false;
+			for ( $position = 12; $position + 8 <= $length; ) {
+				$chunk     = substr( $data, $position, 4 );
+				$frames   += 'ANMF' === $chunk ? 1 : 0;
+				$still     = $still || in_array( $chunk, array( 'VP8 ', 'VP8L' ), true );
+				$unpacked  = unpack( 'V', substr( $data, $position + 4, 4 ) );
+				$size      = is_array( $unpacked ) && is_int( $unpacked[1] ?? null ) ? $unpacked[1] : $length;
+				$position += 8 + $size + ( $size % 2 );
+			}
+
+			return $frames > 0 ? $frames : (int) $still;
+		}
+
+		return 1;
 	}
 
 	/**
