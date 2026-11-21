@@ -55,7 +55,7 @@ final class Site_Health_Test extends Test_Case {
 		$result = $this->health->test_database();
 
 		$this->assertSame( 'critical', $result['status'] );
-		$this->assertStringContainsString( admin_url( 'plugins.php' ), $result['actions'] );
+		$this->assertStringContainsString( 'action=' . Site_Health::REPAIR_ACTION, $result['actions'] );
 	}
 
 	public function test_database_is_critical_and_lists_missing_tables(): void {
@@ -72,20 +72,46 @@ final class Site_Health_Test extends Test_Case {
 		// It says what is missing, not what the dry run of dbDelta() would have done.
 		$this->assertStringContainsString( '<li>Missing table: ' . $table . '</li>', $result['description'] );
 		$this->assertStringNotContainsString( 'Created table', $result['description'] );
-		$this->assertStringContainsString( esc_url( is_multisite() && is_plugin_active_for_network( plugin_basename( \EasyQ\PLUGIN_FILE ) ) ? network_admin_url( 'plugins.php' ) : admin_url( 'plugins.php' ) ), $result['actions'] );
+		$this->assertStringContainsString( esc_url( admin_url( 'admin-post.php' ) ), $result['actions'] );
 	}
 
-	public function test_on_a_network_the_action_leads_to_the_plugins_of_the_network(): void {
-		if ( ! is_multisite() ) {
-			$this->assertTrue( true );
-			return;
+	public function test_the_action_repairs_the_tables_of_the_site_it_is_shown_on(): void {
+		update_option( Installer::DB_VERSION_OPTION, Installer::DB_VERSION - 1 );
+		// On a network too: activating the plugin for the network installs the current site only.
+		$this->assertStringContainsString( esc_url( admin_url( 'admin-post.php' ) ), $this->health->test_database()['actions'] );
+		$redirected = static function (): void {
+			throw new \RuntimeException( 'redirected' );
+		};
+		add_filter( 'wp_redirect', $redirected );
+
+		// Only who may activate plugins, which installs the tables as well.
+		wp_set_current_user( (int) $this->user( 'editor' )->user_id );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( Site_Health::REPAIR_ACTION );
+		add_filter(
+			'wp_die_handler',
+			static fn (): callable => static function (): void {
+			throw new \RuntimeException( 'refused' );
+			}
+		);
+		try {
+			$this->health->repair_tables();
+		} catch ( \RuntimeException $e ) {
+			$this->assertSame( 'refused', $e->getMessage() );
 		}
-		update_site_option( 'active_sitewide_plugins', array( plugin_basename( \EasyQ\PLUGIN_FILE ) => time() ) + (array) get_site_option( 'active_sitewide_plugins', array() ) );
-		update_option( \EasyQ\Database\Installer::DB_VERSION_OPTION, 0 );
+		$this->assertSame( Installer::DB_VERSION - 1, (int) get_option( Installer::DB_VERSION_OPTION ) );
 
-		$result = $this->health->test_database();
+		wp_set_current_user( $this->administrator() );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( Site_Health::REPAIR_ACTION );
+		try {
+			$this->health->repair_tables();
+		} catch ( \RuntimeException $e ) {
+			$this->assertSame( 'redirected', $e->getMessage() );
+		}
+		remove_filter( 'wp_redirect', $redirected );
+		unset( $_REQUEST['_wpnonce'] );
 
-		$this->assertStringContainsString( esc_url( network_admin_url( 'plugins.php' ) ), $result['actions'] );
+		$this->assertSame( Installer::DB_VERSION, (int) get_option( Installer::DB_VERSION_OPTION ) );
+		$this->assertSame( 'good', $this->health->test_database()['status'] );
 	}
 
 	public function test_permalinks_are_recommended_without_a_structure(): void {

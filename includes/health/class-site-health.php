@@ -31,6 +31,15 @@ defined( 'ABSPATH' ) || exit;
 final class Site_Health {
 
 	/**
+	 * Action of the request that creates or updates the tables, see repair_tables().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const REPAIR_ACTION = 'easyq_repair_tables';
+
+	/**
 	 * Settings shown on the Info tab, by section.
 	 *
 	 * @since 0.1.0
@@ -52,6 +61,26 @@ final class Site_Health {
 	public function register(): void {
 		add_filter( 'site_status_tests', array( $this, 'add_tests' ) );
 		add_filter( 'debug_information', array( $this, 'add_information' ) );
+		add_action( 'admin_post_' . self::REPAIR_ACTION, array( $this, 'repair_tables' ) );
+	}
+
+	/**
+	 * Creates or updates the tables of the current site, as the action of the database test
+	 * offers it, and returns to Site Health.
+	 *
+	 * @since 0.1.0
+	 */
+	public function repair_tables(): void {
+		check_admin_referer( self::REPAIR_ACTION );
+		// Who may activate plugins, which installs the tables as well.
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'easyq' ), 403 );
+		}
+
+		Installer::install_site();
+
+		wp_safe_redirect( admin_url( 'site-health.php' ) );
+		exit;
 	}
 
 	/**
@@ -116,18 +145,12 @@ final class Site_Health {
 			'<p>%s</p>',
 			esc_html__( 'Some tables of easyQ are missing or differ from what this version of the plugin expects, so questions and answers may fail to show or to save.', 'easyq' )
 		) . ( '' === $list ? '' : '<ul>' . $list . '</ul>' );
-		// On a network the plugin is changed on the Plugins screen of the network.
-		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
-			// Not covered: the test runner has loaded wp-admin/includes/plugin.php already, and a PHP function cannot be unloaded.
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
-		$network           = is_multisite() && is_plugin_active_for_network( plugin_basename( \EasyQ\PLUGIN_FILE ) );
+		// The tables of this site, also on a network, where activating the plugin for the network
+		// installs the current site only and every other on its next request.
 		$result['actions'] = sprintf(
 			'<p><a href="%1$s">%2$s</a></p>',
-			esc_url( $network ? network_admin_url( 'plugins.php' ) : admin_url( 'plugins.php' ) ),
-			$network
-				? esc_html__( 'Deactivate and activate easyQ on the Plugins screen of the network to create or update the tables', 'easyq' )
-				: esc_html__( 'Deactivate and activate easyQ on the Plugins screen to create or update the tables', 'easyq' )
+			esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=' . self::REPAIR_ACTION ), self::REPAIR_ACTION ) ),
+			esc_html__( 'Create or update the tables of easyQ for this site', 'easyq' )
 		);
 
 		return $result;
