@@ -72,6 +72,24 @@ final class Privacy_Paging_Test extends Test_Case {
 		$this->assertSame( 0, $this->post( end( $posts )->id )->net_votes );
 	}
 
+	public function test_posts_are_deleted_in_smaller_pages_than_they_are_anonymized(): void {
+		\EasyQ\Settings\Options::update( 'general', array( 'erase_posts' => 'delete' ) );
+		$author   = $this->user();
+		$question = $this->ask( $this->user() );
+		for ( $i = 0; $i <= Post_Data::DELETES_PER_PAGE; $i++ ) {
+			$this->comment( $author, $question, $question, "Comment number $i to delete." );
+		}
+		$email = get_userdata( (int) $author->user_id )->user_email;
+
+		// Each deletion takes about 35 queries; 500 of them would be 17,500 in one request.
+		$first = Post_Data::erase_posts( $email );
+		$this->assertFalse( $first['done'] );
+		$left = static fn (): int => (int) $GLOBALS['wpdb']->get_var( $GLOBALS['wpdb']->prepare( 'SELECT COUNT(*) FROM %i WHERE user_id = %d', Schema::table( 'posts' ), $author->user_id ) );
+		$this->assertSame( 1, $left() );
+		$this->assertTrue( Post_Data::erase_posts( $email )['done'] );
+		$this->assertSame( 0, $left() );
+	}
+
 	public function test_messages_are_exported_with_one_page_loaded(): void {
 		global $wpdb;
 		$user  = get_userdata( (int) $this->user()->user_id );

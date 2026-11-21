@@ -56,6 +56,16 @@ final class Post_Data {
 	public const VOTES_PER_PAGE = 100;
 
 	/**
+	 * Posts the eraser deletes per request: each deletion recounts the question, the points
+	 * and the index with about 35 queries, where anonymizing a post takes one.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var int
+	 */
+	public const DELETES_PER_PAGE = 50;
+
+	/**
 	 * Exports the posts a person wrote or changed last.
 	 *
 	 * @since 0.1.0
@@ -167,8 +177,9 @@ final class Post_Data {
 	public static function erase_posts( string $email, int $page = 1 ): array {
 		unset( $page );
 		$user_id  = self::user_id( $email );
-		$rows     = self::posts_of( $user_id, $email, 0, replies_first: true );
 		$delete   = 'delete' === Options::get_string( 'general', 'erase_posts' );
+		$limit    = $delete ? self::DELETES_PER_PAGE : self::PER_PAGE;
+		$rows     = self::posts_of( $user_id, $email, 0, replies_first: true, limit: $limit );
 		$removed  = false;
 		$retained = false;
 		$messages = array();
@@ -198,7 +209,7 @@ final class Post_Data {
 			'items_removed'  => $removed,
 			'items_retained' => $retained,
 			'messages'       => $messages,
-			'done'           => count( $rows ) < self::PER_PAGE,
+			'done'           => count( $rows ) < $limit,
 		);
 	}
 
@@ -325,9 +336,10 @@ final class Post_Data {
 	 * @param int    $offset        Rows to skip.
 	 * @param bool   $replies_first Whether comments come before answers and answers before questions,
 	 *                              so that a post is deleted after its replies by the same person.
+	 * @param int    $limit         Rows at most.
 	 * @return list<Post>
 	 */
-	private static function posts_of( int $user_id, string $email, int $offset, bool $replies_first = false ): array {
+	private static function posts_of( int $user_id, string $email, int $offset, bool $replies_first = false, int $limit = self::PER_PAGE ): array {
 		if ( '' === $email ) {
 			return array();
 		}
@@ -335,8 +347,8 @@ final class Post_Data {
 		$wpdb  = DB::wpdb();
 		$table = Schema::table( 'posts' );
 		$sql   = $replies_first
-			? $wpdb->prepare( "SELECT * FROM %i WHERE user_id = %d OR last_user_id = %d OR (user_id IS NULL AND notify = %s) ORDER BY LEFT(type, 1) = 'C' DESC, LEFT(type, 1) = 'A' DESC, id DESC LIMIT %d OFFSET %d", $table, $user_id, $user_id, $email, self::PER_PAGE, $offset )
-			: $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d OR last_user_id = %d OR (user_id IS NULL AND notify = %s) ORDER BY id LIMIT %d OFFSET %d', $table, $user_id, $user_id, $email, self::PER_PAGE, $offset );
+			? $wpdb->prepare( "SELECT * FROM %i WHERE user_id = %d OR last_user_id = %d OR (user_id IS NULL AND notify = %s) ORDER BY LEFT(type, 1) = 'C' DESC, LEFT(type, 1) = 'A' DESC, id DESC LIMIT %d OFFSET %d", $table, $user_id, $user_id, $email, $limit, $offset )
+			: $wpdb->prepare( 'SELECT * FROM %i WHERE user_id = %d OR last_user_id = %d OR (user_id IS NULL AND notify = %s) ORDER BY id LIMIT %d OFFSET %d', $table, $user_id, $user_id, $email, $limit, $offset );
 		// Not reachable: prepare() with a fixed format never returns null; the check keeps the type.
 		if ( null === $sql ) {
 			return array();
