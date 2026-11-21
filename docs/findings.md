@@ -35,7 +35,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
-| F-234 | low | Cross-check 2026-11-19, low findings of the part auditors, each with its evidence in the audit notes: `languages/easyq.pot` is stale (6 strings missing). | several | old; Cross-check 2026-11-19 on `76f1989`. | Not guarded; deferred like the other low findings unless the owner decides otherwise. |
 
 ## Open suspicions
 
