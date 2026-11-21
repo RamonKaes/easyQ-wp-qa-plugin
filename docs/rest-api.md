@@ -49,7 +49,7 @@ and tools.
 - Plugins can add fields with `register_rest_field()` for the object types
   `easyq-question`, `easyq-answer`, `easyq-comment`, `easyq-post` (moderation list and
   actions), `easyq-category`, `easyq-tag`, `easyq-user`, `easyq-user-field`,
-  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice`, `easyq-message`, `easyq-feedback` and `easyq-newsletter`. `_fields` limits a response to some fields.
+  `easyq-ip`, `easyq-tool-batch`, `easyq-email-template`, `easyq-favorite`, `easyq-notice`, `easyq-message`, `easyq-feedback`, `easyq-newsletter` and `easyq-unsubscribe`. `_fields` limits a response to some fields.
 
 ## Errors
 
@@ -103,7 +103,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | Method and route | Description |
 | --- | --- |
 | `GET /questions` | List questions. Parameters: `source` (`recent`, `hot`, `votes`, `answers`, `views`, `unanswered`, `unselected`, `unupvoted`, or `favorites` for the favorites of the current user), `category` (includes subcategories), `tag`, `author`, `search` (words, best match first, as the search page finds them; the editor pickers use it), `page`, `per_page`. Totals in the `X-WP-Total` and `X-WP-TotalPages` headers; with `search` they are a lower bound (the results up to the page asked, and one more), as the search page of Question2Answer shows no total |
-| `POST /questions` | Ask a question: `title`, `content`, `format` (empty for plain text or `html`; HTML of questions and answers is filtered as core filters posts, without `data-wp-*` attributes, HTML of comments as core filters comments), `tags` (array, or text as entered by users), `category`, `notify`, `email`, `name` and `remember` (anonymous authors; `remember` is the consent to the visitor cookie while the site asks for it, `show_comments_cookies_opt_in`), `extra` (only while the extra field is on) |
+| `POST /questions` | Ask a question: `title`, `content`, `format` (empty for plain text or `html`; HTML of questions and answers is filtered as core filters posts, without `data-wp-*` attributes, HTML of comments as core filters comments), `tags` (array, or text as entered by users), `category`, `notify`, `email`, `name` and `remember` (anonymous authors; `remember` is the consent to the visitor cookie while the site asks for it, `show_comments_cookies_opt_in`), `extra` (only while the extra field is on), `follow` (the answer the new question follows on from, as Question2Answer asks a related question) |
 | `GET /questions/similar` | Similar questions and suggested tags for a `title`, as configured for the ask form |
 | `GET /questions/{id}` | A question; `context=edit` adds the raw content for users who may edit. While the extra field is on, `extra` holds its value as `rendered` (empty unless question pages show it) and, in the edit context, `raw` |
 | `PUT /questions/{id}` | Edit title, content, tags, category or, while the extra field is on, `extra`; `silent` hides the edit for users allowed to edit silently; `name` renames an author without an account, by that author, while such authors may give a name (as `pages/question-post.php`). Every field sent needs the right to edit, except `tags` and `category`, which the right to retag allows as well; a request without fields needs one of the two, as in core. `notify` and `email` change the notifications of the author and only the author may send them |
@@ -113,7 +113,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | Method and route | Description |
 | --- | --- |
 | `GET /questions/{id}/answers` | Answers sorted as configured, optionally with the selected answer first; `page`, `per_page` |
-| `POST /questions/{id}/answers` | Answer: `content`, `format`, `notify`, `email`, `name` |
+| `POST /questions/{id}/answers` | Answer: `content`, `format`, `notify`, `email`, `name`, and `remember` from authors without an account, as for questions |
 | `GET /answers/{id}` | An answer |
 | `PUT /answers/{id}` | Edit an answer: `content`, `format`, `silent`; `notify` and `email` by the author only, and `name` by an author without an account, as for questions |
 
@@ -123,7 +123,7 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | --- | --- |
 | `GET /posts/{id}` | A question, answer or comment by its ID, with the fields of its type, or the closing note of a question (`closed_by`); `context=edit` adds the raw content for users who may edit it. Posts the user may not see answer `404`, and so does a post below one: a comment below a hidden answer is hidden with it on every route |
 | `GET /posts/{id}/comments` | Comments on a question or answer, oldest first |
-| `POST /posts/{id}/comments` | Comment: `content`, `format`, `notify`, `email`, `name` |
+| `POST /posts/{id}/comments` | Comment: `content`, `format`, `notify`, `email`, `name`, and `remember` from authors without an account, as for questions |
 | `GET /comments/{id}` | A comment |
 | `PUT /comments/{id}` | Edit a comment: `content`, `format`, `silent`; `notify` and `email` by the author only, and `name` by an author without an account, as for questions |
 
@@ -159,11 +159,11 @@ Newly created posts carry `queued: true` if they wait for moderation.
 | `DELETE /categories/{id}` | Delete a category without subcategories; `reassign` names the category that receives its posts (0 or omitted for none). Needs `easyq_manage` and, as core for terms, `force=true`: there is no trash, so without it `501 rest_trash_not_supported` |
 | `POST /categories/{id}/reassign` | Move the posts directly in a category, not those in its subcategories, to the category `to` (0 for none); the ID 0 stands for posts without a category. Returns the number of moved questions. Needs `easyq_manage` |
 | `GET /tags` | Tags by popularity; `search` completes a prefix, `page` and `per_page` paginate |
-| `GET /users` | Users by points (`sort=points`, those who took part), the newest users (`newest`), users with special levels (`special`) or the favorites of the current user (`favorites`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages and list the profiles the viewer may open: users who took part, or every user for those who may list users (`list_users`), as core sorts users by their registration only for them. `search` finds users shown to the viewer by name, in the columns core searches for those who may not list users |
+| `GET /users` | `sort`: users by points (`points`, those who took part), the newest users (`newest`), users with special levels (`special`) or the favorites of the current user (`favorites`); paginated, each with name, link, avatar, level, title and points. `newest` and `special` follow the permissions of the matching Q2A pages and list the profiles the viewer may open: users who took part, or every user for those who may list users (`list_users`), as core sorts users by their registration only for them. `search` finds users shown to the viewer by name, in the columns core searches for those who may not list users |
 | `GET /users/{id}` | Public Q&A profile: name, avatar, level, title, points, rank, activity counts and the profile fields the viewer may see. As core shows users, a profile is public once its user took part in the Q&A area; until then only the user and those who may list or edit users see it, and others get `404`, here, on the wall and on the profile page. The date of the registration is in the edit context, which, as in core, only they may ask for (`rest_forbidden_context` otherwise). On multisite, users of other sites only have a profile once they took part |
 | `POST /users/{id}/actions/{action}` | `approve`, `block` or `unblock` a user, as a moderator may on the profile page of Question2Answer: a user below the level of the moderator (any user for a super administrator, or for who may edit the user in WordPress), never oneself; `approve` only while new users are moderated (400 otherwise), `block` not for moderators and higher (403). Answers `id`, `awaiting_approval` and `blocked`. The profile page offers the same as buttons that work without JavaScript |
 | `GET /users/me` | The profile of the current user, with all profile fields, including those hidden from others |
-| `POST /users/me` | Also `PUT` and `PATCH`, as `/wp/v2/users/me`. Change the own profile: `fields` (object of field name and value), `remove_avatar`, `notifications` (whether the user gets emails about their posts; only the current user sees this field), or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; turned upright, cropped to a square, without metadata; refused with `400` if it has more pixels than the memory for images can decode; every attempt counts towards the upload rate limit, as in Question2Answer). Name, email address and password are changed in the WordPress profile |
+| `POST /users/me` | Also `PUT` and `PATCH`, as `/wp/v2/users/me`. Change the own profile: `fields` (object of field name and value), `remove_avatar`, `notifications` (whether the user gets emails about their posts; only the current user sees this field), `messages` and `wall` (whether others may send the user private messages or post on their wall), or a new avatar as multipart upload in the field `avatar` (JPEG, PNG, GIF or WebP; turned upright, cropped to a square, without metadata; refused with `400` if it has more pixels than the memory for images can decode; every attempt counts towards the upload rate limit, as in Question2Answer). Name, email address and password are changed in the WordPress profile |
 
 Unless the site allows it in the posting settings, a question needs a category once
 categories exist, and that category must not have subcategories. This applies to
@@ -258,7 +258,8 @@ The settings shown on the easyQ settings screen are part of the core endpoint
 `/wp/v2/settings` (`GET` and `POST`, capability `manage_options`), one object per
 section: `easyq_settings_general`, `easyq_settings_permissions`, `easyq_settings_users`,
 `easyq_settings_posting`, `easyq_settings_viewing`, `easyq_settings_lists`,
-`easyq_settings_feeds`, `easyq_settings_spam` and `easyq_settings_points`. The points
+`easyq_settings_feeds`, `easyq_settings_spam`, `easyq_settings_points`, `easyq_settings_emails` and
+`easyq_settings_newsletter`, and the email templates in `easyq_email_templates`. The points
 include `user_titles`, an object of titles keyed by the points needed; changing a points
 value recalculates the points of all users. An update may pass only some settings
 of a section; the others keep their value. Unknown settings and values outside the

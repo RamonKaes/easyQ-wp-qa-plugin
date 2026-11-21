@@ -227,6 +227,29 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array(), array_values( array_filter( $own, static fn ( string $name ): bool => ! str_contains( $hooks, "binding source `$name`" ) ) ), 'Binding sources without documentation.' );
 	}
 
+	public function test_every_parameter_and_setting_of_the_rest_api_is_documented(): void {
+		$document = $this->read( self::root() . 'docs/rest-api.md' );
+		$missing  = array();
+		foreach ( rest_get_server()->get_routes( 'easyq/v1' ) as $route => $handlers ) {
+			// The parameters of the path are named by the path.
+			preg_match_all( '/\(\?P<(\w+)>/', $route, $path );
+			foreach ( $handlers as $handler ) {
+				foreach ( array_keys( (array) ( $handler['args'] ?? array() ) ) as $arg ) {
+					if ( 'namespace' !== $arg && ! in_array( $arg, $path[1], true ) && ! str_contains( $document, "`$arg`" ) ) {
+						$missing[] = "$route: $arg";
+					}
+				}
+			}
+		}
+		foreach ( array_keys( get_registered_settings() ) as $setting ) {
+			if ( str_starts_with( $setting, 'easyq_' ) && ! str_contains( $document, "`$setting`" ) ) {
+				$missing[] = "setting $setting";
+			}
+		}
+
+		$this->assertSame( array(), array_values( array_unique( $missing ) ) );
+	}
+
 	public function test_filters_and_events_match_the_hooks_document(): void {
 		$hooks  = $this->read( self::root() . 'docs/hooks.md' );
 		$source = implode( "\n", $this->sources( 'includes' ) );
