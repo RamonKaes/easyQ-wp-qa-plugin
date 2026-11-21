@@ -335,4 +335,22 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertSame( 200, $this->request( 'DELETE', '/users/' . $owner->ID . '/wall/' . $post['id'], array( 'force' => true ) )->get_status() );
 		$this->assertNull( Services::messages()->find( $post['id'] ) );
 	}
+
+	public function test_the_wall_pages_by_its_query_variable(): void {
+		remove_all_filters( 'sanitize_option_' . Options::option_name( 'users' ) );
+		Options::update( 'users', array( 'page_size_wall' => 1 ) );
+		$owner = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
+		$this->assertInstanceOf( \WP_User::class, $owner );
+		Services::messages()->post_on_wall( $this->user(), $owner, 'The older post on the wall.' );
+		Services::messages()->post_on_wall( $this->user(), $owner, 'The newer post on the wall.' );
+		$render = fn (): string => $this->page( 'easyq-user-wall', new Route( 'user', $owner, 'wall' ) );
+
+		$this->assertStringContainsString( 'The newer post', $render() );
+
+		$_GET[ \EasyQ\Blocks\Render\Messages_Render::PAGE_VAR ] = '2';
+		$second = $render();
+		unset( $_GET[ \EasyQ\Blocks\Render\Messages_Render::PAGE_VAR ] );
+		$this->assertStringContainsString( 'The older post', $second );
+		$this->assertStringNotContainsString( 'The newer post', $second );
+	}
 }

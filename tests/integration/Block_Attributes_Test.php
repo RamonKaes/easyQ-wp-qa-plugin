@@ -1,6 +1,6 @@
 <?php
 /**
- * Tests that numbers out of range in block attributes break no block.
+ * Tests that numbers out of range and values of another type in block attributes break no block.
  *
  * @package easyQ
  */
@@ -143,5 +143,73 @@ final class Block_Attributes_Test extends Test_Case {
 		}
 
 		$this->assertSame( array(), $found, 'Integers from attributes and arguments go through EasyQ\Util\Number.' );
+	}
+
+	public function test_values_of_another_type_break_no_block(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		$this->take_part( (int) $author->user_id );
+		Block_Context::router()->set_current( new Route( 'question', $question ) );
+		$context  = array(
+			'easyq/postId' => $question->id,
+			'easyq/userId' => (int) $author->user_id,
+			'easyq/listId' => 'list',
+		);
+		$failures = array();
+
+		// Core checks no key of the query attribute, an object without properties.
+		foreach ( array( array( 'news' ), 5, true ) as $value ) {
+			foreach ( array( 'tag', 'source' ) as $key ) {
+				foreach ( self::problems( 'easyq/question-query', array( 'query' => array( $key => $value ) ), $context ) as $problem ) {
+					$failures[] = "question-query query.$key: $problem";
+				}
+			}
+		}
+
+		// A key of another type is as if it were not set, also for the page size of tag lists.
+		$this->assertSame(
+			\EasyQ\Blocks\Render\Query_Resolver::arguments( array() ),
+			\EasyQ\Blocks\Render\Query_Resolver::arguments(
+				array(
+					'tag'    => array( 'news' ),
+					'source' => array( 'hot' ),
+				)
+			)
+		);
+
+		// The other attributes core checks against their schema; a block binding sets its
+		// values after that check, so each renderer checks the type again.
+		$block = static fn ( string $name ): WP_Block => new WP_Block(
+			array(
+				'blockName'    => $name,
+				'attrs'        => array(),
+				'innerBlocks'  => array(),
+				'innerHTML'    => '',
+				'innerContent' => array(),
+			),
+			$context
+		);
+		foreach ( array(
+			array( 'post-tags', array( 'separator' => array( ' / ' ) ) ),
+			array( 'user-stats', array( 'rows' => array( 'points', array( 'member' ), 7 ) ) ),
+			array( 'activity-count', array( 'rows' => array( 'questions', array( 'users' ) ) ) ),
+		) as [ $name, $attributes ] ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Records PHP messages of the block.
+			set_error_handler(
+				static function ( int $errno, string $errstr ) use ( &$failures, $name ): bool {
+					$failures[] = "$name: $errstr";
+					return true;
+				}
+			);
+			try {
+				\EasyQ\Blocks\Renderer::render( $name, $attributes, '', $block( 'easyq/' . $name ) );
+			} catch ( \Throwable $e ) {
+				$failures[] = "$name: " . get_class( $e ) . ': ' . $e->getMessage();
+			} finally {
+				restore_error_handler();
+			}
+		}
+
+		$this->assertSame( array(), $failures );
 	}
 }
