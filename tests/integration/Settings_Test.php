@@ -716,4 +716,22 @@ final class Settings_Test extends Test_Case {
 		$this->assertSame( '198.51.100.9', $saved['block_ips_write'] );
 		$this->assertContains( 'easyq_changed_block_ips_write', array_column( get_settings_errors( $option ), 'code' ) );
 	}
+
+	public function test_a_value_of_the_wrong_type_keeps_the_stored_one_and_says_so(): void {
+		global $wp_settings_errors;
+		wp_set_current_user( $this->administrator() );
+		Options::update( 'posting', array( 'allow_close_questions' => true ) );
+		Options::update( 'spam', array( 'block_ips_write' => '192.0.2.1' ) );
+		$wp_settings_errors = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Only the messages of this test.
+
+		// A list sent for a switch turned it off without a word; for a text it kept the value without a word.
+		$posting = \EasyQ\Settings\Registry::sanitize( array( 'allow_close_questions' => array( '1' ) ), Options::option_name( 'posting' ) );
+		$spam    = \EasyQ\Settings\Registry::sanitize( array( 'block_ips_write' => array( '203.0.113.7' ) ), Options::option_name( 'spam' ) );
+
+		$this->assertTrue( $posting['allow_close_questions'] );
+		$this->assertSame( '192.0.2.1', $spam['block_ips_write'] );
+		$codes = array_column( get_settings_errors(), 'code' );
+		$this->assertContains( 'easyq_allow_close_questions', $codes );
+		$this->assertContains( 'easyq_block_ips_write', $codes );
+	}
 }

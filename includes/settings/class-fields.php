@@ -324,7 +324,8 @@ final class Fields {
 	private static function sanitize_value( array $field, mixed $value, mixed $current ): mixed {
 		switch ( $field['type'] ) {
 			case 'bool':
-				return is_bool( $value ) || is_int( $value ) || is_string( $value ) ? rest_sanitize_boolean( $value ) : false;
+				// A value that is no switch keeps the stored one, as the other types do, rather than turning it off.
+				return is_bool( $value ) || is_int( $value ) || is_string( $value ) ? rest_sanitize_boolean( $value ) : $current;
 
 			case 'int':
 				if ( ! is_numeric( $value ) ) {
@@ -427,6 +428,16 @@ final class Fields {
 			case 'email':
 				/* translators: %s: label of a setting. */
 				return ! is_string( $value ) || ( '' !== trim( $value ) && ! is_email( sanitize_email( $value ) ) ) ? sprintf( __( '%s needs a valid email address; the previous one is kept.', 'easyq' ), $label ) : null;
+
+			case 'bool':
+				/* translators: %s: label of a setting. */
+				return is_bool( $value ) || is_int( $value ) || is_string( $value ) ? null : sprintf( __( '%s needs to be on or off; the previous value is kept.', 'easyq' ), $label );
+
+			case 'lines':
+			case 'html':
+			case 'text':
+				/* translators: %s: label of a setting. */
+				return is_string( $value ) ? null : sprintf( __( '%s needs text; the previous value is kept.', 'easyq' ), $label );
 
 			default:
 				return null;
