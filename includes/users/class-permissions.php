@@ -374,6 +374,10 @@ final class Permissions {
 
 		$rules['followable'] = Post::ANSWER === $post->type && Options::get_bool( 'posting', 'follow_on_as' );
 
+		// Who voted on and who flagged the post, as `qa-layer-voters-flaggers.php` shows them where the
+		// level of the actor in the category of the post allows it (`qa_user_post_permit_error()`).
+		$rules['voters_viewable'] = null === $error( 'permit_view_voters_flaggers' );
+
 		// Claiming must not break the rules about answering own questions and answering twice.
 		if ( $rules['claimable'] && Post::ANSWER === $base_type ) {
 			if ( ! Options::get_bool( 'posting', 'allow_self_answer' ) && null !== $parent_post && $this->is_by( $parent_post, $actor ) ) {

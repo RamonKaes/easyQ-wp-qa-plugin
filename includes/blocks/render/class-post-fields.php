@@ -17,6 +17,7 @@ use EasyQ\Posts\Content_Renderer;
 use EasyQ\Posts\Post;
 use EasyQ\Posts\Post_Service;
 use EasyQ\REST\Post_Input;
+use EasyQ\REST\Post_Formatter;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
@@ -169,12 +170,33 @@ final class Post_Fields {
 		// Up and down votes separately (Q2A `votes_separated`) or their difference; the block can override the site setting.
 		$display   = is_string( $attributes['display'] ?? null ) ? $attributes['display'] : '';
 		$separated = in_array( $display, array( 'net', 'separated' ), true ) ? 'separated' === $display : Options::get_bool( 'viewing', 'votes_separated' );
+
+		// Who voted, for those who may view voters and flaggers: on the count as Question2Answer
+		// shows it (`qa-layer-voters-flaggers.php`), and as text, which a mouse is not needed for.
+		$who = array();
+		if ( null !== $viewer->user_id && Services::permissions()->post_rules( $post, $viewer )['voters_viewable'] ) {
+			$names = array(
+				'up'   => array(),
+				'down' => array(),
+			);
+			foreach ( Post_Formatter::voters_flaggers( $post )[0] as $voter ) {
+				$names[ $voter['vote'] > 0 ? 'up' : 'down' ][] = wp_specialchars_decode( $voter['name'], ENT_QUOTES );
+			}
+			/* translators: %l: list of names. */
+			$who['up'] = array() === $names['up'] ? '' : wp_sprintf( __( 'Voted up by %l.', 'easyq' ), $names['up'] );
+			/* translators: %l: list of names. */
+			$who['down'] = array() === $names['down'] ? '' : wp_sprintf( __( 'Voted down by %l.', 'easyq' ), $names['down'] );
+			$who['net']  = trim( $who['up'] . ' ' . $who['down'] );
+		}
+
 		// The label is for screen readers; ARIA does not allow aria-label on a plain span.
 		$count = static fn ( string $key, int $value, string $label ): string => sprintf(
-			'<span><span class="screen-reader-text">%s </span><span data-wp-text="context.%sText">%s</span></span>',
+			'<span%4$s><span class="screen-reader-text">%1$s </span><span data-wp-text="context.%2$sText">%3$s</span>%5$s</span>',
 			esc_html( $label ),
 			esc_attr( $key ),
-			esc_html( number_format_i18n( $value ) )
+			esc_html( number_format_i18n( $value ) ),
+			'' === ( $who[ $key ] ?? '' ) ? '' : ' title="' . esc_attr( $who[ $key ] ) . '"',
+			'' === ( $who[ $key ] ?? '' ) ? '' : '<span class="screen-reader-text"> ' . esc_html( $who[ $key ] ) . '</span>'
 		);
 
 		$html = $separated

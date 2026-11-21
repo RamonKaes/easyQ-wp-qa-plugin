@@ -60,7 +60,17 @@ final class Policy_Text {
 
 		$strings[] = '<h2 class="wp-block-heading">' . __( 'Questions and answers', 'easyq' ) . '</h2>';
 		$strings[] = '<p class="privacy-policy-tutorial">' . __( 'This section covers the question and answer pages of the site. Review it after changing the settings of easyQ, as it describes them.', 'easyq' ) . '</p>';
-		$strings[] = '<p>' . $suggested . __( 'When you ask a question, write an answer or a comment, vote, or flag a post, we store it with your user account. Questions, answers and comments are public and show your user name and profile picture. Votes and flags are stored so that each counts only once; who cast them is visible only to the moderators of the site.', 'easyq' ) . '</p>';
+		// Who may see who voted and flagged, as the setting says (`permit_view_voters_flaggers`).
+		$voters = match ( Options::get_int( 'permissions', 'permit_view_voters_flaggers' ) ) {
+			Permits::EXPERTS    => __( 'the experts, editors, moderators and administrators of the site', 'easyq' ),
+			Permits::EDITORS    => __( 'the editors, moderators and administrators of the site', 'easyq' ),
+			Permits::MODERATORS => __( 'the moderators and administrators of the site', 'easyq' ),
+			Permits::SUPERS     => __( 'the super administrators of the network', 'easyq' ),
+			default             => __( 'the administrators of the site', 'easyq' ),
+		};
+		$strings[] = '<p>' . $suggested . __( 'When you ask a question, write an answer or a comment, vote, or flag a post, we store it with your user account. Questions, answers and comments are public and show your user name and profile picture.', 'easyq' )
+			/* translators: %s: who may see it, such as "the administrators of the site". */
+			. ' ' . sprintf( __( 'Votes and flags are stored so that each counts only once; who cast them is visible only to %s.', 'easyq' ), $voters ) . '</p>';
 		$strings[] = '<p>' . ( Options::get_bool( 'spam', 'ip_anonymize' )
 			? __( 'To prevent abuse, we also store the IP address from which a post was written or last changed, shortened by its last part.', 'easyq' )
 			: __( 'To prevent abuse, we also store the IP address from which a post was written or last changed.', 'easyq' ) ) . '</p>';

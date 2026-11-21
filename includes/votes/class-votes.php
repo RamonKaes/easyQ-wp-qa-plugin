@@ -47,6 +47,16 @@ final class Votes {
 	private static array $rows = array();
 
 	/**
+	 * Who voted on and who flagged posts, loaded during the current request, keyed by
+	 * `site:post`; cleared with the votes, see forget().
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var array<string, list<array{user_id: int, vote: int, flag: int}>>
+	 */
+	private static array $voters = array();
+
+	/**
 	 * Sets up the service.
 	 *
 	 * @since 0.1.0
@@ -160,6 +170,53 @@ final class Votes {
 	}
 
 	/**
+	 * Returns who voted on and who flagged several posts, with one query, as
+	 * `qa_db_post_voters_flaggers_selectspec()` loads them for the posts of a page.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int[] $post_ids Post IDs.
+	 * @return array<int, list<array{user_id: int, vote: int, flag: int}>> Votes and flags by post, ordered by user.
+	 */
+	public function voters_flaggers( array $post_ids ): array {
+		$post_ids = array_values( array_unique( array_filter( array_map( 'intval', $post_ids ) ) ) );
+		$key      = static fn ( int $post_id ): string => get_current_blog_id() . ':' . $post_id;
+		$missing  = array_values( array_filter( $post_ids, static fn ( int $id ): bool => ! isset( self::$voters[ $key( $id ) ] ) ) );
+
+		if ( array() !== $missing ) {
+			foreach ( $missing as $post_id ) {
+				self::$voters[ $key( $post_id ) ] = array();
+			}
+			$wpdb = DB::wpdb();
+			$rows = DB::rows(
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
+				$wpdb->get_results(
+					$wpdb->prepare(
+						'SELECT post_id, user_id, vote, flag FROM %i WHERE (vote != 0 OR flag != 0) AND post_id IN (' . implode( ',', array_fill( 0, count( $missing ), '%d' ) ) . ') ORDER BY post_id, user_id',
+						array_merge( array( Schema::table( 'uservotes' ) ), $missing )
+					)
+				)
+			);
+			foreach ( $rows as $row ) {
+				self::$voters[ $key( Row::int( $row, 'post_id' ) ) ][] = array(
+					'user_id' => Row::int( $row, 'user_id' ),
+					'vote'    => Row::int( $row, 'vote' ),
+					'flag'    => Row::int( $row, 'flag' ),
+				);
+			}
+			// The names are shown next to the votes.
+			cache_users( array_column( array_merge( array(), ...array_map( static fn ( int $id ): array => self::$voters[ $key( $id ) ], $missing ) ), 'user_id' ) );
+		}
+
+		$found = array();
+		foreach ( $post_ids as $post_id ) {
+			$found[ $post_id ] = self::$voters[ $key( $post_id ) ];
+		}
+
+		return $found;
+	}
+
+	/**
 	 * Returns the key of a vote in the votes loaded during the current request.
 	 *
 	 * @since 0.1.0
@@ -180,7 +237,8 @@ final class Votes {
 	 * @since 0.1.0
 	 */
 	public static function forget(): void {
-		self::$rows = array();
+		self::$rows   = array();
+		self::$voters = array();
 	}
 
 	/**

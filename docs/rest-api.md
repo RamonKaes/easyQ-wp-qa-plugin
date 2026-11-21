@@ -86,8 +86,8 @@ Questions, answers and comments share one representation:
 | `author` | `id` (null for anonymous authors), `name`, `avatar`, `points` |
 | `content` | `rendered` HTML, `format`; `raw` in the `edit` context for users who may edit |
 | `excerpt` | Shortened plain text |
-| `votes` | `up`, `down`, `net` and the current user's vote in `user` |
-| `flags` | `user` (flagged by the current user); `count` for moderators only |
+| `votes` | `up`, `down`, `net` and the current user's vote in `user`; `voters` (`id`, `name`, `vote`) for those who may view voters and flaggers (`permit_view_voters_flaggers`, by the level in the category of the post), else `null` |
+| `flags` | `user` (flagged by the current user); `count` for moderators only; `flaggers` (`id`, `name`) for those who may view voters and flaggers, else `null` |
 | `can` | Actions the current user can perform: `answer`, `comment`, `edit`, `retag`, `select`, `vote`, `vote_down`, `flag`, `unflag`, `clear_flags`, `close`, `reopen`, `moderate`, `hide`, `reshow`, `delete`, `claim`, `follow` |
 | `ip` | IP address of anonymous authors, for users allowed to see it |
 

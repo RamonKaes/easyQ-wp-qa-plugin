@@ -101,16 +101,43 @@ final class Post_Schema {
 				'type'        => 'object',
 				'readonly'    => true,
 				'properties'  => array(
-					'up'   => array( 'type' => 'integer' ),
-					'down' => array( 'type' => 'integer' ),
-					'net'  => array( 'type' => 'integer' ),
-					'user' => array( 'type' => 'integer' ),
+					'up'     => array( 'type' => 'integer' ),
+					'down'   => array( 'type' => 'integer' ),
+					'net'    => array( 'type' => 'integer' ),
+					'user'   => array( 'type' => 'integer' ),
+					'voters' => array(
+						'description' => __( 'Who voted, for those who may view voters and flaggers; null for others.', 'easyq' ),
+						'type'        => array( 'array', 'null' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id'   => array( 'type' => 'integer' ),
+								'name' => array( 'type' => 'string' ),
+								'vote' => array( 'type' => 'integer' ),
+							),
+						),
+					),
 				),
 			),
 			'flags'        => array(
 				'description' => __( 'Flags; the count is only shown to moderators.', 'easyq' ),
 				'type'        => 'object',
 				'readonly'    => true,
+				'properties'  => array(
+					'count'    => array( 'type' => array( 'integer', 'null' ) ),
+					'user'     => array( 'type' => 'boolean' ),
+					'flaggers' => array(
+						'description' => __( 'Who flagged, for those who may view voters and flaggers; null for others.', 'easyq' ),
+						'type'        => array( 'array', 'null' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id'   => array( 'type' => 'integer' ),
+								'name' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
 			),
 			'can'          => array(
 				'description'          => __( 'Actions the current user can perform on the post.', 'easyq' ),

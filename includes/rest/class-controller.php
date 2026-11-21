@@ -319,6 +319,10 @@ abstract class Controller extends WP_REST_Controller {
 		Services::user_query()->prime( $authors );
 		if ( array() !== $posts && null !== $viewer ) {
 			Services::votes()->prime( array_map( static fn ( Post $post ): int => $post->id, $posts ), $viewer );
+			// Who voted and flagged, where the viewer may see it somewhere.
+			if ( array() !== Services::permissions()->category_scope( 'permit_view_voters_flaggers', $this->actor() ) ) {
+				Services::votes()->voters_flaggers( array_map( static fn ( Post $post ): int => $post->id, $posts ) );
+			}
 		}
 
 		$data = array();

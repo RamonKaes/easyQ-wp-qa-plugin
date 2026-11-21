@@ -169,6 +169,12 @@ final class Posts_List_Table extends WP_List_Table {
 		if ( null !== $this->actor->user_id ) {
 			Services::votes()->prime( array_map( static fn ( Post $post ): int => $post->id, $posts ), $this->actor->user_id );
 		}
+
+		// Who flagged the flagged posts, where the moderator may see it.
+		$flagged = array_filter( $posts, static fn ( Post $post ): bool => $post->flag_count > 0 );
+		if ( array() !== $flagged && array() !== Services::permissions()->category_scope( 'permit_view_voters_flaggers', $this->actor ) ) {
+			Services::votes()->voters_flaggers( array_map( static fn ( Post $post ): int => $post->id, $flagged ) );
+		}
 	}
 
 	/**
@@ -437,6 +443,12 @@ final class Posts_List_Table extends WP_List_Table {
 		if ( $item->flag_count > 0 ) {
 			/* translators: %s: number of flags. */
 			$states[] = sprintf( _n( '%s flag', '%s flags', $item->flag_count, 'easyq' ), number_format_i18n( $item->flag_count ) );
+			// Who flagged, for those who may view voters and flaggers, as Question2Answer shows it.
+			$flaggers = Services::permissions()->post_rules( $item, $this->actor )['voters_viewable'] ? \EasyQ\REST\Post_Formatter::voters_flaggers( $item )[1] : array();
+			if ( array() !== $flaggers ) {
+				/* translators: %l: list of names. */
+				$states[] = wp_sprintf( __( 'flagged by %l', 'easyq' ), array_map( static fn ( array $flagger ): string => wp_specialchars_decode( $flagger['name'], ENT_QUOTES ), $flaggers ) );
+			}
 		}
 
 		$type = match ( $item->base_type() ) {

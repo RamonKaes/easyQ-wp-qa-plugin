@@ -76,12 +76,13 @@ final class Post_Formatter {
 	 * @return array<string, mixed>
 	 */
 	public function format( Post $post, Actor $viewer, string $context = 'view', array $children = array() ): array {
-		$permissions = Services::permissions();
-		$base_type   = $post->base_type();
-		$rules       = $permissions->post_rules( $post, $viewer, null, array(), $children );
-		$question_id = Post::QUESTION === $base_type ? $post->id : Services::post_service()->question_of( $post )?->id;
-		$user_vote   = null === $viewer->user_id ? 0 : Services::votes()->vote_of( $post->id, $viewer->user_id );
-		$moderator   = null !== $viewer->user_id && user_can( $viewer->user_id, Capabilities::MODERATE );
+		$permissions           = Services::permissions();
+		$base_type             = $post->base_type();
+		$rules                 = $permissions->post_rules( $post, $viewer, null, array(), $children );
+		$question_id           = Post::QUESTION === $base_type ? $post->id : Services::post_service()->question_of( $post )?->id;
+		$user_vote             = null === $viewer->user_id ? 0 : Services::votes()->vote_of( $post->id, $viewer->user_id );
+		$moderator             = null !== $viewer->user_id && user_can( $viewer->user_id, Capabilities::MODERATE );
+		[ $voters, $flaggers ] = $rules['voters_viewable'] ? self::voters_flaggers( $post ) : array( null, null );
 
 		$data = array(
 			'id'           => $post->id,
@@ -98,14 +99,16 @@ final class Post_Formatter {
 			),
 			'excerpt'      => $this->renderer->text( Text::shorten_line( $post->text(), 200 ) ),
 			'votes'        => array(
-				'up'   => $post->upvotes,
-				'down' => $post->downvotes,
-				'net'  => $post->net_votes,
-				'user' => $user_vote,
+				'up'     => $post->upvotes,
+				'down'   => $post->downvotes,
+				'net'    => $post->net_votes,
+				'user'   => $user_vote,
+				'voters' => $voters,
 			),
 			'flags'        => array(
-				'count' => $moderator ? $post->flag_count : null,
-				'user'  => $rules['unflaggable'],
+				'count'    => $moderator ? $post->flag_count : null,
+				'user'     => $rules['unflaggable'],
+				'flaggers' => $flaggers,
 			),
 			'can'          => array(
 				'answer'      => $rules['answer_button'],
@@ -160,6 +163,41 @@ final class Post_Formatter {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Returns who voted on and who flagged a post, with their names, as Question2Answer shows
+	 * them to those who may view voters and flaggers (`qa-layer-voters-flaggers.php`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post $post Post.
+	 * @return array{0: list<array{id: int, name: string, vote: int}>, 1: list<array{id: int, name: string}>}
+	 */
+	public static function voters_flaggers( Post $post ): array {
+		$voters   = array();
+		$flaggers = array();
+		foreach ( Services::votes()->voters_flaggers( array( $post->id ) )[ $post->id ] ?? array() as $row ) {
+			$user = get_userdata( $row['user_id'] );
+			if ( false === $user ) {
+				continue;
+			}
+			if ( 0 !== $row['vote'] ) {
+				$voters[] = array(
+					'id'   => $user->ID,
+					'name' => $user->display_name,
+					'vote' => $row['vote'],
+				);
+			}
+			if ( 0 !== $row['flag'] ) {
+				$flaggers[] = array(
+					'id'   => $user->ID,
+					'name' => $user->display_name,
+				);
+			}
+		}
+
+		return array( $voters, $flaggers );
 	}
 
 	/**
