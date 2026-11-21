@@ -15,6 +15,7 @@ use EasyQ\Posts\Post_Service;
 use EasyQ\Settings\Options;
 use EasyQ\Users\Visitor_Cookie;
 use EasyQ\Util\Text;
+use WP_Error;
 use WP_REST_Request;
 
 defined( 'ABSPATH' ) || exit;
@@ -37,9 +38,10 @@ final class Post_Input {
 	public static function content_args( bool $required ): array {
 		return array(
 			'content'  => array(
-				'description' => __( 'Content of the post.', 'easyq' ),
-				'type'        => 'string',
-				'required'    => $required,
+				'description'       => __( 'Content of the post.', 'easyq' ),
+				'type'              => 'string',
+				'required'          => $required,
+				'validate_callback' => array( self::class, 'validate_text' ),
 			),
 			'format'   => array(
 				'description' => __( 'Content format: empty for plain text, or html.', 'easyq' ),
@@ -57,14 +59,34 @@ final class Post_Input {
 				'format'      => 'email',
 			),
 			'name'     => array(
-				'description' => __( 'Name of an anonymous author.', 'easyq' ),
-				'type'        => 'string',
+				'description'       => __( 'Name of an anonymous author.', 'easyq' ),
+				'type'              => 'string',
+				'validate_callback' => array( self::class, 'validate_text' ),
 			),
 			'remember' => array(
 				'description' => __( 'Whether an anonymous author may be remembered in this browser with a cookie, to edit the post later. Needed when the site asks before it sets the comment cookies (show_comments_cookies_opt_in).', 'easyq' ),
 				'type'        => 'boolean',
 			),
 		);
+	}
+
+	/**
+	 * Refuses bytes in a text that are no UTF-8: they cannot be stored, and dropping them
+	 * silently would store an empty post as a success. The schema is checked as well, by the
+	 * default sanitizer of core (`rest_parse_request_arg()`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $value Value.
+	 * @return true|WP_Error
+	 */
+	public static function validate_text( mixed $value ): bool|WP_Error {
+		// As `wp_check_invalid_utf8()` checks without mbstring; `wp_is_valid_utf8()` came with WordPress 6.9.
+		if ( is_string( $value ) && 1 !== preg_match( '//u', $value ) ) {
+			return new WP_Error( 'rest_invalid_param', __( 'The text has characters that are not valid. Please type it again.', 'easyq' ) );
+		}
+
+		return true;
 	}
 
 	/**

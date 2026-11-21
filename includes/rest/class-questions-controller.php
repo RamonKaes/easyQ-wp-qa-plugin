@@ -502,9 +502,10 @@ final class Questions_Controller extends Controller {
 	private function question_args( bool $is_new ): array {
 		$args = array(
 			'title'    => array(
-				'description' => __( 'Title of the question.', 'easyq' ),
-				'type'        => 'string',
-				'required'    => $is_new,
+				'description'       => __( 'Title of the question.', 'easyq' ),
+				'type'              => 'string',
+				'required'          => $is_new,
+				'validate_callback' => array( Post_Input::class, 'validate_text' ),
 			),
 			'tags'     => array(
 				'description' => __( 'Tags, as an array or as text entered by a user.', 'easyq' ),

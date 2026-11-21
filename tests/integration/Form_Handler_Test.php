@@ -657,4 +657,47 @@ final class Form_Handler_Test extends REST_Test_Case {
 		// Not core's "Invalid parameter(s): vote", which names the parameter, not the field.
 		$this->assertSame( 'Please check the form.', Flash::current()['message'] ?? '' );
 	}
+
+	public function test_text_that_is_no_utf8_is_refused_and_nothing_is_stored(): void {
+		global $wpdb;
+		$this->login();
+		$posts  = static fn (): int => (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . \EasyQ\Database\Schema::table( 'posts' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- A count of the test.
+		$before = $posts();
+
+		// A form sends the bytes as they come; core would drop them and store an empty post.
+		foreach ( array( 'content', 'title' ) as $field ) {
+			$fields           = array(
+				'title'   => 'A question with a broken byte',
+				'content' => 'The text of a question with a broken byte.',
+			);
+			$fields[ $field ] = "Broken \xC3\x28 byte in the $field";
+			$this->assertSame( '', $this->submit( 'ask', $fields ), $field );
+			$this->assertSame( 'Please check the form.', Flash::current()['message'] ?? '', $field );
+			$this->assertStringContainsString( 'not valid', Flash::current()['fields'][ $field ] ?? '', $field );
+		}
+		$this->assertSame( $before, $posts() );
+
+		$message = $this->request(
+			'POST',
+			'/messages',
+			array(
+				'to'      => (int) $this->user()->user_id,
+				'content' => "Broken \xC3\x28",
+			)
+		)->as_error();
+		$this->assertInstanceOf( \WP_Error::class, $message );
+		$this->assertArrayHasKey( 'content', (array) ( $message->get_error_data()['params'] ?? array() ) );
+
+		// The schema still holds: a text is a string.
+		$typed = $this->request(
+			'POST',
+			'/questions',
+			array(
+				'title'   => 'A question with a list as its text',
+				'content' => array( 'a list' ),
+			)
+		)->as_error();
+		$this->assertInstanceOf( \WP_Error::class, $typed );
+		$this->assertArrayHasKey( 'content', (array) ( $typed->get_error_data()['params'] ?? array() ) );
+	}
 }

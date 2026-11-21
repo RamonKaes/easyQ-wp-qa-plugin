@@ -52,9 +52,10 @@ final class Messages_Controller extends Controller {
 	public function register_routes(): void {
 		$content = array(
 			'content' => array(
-				'description' => __( 'Text of the message.', 'easyq' ),
-				'type'        => 'string',
-				'required'    => true,
+				'description'       => __( 'Text of the message.', 'easyq' ),
+				'type'              => 'string',
+				'required'          => true,
+				'validate_callback' => array( Post_Input::class, 'validate_text' ),
 			),
 		);
 
