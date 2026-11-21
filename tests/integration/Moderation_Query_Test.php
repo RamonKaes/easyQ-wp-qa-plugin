@@ -140,4 +140,32 @@ final class Moderation_Query_Test extends Test_Case {
 		$this->assertSame( 3, $page['total'] );
 		$this->assertSame( array( $in_child->id ), array_map( static fn ( Post $post ): int => $post->id, $page['posts'] ) );
 	}
+
+	public function test_a_month_holds_its_first_and_last_second_and_flags_order_the_flagged_view(): void {
+		global $wpdb;
+		$admin = new Actor( $this->administrator() );
+		$posts = array();
+		foreach ( array(
+			'first'  => '2026-02-01 00:00:00',
+			'last'   => '2026-02-28 23:59:59',
+			'after'  => '2026-03-01 00:00:00',
+			'before' => '2026-01-31 23:59:59',
+		) as $name => $created ) {
+			$posts[ $name ] = $this->ask( $this->user(), "A question created $name in the month" );
+			$wpdb->update( \EasyQ\Database\Schema::table( 'posts' ), array( 'created' => $created ), array( 'id' => $posts[ $name ]->id ) );
+		}
+		$ids = static fn ( array $found ): array => array_map( static fn ( Post $post ): int => $post->id, $found['posts'] );
+
+		$february = $ids( Services::moderation_query()->find( $admin, array( 'month' => '202602' ) ) );
+		sort( $february );
+		$this->assertSame( array( $posts['first']->id, $posts['last']->id ), $february );
+
+		// The most flagged first, then the newest, as Question2Answer lists flagged posts.
+		$wpdb->update( \EasyQ\Database\Schema::table( 'posts' ), array( 'flag_count' => 1 ), array( 'id' => $posts['after']->id ) );
+		$wpdb->update( \EasyQ\Database\Schema::table( 'posts' ), array( 'flag_count' => 3 ), array( 'id' => $posts['before']->id ) );
+		foreach ( $posts as $post ) {
+			Services::posts()->forget( $post->id );
+		}
+		$this->assertSame( array( $posts['before']->id, $posts['after']->id ), $ids( Services::moderation_query()->find( $admin, array( 'view' => 'flagged' ) ) ) );
+	}
 }

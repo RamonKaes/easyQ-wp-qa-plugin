@@ -107,54 +107,12 @@ final class Moderation_Query {
 		$per_page = max( 1, min( self::MAX_PER_PAGE, is_int( $args['per_page'] ?? null ) ? $args['per_page'] : 20 ) );
 		$v        = $this->values( $actor, $view, $args );
 
-		$ids = DB::int_col(
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-			$wpdb->get_col(
-				$wpdb->prepare(
-					"SELECT id FROM %i
-					WHERE (
-						( %d = 1 AND type IN ('Q', 'A', 'C') AND ( %d = 0 OR flag_count > 0 ) AND ( %s = '*' OR FIND_IN_SET(category_id, %s) ) )
-						OR ( %d = 1 AND type IN ('Q_QUEUED', 'A_QUEUED', 'C_QUEUED') AND ( %s = '*' OR FIND_IN_SET(category_id, %s) ) )
-						OR ( %d = 1 AND type IN ('Q_HIDDEN', 'A_HIDDEN', 'C_HIDDEN') AND ( %s = '*' OR FIND_IN_SET(category_id, %s) ) )
-						OR ( %d = 1 AND type = 'Q' AND closed_by_id IS NOT NULL )
-					)
-					AND ( %s = '' OR LEFT(type, 1) = %s )
-					AND ( %d = 0 OR %d IN (category_id, category_path_1, category_path_2, category_path_3) )
-					AND ( %d = 0 OR user_id = %d )
-					AND ( %d = 0 OR created_ip = %s )
-					AND ( %s = '' OR title LIKE %s OR content LIKE %s )
-					AND ( %s = '' OR DATE_FORMAT(created, '%%Y%%m') = %s )
-					ORDER BY CASE WHEN %d = 1 THEN flag_count ELSE 0 END DESC, created DESC, id DESC LIMIT %d, %d",
-					Schema::table( 'posts' ),
-					$v['visible'],
-					$v['flagged'],
-					$v['visible_scope'],
-					$v['visible_scope'],
-					$v['queued'],
-					$v['queued_scope'],
-					$v['queued_scope'],
-					$v['hidden'],
-					$v['hidden_scope'],
-					$v['hidden_scope'],
-					$v['closed'],
-					$v['type'],
-					$v['type'],
-					$v['category'],
-					$v['category'],
-					$v['user'],
-					$v['user'],
-					$v['ip_set'],
-					$v['ip'],
-					$v['search'],
-					$v['like'],
-					$v['like'],
-					$v['month'],
-					$v['month'],
-					$v['flagged'],
-					( $page - 1 ) * $per_page,
-					$per_page
-				)
-			)
+		[ $where, $args ] = $this->where( $v );
+		// The newest first, the most flagged first in the flagged view, as core lists its posts by date.
+		$order = 1 === $v['flagged'] ? 'flag_count DESC, created DESC, id DESC' : 'created DESC, id DESC';
+		$ids   = DB::int_col(
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The conditions of where(), each with its placeholders; custom tables without a WordPress API.
+			$wpdb->get_col( (string) $wpdb->prepare( "SELECT id FROM %i WHERE $where ORDER BY $order LIMIT %d, %d", array_merge( array( Schema::table( 'posts' ) ), $args, array( ( $page - 1 ) * $per_page, $per_page ) ) ) )
 		);
 
 		$found = $this->posts->find_many( $ids );
@@ -238,51 +196,129 @@ final class Moderation_Query {
 	 * @return int
 	 */
 	private function total( array $v ): int {
-		$wpdb = DB::wpdb();
+		$wpdb             = DB::wpdb();
+		[ $where, $args ] = $this->where( $v );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom tables without a WordPress API.
-		return (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT COUNT(*) FROM %i
-				WHERE (
-					( %d = 1 AND type IN ('Q', 'A', 'C') AND ( %d = 0 OR flag_count > 0 ) AND ( %s = '*' OR FIND_IN_SET(category_id, %s) ) )
-					OR ( %d = 1 AND type IN ('Q_QUEUED', 'A_QUEUED', 'C_QUEUED') AND ( %s = '*' OR FIND_IN_SET(category_id, %s) ) )
-					OR ( %d = 1 AND type IN ('Q_HIDDEN', 'A_HIDDEN', 'C_HIDDEN') AND ( %s = '*' OR FIND_IN_SET(category_id, %s) ) )
-					OR ( %d = 1 AND type = 'Q' AND closed_by_id IS NOT NULL )
-				)
-				AND ( %s = '' OR LEFT(type, 1) = %s )
-				AND ( %d = 0 OR %d IN (category_id, category_path_1, category_path_2, category_path_3) )
-				AND ( %d = 0 OR user_id = %d )
-				AND ( %d = 0 OR created_ip = %s )
-				AND ( %s = '' OR title LIKE %s OR content LIKE %s )
-				AND ( %s = '' OR DATE_FORMAT(created, '%%Y%%m') = %s )",
-				Schema::table( 'posts' ),
-				$v['visible'],
-				$v['flagged'],
-				$v['visible_scope'],
-				$v['visible_scope'],
-				$v['queued'],
-				$v['queued_scope'],
-				$v['queued_scope'],
-				$v['hidden'],
-				$v['hidden_scope'],
-				$v['hidden_scope'],
-				$v['closed'],
-				$v['type'],
-				$v['type'],
-				$v['category'],
-				$v['category'],
-				$v['user'],
-				$v['user'],
-				$v['ip_set'],
-				$v['ip'],
-				$v['search'],
-				$v['like'],
-				$v['like'],
-				$v['month'],
-				$v['month']
-			)
-		);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber -- The conditions of where(), each with its placeholders; custom tables without a WordPress API.
+		return (int) $wpdb->get_var( (string) $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE $where", array_merge( array( Schema::table( 'posts' ) ), $args ) ) );
+	}
+
+	/**
+	 * Returns the conditions of a query, with their values for `$wpdb->prepare()`.
+	 *
+	 * Only the conditions that apply are part of it, each in a form the indexes serve (types in
+	 * a list, categories in a list, a month as a range of dates), as core builds the query of
+	 * its list of posts for the view it shows (`WP_Query::get_posts()`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param array<string, int|string> $v Values of the conditions, see values().
+	 * @return array{0: literal-string, 1: list<int|string>} SQL with placeholders, and their values.
+	 */
+	private function where( array $v ): array {
+		$type = (string) $v['type'];
+		/**
+		 * Conditions of the states.
+		 *
+		 * @var list<literal-string> $branches
+		 */
+		$branches = array();
+		/**
+		 * Values of the placeholders.
+		 *
+		 * @var list<int|string> $args
+		 */
+		$args = array();
+		/**
+		 * Conditions of the states that apply, with their values.
+		 *
+		 * @var list<array{0: literal-string, 1: list<int|string>}|null> $states
+		 */
+		$states = array();
+		if ( 1 === $v['visible'] ) {
+			$states[] = self::state( array( Post::QUESTION, Post::ANSWER, Post::COMMENT ), (string) $v['visible_scope'], $type, 1 === $v['flagged'] ? ' AND flag_count > 0' : '' );
+		}
+		if ( 1 === $v['queued'] ) {
+			$states[] = self::state( array( 'Q_QUEUED', 'A_QUEUED', 'C_QUEUED' ), (string) $v['queued_scope'], $type );
+		}
+		if ( 1 === $v['hidden'] ) {
+			$states[] = self::state( array( 'Q_HIDDEN', 'A_HIDDEN', 'C_HIDDEN' ), (string) $v['hidden_scope'], $type );
+		}
+		if ( 1 === $v['closed'] ) {
+			$states[] = self::state( array( Post::QUESTION ), '*', $type, ' AND closed_by_id IS NOT NULL' );
+		}
+		foreach ( array_filter( $states ) as [ $sql, $values ] ) {
+			$branches[] = $sql;
+			$args       = array_merge( $args, $values );
+		}
+
+		/**
+		 * Conditions of the query.
+		 *
+		 * @var list<literal-string> $conditions
+		 */
+		$conditions = array( array() === $branches ? '1 = 0' : '(' . implode( ' OR ', $branches ) . ')' );
+		if ( 0 !== $v['category'] ) {
+			$conditions[] = '(category_id = %d OR category_path_1 = %d OR category_path_2 = %d OR category_path_3 = %d)';
+			$args         = array_merge( $args, array_fill( 0, 4, (int) $v['category'] ) );
+		}
+		if ( 0 !== $v['user'] ) {
+			$conditions[] = 'user_id = %d';
+			$args[]       = (int) $v['user'];
+		}
+		if ( 1 === $v['ip_set'] ) {
+			$conditions[] = 'created_ip = %s';
+			$args[]       = (string) $v['ip'];
+		}
+		if ( '' !== $v['search'] ) {
+			$conditions[] = '(title LIKE %s OR content LIKE %s)';
+			$args[]       = (string) $v['like'];
+			$args[]       = (string) $v['like'];
+		}
+		if ( '' !== $v['month'] ) {
+			$start        = substr( (string) $v['month'], 0, 4 ) . '-' . substr( (string) $v['month'], 4, 2 ) . '-01 00:00:00';
+			$conditions[] = 'created >= %s AND created < %s';
+			$args[]       = $start;
+			$args[]       = gmdate( 'Y-m-d H:i:s', (int) strtotime( $start . ' UTC +1 month' ) );
+		}
+
+		return array( implode( ' AND ', $conditions ), $args );
+	}
+
+	/**
+	 * Returns the condition of a state of posts: its types of the kind the type filter keeps,
+	 * in the categories of the scope.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string[] $types Types of the state.
+	 * @param string   $scope Categories, see scope(); empty for none.
+	 * @param string   $type  Type filter, a first letter or empty.
+	 * @param string   $extra Further condition, starting with AND.
+	 * @phpstan-param list<literal-string> $types
+	 * @phpstan-param literal-string $extra
+	 * @return array{0: literal-string, 1: list<int|string>}|null Null if the state matches nothing.
+	 */
+	private static function state( array $types, string $scope, string $type, string $extra = '' ): ?array {
+		$kept = array();
+		foreach ( $types as $name ) {
+			if ( '' === $type || str_starts_with( $name, $type ) ) {
+				$kept[] = $name;
+			}
+		}
+		if ( array() === $kept || '' === $scope ) {
+			return null;
+		}
+
+		$sql    = 'type IN (' . implode( ',', array_fill( 0, count( $kept ), '%s' ) ) . ')';
+		$values = $kept;
+		if ( '*' !== $scope ) {
+			$ids    = array_map( 'intval', explode( ',', $scope ) );
+			$sql   .= ' AND category_id IN (' . implode( ',', array_fill( 0, count( $ids ), '%d' ) ) . ')';
+			$values = array_merge( $values, $ids );
+		}
+
+		return array( '(' . $sql . $extra . ')', $values );
 	}
 
 	/**
