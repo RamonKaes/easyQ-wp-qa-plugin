@@ -233,6 +233,8 @@ final class Admin_Capabilities_Test extends Test_Case {
 			set_current_screen( $hook );
 			do_action( 'load-' . $hook ); // phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- The hook of core's admin screens (wp-admin/admin.php).
 			$this->assertNotNull( get_current_screen()?->get_help_tab( 'easyq-overview' ), $page );
+			// With the sidebar core gives every screen with help tabs.
+			$this->assertStringContainsString( 'For more information:', (string) get_current_screen()?->get_help_sidebar(), $page );
 		}
 
 		// The users list of core, to which easyQ adds its bulk actions.

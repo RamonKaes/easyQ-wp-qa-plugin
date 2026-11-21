@@ -110,6 +110,7 @@ final class Email_Templates_Screen {
 				'content' => '<p>' . esc_html__( 'The texts of the emails easyQ sends. Placeholders such as ###TITLE### take the details of each email; a test sends the text to you.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 		$this->table = new Email_Templates_List_Table();
 		get_current_screen()?->set_screen_reader_content(
 			array(

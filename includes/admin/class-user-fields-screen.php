@@ -137,6 +137,7 @@ final class User_Fields_Screen {
 				'content' => '<p>' . esc_html__( 'Fields that users fill in on their profile, and optionally when they register. Who sees a field is set for each field.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 		$this->table = new User_Fields_List_Table();
 		get_current_screen()?->set_screen_reader_content(
 			array(

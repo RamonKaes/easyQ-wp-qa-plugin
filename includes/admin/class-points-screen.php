@@ -123,6 +123,7 @@ final class Points_Screen {
 				'content' => '<p>' . esc_html__( 'Users earn points for posting, for votes on their posts and for selected answers. Saving changed values recalculates the points of all users.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 	}
 
 	/**
@@ -138,6 +139,7 @@ final class Points_Screen {
 				'content' => '<p>' . esc_html__( 'A user title is shown with the name of a user who reached its number of points, up to the next title. Users with a level of Expert or higher show their level instead.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 	}
 
 	/**

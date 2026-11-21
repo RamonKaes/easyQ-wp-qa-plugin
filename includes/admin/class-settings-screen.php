@@ -84,6 +84,7 @@ final class Settings_Screen {
 				'content' => '<p>' . esc_html__( 'The settings of the Q&A area, grouped in tabs. Permissions say who may ask, answer, vote and moderate; the other tabs set how the pages look and how easyQ treats spam and data.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 		add_action( 'admin_enqueue_scripts', array( self::class, 'enqueue' ) );
 	}
 

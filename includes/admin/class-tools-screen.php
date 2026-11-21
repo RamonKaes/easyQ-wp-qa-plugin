@@ -134,6 +134,7 @@ final class Tools_Screen {
 				'content' => '<p>' . esc_html__( 'Recalculate counts, points and the search index after an import or a change of settings. Each tool runs in batches until it is done.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 
 		if ( ! isset( $_POST['easyq_tool'] ) ) {

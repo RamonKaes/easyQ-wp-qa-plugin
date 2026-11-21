@@ -76,6 +76,7 @@ final class Dashboard_Screen {
 				'content' => '<p>' . esc_html__( 'The dashboard counts the questions, answers and comments, and lists what waits for approval or was flagged, with links to the posts screen where you handle them.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 	}
 
 	/**

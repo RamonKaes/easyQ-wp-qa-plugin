@@ -145,6 +145,7 @@ final class Categories_Screen {
 				'content' => '<p>' . esc_html__( 'Categories sort the questions. Each has a slug for its address and may have subcategories; deleting a category moves its questions to the category you choose.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 		$this->table = new Categories_List_Table( Services::categories() );
 		get_current_screen()?->set_screen_reader_content(
 			array(

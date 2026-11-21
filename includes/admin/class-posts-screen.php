@@ -213,6 +213,7 @@ final class Posts_Screen {
 				'content' => '<p>' . esc_html__( 'Moderate the questions, answers and comments of the Q&A area: approve or reject what waits, look at flagged posts, hide, show again or delete. The views filter by status, the search finds words in titles and texts.', 'easyq' ) . '</p>',
 			)
 		);
+		Help::sidebar();
 		$this->table = new Posts_List_Table( self::filters() );
 		get_current_screen()?->set_screen_reader_content(
 			array(
