@@ -122,6 +122,45 @@ final class Post_Service_Edges_Test extends Test_Case {
 		$this->assertSame( 0, $this->post( $question->id )->views );
 	}
 
+	public function test_a_queued_comment_is_counted_at_once(): void {
+		$question = $this->ask( $this->user() );
+		$this->assertSame( 0, \EasyQ\Stats\Counts::get( \EasyQ\Stats\Counts::QUEUED ), 'Counted and kept before.' );
+
+		Services::post_service()->create_comment( $this->user(), $question, $question, 'A comment that waits.', '', null, null, true );
+
+		$this->assertSame( 1, \EasyQ\Stats\Counts::get( \EasyQ\Stats\Counts::QUEUED ) );
+	}
+
+	public function test_approved_answers_and_comments_take_the_time_of_their_approval(): void {
+		global $wpdb;
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question, 'An answer that waited.', true );
+		$comment  = Services::post_service()->create_comment( $this->user(), $question, $question, 'A comment that waited.', '', null, null, true );
+		$this->assertIsInt( $comment );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Dates of the test.
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET created = %s WHERE id IN (%d, %d)', \EasyQ\Database\Schema::table( 'posts' ), '2020-01-01 00:00:00', $answer->id, $comment ) );
+		Services::posts()->forget( $answer->id );
+		Services::posts()->forget( $comment );
+
+		Services::post_service()->set_answer_status( Actor::system(), $this->post( $answer->id ), $question, Post::STATUS_NORMAL );
+		Services::post_service()->set_comment_status( Actor::system(), $this->post( $comment ), $question, $question, Post::STATUS_NORMAL );
+
+		$this->assertNotSame( '2020-01-01 00:00:00', $this->post( $answer->id )->created, 'As moderate_update_time of Question2Answer.' );
+		$this->assertNotSame( '2020-01-01 00:00:00', $this->post( $comment )->created );
+	}
+
+	public function test_recalculating_many_hot_questions_empties_the_cache_of_posts_at_once(): void {
+		global $wpdb;
+		$question = $this->ask( $this->user() );
+		$before   = Services::posts()->find( $question->id )?->hotness;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Views of the test.
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET views = 5000 WHERE id = %d', \EasyQ\Database\Schema::table( 'posts' ), $question->id ) );
+
+		Services::posts()->update_hotness( $question->id, $question->id + 200 );
+
+		$this->assertNotSame( $before, Services::posts()->find( $question->id )?->hotness );
+	}
+
 	/**
 	 * Returns the code of an error, or null for another result.
 	 *

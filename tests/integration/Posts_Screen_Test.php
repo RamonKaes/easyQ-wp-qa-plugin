@@ -350,6 +350,57 @@ final class Posts_Screen_Test extends Test_Case {
 		$this->assertNull( $admin_bar->get_node( 'easyq-pending' ) );
 	}
 
+	public function test_the_admin_bar_has_no_node_while_nothing_waits(): void {
+		$admin_bar = new WP_Admin_Bar();
+		( new Posts_Screen() )->add_admin_bar_node( $admin_bar );
+
+		$this->assertNull( $admin_bar->get_node( 'easyq-pending' ) );
+	}
+
+	public function test_the_views_say_when_they_are_empty_and_offer_their_actions(): void {
+		$this->request( array( 'view' => 'pending' ) );
+		$this->assertStringContainsString( 'No posts are awaiting approval.', $this->render() );
+
+		$question = $this->ask( $this->user() );
+		Services::votes()->flag( $this->user(), $question, $question );
+		$this->request( array( 'view' => 'flagged' ) );
+		$html = $this->render();
+		$this->assertStringContainsString( '<option value="clear-flags">', $html );
+		$this->assertStringContainsString( '<option value="hide">', $html );
+	}
+
+	public function test_a_hidden_comment_with_flags_is_listed_as_such(): void {
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$comment  = $this->comment( $this->user(), $question, $answer, 'A comment that was flagged twice.' );
+		Options::update( 'viewing', array( 'voting_on_cs' => true ) );
+		Services::votes()->flag( $this->user(), $this->post( $comment->id ), $question );
+		Services::votes()->flag( $this->user(), $this->post( $comment->id ), $question );
+		Services::post_service()->set_comment_status( Actor::system(), $this->post( $comment->id ), $question, $answer, Post::STATUS_HIDDEN );
+		$this->request( array( 'view' => 'hidden' ) );
+
+		$html = $this->render();
+		$this->assertStringContainsString( '<span class="post-state">Comment</span> — <strong>Hidden, 2 flags,', $html );
+
+		$table = new \EasyQ\Admin\Posts_List_Table( Posts_Screen::filters() );
+		$label = new \ReflectionMethod( $table, 'get_primary_column_aria_label' );
+		$this->assertSame( 'Comment: A comment that was flagged twice.', $label->invoke( $table, $this->post( $comment->id ) ) );
+	}
+
+	public function test_a_failed_action_is_reported_as_an_error(): void {
+		$this->request(
+			array(
+				'easyq_did'    => 'hide',
+				'easyq_done'   => '1',
+				'easyq_failed' => '2',
+			)
+		);
+		$this->assertStringContainsString( '2 posts could not be changed', $this->render() );
+
+		$this->request( array( 'easyq_did' => 'failed' ) );
+		$this->assertMatchesRegularExpression( '/notice-error[^>]*><p>The action could not be carried out./', $this->render() );
+	}
+
 	public function test_row_headers_have_short_names(): void {
 		$question = $this->ask( $this->user(), 'A question with a short name' );
 		$answer   = $this->answer( $this->user(), $question, 'An answer that is longer than the eight words of its row header name.' );

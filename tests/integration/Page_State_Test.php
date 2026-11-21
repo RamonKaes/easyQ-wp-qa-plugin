@@ -140,6 +140,22 @@ final class Page_State_Test extends Test_Case {
 		Block_Context::router()->set_current( null );
 	}
 
+	public function test_the_author_viewing_the_own_question_is_not_counted_and_other_pages_keep_their_robots(): void {
+		$author   = $this->user();
+		$question = $this->ask( $author );
+		$meta     = new Page_Meta( Block_Context::router() );
+		Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'question', $question ) );
+		wp_set_current_user( (int) $author->user_id );
+		$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 Firefox/140.0';
+		$_SERVER['REMOTE_ADDR']     = '192.0.2.78';
+
+		$meta->count_view();
+		$this->assertSame( 0, $this->post( $question->id )->views );
+
+		Block_Context::router()->set_current( null );
+		$this->assertSame( array( 'max-image-preview' => 'large' ), $meta->robots( array( 'max-image-preview' => 'large' ) ) );
+	}
+
 	public function test_views_count_people_once_in_a_row_and_store_one_value_per_question(): void {
 		global $wpdb;
 		$question = $this->ask( $this->user() );

@@ -42,6 +42,8 @@ final class Users_Screen_Test extends Test_Case {
 		$this->assertArrayHasKey( 'easyq_points', $this->screen->columns( array() ) );
 		$this->assertSame( '100', $this->screen->column_value( '', 'easyq_points', $user ) );
 		$this->assertSame( 'Registered user, awaiting approval', $this->screen->column_value( '', 'easyq_level', $user ) );
+		User_Status::block( \EasyQ\Actor::system(), $user );
+		$this->assertSame( 'Registered user, awaiting approval, blocked', $this->screen->column_value( '', 'easyq_level', $user ) );
 		$this->assertSame( 'other', $this->screen->column_value( 'other', 'email', $user ) );
 	}
 
@@ -83,6 +85,15 @@ final class Users_Screen_Test extends Test_Case {
 			$_GET     = array();
 			$_REQUEST = array();
 		}
+	}
+
+	public function test_no_notice_for_an_action_that_is_not_ours(): void {
+		$_GET['easyq_done']  = 'delete';
+		$_GET['easyq_count'] = '2';
+		ob_start();
+		$this->screen->notice();
+
+		$this->assertSame( '', ob_get_clean() );
 	}
 
 	public function test_bulk_actions_approve_and_block_on_the_request_of_the_form(): void {

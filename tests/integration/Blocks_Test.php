@@ -838,4 +838,33 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringEndsWith( '/message/pat%20example/', Routes::url( 'message', 'pat example' ) );
 		$this->set_permalink_structure( '' );
 	}
+
+	public function test_the_blocks_have_their_own_category_in_the_inserter(): void {
+		$slugs = array_column( (array) apply_filters( 'block_categories_all', array(), new \WP_Block_Editor_Context() ), 'slug' );
+
+		$this->assertContains( 'easyq', $slugs );
+	}
+
+	public function test_large_numbers_are_shown_in_thousands_while_the_setting_is_on(): void {
+		$this->assertSame( '1.5k', \EasyQ\Blocks\Render::number( 1500 ) );
+		Options::update( 'viewing', array( 'show_compact_numbers' => false ) );
+		$this->assertSame( '1,500', \EasyQ\Blocks\Render::number( 1500 ) );
+	}
+
+	public function test_a_category_page_has_a_favorite_button_for_its_category(): void {
+		Options::update( 'general', array( 'tags_or_categories' => 'c' ) );
+		$category = Services::categories()->find( (int) Services::categories()->create( null, 'Birds' ) );
+		$this->assertNotNull( $category );
+		wp_set_current_user( (int) $this->user()->user_id );
+
+		$html = $this->render( '<!-- wp:easyq/favorite-button /-->', new Route( 'category', $category ) );
+
+		$this->assertStringContainsString( '"favoriteType":"category","favoriteId":' . $category->id, $html );
+	}
+
+	public function test_the_style_variations_of_block_themes_are_loaded_for_the_q_and_a_pages(): void {
+		\EasyQ\Frontend\Templates::enqueue_style_variations();
+
+		$this->assertTrue( wp_style_is( 'block-style-variation-styles', 'enqueued' ) );
+	}
 }

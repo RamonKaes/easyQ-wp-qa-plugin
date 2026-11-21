@@ -93,6 +93,9 @@ final class Sitemap_Provider_Test extends Test_Case {
 		$users = array_column( $provider->get_url_list( 1, 'users' ), 'loc' );
 		$this->assertSame( array( URLs::user( get_userdata( (int) $author->user_id ) ) ), $users, 'Core lists authors, not users who only voted.' );
 		$this->assertSame( 1, $provider->get_max_num_pages( 'users' ) );
+		$this->assertSame( 0, $provider->get_max_num_pages( 'tags' ), 'No tags, no page.' );
+		$this->ask( $author, 'A tagged question', 'Text.', array( 'sitemaps' ) );
+		$this->assertSame( 1, ( new Sitemap_Provider() )->get_max_num_pages( 'tags' ) );
 	}
 
 	public function test_applies_filters_as_the_core_providers(): void {

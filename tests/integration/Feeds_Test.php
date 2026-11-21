@@ -406,6 +406,9 @@ final class Feeds_Test extends Test_Case {
 
 	public function test_the_pages_without_answers_and_of_answers_have_their_feeds(): void {
 		$this->assertSame( array( 'unanswered', null ), Feeds::for_route( new Route( 'unanswered' ) ) );
+		Options::update( 'feeds', array( 'feed_for_search' => true ) );
+		$this->assertSame( array( 'search', 'roses' ), Feeds::for_route( new Route( 'search' ), 'roses' ) );
+		$this->assertNull( Feeds::for_route( new Route( 'search' ) ), 'No search terms, no feed.' );
 		Options::update( 'feeds', array( 'feed_for_qa' => true ) );
 		$this->assertSame( array( 'answers', null ), Feeds::for_route( new Route( 'answers' ) ) );
 

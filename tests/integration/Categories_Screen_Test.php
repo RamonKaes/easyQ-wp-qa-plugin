@@ -447,6 +447,23 @@ final class Categories_Screen_Test extends Test_Case {
 		$this->assertContains( 'The slug can have at most ' . Categories::MAX_SLUG_LENGTH . ' characters.', $long_slug->get_error_messages() );
 	}
 
+	public function test_the_list_says_when_there_is_no_category_and_the_move_page_names_questions_without_one(): void {
+		$screen = new Categories_Screen();
+		$this->assertStringContainsString( 'No categories yet. To get started, add the first category.', $this->render( $screen ) );
+
+		$this->create( null, 'Only' );
+		$this->ask( $this->user(), 'Question without a category', 'x' );
+		$html = $this->render(
+			$screen,
+			array(
+				'action'   => 'reassign',
+				'category' => 0,
+			)
+		);
+		$this->assertMatchesRegularExpression( '/<p>1 question has no category\.[^<]*<\/p>/', $html );
+		$this->assertStringContainsString( 'Move questions without a category to', $html );
+	}
+
 	public function test_only_users_who_manage_easyq_may_submit(): void {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
 

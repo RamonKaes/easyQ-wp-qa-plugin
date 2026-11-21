@@ -307,6 +307,44 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertStringNotContainsString( 'A message kept in the box.', $this->page( 'easyq-messages', new Route( 'messages' ) ) );
 	}
 
+	public function test_only_who_may_delete_a_wall_post_gets_its_button(): void {
+		Options::update( 'users', array( 'allow_user_walls' => true ) );
+		$owner = get_userdata( (int) $this->user()->user_id );
+		$this->take_part( $owner->ID );
+		$post = Services::messages()->post_on_wall( $this->user(), $owner, 'A post on the wall.' );
+		$this->assertIsInt( $post );
+		$message = Services::messages()->find( $post );
+		$this->assertNotNull( $message );
+
+		$this->assertFalse( Services::messages()->can_delete_wall_post( new \EasyQ\Actor( null, null, '192.0.2.4' ), $message ), 'Visitors delete nothing.' );
+		wp_set_current_user( (int) $this->user()->user_id );
+		$this->assertMatchesRegularExpression( '/A post on the wall\.<\/p>\s*<\/div><\/li>/', $this->page( 'easyq-user-wall', new Route( 'user', $owner, 'wall' ) ), 'No buttons for a reader who may not delete it.' );
+	}
+
+	public function test_a_private_message_cannot_be_deleted_as_a_wall_post(): void {
+		$sender = $this->user();
+		$this->take_part( (int) $sender->user_id );
+		$to = get_userdata( (int) $this->user()->user_id );
+		$this->take_part( $to->ID );
+		$id = Services::messages()->send( $sender, $to, 'Private.' );
+		$this->assertIsInt( $id );
+
+		$this->assertFalse( Services::messages()->can_delete_wall_post( $sender, Services::messages()->find( $id ) ) );
+	}
+
+	public function test_a_long_box_of_messages_has_pages(): void {
+		Options::update( 'users', array( 'page_size_pms' => 1 ) );
+		$sender = $this->user();
+		$this->take_part( (int) $sender->user_id );
+		$to = get_userdata( (int) $this->user()->user_id );
+		$this->take_part( $to->ID );
+		Services::messages()->send( $sender, $to, 'First message.' );
+		Services::messages()->send( $sender, $to, 'Second message.' );
+		wp_set_current_user( $to->ID );
+
+		$this->assertStringContainsString( 'wp-block-query-pagination', $this->page( 'easyq-messages', new Route( 'messages' ) ) );
+	}
+
 	public function test_account_sets_the_wishes(): void {
 		$user = (int) $this->user()->user_id;
 		wp_set_current_user( $user );

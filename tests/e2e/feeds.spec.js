@@ -30,6 +30,8 @@ test.describe( 'Feeds and sitemaps', () => {
 		expect( feed.headers()[ 'content-type' ] ).toContain(
 			'application/rss+xml'
 		);
+		// As core sends its feeds: the time of the newest item, for readers that ask again.
+		expect( feed.headers()[ 'last-modified' ] ).toMatch( / GMT$/ );
 		const xml = await feed.text();
 		expect( xml ).toContain( '<rss version="2.0"' );
 		expect( xml ).toContain( `<title>${ title }</title>` );
@@ -44,14 +46,21 @@ test.describe( 'Feeds and sitemaps', () => {
 	} );
 
 	test( 'answers disabled feeds with not found', async ( {
-		request,
+		playwright,
 		requestUtils,
 	} ) => {
-		const feed = await request.get(
+		// A visitor: core sends no-cache headers to logged-in users anyway.
+		const visitor = await playwright.request.newContext( {
+			storageState: { cookies: [], origins: [] },
+		} );
+		const feed = await visitor.get(
 			`${ requestUtils.baseURL }/?feed=easyq&easyq_route=feed&easyq_arg=hot`
 		);
 
 		expect( feed.status() ).toBe( 404 );
+		// Not kept by caches, as core sends its not-found pages.
+		expect( feed.headers()[ 'cache-control' ] ).toContain( 'no-cache' );
+		await visitor.dispose();
 	} );
 
 	test( 'adds questions to the sitemaps', async ( {
