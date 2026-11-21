@@ -1047,7 +1047,8 @@ final class Forms {
 				/* translators: %s: address of the login page. */
 				: sprintf( __( '<a href="%s">Log in</a> to take part.', 'easyq' ), esc_url( wp_login_url( $current ) ) );
 
-			return sprintf( '<p>%s</p>', wp_kses( $sentence, array( 'a' => array( 'href' => true ) ) ) );
+			// With the class of the comment form of core (`comment_form()`), which themes style.
+			return sprintf( '<p class="must-log-in">%s</p>', wp_kses( $sentence, array( 'a' => array( 'href' => true ) ) ) );
 		}
 
 		$message = match ( $reason ) {

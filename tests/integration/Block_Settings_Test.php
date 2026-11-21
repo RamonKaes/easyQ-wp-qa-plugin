@@ -302,6 +302,14 @@ final class Block_Settings_Test extends Test_Case {
 		return do_blocks( '<!-- wp:easyq/question --><!-- wp:easyq/answer-form /--><!-- /wp:easyq/question -->' );
 	}
 
+	public function test_visitors_are_asked_to_log_in_as_the_comment_form_of_core_asks(): void {
+		wp_set_current_user( 0 );
+
+		$html = $this->answer_form( $this->ask( $this->user() ) );
+
+		$this->assertStringContainsString( '<p class="must-log-in">', $html );
+	}
+
 	public function test_the_answer_form_is_shown_right_away_as_the_setting_says(): void {
 		$asker    = $this->user();
 		$question = $this->ask( $asker );
