@@ -227,6 +227,37 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array(), array_values( array_filter( $own, static fn ( string $name ): bool => ! str_contains( $hooks, "binding source `$name`" ) ) ), 'Binding sources without documentation.' );
 	}
 
+	public function test_git_archive_and_the_release_archive_leave_out_the_same_paths(): void {
+		preg_match_all( '#^/(\S+)\s+export-ignore$#m', $this->read( self::root() . '.gitattributes' ), $ignored );
+		$package = json_decode( $this->read( self::root() . 'package.json' ), true );
+		$files   = (array) ( is_array( $package ) ? $package['files'] ?? array() : array() );
+		// The paths Git keeps: neither ignored (also locally, in `.git/info/exclude`) nor empty folders.
+		$patterns = array( '.git' );
+		foreach ( array( '.gitignore', '.git/info/exclude' ) as $list ) {
+			if ( is_file( self::root() . $list ) ) {
+				$patterns = array_merge( $patterns, (array) preg_split( '/\R/', $this->read( self::root() . $list ) ) );
+			}
+		}
+		$patterns = array_filter( array_map( static fn ( $pattern ): string => trim( (string) $pattern, " /\t" ), $patterns ), static fn ( string $pattern ): bool => '' !== $pattern && '#' !== $pattern[0] );
+		$tracked  = array_filter(
+			array_diff( (array) scandir( self::root() ), array( '.', '..' ) ),
+			static function ( $name ) use ( $patterns ): bool {
+				$path = self::root() . $name;
+				foreach ( $patterns as $pattern ) {
+					if ( fnmatch( $pattern, (string) $name ) ) {
+						return false;
+					}
+				}
+
+				return ! is_dir( $path ) || array() !== array_diff( (array) scandir( $path ), array( '.', '..' ) );
+			}
+		);
+
+		$this->assertSame( array(), array_values( array_intersect( $ignored[1], $files ) ), 'Shipped paths are not export-ignored.' );
+		$this->assertSame( array(), array_values( array_diff( $tracked, $files, $ignored[1] ) ), 'Every path is shipped or export-ignored.' );
+		$this->assertStringContainsString( 'plugin-zip', $this->read( self::root() . '.gitattributes' ) );
+	}
+
 	public function test_docblocks_put_the_description_before_the_tags(): void {
 		$sources = array_merge( $this->sources( 'includes' ), array( 'easyq.php' => $this->read( self::root() . 'easyq.php' ) ) );
 		$late    = array();

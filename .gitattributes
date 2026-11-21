@@ -1,6 +1,8 @@
 * text=auto eol=lf
 
-# Excluded from release archives (git archive)
+# Kept out of `git archive` (the source downloads of GitHub). The release archive is
+# built by `npm run plugin-zip` from the `files` of package.json; Docs_Test checks
+# that both leave out the same paths.
 /.github                     export-ignore
 /docs                        export-ignore
 /tests                       export-ignore
