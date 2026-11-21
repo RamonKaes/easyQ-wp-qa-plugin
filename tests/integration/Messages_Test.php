@@ -353,4 +353,27 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertStringContainsString( 'The older post', $second );
 		$this->assertStringNotContainsString( 'The newer post', $second );
 	}
+
+	public function test_an_empty_or_long_message_is_refused_as_core_refuses_invalid_parameters(): void {
+		$owner = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
+		$this->assertInstanceOf( \WP_User::class, $owner );
+		wp_set_current_user( (int) $this->user()->user_id );
+
+		foreach ( array(
+			array( '/users/' . $owner->ID . '/wall', array( 'content' => '   ' ) ),
+			array(
+				'/messages',
+				array(
+					'to'      => $owner->ID,
+					'content' => str_repeat( 'x', 20000 ),
+				),
+			),
+		) as [ $route, $params ] ) {
+			$error = $this->request( 'POST', $route, $params )->as_error();
+			$this->assertInstanceOf( \WP_Error::class, $error, $route );
+			$this->assertSame( 'rest_invalid_param', $error->get_error_code(), $route );
+			$this->assertSame( 400, $error->get_error_data()['status'] ?? null, $route );
+			$this->assertArrayHasKey( 'content', $error->get_error_data()['params'] ?? array(), $route );
+		}
+	}
 }

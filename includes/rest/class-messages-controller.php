@@ -45,6 +45,30 @@ final class Messages_Controller extends Controller {
 	protected $rest_base = 'messages';
 
 	/**
+	 * Returns an error of the input of a message as core returns invalid parameters
+	 * (`rest_invalid_param` with `params` and `details`), and any other error as it is.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param WP_Error $error Error of Messages, with its fields in `fields`.
+	 * @return WP_Error
+	 */
+	private static function input_error( WP_Error $error ): WP_Error {
+		$data   = $error->get_error_data();
+		$fields = is_array( $data ) && is_array( $data['fields'] ?? null ) ? $data['fields'] : array();
+		if ( array() === $fields ) {
+			return $error;
+		}
+
+		$errors = new WP_Error();
+		foreach ( $fields as $field => $message ) {
+			$errors->add( (string) $field, is_string( $message ) ? $message : $error->get_error_message() );
+		}
+
+		return REST_Errors::invalid( $errors );
+	}
+
+	/**
 	 * Registers the routes.
 	 *
 	 * @since 0.1.0
@@ -193,7 +217,7 @@ final class Messages_Controller extends Controller {
 
 		$id = Services::messages()->post_on_wall( $this->actor(), $owner, (string) self::string_param( $request, 'content' ) );
 		if ( $id instanceof WP_Error ) {
-			return $id;
+			return self::input_error( $id );
 		}
 
 		$response = $this->prepare_item_for_response( Services::messages()->find( $id ), $request );
@@ -379,7 +403,7 @@ final class Messages_Controller extends Controller {
 
 		$id = Services::messages()->send( $this->actor(), $to, (string) self::string_param( $request, 'content' ) );
 		if ( $id instanceof WP_Error ) {
-			return $id;
+			return self::input_error( $id );
 		}
 
 		$message  = null === $id ? null : Services::messages()->find( $id );
