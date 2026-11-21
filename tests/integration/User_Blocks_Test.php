@@ -78,8 +78,21 @@ final class User_Blocks_Test extends Test_Case {
 
 		$this->assertStringContainsString( 'Recent activity', $html );
 		$this->assertStringContainsString( 'A question that gets answered', $html );
-		$this->assertMatchesRegularExpression( '#<a href="[^"]+\#easyq-post-\d+">answered</a> <time#', $html );
+		// One sentence, the time linked to the answer as core links the date of a comment.
+		$this->assertMatchesRegularExpression( '#answered <a href="[^"]+\#easyq-post-\d+"><time datetime="[^"]+">[^<]+</time></a> by #', $html );
 		$this->assertStringContainsString( 'Linus</a> (', $html );
+	}
+
+	public function test_a_translation_orders_the_whole_sentence_of_an_activity(): void {
+		$question = $this->ask( new Actor( $this->named_user( 'Grace' )->ID ), 'A question that gets answered' );
+		$this->answer( new Actor( $this->named_user( 'Linus' )->ID ), $question );
+		$german = static fn ( string $translation, string $text ): string => 'answered %1$s by %2$s' === $text ? '%2$s hat %1$s geantwortet' : $translation;
+		add_filter( 'gettext_easyq', $german, 10, 2 );
+
+		$html = $this->render_template( 'easyq-activity', new Route( 'activity' ) );
+
+		remove_filter( 'gettext_easyq', $german, 10 );
+		$this->assertMatchesRegularExpression( '#Linus</a> \(.*?\) hat <a href="[^"]+"><time[^>]*>[^<]+</time></a> geantwortet#', $html );
 	}
 
 	public function test_answers_and_comments_pages_list_recent_answers_and_comments(): void {

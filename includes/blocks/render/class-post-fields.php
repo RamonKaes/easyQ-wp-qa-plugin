@@ -409,22 +409,21 @@ final class Post_Fields {
 			return '';
 		}
 
-		$what = esc_html( $item->label( $other ) );
-		if ( $other->id !== $post->id ) {
-			$what = sprintf( '<a href="%s">%s</a>', esc_url( URLs::post( $other ) ), $what );
-		}
-
+		// The time links to the other post, as core links the date of a comment to the comment.
 		$when = sprintf( '<time datetime="%s">%s</time>', esc_attr( mysql_to_rfc3339( $item->time ) ), esc_html( Render::date( $item->time ) ) );
+		if ( $other->id !== $post->id ) {
+			$when = sprintf( '<a href="%s">%s</a>', esc_url( URLs::post( $other ) ), $when );
+		}
 
 		$who = '';
 		if ( $attributes['showAuthor'] ?? true ) {
 			$who = self::activity_user( $item, $other, (bool) ( $attributes['showPoints'] ?? true ) );
 		}
 
+		// A whole sentence for each activity, see Activity_Item::sentence().
 		$html = '' === $who
-			? $what . ' ' . $when
-			/* translators: 1: what happened, e.g. "answered", 2: when it happened, e.g. "5 minutes ago", 3: who did it. Reorder as the language needs. */
-			: sprintf( esc_html__( '%1$s %2$s by %3$s', 'easyq' ), $what, $when, $who );
+			? sprintf( esc_html( $item->sentence( $other, false ) ), $when )
+			: sprintf( esc_html( $item->sentence( $other, true ) ), $when, $who );
 
 		return sprintf( '<div %s>%s</div>', get_block_wrapper_attributes(), $html );
 	}

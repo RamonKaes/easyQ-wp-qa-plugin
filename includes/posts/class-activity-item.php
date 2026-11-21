@@ -135,6 +135,250 @@ final class Activity_Item {
 	}
 
 	/**
+	 * Returns the whole sentence of the activity, as core writes "%1$s at %2$s" and not a phrase
+	 * inside another string: the time in `%1$s`, the author in `%2$s`, or the time alone in `%s`
+	 * without the author. Translators get one sentence per activity and can make it agree.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post|null $post        The created or changed post, see label().
+	 * @param bool      $with_author Whether the sentence names who did it.
+	 * @return string Unescaped text with the placeholders.
+	 */
+	public function sentence( ?Post $post, bool $with_author ): string {
+		$closed = null !== $post && $post->is_closed();
+		$hidden = null !== $post && $post->is_hidden();
+		$key    = ( $this->personal ? 'own-' : '' ) . $this->base_type . '-' . (string) $this->update_type;
+
+		$pair = match ( $key ) {
+			'Q-' => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'asked %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'asked %s', 'easyq' ),
+			),
+			'Q-' . Post::UPDATE_VISIBLE => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'reshown %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'reshown %s', 'easyq' ),
+			),
+			'Q-' . Post::UPDATE_CLOSED => $closed
+				? array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'closed %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'closed %s', 'easyq' ),
+				)
+				: array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'reopened %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'reopened %s', 'easyq' ),
+				),
+			'Q-' . Post::UPDATE_TAGS => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'retagged %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'retagged %s', 'easyq' ),
+			),
+			'Q-' . Post::UPDATE_CATEGORY => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'recategorized %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'recategorized %s', 'easyq' ),
+			),
+			'A-' => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'answered %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'answered %s', 'easyq' ),
+			),
+			'A-' . Post::UPDATE_SELECTED => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'answer selected %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'answer selected %s', 'easyq' ),
+			),
+			'A-' . Post::UPDATE_VISIBLE => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'answer reshown %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'answer reshown %s', 'easyq' ),
+			),
+			'A-' . Post::UPDATE_CONTENT => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'answer edited %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'answer edited %s', 'easyq' ),
+			),
+			'Q-' . Updates::FOLLOWS => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'asked related question %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'asked related question %s', 'easyq' ),
+			),
+			'C-', 'C-' . Updates::FOLLOWS, 'C-' . Updates::COMMENT_ON_QUESTION, 'C-' . Updates::COMMENT_ON_ANSWER => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'commented %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'commented %s', 'easyq' ),
+			),
+			'C-' . Post::UPDATE_TYPE, 'C-' . Post::UPDATE_PARENT => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'comment moved %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'comment moved %s', 'easyq' ),
+			),
+			'C-' . Post::UPDATE_VISIBLE => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'comment reshown %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'comment reshown %s', 'easyq' ),
+			),
+			'C-' . Post::UPDATE_CONTENT => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'comment edited %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'comment edited %s', 'easyq' ),
+			),
+			'own-Q-' . Post::UPDATE_VISIBLE => $hidden
+				? array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your question hidden %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your question hidden %s', 'easyq' ),
+				)
+				: array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your question reshown %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your question reshown %s', 'easyq' ),
+				),
+			'own-Q-' . Post::UPDATE_CLOSED => $closed
+				? array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your question closed %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your question closed %s', 'easyq' ),
+				)
+				: array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your question reopened %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your question reopened %s', 'easyq' ),
+				),
+			'own-Q-' . Post::UPDATE_TAGS => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your question retagged %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your question retagged %s', 'easyq' ),
+			),
+			'own-Q-' . Post::UPDATE_CATEGORY => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your question recategorized %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your question recategorized %s', 'easyq' ),
+			),
+			'own-Q-' . Updates::FOLLOWS => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'asked on your answer %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'asked on your answer %s', 'easyq' ),
+			),
+			'own-A-' => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your question answered %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your question answered %s', 'easyq' ),
+			),
+			'own-A-' . Post::UPDATE_SELECTED => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your answer selected %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your answer selected %s', 'easyq' ),
+			),
+			'own-A-' . Post::UPDATE_VISIBLE => $hidden
+				? array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your answer hidden %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your answer hidden %s', 'easyq' ),
+				)
+				: array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your answer reshown %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your answer reshown %s', 'easyq' ),
+				),
+			'own-A-' . Post::UPDATE_CONTENT => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your answer edited %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your answer edited %s', 'easyq' ),
+			),
+			'own-C-' . Updates::COMMENT_ON_QUESTION => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your question commented %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your question commented %s', 'easyq' ),
+			),
+			'own-C-' . Updates::COMMENT_ON_ANSWER => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your answer commented %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your answer commented %s', 'easyq' ),
+			),
+			'own-C-' . Updates::FOLLOWS => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your comment followed %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your comment followed %s', 'easyq' ),
+			),
+			'own-C-' . Post::UPDATE_TYPE, 'own-C-' . Post::UPDATE_PARENT => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your comment moved %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your comment moved %s', 'easyq' ),
+			),
+			'own-C-' . Post::UPDATE_VISIBLE => $hidden
+				? array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your comment hidden %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your comment hidden %s', 'easyq' ),
+				)
+				: array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your comment reshown %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your comment reshown %s', 'easyq' ),
+				),
+			'own-C-' . Post::UPDATE_CONTENT => array(
+				/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+				__( 'your comment edited %1$s by %2$s', 'easyq' ),
+				/* translators: %s: when it happened, e.g. "5 minutes ago". */
+				__( 'your comment edited %s', 'easyq' ),
+			),
+			default => $this->personal
+				? array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'your question edited %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'your question edited %s', 'easyq' ),
+				)
+				: array(
+					/* translators: 1: when it happened, e.g. "5 minutes ago", 2: who did it. */
+					__( 'edited %1$s by %2$s', 'easyq' ),
+					/* translators: %s: when it happened, e.g. "5 minutes ago". */
+					__( 'edited %s', 'easyq' ),
+				),
+		};
+
+		return $with_author ? $pair[0] : $pair[1];
+	}
+
+	/**
 	 * Returns the description for the user whose post it is, as the Q2A texts `your_*`.
 	 *
 	 * @since 0.1.0
