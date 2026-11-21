@@ -36,7 +36,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
 | F-234 | low | Cross-check 2026-11-19, low findings of the part auditors, each with its evidence in the audit notes: `languages/easyq.pot` is stale (6 strings missing). | several | old; Cross-check 2026-11-19 on `76f1989`. | Not guarded; deferred like the other low findings unless the owner decides otherwise. |
-| F-194 | low | The start of a search is not bounded by any test (`Query_Resolver::MAX_SEARCH_START` in `GET /questions?search=`). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-197 | low | No test holds the length of user titles on save (`MAX_TITLE_LENGTH`) nor that the posts list offers only the row actions the moderator may use. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-203 | low | The pattern that reads the indexes `dbDelta()` added for Site Health is held by no test. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-207 | low | Authors without an account cannot change their name when they edit, which Question2Answer offers (`qa-include/pages/question-post.php:394`): `Post_Service::edit_question()` and `update_content()` take a name, but the REST API never passes one. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
