@@ -69,7 +69,7 @@ easyQ is made for block themes, such as Twenty Twenty-Five. Classic themes show 
 
 = Where do I change the settings? =
 
-In the admin menu under easyQ → Settings. The tabs cover the general options, permissions, users, posting, viewing, lists, feeds and spam protection. Options of features that are still to come appear together with them.
+In the admin menu under easyQ → Settings. The tabs are General, Permissions, Email (notifications, feedback form and email templates), Users, Posting, Viewing, Lists, Feeds, Spam and Newsletter. Options of features that are still to come appear together with them.
 
 = What do the tools do? =
 

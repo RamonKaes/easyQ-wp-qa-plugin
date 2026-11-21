@@ -227,6 +227,14 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array(), array_values( array_filter( $own, static fn ( string $name ): bool => ! str_contains( $hooks, "binding source `$name`" ) ) ), 'Binding sources without documentation.' );
 	}
 
+	public function test_the_readme_names_every_settings_tab(): void {
+		preg_match( '/^In the admin menu under easyQ → Settings\. The tabs are (.*)$/m', $this->read( self::root() . 'readme.txt' ), $faq );
+		$this->assertNotEmpty( $faq, 'The FAQ names the settings tabs.' );
+		$missing = array_filter( \EasyQ\Settings\Fields::tabs(), static fn ( string $title ): bool => ! str_contains( $faq[1], $title ) );
+
+		$this->assertSame( array(), $missing );
+	}
+
 	public function test_every_parameter_and_setting_of_the_rest_api_is_documented(): void {
 		$document = $this->read( self::root() . 'docs/rest-api.md' );
 		$missing  = array();
