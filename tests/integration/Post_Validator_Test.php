@@ -89,6 +89,19 @@ final class Post_Validator_Test extends Test_Case {
 		$this->assertNotEmpty( $errors->get_error_message( 'tags' ) );
 	}
 
+	public function test_a_tag_is_at_most_as_long_as_the_index_keeps_it(): void {
+		$tag    = str_repeat( 'x', \EasyQ\Search\Basic_Search::MAX_WORD_LENGTH );
+		$fields = static fn ( string $tag ): array => array(
+			'title'   => 'A reasonable title here',
+			'content' => 'With enough content to be valid.',
+			'tags'    => array( $tag ),
+		);
+
+		$this->assertSame( '', $this->validator->validate_question( $fields( $tag ) )->get_error_message( 'tags' ) );
+		// Longer, the tag page could not find it, and its links would widen every list.
+		$this->assertStringContainsString( '80 characters', $this->validator->validate_question( $fields( $tag . 'x' ) )->get_error_message( 'tags' ) );
+	}
+
 	public function test_measures_content_as_text(): void {
 		$errors = $this->validator->validate_answer(
 			array(

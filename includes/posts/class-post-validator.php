@@ -8,6 +8,7 @@
 
 namespace EasyQ\Posts;
 
+use EasyQ\Search\Basic_Search;
 use EasyQ\Settings\Options;
 use EasyQ\Util\Text;
 use WP_Error;
@@ -107,6 +108,11 @@ final class Post_Validator {
 				$errors->add( 'tags', sprintf( _n( 'Please add at most %d tag.', 'Please add at most %d tags.', $max, 'easyq' ), $max ) );
 			} elseif ( Text::length( Text::tags_to_string( array_map( static fn ( $tag ): string => is_scalar( $tag ) ? (string) $tag : '', $fields['tags'] ) ) ) > self::MAX_TAGS_LENGTH ) {
 				$errors->add( 'tags', $this->max_length_message( self::MAX_TAGS_LENGTH ) );
+			} elseif ( array() !== array_filter( $fields['tags'], static fn ( $tag ): bool => is_scalar( $tag ) && Text::length( (string) $tag ) > Basic_Search::MAX_WORD_LENGTH ) ) {
+				// The index keeps a tag to its length, so a longer one could not be reached through
+				// its address; core likewise refuses a term name it cannot store (`wp_insert_term()`).
+				/* translators: %s: number of characters. */
+				$errors->add( 'tags', sprintf( __( 'Each tag can have at most %s characters.', 'easyq' ), number_format_i18n( Basic_Search::MAX_WORD_LENGTH ) ) );
 			}
 		}
 
