@@ -109,6 +109,20 @@ final class Text_Test extends TestCase {
 		$this->assertSame( array(), Text::block_words_match_all( 'spammer', $regex ) );
 	}
 
+	public function test_matches_of_different_parts_of_a_long_list_that_overlap_are_one_span(): void {
+		// Words of ideographs have no boundaries, so two block words can share characters; in a long
+		// list they land in different parts of the expression, whose matches may overlap.
+		$words = array( '日本' );
+		for ( $index = 0; $index < 5000; $index++ ) {
+			$words[] = sprintf( 'badword%04d', $index );
+		}
+		$words[] = '本語';
+		$regex   = Text::block_words_to_regex( implode( ', ', $words ) );
+
+		$this->assertSame( array( 0 => 9 ), Text::block_words_match_all( '日本語', $regex ) );
+		$this->assertSame( '***', Text::block_words_replace( '日本語', $regex ) );
+	}
+
 	public function test_long_lists_of_block_words_are_found_without_a_message(): void {
 		// Public lists of bad words have thousands of entries; one expression of them does not compile.
 		$words = array();

@@ -744,4 +744,98 @@ final class Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( (string) $related->title, $html );
 		$this->assertSame( 1, substr_count( $html, (string) $question->title ) === 0 ? 1 : 0 );
 	}
+
+	public function test_the_bindings_give_the_excerpt_of_a_post_and_the_address_of_a_user(): void {
+		$author   = $this->take_part( (int) $this->user()->user_id );
+		$question = $this->ask( new \EasyQ\Actor( $author ), 'A bound question', 'The text that becomes the excerpt.' );
+		\EasyQ\Blocks\Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'question', $question ) );
+		$block = new \WP_Block( array( 'blockName' => 'core/paragraph' ) );
+
+		$this->assertSame( 'The text that becomes the excerpt.', get_block_bindings_source( 'easyq/post' )?->get_value( array( 'key' => 'excerpt' ), $block, 'content' ) );
+
+		\EasyQ\Blocks\Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'user', get_userdata( $author ) ) );
+		$this->assertSame( esc_url( \EasyQ\Frontend\URLs::user( get_userdata( $author ) ) ), get_block_bindings_source( 'easyq/user' )?->get_value( array( 'key' => 'url' ), $block, 'url' ) );
+		\EasyQ\Blocks\Block_Context::router()->set_current( null );
+	}
+
+	/**
+	 * Renders a block of a post, with the post in the block context as the lists pass it.
+	 *
+	 * @param string               $name       Block name.
+	 * @param int                  $post_id    Post ID.
+	 * @param array<string, mixed> $context    Further context.
+	 * @param array<string, mixed> $attributes Attributes.
+	 * @return string
+	 */
+	private function render_for_post( string $name, int $post_id, array $context = array(), array $attributes = array() ): string {
+		\EasyQ\Blocks\Render::reset_ids();
+
+		return ( new \WP_Block(
+			array(
+				'blockName'    => $name,
+				'attrs'        => $attributes,
+				'innerBlocks'  => array(),
+				'innerHTML'    => '',
+				'innerContent' => array(),
+			),
+			array( 'easyq/postId' => $post_id ) + $context
+		) )->render();
+	}
+
+	public function test_the_fields_of_answers_and_comments_show_votes_selection_and_solved_questions(): void {
+		Options::update( 'viewing', array( 'voting_on_cs' => true ) );
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $this->user(), $question );
+		$comment  = $this->comment( $this->user(), $question, $answer );
+		Services::post_service()->select_answer( Actor::system(), $question, $answer->id );
+
+		$this->assertNotSame( '', $this->render_for_post( 'easyq/post-votes', $comment->id ), 'Comments have votes once they are on.' );
+		$this->assertStringContainsString( '1 answer (solved)', $this->render_for_post( 'easyq/post-answer-count', $question->id ) );
+		$this->assertStringContainsString( 'Best answer', $this->render_for_post( 'easyq/post-status', $answer->id ) );
+	}
+
+	public function test_the_date_names_who_changed_a_post_of_someone_else(): void {
+		$question = $this->ask( $this->user() );
+		$editor   = $this->user( 'editor' );
+		Services::post_service()->edit_question( $editor, $question, 'A question an editor changed', 'Changed text.', '', array(), null );
+
+		$this->assertMatchesRegularExpression( '/edited <time[^>]*>[^<]*<\/time> by ' . preg_quote( get_userdata( (int) $editor->user_id )->display_name, '/' ) . '/', $this->render_for_post( 'easyq/post-date', $question->id ) );
+	}
+
+	public function test_the_activity_names_visitors_and_leaves_out_unknown_users_of_changes(): void {
+		$question = Services::post_service()->create_question( new Actor( null, null, '192.0.2.8' ), 'A question by a visitor', 'Text.', '', array(), null, null, 'Pat' );
+		$this->assertIsInt( $question );
+
+		$this->assertStringContainsString( 'Pat', $this->render_for_post( 'easyq/post-activity', $question ) );
+
+		$change = array(
+			'postId'     => $question,
+			'baseType'   => 'Q',
+			'time'       => current_time( 'mysql', true ),
+			'updateType' => \EasyQ\Posts\Post::UPDATE_CONTENT,
+			'userId'     => null,
+		);
+		$html   = $this->render_for_post( 'easyq/post-activity', $question, array( 'easyq/activity' => $change ) );
+		$this->assertStringContainsString( '<time datetime=', $html, 'The change is told, without its user.' );
+		$this->assertStringNotContainsString( 'Pat', $html );
+		$this->assertStringNotContainsString( ' by ', $html );
+	}
+
+	public function test_the_list_without_answers_sorts_by_what_its_questions_lack(): void {
+		$html = $this->render( '<!-- wp:easyq/sort-navigation /-->', new Route( 'unanswered' ) );
+
+		$this->assertStringContainsString( 'Questions without a selected answer', $html );
+		$this->assertStringContainsString( esc_url( add_query_arg( 'by', 'unselected', Routes::url( 'unanswered' ) ) ), $html );
+	}
+
+	public function test_the_title_outside_q_and_a_pages_is_the_questions(): void {
+		$this->assertSame( 'Questions', \EasyQ\Blocks\Render\Widgets::title_of_page() );
+	}
+
+	public function test_the_address_of_a_conversation_names_the_other_user(): void {
+		$this->set_permalink_structure( '/%postname%/' );
+
+		$this->assertStringEndsWith( '/message/pat%20example/', Routes::url( 'message', 'pat example' ) );
+		$this->set_permalink_structure( '' );
+	}
 }

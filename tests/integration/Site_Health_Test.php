@@ -185,4 +185,10 @@ final class Site_Health_Test extends Test_Case {
 		$this->assertSame( 'Column of another type: ' . $table . '.views', $describe->invoke( null, 'Changed type of ' . $table . '.views from int(10) to bigint(20)' ) );
 		$this->assertSame( 'Column with another default value: ' . $table . '.views', $describe->invoke( null, 'Changed default value of ' . $table . '.views from 1 to 0' ) );
 	}
+
+	public function test_a_change_without_a_known_pattern_is_shown_as_dbdelta_says_it(): void {
+		$describe = new \ReflectionMethod( \EasyQ\Health\Site_Health::class, 'describe_change' );
+
+		$this->assertSame( 'Changed collation of wp_easyq_posts', $describe->invoke( null, 'Changed collation of wp_easyq_posts' ) );
+	}
 }

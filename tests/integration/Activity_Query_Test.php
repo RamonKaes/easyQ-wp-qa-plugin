@@ -68,6 +68,24 @@ final class Activity_Query_Test extends Test_Case {
 		$this->assertSame( 'asked', $items[2]->label() );
 	}
 
+	public function test_a_post_edited_right_after_it_was_written_is_listed_as_written(): void {
+		// As Question2Answer: an edit by the author within minutes counts as the post itself.
+		$created = new Activity_Item( 7, 70, 'A', '2026-01-01 10:00:00', null, 5 );
+		$edited  = new Activity_Item( 7, 70, 'A', '2026-01-01 10:01:00', Post::UPDATE_CONTENT, 5 );
+
+		$this->assertSame( array( $created ), Activity_Query::sort_and_dedupe( array( $edited, $created ) ) );
+	}
+
+	public function test_a_reshown_question_is_named_so_also_for_its_author(): void {
+		$question = $this->ask( $this->user() );
+
+		$this->assertSame( 'reshown', ( new Activity_Item( $question->id, $question->id, 'Q', '2026-01-01 10:00:00', Post::UPDATE_VISIBLE, 5 ) )->label( $question ) );
+		$own = new Activity_Item( $question->id, $question->id, 'Q', '2026-01-01 10:00:00', Post::UPDATE_VISIBLE, 5, true );
+		$this->assertSame( 'your question reshown', $own->label( $question ) );
+		Services::post_service()->set_question_status( Actor::system(), $question, Post::STATUS_HIDDEN );
+		$this->assertSame( 'your question hidden', $own->label( $this->post( $question->id ) ) );
+	}
+
 	public function test_lists_answers_or_comments_only(): void {
 		$question = $this->ask( $this->user() );
 		$answer   = $this->answer( $this->user(), $question );

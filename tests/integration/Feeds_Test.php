@@ -403,4 +403,37 @@ final class Feeds_Test extends Test_Case {
 		$this->assertNotNull( $this->feeds->channel( 'search', 'widget', new Actor() ) );
 		$this->assertSame( 100, $spy->count );
 	}
+
+	public function test_the_pages_without_answers_and_of_answers_have_their_feeds(): void {
+		$this->assertSame( array( 'unanswered', null ), Feeds::for_route( new Route( 'unanswered' ) ) );
+		Options::update( 'feeds', array( 'feed_for_qa' => true ) );
+		$this->assertSame( array( 'answers', null ), Feeds::for_route( new Route( 'answers' ) ) );
+
+		$this->assertSame( 'Questions without answers', $this->feeds->channel( 'unanswered', null, new Actor() )['title'] ?? null );
+	}
+
+	public function test_no_feed_is_linked_or_sent_where_visitors_may_not_read_or_a_page_has_none(): void {
+		Options::update( 'permissions', array( 'permit_view_q_page' => \EasyQ\Users\Permits::USERS ) );
+		Block_Context::router()->set_current( new Route( 'home' ) );
+		ob_start();
+		$this->feeds->discovery_link();
+		$this->assertSame( '', (string) ob_get_clean() );
+
+		Options::update( 'permissions', array( 'permit_view_q_page' => \EasyQ\Users\Permits::ALL ) );
+		Block_Context::router()->set_current( new Route( 'questions' ) );
+		ob_start();
+		$this->feeds->render();
+		$this->assertSame( 'This feed does not exist.', (string) ob_get_clean() );
+	}
+
+	public function test_items_name_the_category_of_their_question(): void {
+		Options::update( 'general', array( 'tags_or_categories' => 'c' ) );
+		$category = Services::categories()->create( null, 'Gardening' );
+		$this->assertIsInt( $category );
+		$this->ask( $this->user(), 'A question about roses', 'Text.', array(), $category );
+
+		$channel = $this->feeds->channel( 'questions', null, new Actor() );
+		$this->assertNotNull( $channel );
+		$this->assertStringContainsString( '<category>Gardening</category>', $this->feeds->xml( $channel ) );
+	}
 }

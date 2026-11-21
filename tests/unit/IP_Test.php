@@ -65,6 +65,12 @@ final class IP_Test extends TestCase {
 		$this->assertSame( '2001:0db8:*:*:*:*:*:*', IP::expand_ipv6( '2001:db8:*:*:*:*:*:*' ) );
 	}
 
+	public function test_ranges_of_another_family_and_invalid_rules_never_match(): void {
+		$this->assertFalse( IP::between( '192.0.2.1', '2001:db8::1', '2001:db8::9' ), 'An IPv4 address is in no IPv6 range.' );
+		$this->assertFalse( IP::between( 'no address', 'no address', 'no address' ) );
+		$this->assertSame( '2001:db8::zz', IP::expand_ipv6( '2001:db8::zz' ), 'An invalid rule is kept as it is.' );
+	}
+
 	public function test_converts_to_and_from_binary(): void {
 		$this->assertSame( '192.168.0.1', IP::from_binary( IP::to_binary( '192.168.0.1' ) ) );
 		$this->assertSame( '2001:db8::1', IP::from_binary( IP::to_binary( '2001:db8::1' ) ) );

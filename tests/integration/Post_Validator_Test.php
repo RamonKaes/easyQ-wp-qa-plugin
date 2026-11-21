@@ -76,6 +76,30 @@ final class Post_Validator_Test extends Test_Case {
 		);
 	}
 
+	public function test_an_empty_answer_is_asked_to_be_filled_in_when_one_character_is_enough(): void {
+		Options::update( 'posting', array( 'min_len_a_content' => 1 ) );
+
+		$this->assertSame( array( 'Please fill in this field.' ), $this->validator->validate_answer( array( 'content' => '' ) )->get_error_messages( 'content' ) );
+	}
+
+	public function test_all_tags_together_are_at_most_as_long_as_the_column_keeps_them(): void {
+		Options::update( 'posting', array( 'max_num_q_tags' => 50 ) );
+		$tags = array();
+		for ( $index = 0; $index < 40; $index++ ) {
+			$tags[] = sprintf( 'tag-number-%02d-of-many', $index );
+		}
+
+		$errors = $this->validator->validate_question(
+			array(
+				'title'   => 'A question with very many tags',
+				'content' => 'Text of the question.',
+				'tags'    => $tags,
+			)
+		);
+
+		$this->assertSame( array( 'Please enter at most ' . Post_Validator::MAX_TAGS_LENGTH . ' characters.' ), $errors->get_error_messages( 'tags' ) );
+	}
+
 	public function test_requires_minimum_number_of_tags(): void {
 		Options::update( 'posting', array( 'min_num_q_tags' => 1 ) );
 

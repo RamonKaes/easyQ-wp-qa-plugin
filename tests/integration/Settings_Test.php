@@ -173,7 +173,9 @@ final class Settings_Test extends Test_Case {
 		);
 
 		$this->assertSame( 'started', $this->press_newsletter_button( 'start' ) );
-		$this->assertStringContainsString( 'name="do" value="cancel" class="button">Cancel sending</button>', $this->render( 'newsletter' ) );
+		$html = $this->render( 'newsletter' );
+		$this->assertStringContainsString( 'Sending: 0 of 0 users.', $html );
+		$this->assertStringContainsString( 'name="do" value="cancel" class="button">Cancel sending</button>', $html );
 
 		$this->assertSame( 'cancelled', $this->press_newsletter_button( 'cancel' ) );
 		$this->assertFalse( \EasyQ\Newsletter\Newsletter::progress()['running'] );
@@ -187,6 +189,14 @@ final class Settings_Test extends Test_Case {
 		$this->assertStringContainsString( 'The test email could not be sent.', $this->render( 'newsletter' ) );
 		unset( $_GET['easyq_newsletter'] );
 		$wp_rest_server = null;
+	}
+
+	public function test_an_address_or_role_levels_of_another_type_keep_the_stored_value(): void {
+		Options::update( 'emails', array( 'from_email' => 'owner@example.org' ) );
+		$levels = Options::get( 'general', 'role_levels' );
+
+		$this->assertSame( 'owner@example.org', Fields::sanitize( 'emails', array( 'from_email' => array( 'x@example.org' ) ) + Options::get_section( 'emails' ) )['from_email'] );
+		$this->assertSame( $levels, Fields::sanitize( 'general', array( 'role_levels' => 'administrator' ) + Options::get_section( 'general' ) )['role_levels'] );
 	}
 
 	public function test_every_field_belongs_to_a_setting_and_accepts_its_default(): void {

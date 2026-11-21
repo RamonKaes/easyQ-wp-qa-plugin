@@ -260,6 +260,20 @@ final class User_Blocks_Test extends Test_Case {
 		$this->assertStringContainsString( 'Your profile has been saved.', $html );
 	}
 
+	public function test_every_form_has_its_own_success_message(): void {
+		$fields   = new \ReflectionClassConstant( \EasyQ\Frontend\Form_Handler::class, 'FIELDS' );
+		$messages = array();
+		foreach ( array_keys( (array) $fields->getValue() ) as $form ) {
+			$message = Flash::success_message( (string) $form, false );
+			$this->assertIsString( $message, (string) $form );
+			$this->assertNotSame( '', $message, (string) $form );
+			$messages[ $form ] = $message;
+		}
+
+		$this->assertSame( 'Your comment has been published.', $messages['comment'] );
+		$this->assertSame( 'Thank you! You will get the newsletter.', $messages['newsletter_confirm'] );
+	}
+
 	public function test_form_errors_are_shown_once(): void {
 		Flash::keep( 'Please check the form.', 'ask', 0 );
 

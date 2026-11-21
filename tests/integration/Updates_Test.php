@@ -260,4 +260,85 @@ final class Updates_Test extends Test_Case {
 		$this->assertSame( 0, $this->count_rows( 'sharedevents', 'last_user_id = ' . (int) $helper->user_id ) );
 		$this->assertNotSame( array(), $this->items( $asker ) );
 	}
+
+	public function test_the_author_hears_that_a_hidden_answer_or_comment_is_shown_again(): void {
+		$helper   = $this->user();
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $helper, $question );
+		$comment  = $this->comment( $helper, $this->post( $question->id ), $this->post( $answer->id ) );
+		$service  = Services::post_service();
+
+		// Only what showing it again records: the hiding is told on its own.
+		$service->set_answer_status( Actor::system(), $this->post( $answer->id ), $this->post( $question->id ), Post::STATUS_HIDDEN );
+		Services::updates()->truncate();
+		$service->set_answer_status( Actor::system(), $this->post( $answer->id ), $this->post( $question->id ), Post::STATUS_NORMAL );
+		$item = $this->items( $helper )[0];
+		$this->assertSame( array( $answer->id, Post::UPDATE_VISIBLE ), array( $item->post_id, $item->update_type ) );
+
+		$service->set_comment_status( Actor::system(), $this->post( $comment->id ), $this->post( $question->id ), $this->post( $answer->id ), Post::STATUS_HIDDEN );
+		Services::updates()->truncate();
+		$service->set_comment_status( Actor::system(), $this->post( $comment->id ), $this->post( $question->id ), $this->post( $answer->id ), Post::STATUS_NORMAL );
+		$item = $this->items( $helper )[0];
+		$this->assertSame( array( $comment->id, Post::UPDATE_VISIBLE ), array( $item->post_id, $item->update_type ) );
+	}
+
+	public function test_what_happened_to_the_own_post_is_listed_at_its_own_time_even_with_a_later_change(): void {
+		global $wpdb;
+		$asker  = $this->user();
+		$first  = $this->ask( $asker, 'The own question of the asker' );
+		$second = $this->ask( $this->user(), 'A question the asker follows' );
+		Services::favorites()->set( $asker, 'question', $first->id, true );
+		Services::favorites()->set( $asker, 'question', $second->id, true );
+		$answer = $this->answer( $this->user(), $first );
+		$other  = $this->answer( $this->user(), $this->post( $second->id ) );
+		Services::post_service()->edit_answer( $this->user( 'editor' ), $this->post( $answer->id ), $this->post( $first->id ), 'Changed by an editor.', '', null );
+		// The questions at 9:00, the answer to the own question at 10:00, the other question at 10:01, the change at 10:02.
+		$table = Schema::table( 'userevents' );
+		foreach ( array(
+			array( $first->id, 'IS NULL', '09:00:00' ),
+			array( $second->id, 'IS NULL', '09:00:00' ),
+			array( $answer->id, 'IS NULL', '10:00:00' ),
+			array( $other->id, 'IS NULL', '10:01:00' ),
+			array( $answer->id, "= 'E'", '10:02:00' ),
+		) as [ $post_id, $type, $time ] ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Fixed conditions of this test.
+			$wpdb->query( $wpdb->prepare( "UPDATE %i SET updated = %s WHERE last_post_id = %d AND update_type $type", $table, '2026-01-01 ' . $time, $post_id ) );
+		}
+
+		$items = $this->items( $asker );
+
+		// The personal item wins over the change two minutes later, and stands where its time puts it.
+		$this->assertSame( array( $second->id, $first->id ), array_map( static fn ( Activity_Item $item ): int => $item->question_id, $items ) );
+		$this->assertTrue( $items[1]->personal );
+	}
+
+	public function test_the_refill_records_edits_and_leaves_out_close_notes(): void {
+		global $wpdb;
+		$helper   = $this->user();
+		$question = $this->ask( $this->user() );
+		$answer   = $this->answer( $helper, $question );
+		Services::post_service()->edit_answer( $this->user( 'editor' ), $this->post( $answer->id ), $this->post( $question->id ), 'Changed by an editor.', '', null );
+		Services::post_service()->close_with_note( Actor::system(), $this->post( $question->id ), 'Closed with a note.' );
+		$note = Services::posts()->close_note_of( $this->post( $question->id ) );
+		$this->assertNotNull( $note );
+
+		Services::updates()->truncate();
+		Services::updates()->refill( $question->id );
+
+		$item = $this->items( $helper )[0];
+		$this->assertSame( array( $answer->id, Post::UPDATE_CONTENT ), array( $item->post_id, $item->update_type ) );
+		$this->assertSame( 0, $this->count_rows( 'userevents', 'last_post_id = ' . (int) $note->id ) );
+	}
+
+	public function test_the_threshold_of_shared_streams_grows_with_the_followers_who_read_most_of_them(): void {
+		update_option( Updates::THRESHOLD_OPTION, 2, false );
+		$fans = array( $this->user(), $this->user() );
+		foreach ( array( $this->ask( $this->user(), 'First shared' ), $this->ask( $this->user(), 'Second shared' ), $this->ask( $this->user(), 'Third shared' ) ) as $question ) {
+			foreach ( $fans as $fan ) {
+				Services::favorites()->set( $fan, 'question', $question->id, true );
+			}
+		}
+
+		$this->assertSame( 3, (int) get_option( Updates::THRESHOLD_OPTION ) );
+	}
 }

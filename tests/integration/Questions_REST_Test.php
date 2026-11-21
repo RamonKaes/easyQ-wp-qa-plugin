@@ -374,4 +374,45 @@ final class Questions_REST_Test extends REST_Test_Case {
 		$this->login( 'editor' );
 		$this->assertSame( '203.0.113.9', $this->data( $this->request( 'GET', '/questions/' . $question->id ) )['ip'] );
 	}
+
+	public function test_similar_questions_stop_at_the_first_that_matches_too_little(): void {
+		$close = $this->ask( $this->user(), 'A close match' );
+		$weak  = $this->ask( $this->user(), 'A weak match' );
+		$after = $this->ask( $this->user(), 'Listed after the weak match' );
+		// A provider whose scores are known: the list is sorted by score, so the first result below the minimum ends it.
+		$scored = new class( array(
+			$close->id => 9.0,
+			$weak->id  => 1.0,
+			$after->id => 9.0,
+		) ) implements \EasyQ\Search\Search_Provider {
+			/**
+			 * @param array<int, float> $scores Scores by question ID.
+			 */
+			public function __construct( private array $scores ) {
+			}
+			public function id(): string {
+				return 'scored';
+			}
+			public function label(): string {
+				return 'Scored';
+			}
+			public function index_post( \EasyQ\Search\Indexed_Post $post ): void {
+			}
+			public function unindex_post( int $post_id ): void {
+			}
+			public function move_post( int $post_id, ?int $category_id ): void {
+			}
+			public function search( string $query, int $start, int $count, ?int $user_id ): array {
+				return array_map( static fn ( int $id, float $score ): \EasyQ\Search\Search_Result => new \EasyQ\Search\Search_Result( $id, $score, 'Q', $id ), array_keys( $this->scores ), $this->scores );
+			}
+		};
+		add_filter( 'easyq_search_providers', static fn ( array $providers ): array => array_merge( $providers, array( $scored ) ) );
+		Services::reset();
+		Options::update( 'lists', array( 'search_provider' => 'scored' ) );
+		Options::update( 'posting', array( 'do_ask_check_qs' => true ) );
+
+		$similar = $this->data( $this->request( 'GET', '/questions/similar', array( 'title' => 'match' ) ) )['questions'];
+
+		$this->assertSame( array( $close->id ), array_column( $similar, 'id' ) );
+	}
 }

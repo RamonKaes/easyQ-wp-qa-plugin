@@ -85,6 +85,24 @@ test.describe( 'Email templates', () => {
 		).toBeVisible();
 	} );
 
+	test( 'refuses an empty text sent through the settings of the REST API', async ( {
+		requestUtils,
+	} ) => {
+		// Outside the admin area core's settings messages are not loaded; the text is refused all the same.
+		const settings = await requestUtils.rest( {
+			method: 'POST',
+			path: '/wp/v2/settings',
+			data: {
+				easyq_email_templates: {
+					flagged: { subject: '', body: 'A text without a subject.' },
+				},
+			},
+		} );
+
+		expect( settings ).toHaveProperty( 'easyq_email_templates' );
+		expect( settings.easyq_email_templates.flagged ).toBeUndefined();
+	} );
+
 	test( 'has no accessibility violations', async ( { admin, page } ) => {
 		for ( const query of [
 			'page=easyq-email-templates',

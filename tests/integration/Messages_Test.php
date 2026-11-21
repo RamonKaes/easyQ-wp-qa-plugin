@@ -269,6 +269,44 @@ final class Messages_Test extends REST_Test_Case {
 		$this->assertSame( 403, $this->request( 'POST', '/messages', $message )->get_status() );
 	}
 
+	public function test_a_private_message_is_no_wall_post_to_delete(): void {
+		$sender    = $this->user();
+		$recipient = (int) $this->user()->user_id;
+		$this->take_part( (int) $sender->user_id );
+		$this->take_part( $recipient );
+		$id = Services::messages()->send( $sender, get_userdata( $recipient ), 'A private message.' );
+		$this->assertIsInt( $id );
+
+		$refused = Services::messages()->delete_wall_post( \EasyQ\Actor::system(), $id );
+		$this->assertInstanceOf( \WP_Error::class, $refused );
+		$this->assertSame( 'easyq_not_found', $refused->get_error_code() );
+		$this->assertNotNull( Services::messages()->find( $id ) );
+	}
+
+	public function test_users_who_must_confirm_their_address_are_told_so(): void {
+		$this->assertSame( 'Please confirm your email address first.', Messages::reason_message( 'confirm' ) );
+	}
+
+	public function test_the_message_page_says_why_no_message_can_be_sent(): void {
+		$user = get_userdata( (int) $this->user()->user_id );
+		$this->take_part( $user->ID );
+		wp_set_current_user( $user->ID );
+
+		$this->assertStringContainsString( 'You cannot send a message to yourself.', $this->page( 'easyq-message', new Route( 'message', $user ) ) );
+	}
+
+	public function test_without_the_history_the_box_lists_no_messages(): void {
+		$sender    = $this->user();
+		$recipient = get_userdata( (int) $this->user()->user_id );
+		$this->take_part( (int) $sender->user_id );
+		$this->take_part( $recipient->ID );
+		$this->assertIsInt( Services::messages()->send( $sender, $recipient, 'A message kept in the box.' ) );
+		Options::update( 'users', array( 'show_message_history' => false ) );
+		wp_set_current_user( $recipient->ID );
+
+		$this->assertStringNotContainsString( 'A message kept in the box.', $this->page( 'easyq-messages', new Route( 'messages' ) ) );
+	}
+
 	public function test_account_sets_the_wishes(): void {
 		$user = (int) $this->user()->user_id;
 		wp_set_current_user( $user );

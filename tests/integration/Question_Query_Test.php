@@ -86,4 +86,17 @@ final class Question_Query_Test extends Test_Case {
 		$this->assertSame( array( $first->id, $second->id ), $this->ids( array( 'source' => 'views' ) ) );
 		$this->assertSame( 2, Services::question_query()->find( array( 'source' => 'views' ) )['total'] );
 	}
+
+	public function test_questions_of_a_category_three_levels_down_are_found_by_its_path(): void {
+		$categories = Services::categories();
+		$top        = $categories->create( null, 'Top' );
+		$middle     = $categories->create( (int) $top, 'Middle' );
+		$bottom     = $categories->create( (int) $middle, 'Bottom' );
+		$this->assertIsInt( $bottom );
+		$question = $this->ask( $this->user(), 'A question three levels down', 'Text.', array(), $bottom );
+
+		$found = Services::question_query()->find( array( 'category_id' => $bottom ) );
+
+		$this->assertSame( array( $question->id ), array_map( static fn ( $post ): int => $post->id, $found['posts'] ) );
+	}
 }

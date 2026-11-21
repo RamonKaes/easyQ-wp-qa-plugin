@@ -40,6 +40,20 @@ final class Personal_Data_Test extends Test_Case {
 		}
 	}
 
+	public function test_the_export_names_close_notes_and_hidden_posts(): void {
+		$person   = new Actor( $this->user()->user_id, null, '192.0.2.10' );
+		$question = $this->ask( $person, 'A question the person closed' );
+		Services::post_service()->close_with_note( $person, $question, 'Answered elsewhere.' );
+		$note = Services::posts()->close_note_of( $this->post( $question->id ) );
+		$this->assertNotNull( $note );
+		Services::post_service()->set_question_status( Actor::system(), $this->post( $question->id ), Post::STATUS_HIDDEN );
+
+		$items = array_column( Post_Data::export_posts( $this->email( $person ) )['data'], 'data', 'item_id' );
+
+		$this->assertSame( 'Question (hidden)', array_column( $items[ "easyq-post-{$question->id}" ], 'value', 'name' )['Kind'] );
+		$this->assertSame( 'Reason for closing', array_column( $items[ "easyq-post-{$note->id}" ], 'value', 'name' )['Kind'] );
+	}
+
 	public function test_exports_the_posts_a_person_wrote_or_changed_last(): void {
 		$person   = new Actor( $this->user()->user_id, null, '192.0.2.10' );
 		$other    = new Actor( $this->user()->user_id, null, '198.51.100.20' );

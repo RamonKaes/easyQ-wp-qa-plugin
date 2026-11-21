@@ -127,6 +127,19 @@ final class Page_State_Test extends Test_Case {
 		$this->assertSame( 'how-do-i', URLs::slug( 'How do I configure the widget?' ) );
 	}
 
+	public function test_a_view_without_a_user_agent_counts_as_from_a_person(): void {
+		$question = $this->ask( $this->user() );
+		$meta     = new Page_Meta( Block_Context::router() );
+		Block_Context::router()->set_current( new \EasyQ\Frontend\Route( 'question', $question ) );
+		unset( $_SERVER['HTTP_USER_AGENT'] );
+		$_SERVER['REMOTE_ADDR'] = '192.0.2.77';
+
+		$meta->count_view();
+
+		$this->assertSame( 1, $this->post( $question->id )->views, 'As qa_is_human_probably(): no agent, no reason to doubt.' );
+		Block_Context::router()->set_current( null );
+	}
+
 	public function test_views_count_people_once_in_a_row_and_store_one_value_per_question(): void {
 		global $wpdb;
 		$question = $this->ask( $this->user() );

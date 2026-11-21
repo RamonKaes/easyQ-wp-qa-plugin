@@ -151,4 +151,23 @@ final class Search_Test extends Test_Case {
 		$this->assertSame( $provider, Services::search()->provider() );
 		$this->assertArrayHasKey( 'basic', Services::search()->providers() );
 	}
+
+	public function test_a_post_stays_in_the_index_while_indexing_is_suspended(): void {
+		$question = $this->ask( $this->user(), 'Zeppelins of the suspended index' );
+		$search   = Services::search();
+
+		$search->suspend();
+		$search->unindex( $question->id );
+		$search->resume();
+
+		$this->assertContains( $question->id, $this->search_ids( 'zeppelins' ) );
+	}
+
+	public function test_no_words_need_no_query(): void {
+		global $wpdb;
+		$wpdb->last_error = '';
+
+		$this->assertSame( array(), ( new \EasyQ\Search\Basic_Search() )->word_ids( array( '', '' ), true ) );
+		$this->assertSame( '', $wpdb->last_error );
+	}
 }

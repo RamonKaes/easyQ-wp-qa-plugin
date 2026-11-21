@@ -66,4 +66,11 @@ final class Content_Renderer_Test extends Test_Case {
 		$this->assertSame( "<p>İİİİİİ ****</p>\n", $renderer->html( 'İİİİİİ darn', '' ) );
 		$this->assertSame( 'İstanbul ****', $renderer->text( 'İstanbul darn' ) );
 	}
+
+	public function test_a_link_without_an_address_gets_no_link_attributes(): void {
+		$html = ( new Content_Renderer() )->html( '<p><a title="anchor">here</a> and <a href="https://example.com/">there</a></p>', 'html' );
+
+		$this->assertStringContainsString( '<a title="anchor">here</a>', $html );
+		$this->assertStringContainsString( 'rel="nofollow', $html );
+	}
 }

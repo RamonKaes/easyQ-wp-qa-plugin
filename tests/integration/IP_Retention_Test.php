@@ -239,4 +239,19 @@ final class IP_Retention_Test extends Test_Case {
 	private function cookie( int $id ): array {
 		return array( IP::from_binary( $this->column( 'cookies', 'created_ip', $id ) ), IP::from_binary( $this->column( 'cookies', 'written_ip', $id ) ) );
 	}
+
+	public function test_clearing_many_addresses_empties_the_cache_of_posts_at_once(): void {
+		global $wpdb;
+		$question = $this->ask( new \EasyQ\Actor( null, null, '192.0.2.50' ) );
+		$table    = \EasyQ\Database\Schema::table( 'posts' );
+		for ( $copy = 0; $copy < 100; $copy++ ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Rows of the test.
+			$wpdb->query( $wpdb->prepare( 'INSERT INTO %i (type, title, content, created, created_ip) SELECT type, title, content, created, created_ip FROM %i WHERE id = %d', $table, $table, $question->id ) );
+		}
+		$this->assertNotNull( Services::posts()->find( $question->id )?->created_ip, 'Cached with its address.' );
+
+		$this->assertGreaterThan( 100, Services::posts()->clear_ips_before( gmdate( 'Y-m-d H:i:s', time() + HOUR_IN_SECONDS ) ) );
+
+		$this->assertNull( Services::posts()->find( $question->id )?->created_ip );
+	}
 }

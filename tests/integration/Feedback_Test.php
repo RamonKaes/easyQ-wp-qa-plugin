@@ -122,6 +122,33 @@ final class Feedback_Test extends REST_Test_Case {
 		$this->assertSame( '', do_blocks( '<!-- wp:easyq/feedback-form /-->' ) );
 	}
 
+	public function test_the_service_itself_refuses_when_off_and_shortens_nothing(): void {
+		$feedback = \EasyQ\Services::feedback();
+
+		$long = $feedback->send( new \EasyQ\Actor( null, null, '192.0.2.3' ), str_repeat( 'a', \EasyQ\Feedback\Feedback::MAX_LENGTH + 1 ) );
+		$this->assertInstanceOf( \WP_Error::class, $long );
+		$this->assertSame( 'Please shorten the message to ' . \EasyQ\Feedback\Feedback::MAX_LENGTH . ' characters.', $long->get_error_data()['params']['message'] ?? null );
+
+		Options::update( 'emails', array( 'feedback_enabled' => false ) );
+		$off = $feedback->send( new \EasyQ\Actor( null, null, '192.0.2.3' ), 'Hello' );
+		$this->assertInstanceOf( \WP_Error::class, $off );
+		$this->assertSame( 'easyq_off', $off->get_error_code() );
+		$this->assertSame( array(), tests_retrieve_phpmailer_instance()->mock_sent );
+	}
+
+	public function test_the_form_says_why_it_cannot_be_sent(): void {
+		Options::update( 'spam', array( 'block_ips_write' => '192.0.2.9' ) );
+		$_SERVER['REMOTE_ADDR'] = '192.0.2.9';
+		try {
+			$html = do_blocks( '<!-- wp:easyq/feedback-form /-->' );
+		} finally {
+			$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+		}
+
+		$this->assertStringContainsString( \EasyQ\Blocks\Render\Forms::permission_message( 'ipblock' ), $html );
+		$this->assertStringNotContainsString( '<textarea', $html );
+	}
+
 	public function test_the_form_fills_in_the_user_and_shows_the_privacy_note(): void {
 		$user = get_userdata( (int) $this->user()->user_id );
 		wp_set_current_user( $user->ID );

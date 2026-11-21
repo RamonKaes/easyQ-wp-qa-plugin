@@ -92,6 +92,7 @@ final class Sitemap_Provider_Test extends Test_Case {
 
 		$users = array_column( $provider->get_url_list( 1, 'users' ), 'loc' );
 		$this->assertSame( array( URLs::user( get_userdata( (int) $author->user_id ) ) ), $users, 'Core lists authors, not users who only voted.' );
+		$this->assertSame( 1, $provider->get_max_num_pages( 'users' ) );
 	}
 
 	public function test_applies_filters_as_the_core_providers(): void {
