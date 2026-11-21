@@ -197,6 +197,11 @@ final class Settings_Test extends Test_Case {
 
 		$this->assertSame( 'owner@example.org', Fields::sanitize( 'emails', array( 'from_email' => array( 'x@example.org' ) ) + Options::get_section( 'emails' ) )['from_email'] );
 		$this->assertSame( $levels, Fields::sanitize( 'general', array( 'role_levels' => 'administrator' ) + Options::get_section( 'general' ) )['role_levels'] );
+
+		// The messages of the settings form are a global of core; they leave with this test.
+		global $wp_settings_errors;
+		$this->assertNotSame( array(), get_settings_errors( Options::option_name( 'emails' ) ) );
+		$wp_settings_errors = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Resets what the test added.
 	}
 
 	public function test_every_field_belongs_to_a_setting_and_accepts_its_default(): void {
