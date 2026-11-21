@@ -392,4 +392,38 @@ final class Messages_Test extends REST_Test_Case {
 			$this->assertStringContainsString( 'turn off "' . $label . '" in your account', $bodies );
 		}
 	}
+
+	public function test_the_recipient_can_answer_a_sender_who_never_took_part(): void {
+		$recipient = get_userdata( $this->take_part( (int) $this->user()->user_id ) );
+		$this->assertInstanceOf( \WP_User::class, $recipient );
+		$sender = (int) self::factory()->user->create();
+		$this->assertFalse( Services::user_query()->is_shown( get_userdata( $sender ), $recipient->ID ), 'A new user has no profile yet.' );
+
+		wp_set_current_user( $sender );
+		$this->assertSame(
+			201,
+			$this->request(
+				'POST',
+				'/messages',
+				array(
+					'to'      => $recipient->ID,
+					'content' => 'A first message from a new user.',
+				)
+			)->get_status()
+		);
+
+		// The recipient answers on the message page of the sender, which answered 404 before (F-140).
+		wp_set_current_user( $recipient->ID );
+		$this->assertSame(
+			201,
+			$this->request(
+				'POST',
+				'/messages',
+				array(
+					'to'      => $sender,
+					'content' => 'An answer to the new user.',
+				)
+			)->get_status()
+		);
+	}
 }

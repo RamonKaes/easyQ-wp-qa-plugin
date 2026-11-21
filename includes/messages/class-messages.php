@@ -236,6 +236,8 @@ final class Messages {
 		}
 
 		$id = $this->insert( self::WALL, $actor->user_id, $owner->ID, $content );
+		// Writing is taking part: the profile and the message page of the writer show to the owner.
+		Services::points()->update( $actor->user_id, array() );
 		Events::dispatch(
 			'u_wall_post',
 			array(
@@ -376,6 +378,9 @@ final class Messages {
 		}
 
 		$id = Options::get_bool( 'users', 'show_message_history' ) ? $this->insert( self::PRIVATE, $actor->user_id, $to->ID, $content ) : null;
+		// Writing is taking part: the recipient can see the profile and answer on the message page
+		// of the sender, which shows only the profiles of those who took part (F-140).
+		Services::points()->update( $actor->user_id, array() );
 		Events::dispatch(
 			'u_message',
 			array(
