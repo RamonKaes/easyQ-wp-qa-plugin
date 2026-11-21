@@ -37,7 +37,8 @@ test.describe( 'Feeds and sitemaps', () => {
 		await page.goto( '/?easyq_route=home' );
 		await expect(
 			page.locator(
-				'link[rel="alternate"][type="application/rss+xml"][title="Recent questions and answers"]'
+				// Titled as core titles its feeds: the site, a separator, the feed.
+				'link[rel="alternate"][type="application/rss+xml"][title$=" » Recent questions and answers Feed"]'
 			)
 		).toHaveCount( 1 );
 	} );
