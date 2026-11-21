@@ -112,6 +112,37 @@ test.describe( 'Pickers of the editor on a larger site', () => {
 			.click();
 	} );
 
+	test( 'shows names as they are written', async ( {
+		admin,
+		editor,
+		page,
+		requestUtils,
+	} ) => {
+		// Core stores display names with entities (`pre_user_display_name`).
+		await requestUtils.rest( {
+			method: 'POST',
+			path: '/wp/v2/users',
+			data: {
+				username: `ampersand${ stamp }`,
+				email: `ampersand${ stamp }@example.org`,
+				name: `Tom & Jerry ${ stamp }`,
+				password: `pw-${ stamp }-y`,
+				roles: [ 'subscriber' ],
+			},
+		} );
+
+		await admin.createNewPost();
+		await editor.insertBlock( { name: 'easyq/user' } );
+		await editor.openDocumentSettingsSidebar();
+		await page
+			.getByRole( 'region', { name: 'Editor settings' } )
+			.getByRole( 'combobox', { name: 'User' } )
+			.fill( `Jerry ${ stamp }` );
+		await expect(
+			page.getByRole( 'option', { name: `Tom & Jerry ${ stamp }` } )
+		).toBeVisible();
+	} );
+
 	test( 'offers a category behind a hundred others', async ( {
 		admin,
 		editor,

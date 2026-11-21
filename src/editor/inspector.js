@@ -288,6 +288,20 @@ const OPTIONS = {
 };
 
 /**
+ * Turns entities into characters, as `decodeEntities()` of `@wordpress/html-entities` does
+ * for the pickers of core: the browser parses the text in a textarea, which runs no markup.
+ *
+ * @param {string} text Text with entities.
+ * @return {string} Text.
+ */
+function decodeEntities( text ) {
+	const area = document.createElement( 'textarea' );
+	area.innerHTML = text;
+
+	return area.value;
+}
+
+/**
  * Lets editors pick a question by its title.
  *
  * @since 0.1.0
@@ -313,7 +327,8 @@ function QuestionPicker( { label, help, value, onChange } ) {
 	const options = ( Array.isArray( questions ) ? questions : [] ).map(
 		( question ) => ( {
 			value: String( question.id ),
-			label: question.title.raw ?? question.title.rendered,
+			label:
+				question.title.raw ?? decodeEntities( question.title.rendered ),
 		} )
 	);
 	if (
@@ -322,7 +337,7 @@ function QuestionPicker( { label, help, value, onChange } ) {
 	) {
 		options.unshift( {
 			value: String( value ),
-			label: chosen.title.rendered,
+			label: decodeEntities( chosen.title.rendered ),
 		} );
 	}
 
@@ -364,13 +379,17 @@ export function UserPicker( { label, help, value, onChange } ) {
 	const chosen = useEasyQ( value ? `users/${ value }` : null );
 	const options = ( Array.isArray( users ) ? users : [] ).map( ( user ) => ( {
 		value: String( user.id ),
-		label: user.name,
+		// Core stores display names with entities (`pre_user_display_name`) and decodes them in its pickers.
+		label: decodeEntities( user.name ),
 	} ) );
 	if (
 		chosen &&
 		! options.some( ( option ) => option.value === String( value ) )
 	) {
-		options.unshift( { value: String( value ), label: chosen.name } );
+		options.unshift( {
+			value: String( value ),
+			label: decodeEntities( chosen.name ),
+		} );
 	}
 
 	return (
