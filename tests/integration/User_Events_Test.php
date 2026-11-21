@@ -94,6 +94,11 @@ final class User_Events_Test extends Test_Case {
 		$this->assertNull( $this->post( $question->id )->user_id );
 	}
 
+	/**
+	 * On a network, wp_delete_user() removes the user from the site only.
+	 *
+	 * @group ms-excluded
+	 */
 	public function test_deleting_a_voter_brings_the_hotness_back(): void {
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 		$question = $this->ask( $this->user() );
@@ -116,6 +121,11 @@ final class User_Events_Test extends Test_Case {
 		$this->assertSame( $unupvoted + 1, \EasyQ\Stats\Counts::get( \EasyQ\Stats\Counts::UNUPVOTED ), 'The question has no upvote again.' );
 	}
 
+	/**
+	 * On a network, wp_delete_user() removes the user from the site only.
+	 *
+	 * @group ms-excluded
+	 */
 	public function test_the_heir_of_the_posts_keeps_no_vote_on_them(): void {
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 		$author   = $this->user();
