@@ -2,8 +2,14 @@
  * REST API over HTTP, with cookie authentication and as a visitor.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 
 test.describe( 'REST API', () => {
+	test.beforeAll( async ( { requestUtils } ) => {
+		// The PHP integration tests reinstall the test site, which deactivates the plugin.
+		await activatePlugin( requestUtils );
+	} );
+
 	test( 'creates a question as a logged-in user and lists it publicly', async ( {
 		requestUtils,
 		request,

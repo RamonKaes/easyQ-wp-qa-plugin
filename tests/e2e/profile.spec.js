@@ -2,8 +2,14 @@
  * Q&A section of the profile screen and the users list.
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
+const { activatePlugin } = require( './plugin' );
 
 test.describe( 'User profile', () => {
+	test.beforeAll( async ( { requestUtils } ) => {
+		// The PHP integration tests reinstall the test site, which deactivates the plugin.
+		await activatePlugin( requestUtils );
+	} );
+
 	test( 'saves the Q&A profile fields of the current user', async ( {
 		admin,
 		page,
