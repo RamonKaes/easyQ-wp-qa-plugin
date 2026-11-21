@@ -182,7 +182,8 @@ final class Registration_Test extends Test_Case {
 
 		$_POST['easyq_terms']    = '1';
 		$_POST['easyq_register'] = 'invalid';
-		$this->assertContains( 'easyq_terms', $this->errors_of( 'alice' ), 'A form without a valid nonce stores no consent, so it is refused.' );
+		// A form without a valid nonce stores no consent; it says that it expired, not that the terms were not ticked.
+		$this->assertSame( array( 'easyq_expired' ), array_values( array_intersect( $this->errors_of( 'alice' ), array( 'easyq_expired', 'easyq_terms' ) ) ) );
 
 		$_POST['easyq_register'] = wp_create_nonce( 'easyq_register' );
 		$before                  = time();
@@ -380,5 +381,14 @@ final class Registration_Test extends Test_Case {
 		$meta = ( new Registration() )->add_signup_meta( array() );
 
 		$this->assertSame( 'Lovelace Ltd', $meta['easyq_registration']['fields'][ $field ] ?? null );
+	}
+
+	public function test_an_expired_form_without_terms_says_so_instead_of_dropping_the_fields(): void {
+		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
+		$this->assertIsInt( $field );
+		$_POST['easyq_register'] = 'expired';
+		$_POST['easyq_fields']   = array( $field => 'Lovelace Ltd' );
+
+		$this->assertContains( 'easyq_expired', $this->errors_of( 'bob' ) );
 	}
 }

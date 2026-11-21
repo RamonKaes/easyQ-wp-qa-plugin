@@ -173,6 +173,16 @@ final class Registration {
 			return $errors;
 		}
 
+		// A form that came back too late says so, rather than that the ticked terms were not
+		// accepted; it shows again with what was entered, so neither the fields nor the wish for
+		// the newsletter get lost without a word.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only tells whether the form sent its nonce; has_valid_nonce() verifies it.
+		if ( isset( $_POST[ self::NONCE ] ) && ! $this->has_valid_nonce() ) {
+			$errors->add( 'easyq_expired', __( '<strong>Error:</strong> The form has expired. Please try again.', 'easyq' ) );
+
+			return $errors;
+		}
+
 		if ( self::asks_for_terms() && ! $this->ticked( 'easyq_terms' ) ) {
 			$errors->add( 'easyq_terms', __( '<strong>Error:</strong> Please accept the terms.', 'easyq' ) );
 		}

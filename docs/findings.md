@@ -36,7 +36,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
 | F-234 | low | Cross-check 2026-11-19, low findings of the part auditors, each with its evidence in the audit notes: `languages/easyq.pot` is stale (6 strings missing). | several | old; Cross-check 2026-11-19 on `76f1989`. | Not guarded; deferred like the other low findings unless the owner decides otherwise. |
-| F-160 | low | Registration with an expired nonce says "Please accept the terms" although the box is ticked; without terms, fields and the newsletter wish are lost silently. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-161 | low | A field sent as an array shows "Missing parameter(s): title" on the page. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-162 | low | Rows of `docs/guidelines-checklist.md` name fixed findings as their state (rows near 190, 193, 196 and 220 of B and I, F-22 and F-23 in F, row 268 "in steps … five sites"). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-167 | low | The count after a vote changes without a live region or `speak()`; screen readers hear nothing (WCAG 4.1.3). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
