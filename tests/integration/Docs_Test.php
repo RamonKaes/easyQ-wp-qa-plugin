@@ -219,6 +219,12 @@ final class Docs_Test extends Test_Case {
 
 		$this->assertSame( array(), $missing );
 		$this->assertSame( array(), $built, 'No longer planned: remove them from the list.' );
+
+		// And the other way: every binding source of easyQ is described in the document of hooks.
+		$hooks = $this->read( self::root() . 'docs/hooks.md' );
+		$own   = array_filter( $sources, static fn ( string $name ): bool => str_starts_with( $name, 'easyq/' ) );
+		$this->assertContains( 'easyq/user', $own );
+		$this->assertSame( array(), array_values( array_filter( $own, static fn ( string $name ): bool => ! str_contains( $hooks, "binding source `$name`" ) ) ), 'Binding sources without documentation.' );
 	}
 
 	public function test_filters_and_events_match_the_hooks_document(): void {

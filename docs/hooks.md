@@ -198,6 +198,11 @@ question; empty unless question pages show it).
 <!-- /wp:heading -->
 ```
 
+The binding source `easyq/user` does the same for a user (from the context `easyq/userId`,
+e.g. in a user list, or the user of a profile page), for those who may see the profile.
+Supported keys: `name`, `url`, `avatar`, `points`, `title` (the user title earned with
+points) and `description`.
+
 ## Interfaces
 
 ### `EasyQ\Search\Search_Provider`
