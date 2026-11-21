@@ -309,6 +309,15 @@ final class User_Fields {
 		if ( Text::length( $label ) > self::MAX_NAME_LENGTH ) {
 			/* translators: %d: maximum number of characters. */
 			$errors->add( 'label', sprintf( __( 'The label can have at most %d characters.', 'easyq' ), self::MAX_NAME_LENGTH ) );
+		} elseif ( '' !== trim( $label ) ) {
+			// One field per label, as core refuses a second term of the same name (`wp_insert_term()`):
+			// a form sent twice, e.g. by a double click, makes one field.
+			foreach ( $this->all() as $field ) {
+				if ( $field->id !== $id && Text::lowercase( trim( $field->label ) ) === Text::lowercase( trim( $label ) ) ) {
+					$errors->add( 'label', __( 'Another field with this label already exists.', 'easyq' ) );
+					break;
+				}
+			}
 		}
 
 		if ( null !== $permit && ! isset( self::permit_choices()[ $permit ] ) ) {

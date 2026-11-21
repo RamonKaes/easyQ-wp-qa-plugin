@@ -80,6 +80,20 @@ final class User_Fields_Test extends Test_Case {
 		$this->assertInstanceOf( WP_Error::class, $this->fields->update( 999, 'x', 0, null ) );
 	}
 
+	public function test_a_label_names_one_field_as_a_name_names_one_term(): void {
+		$fields = Services::user_fields();
+		$first  = $fields->create( '', 'Company', 0, null );
+		$this->assertIsInt( $first );
+
+		// A form sent twice, e.g. by a double click, made a second field company-2.
+		$twice = $fields->create( '', 'company ', 0, null );
+		$this->assertInstanceOf( \WP_Error::class, $twice );
+		$this->assertSame( array( 'label' ), $twice->get_error_codes() );
+
+		// The field keeps its own label when it changes.
+		$this->assertTrue( $fields->update( $first, 'Company', 0, null ) );
+	}
+
 	public function test_sanitizes_values_by_kind(): void {
 		$user  = self::factory()->user->create();
 		$link  = $this->field( (int) $this->fields->create( 'homepage', '', User_Field::FLAG_LINK, null ) );
