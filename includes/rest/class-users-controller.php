@@ -315,21 +315,7 @@ final class Users_Controller extends Controller {
 
 		$search = trim( (string) self::string_param( $request, 'search' ) );
 		if ( '' !== $search ) {
-			// The columns core searches for those who may not list users (`WP_REST_Users_Controller::get_items()`).
-			$matches = get_users(
-				array(
-					'search'         => '*' . $search . '*',
-					'search_columns' => array( 'ID', 'user_nicename', 'display_name' ),
-					'fields'         => 'ID',
-					'orderby'        => 'display_name',
-					'number'         => 200,
-				)
-			);
-			$ids     = Services::user_query()->shown_ids( array_map( array( \EasyQ\Util\Number::class, 'id' ), $matches ), get_current_user_id() > 0 ? get_current_user_id() : null );
-			$found   = array(
-				'ids'   => array_slice( $ids, ( $page - 1 ) * $per_page, $per_page ),
-				'total' => count( $ids ),
-			);
+			$found = Services::user_query()->search( $search, $page, $per_page, get_current_user_id() > 0 ? get_current_user_id() : null );
 		} elseif ( 'favorites' === $sort ) {
 			// The users the viewer follows, as the favorites page lists them; nothing for visitors.
 			$ids   = Services::favorites()->shown_users( get_current_user_id() );

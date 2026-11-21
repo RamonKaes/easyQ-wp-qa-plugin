@@ -87,6 +87,53 @@ final class User_Query {
 	}
 
 	/**
+	 * Searches users by name, as core searches users for those who may not list them, among
+	 * the profiles the viewer may see (is_shown()), paged and counted by the database.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param string   $search    Text the name contains.
+	 * @param int      $page      Page number, starting at 1.
+	 * @param int      $per_page  Users per page.
+	 * @param int|null $viewer_id Viewer, null for a visitor.
+	 * @return array{ids: int[], total: int}
+	 */
+	public function search( string $search, int $page, int $per_page, ?int $viewer_id ): array {
+		$per_page = max( 1, min( self::MAX_PER_PAGE, $per_page ) );
+		$args     = array(
+			// The columns of `WP_REST_Users_Controller::get_items()` for those who may not list users.
+			'search'         => '*' . $search . '*',
+			'search_columns' => array( 'ID', 'user_nicename', 'display_name' ),
+			'orderby'        => 'display_name',
+			'offset'         => ( max( 1, $page ) - 1 ) * $per_page,
+			'number'         => $per_page,
+			'fields'         => 'ID',
+			'count_total'    => true,
+		);
+
+		// Those who may list users see every member; others the users who took part, wherever
+		// they are members, and themselves.
+		$restrict = null;
+		if ( null === $viewer_id || ! user_can( $viewer_id, 'list_users' ) ) {
+			$args['blog_id'] = 0;
+			$restrict        = static function ( WP_User_Query $query ) use ( $viewer_id ): void {
+				$wpdb               = DB::wpdb();
+				$query->query_where = ( is_string( $query->query_where ) ? $query->query_where : '' ) . $wpdb->prepare( ' AND ( %i.ID IN ( SELECT user_id FROM %i ) OR %i.ID = %d )', $wpdb->users, Schema::table( 'userpoints' ), $wpdb->users, $viewer_id ?? 0 );
+			};
+			add_action( 'pre_user_query', $restrict );
+		}
+		$query = new WP_User_Query( $args );
+		if ( null !== $restrict ) {
+			remove_action( 'pre_user_query', $restrict );
+		}
+
+		return array(
+			'ids'   => self::ids( (array) $query->get_results() ),
+			'total' => $query->get_total(),
+		);
+	}
+
+	/**
 	 * Checks whether a user belongs to the Q&A area of the current site.
 	 *
 	 * On a network, users of other sites only have a profile here once they took part.

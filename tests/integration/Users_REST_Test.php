@@ -447,4 +447,39 @@ final class Users_REST_Test extends REST_Test_Case {
 		$this->assertSame( 400, $response->get_status() );
 		$this->assertStringContainsString( 'too large', (string) ( $response->as_error()?->get_error_data()['params']['avatar'] ?? '' ) );
 	}
+
+	public function test_the_search_pages_and_counts_every_match_the_viewer_may_see(): void {
+		global $wpdb;
+		$ids = self::factory()->user->create_many( 205, array( 'display_name' => 'Searchable member' ) );
+		// All took part, but one: its profile shows to itself and to those who may list users.
+		$silent = array_pop( $ids );
+		$rows   = implode( ',', array_map( static fn ( int $id ): string => '(' . $id . ')', $ids ) );
+		$wpdb->query( 'INSERT INTO ' . \EasyQ\Database\Schema::table( 'userpoints' ) . " (user_id) VALUES $rows" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- IDs of the test.
+		$search = function ( int $page ): \WP_REST_Response {
+			return $this->request(
+				'GET',
+				'/users',
+				array(
+					'search'   => 'Searchable',
+					'per_page' => 100,
+					'page'     => $page,
+				)
+			);
+		};
+
+		wp_set_current_user( 0 );
+		$third = $search( 3 );
+		$this->assertSame( 204, (int) $third->get_headers()['X-WP-Total'] );
+		$this->assertCount( 4, $this->data( $third ) );
+		$this->assertNotContains( $silent, array_column( $this->data( $search( 1 ) ), 'id' ) );
+
+		wp_set_current_user( $ids[0] );
+		$this->assertSame( 204, (int) $search( 1 )->get_headers()['X-WP-Total'], 'Another user.' );
+
+		wp_set_current_user( $silent );
+		$this->assertSame( 205, (int) $search( 1 )->get_headers()['X-WP-Total'], 'Themselves.' );
+
+		wp_set_current_user( $this->administrator() );
+		$this->assertSame( 205, (int) $search( 1 )->get_headers()['X-WP-Total'] );
+	}
 }
