@@ -200,7 +200,8 @@ final class Filter_Values_Test extends REST_Test_Case {
 	}
 
 	public function test_the_filters_of_easyq_take_any_value_back(): void {
-		// A net over the source: the value a filter of easyQ returns is checked, never cast.
+		// A net over the source: the value a filter of easyQ returns is checked, never cast, with a
+		// cast or a function that casts.
 		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( dirname( __DIR__, 2 ) . '/includes', \FilesystemIterator::SKIP_DOTS ) );
 		$read  = 0;
 		foreach ( $files as $file ) {
@@ -209,7 +210,7 @@ final class Filter_Values_Test extends REST_Test_Case {
 			}
 			++$read;
 			$source = (string) file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			$this->assertSame( 0, preg_match( '/\(\s*(string|int|bool|array|float)\s*\)\s*apply_filters(_ref_array)?\s*\(/', $source ), $file->getFilename() );
+			$this->assertSame( 0, preg_match( '/(\(\s*(string|int|integer|bool|boolean|array|float|double)\s*\)|\b(strval|intval|boolval|floatval|absint|settype)\s*\()\s*apply_filters(_ref_array)?\s*\(/i', $source ), $file->getFilename() );
 		}
 		$this->assertGreaterThan( 100, $read );
 

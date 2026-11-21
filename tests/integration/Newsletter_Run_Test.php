@@ -80,10 +80,11 @@ final class Newsletter_Run_Test extends Test_Case {
 	}
 
 	public function test_every_email_passes_the_filters_of_easyq(): void {
-		// A net over the source: `Mailer` is the only class that hands emails to `wp_mail()`.
+		// A net over the source: `Mailer` is the only class that hands emails to `wp_mail()`,
+		// called by name or as a callback such as `call_user_func( 'wp_mail', … )`.
 		$callers = array();
 		foreach ( new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( dirname( __DIR__, 2 ) . '/includes', \FilesystemIterator::SKIP_DOTS ) ) as $file ) {
-			if ( 'php' === $file->getExtension() && 1 === preg_match( '/\bwp_mail\s*\(\s*[^)\s]/', (string) preg_replace( '~//[^\n]*|/\*.*?\*/~s', '', (string) file_get_contents( $file->getPathname() ) ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			if ( 'php' === $file->getExtension() && 1 === preg_match( '/\bwp_mail\s*\(\s*[^)\s]|([\'"])wp_mail\1/', (string) preg_replace( '~//[^\n]*|/\*.*?\*/~s', '', (string) file_get_contents( $file->getPathname() ) ) ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 				$callers[] = $file->getFilename();
 			}
 		}

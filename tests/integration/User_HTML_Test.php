@@ -209,13 +209,26 @@ final class User_HTML_Test extends REST_Test_Case {
 	}
 
 	public function test_no_html_of_others_reaches_the_page_without_the_filter_of_easyq(): void {
-		// A net over the source: every filter of HTML in the renderers of blocks and the notices
-		// goes through `Content_Renderer`, which removes directives.
-		$files = array_merge( (array) glob( dirname( __DIR__, 2 ) . '/includes/blocks/render/*.php' ), array( dirname( __DIR__, 2 ) . '/includes/notices/class-notices.php' ) );
-		$this->assertGreaterThan( 5, count( $files ) );
+		// A net over the source: every filter of HTML goes through `Content_Renderer`, which
+		// removes directives. Outside it, only the texts of the site owner are filtered as core
+		// does: the setting that stores them and the registration form, which is no page of easyQ;
+		// and translated sentences may keep their links, an allow list without attributes for directives.
+		$own   = array( 'class-content-renderer.php', 'class-fields.php', 'class-registration.php' );
+		$files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( dirname( __DIR__, 2 ) . '/includes', \FilesystemIterator::SKIP_DOTS ) );
+		$read  = 0;
 		foreach ( $files as $file ) {
-			$source = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			$this->assertSame( 0, preg_match( '/\bwp_kses_post\s*\(|\bwp_kses_data\s*\(|\bwp_filter_post_kses\s*\(/', $source ), basename( $file ) );
+			if ( 'php' !== $file->getExtension() || in_array( $file->getFilename(), $own, true ) ) {
+				continue;
+			}
+			++$read;
+			$source = (string) file_get_contents( $file->getPathname() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			$source = (string) preg_replace_callback(
+				'/\bwp_kses\s*(\((?:[^()]++|(?1))*\))/',
+				static fn ( array $call ): string => 1 === preg_match( '/,\s*array\(\s*\'a\'\s*=>\s*array\(\s*\'href\'\s*=>\s*true\s*\)\s*\)\s*\)$/', $call[1] ) ? 'links_only' : $call[0],
+				$source
+			);
+			$this->assertSame( 0, preg_match( '/\b(wp_kses|wp_kses_post|wp_kses_data|wp_filter_post_kses|wp_filter_kses|wp_kses_post_deep)\s*\(|([\'"])(wp_kses\w*|wp_filter_\w*kses)\2/', $source ), $file->getFilename() );
 		}
+		$this->assertGreaterThan( 100, $read );
 	}
 }
