@@ -87,11 +87,11 @@ final class Tools {
 	/**
 	 * Runs one batch of a tool.
 	 *
-	 * @since 0.1.0
-	 *
 	 * The items of a step are counted once, at its start, as Question2Answer counts once per
 	 * step; the caller passes the total and the items done back with the next batch. A run has
 	 * a token: while one runs, another is refused, so two runs never write the same items twice.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param Actor    $actor Who runs the tool.
 	 * @param string   $tool  A key of STEPS.

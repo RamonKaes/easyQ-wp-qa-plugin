@@ -523,10 +523,10 @@ final class Settings_Screen {
 	/**
 	 * Renders the points minimum of a permission.
 	 *
-	 * @since 0.1.0
-	 *
 	 * The script of the screen disables it while the chosen threshold needs no points;
 	 * a disabled field is not sent, so its stored value stays.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string $section  Section name.
 	 * @param string $key      Setting name of the points minimum.

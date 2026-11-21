@@ -66,11 +66,11 @@ final class Mailer {
 	/**
 	 * Returns the subject and text of a template with its placeholders replaced.
 	 *
-	 * @since 0.1.0
-	 *
 	 * The placeholders of the recipient (`###USERNAME###`, `###EMAIL###`) come from the
 	 * recipient whenever one is given, so an email built outside `send()`, such as the ones
 	 * that replace core's, offers the same placeholders as the template screen.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string                $name         Template name.
 	 * @param array<string, string> $placeholders Placeholders with their values, besides those of every email.

@@ -227,6 +227,22 @@ final class Docs_Test extends Test_Case {
 		$this->assertSame( array(), array_values( array_filter( $own, static fn ( string $name ): bool => ! str_contains( $hooks, "binding source `$name`" ) ) ), 'Binding sources without documentation.' );
 	}
 
+	public function test_docblocks_put_the_description_before_the_tags(): void {
+		$sources = array_merge( $this->sources( 'includes' ), array( 'easyq.php' => $this->read( self::root() . 'easyq.php' ) ) );
+		$late    = array();
+		foreach ( $sources as $path => $source ) {
+			preg_match_all( '#/\*\*.*?\*/#s', $source, $blocks );
+			foreach ( $blocks[0] as $block ) {
+				// After the first tag, a paragraph that is not a tag is description out of place.
+				if ( preg_match( '/^\s*\* @\w.*?^\s*\*\n\s*\* [^@\s]/ms', $block ) ) {
+					$late[] = basename( (string) $path ) . ': ' . strtok( trim( substr( $block, 3 ) ), "\n" );
+				}
+			}
+		}
+
+		$this->assertSame( array(), $late );
+	}
+
 	public function test_methods_said_to_be_called_by_tests_only_have_no_caller_in_the_plugin(): void {
 		$sources = array_merge( $this->sources( 'includes' ), array( $this->read( self::root() . 'easyq.php' ), $this->read( self::root() . 'uninstall.php' ) ) );
 		$methods = array();

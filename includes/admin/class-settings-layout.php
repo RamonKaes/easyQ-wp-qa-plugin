@@ -17,10 +17,10 @@ defined( 'ABSPATH' ) || exit;
  * sections with headings, as under Settings → Writing, and related switches and
  * numbers in one row with a short title, as under Settings → Discussion.
  *
- * @since 0.1.0
- *
  * Switches always share a row with a short title, even alone, so that their text
  * stands beside them, as under Settings → Reading.
+ *
+ * @since 0.1.0
  */
 final class Settings_Layout {
 

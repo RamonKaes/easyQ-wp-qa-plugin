@@ -62,11 +62,11 @@ final class User_Query {
 	/**
 	 * Lists users.
 	 *
-	 * @since 0.1.0
-	 *
 	 * The newest and the special users are the profiles the viewer may see (is_shown()): users
 	 * who took part, or every user for those who may list users, as core sorts users by their
 	 * registration only for them. The list by points has only users who took part anyway.
+	 *
+	 * @since 0.1.0
 	 *
 	 * @param string   $sort      One of the SORTS keys.
 	 * @param int      $page      Page number, starting at 1.
