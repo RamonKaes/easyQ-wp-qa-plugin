@@ -201,12 +201,16 @@ final class Block_Attributes_Test extends Test_Case {
 					return true;
 				}
 			);
+			// As WP_Block::render() names the block for the block supports; WordPress 6.7 reads it unchecked.
+			$rendered                            = $block( 'easyq/' . $name );
+			\WP_Block_Supports::$block_to_render = $rendered->parsed_block;
 			try {
-				\EasyQ\Blocks\Renderer::render( $name, $attributes, '', $block( 'easyq/' . $name ) );
+				\EasyQ\Blocks\Renderer::render( $name, $attributes, '', $rendered );
 			} catch ( \Throwable $e ) {
 				$failures[] = "$name: " . get_class( $e ) . ': ' . $e->getMessage();
 			} finally {
 				restore_error_handler();
+				\WP_Block_Supports::$block_to_render = null;
 			}
 		}
 

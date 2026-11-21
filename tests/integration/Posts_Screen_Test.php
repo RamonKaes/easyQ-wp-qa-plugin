@@ -322,7 +322,7 @@ final class Posts_Screen_Test extends Test_Case {
 		$this->request( array() );
 
 		$html = $this->render();
-		$this->assertMatchesRegularExpression( '/A closed question in a category.*?Closed/s', $html );
+		$this->assertStringContainsString( '<span class="post-state">Question</span> — <strong>Closed</strong></p><p><strong>A closed question in a category</strong>', $html );
 		$this->assertStringContainsString( '<a href="' . esc_url( Posts_Screen::url( array( 'category' => $category ) ) ) . '">Hardware</a>', $html );
 	}
 
