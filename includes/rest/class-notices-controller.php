@@ -110,11 +110,26 @@ final class Notices_Controller extends Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function delete_item( $request ): WP_REST_Response|WP_Error {
-		if ( ! Services::notices()->dismiss( $this->actor(), (string) self::string_param( $request, 'id' ) ) ) {
+		$actor = $this->actor();
+		$id    = (string) self::string_param( $request, 'id' );
+		// The notice as it was, which core's delete routes answer with (`previous`).
+		$previous = null;
+		foreach ( Services::notices()->for_actor( $actor ) as $notice ) {
+			if ( $notice['id'] === $id ) {
+				$previous = $this->prepare_item_for_response( $notice, $request )->get_data();
+			}
+		}
+
+		if ( ! Services::notices()->dismiss( $actor, $id ) ) {
 			return REST_Errors::not_found( 'other' );
 		}
 
-		return new WP_REST_Response( array( 'deleted' => true ) );
+		return new WP_REST_Response(
+			array(
+				'deleted'  => true,
+				'previous' => $previous,
+			)
+		);
 	}
 
 	/**

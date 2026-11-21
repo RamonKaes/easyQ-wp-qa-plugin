@@ -210,7 +210,7 @@ category) and to the `move` action; a question may always keep the category it h
 | Method and route | Description |
 | --- | --- |
 | `GET /notices` | The notices of the current user or visitor, with `id` and `content` as HTML |
-| `DELETE /notices/{id}` | Dismiss a notice: its number, `welcome`, or `visitor`, which sets the cookie `easyq_noticed`. Only your own; others answer `404` |
+| `DELETE /notices/{id}` | Dismiss a notice: its number, `welcome`, or `visitor`, which sets the cookie `easyq_noticed`. Only your own; others answer `404`. Answers `deleted` and the notice as it was in `previous`, as core's delete routes do |
 
 ### Emails
 

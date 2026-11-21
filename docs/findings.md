@@ -36,7 +36,6 @@ back from "Deferred" keep their text, with the remaining columns left out.
 | No. | Class | Finding | Cell | Trigger, since | Why no guard saw it |
 | --- | --- | --- | --- | --- | --- |
 | F-234 | low | Cross-check 2026-11-19, low findings of the part auditors, each with its evidence in the audit notes: `languages/easyq.pot` is stale (6 strings missing). | several | old; Cross-check 2026-11-19 on `76f1989`. | Not guarded; deferred like the other low findings unless the owner decides otherwise. |
-| F-153 | low | `DELETE /notices/{id}` answers without `previous`, as core's delete routes do. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-158 | low | A complete image without `Content-Type` in its multipart part is refused as "only partly arrived" and counted against the limit. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-159 | low | `slug` through `/wp/v2/users/me` sets the profile address past the blocked usernames (measured: `/questions/user/anonymous/`). | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |
 | F-160 | low | Registration with an expired nonce says "Please accept the terms" although the box is ticked; without terms, fields and the newsletter wish are lost silently. | — | Deferred on 2026-11-19, back on the owner's word of the same evening. | — |

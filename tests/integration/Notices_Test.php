@@ -59,7 +59,11 @@ final class Notices_Test extends REST_Test_Case {
 		wp_set_current_user( $user_id );
 
 		$this->assertSame( 'welcome', $this->data( $this->request( 'GET', '/notices' ) )[0]['id'] );
-		$this->assertSame( 200, $this->request( 'DELETE', '/notices/welcome' )->get_status() );
+		$deleted = $this->request( 'DELETE', '/notices/welcome' );
+		$this->assertSame( 200, $deleted->get_status() );
+		// With the notice as it was, as core's delete routes answer.
+		$this->assertSame( 'welcome', $this->data( $deleted )['previous']['id'] ?? null );
+		$this->assertStringContainsString( 'Welcome here', $this->data( $deleted )['previous']['content'] ?? '' );
 		$this->assertSame( array(), $this->data( $this->request( 'GET', '/notices' ) ) );
 		$this->assertSame( '', Site_Meta::get( $user_id, Notices::WELCOME_META ) );
 		$this->assertSame( 404, $this->request( 'DELETE', '/notices/welcome' )->get_status() );
