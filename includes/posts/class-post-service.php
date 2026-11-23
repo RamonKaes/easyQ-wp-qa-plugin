@@ -966,7 +966,8 @@ final class Post_Service {
 	 * @param Actor $actor       Who closes the question.
 	 * @param Post  $question    Question.
 	 * @param int   $original_id ID of the original question.
-	 * @return true|WP_Error The error of conflict() if another request deleted the question in between.
+	 * @return true|WP_Error The error of conflict() if another request closed, reopened or deleted
+	 *                       the question in between.
 	 */
 	public function close_as_duplicate( Actor $actor, Post $question, int $original_id ): bool|WP_Error {
 		$question = $this->reopen( $actor, $question );
@@ -974,7 +975,10 @@ final class Post_Service {
 			return self::conflict();
 		}
 
-		$this->posts->update( $question->id, array( 'closed_by_id' => $original_id ), $actor, Post::UPDATE_CLOSED );
+		// Closed only if nobody closed it since: two moderators at once close it once.
+		if ( ! $this->posts->change_closed( $question->id, null, $original_id, $actor ) ) {
+			return self::conflict();
+		}
 		$this->question_counts_changed( $question );
 
 		Events::dispatch(
@@ -1000,8 +1004,8 @@ final class Post_Service {
 	 * @param Post   $question Question.
 	 * @param string $note     Reason.
 	 * @return true|WP_Error The error `easyq_not_created` if the database refused the note, the
-	 *                       error of conflict() if another request deleted the question or the
-	 *                       note in between.
+	 *                       error of conflict() if another request closed, reopened or deleted
+	 *                       the question, or deleted the note, in between.
 	 */
 	public function close_with_note( Actor $actor, Post $question, string $note ): bool|WP_Error {
 		$question = $this->reopen( $actor, $question );
@@ -1015,6 +1019,14 @@ final class Post_Service {
 			return new WP_Error( 'easyq_not_created', __( 'The reason for closing could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
+		// Closed only if nobody closed it since: two moderators at once close it once, and the
+		// note of the second goes again, so that no note is left that the question does not name.
+		if ( ! $this->posts->change_closed( $question->id, null, $note_id, $actor ) ) {
+			$this->posts->delete( $note_id );
+
+			return self::conflict();
+		}
+
 		$note_post = $this->reread( $note_id );
 		if ( null === $note_post ) {
 			// Deleted by another request that reopened the question right away.
@@ -1023,8 +1035,6 @@ final class Post_Service {
 		if ( Post::QUESTION === $question->type ) {
 			$this->search->index( $note_post, $question->id, $question->category_id );
 		}
-
-		$this->posts->update( $question->id, array( 'closed_by_id' => $note_id ), $actor, Post::UPDATE_CLOSED );
 		$this->question_counts_changed( $question );
 
 		Events::dispatch(
@@ -1048,7 +1058,8 @@ final class Post_Service {
 	 *
 	 * @param Actor $actor    Who reopens the question.
 	 * @param Post  $question Question.
-	 * @return Post|null The question after the change, or null if another request deleted it in between.
+	 * @return Post|null The question after the change, or null if another request reopened,
+	 *                   closed again or deleted it in between.
 	 */
 	public function reopen( Actor $actor, Post $question ): ?Post {
 		if ( null === $question->closed_by_id ) {
@@ -1057,7 +1068,11 @@ final class Post_Service {
 
 		$note = $this->posts->close_note_of( $question );
 
-		$this->posts->update( $question->id, array( 'closed_by_id' => null ), $actor, Post::UPDATE_CLOSED );
+		// Reopened only if it is still closed as it was read: a second reopen, or a close in
+		// between, leaves it as the other request left it.
+		if ( ! $this->posts->change_closed( $question->id, $question->closed_by_id, null, $actor ) ) {
+			return null;
+		}
 
 		if ( null !== $note ) {
 			$this->search->unindex( $note->id );

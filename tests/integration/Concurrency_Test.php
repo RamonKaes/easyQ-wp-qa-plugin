@@ -197,6 +197,43 @@ final class Concurrency_Test extends REST_Test_Case {
 		$this->assertSame( 0, $this->post( $question->id )->answer_count );
 	}
 
+	/**
+	 * Two closes or reopens at once go through once and leave no closing note the question does
+	 * not name, which would keep it from ever being deleted (F-256).
+	 */
+	public function test_two_closes_or_reopens_at_once_go_through_once(): void {
+		$service   = Services::post_service();
+		$moderator = $this->user( 'editor' );
+		$question  = $this->ask( $this->user() );
+		$original  = $this->ask( $this->user(), 'The original question of the duplicate' );
+		$notes     = static fn (): array => array_values( array_filter( Services::posts()->children( $question->id ), static fn ( Post $child ): bool => Post::NOTE === $child->type ) );
+
+		// Both read the question open.
+		$open = $this->post( $question->id );
+		$this->assertTrue( $service->close_with_note( $moderator, $open, 'The first reason.' ) );
+		$second = $service->close_with_note( $moderator, $open, 'The second reason.' );
+		$this->assertWPError( $second );
+		$this->assertSame( 'easyq_changed', $second->get_error_code() );
+		$this->assertCount( 1, $notes() );
+		$this->assertSame( $notes()[0]->id, $this->post( $question->id )->closed_by_id );
+		$duplicate = $service->close_as_duplicate( $moderator, $open, $original->id );
+		$this->assertWPError( $duplicate );
+		$this->assertSame( $notes()[0]->id, $this->post( $question->id )->closed_by_id );
+
+		// Both read the question closed by the note.
+		$closed = $this->post( $question->id );
+		$this->assertNotNull( $service->reopen( $moderator, $closed ) );
+		$this->assertTrue( $service->close_as_duplicate( $moderator, $this->post( $question->id ), $original->id ) );
+		$this->assertNull( $service->reopen( $moderator, $closed ) );
+		$this->assertSame( $original->id, $this->post( $question->id )->closed_by_id );
+		$this->assertSame( array(), $notes() );
+
+		// Nothing is left that keeps the question from being deleted once reopened and hidden.
+		$this->assertNotNull( $service->reopen( $moderator, $this->post( $question->id ) ) );
+		$service->set_question_status( $moderator, $this->post( $question->id ), Post::STATUS_HIDDEN );
+		$this->assertTrue( $service->delete_question( $moderator, $this->post( $question->id ) ) );
+	}
+
 	public function test_the_rest_api_answers_409_to_a_post_deleted_in_between(): void {
 		$this->login( 'editor' );
 		$category = Services::categories()->create( null, 'Target' );

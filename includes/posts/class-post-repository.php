@@ -370,6 +370,43 @@ final class Post_Repository {
 	}
 
 	/**
+	 * Changes what closed a question only if it is still what the question was read with.
+	 *
+	 * Two moderators may close or reopen the same question at once; only the first change
+	 * goes through, so that no closing note is left without its question pointing to it.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int      $id    Question ID.
+	 * @param int|null $from  What closed the question when it was read: a note, the original of
+	 *                        a duplicate, or null for an open question.
+	 * @param int|null $to    What closes it now, or null to reopen it.
+	 * @param Actor    $actor Who made the change.
+	 * @return bool Whether the question still had the value and was changed.
+	 */
+	public function change_closed( int $id, ?int $from, ?int $to, Actor $actor ): bool {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Custom table; the cache is cleared below.
+		$changed = DB::wpdb()->update(
+			Schema::table( 'posts' ),
+			array(
+				'closed_by_id' => $to,
+				'updated'      => DB::now(),
+				'update_type'  => Post::UPDATE_CLOSED,
+				'last_user_id' => $actor->user_id,
+				'last_ip'      => $actor->stored_ip(),
+			),
+			// A null in the condition is `IS NULL` (`wpdb::update()`).
+			array(
+				'id'           => $id,
+				'closed_by_id' => $from,
+			)
+		);
+		$this->forget( $id );
+
+		return is_int( $changed ) && $changed > 0;
+	}
+
+	/**
 	 * Sets the selected answer of a question.
 	 *
 	 * The previous answer loses its "selected" change metadata; the new answer records who selected it.
