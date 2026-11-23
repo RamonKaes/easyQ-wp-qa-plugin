@@ -367,7 +367,7 @@ final class Posts_Controller extends Controller {
 		$rules       = Services::permissions()->post_rules( $post, $actor, $parent_post, $parent_post ? Services::posts()->children( $parent_post->id ) : array(), Services::posts()->children( $post->id ) );
 
 		if ( ! ( $rules[ self::ACTIONS[ $action ] ?? '' ] ?? false ) ) {
-			return REST_Errors::permission( null === $actor->user_id && 'claim' !== $action ? 'login' : 'level' );
+			return REST_Errors::permission( $this->refusal( $post, $actor, $rules, null === $actor->user_id && 'claim' !== $action ? 'login' : 'level' ) );
 		}
 
 		return match ( $action ) {

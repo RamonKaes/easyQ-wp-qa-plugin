@@ -574,7 +574,7 @@ abstract class Controller extends WP_REST_Controller {
 		$needs_edit = array_diff( $fields, $retag_fields );
 		$allowed    = array() === $needs_edit ? $rules['editable'] || ( array() !== $retag_fields && $rules['retaggable'] ) : $rules['editable'];
 		if ( ! $allowed ) {
-			return REST_Errors::permission( 'level' );
+			return REST_Errors::permission( $this->refusal( $post, $actor, $rules, 'level' ) );
 		}
 
 		if ( self::bool_param( $request, 'silent' ) && ! user_can( (int) $actor->user_id, 'easyq_edit_silently' ) ) {
@@ -582,6 +582,23 @@ abstract class Controller extends WP_REST_Controller {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Returns why a rule of a post refuses the actor: for the author the block, the
+	 * unconfirmed address or the blocked IP that stops them, as Question2Answer reports it
+	 * (`qa_page_q_permit_edit()`), otherwise the given reason.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param Post                $post     The post.
+	 * @param Actor               $actor    The actor.
+	 * @param array<string, bool> $rules    The rules of the post for the actor.
+	 * @param string              $fallback Reason if the author is not stopped, e.g. `level`.
+	 * @return string
+	 */
+	protected function refusal( Post $post, Actor $actor, array $rules, string $fallback ): string {
+		return ( $rules['by_user'] ? Services::permissions()->error( null, $actor, $post ) : null ) ?? $fallback;
 	}
 
 	/**

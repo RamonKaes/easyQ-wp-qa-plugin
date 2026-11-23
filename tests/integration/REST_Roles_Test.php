@@ -550,6 +550,86 @@ final class REST_Roles_Test extends REST_Test_Case {
 		$this->assertContains( '', $blocked );
 	}
 
+	/**
+	 * A blocked, IP-blocked or unconfirmed author no longer changes their own posts, as
+	 * Question2Answer checks the block also for the author (`qa_page_q_permit_edit()` in
+	 * `qa-include/pages/question-post.php`), and is told why (F-251).
+	 */
+	public function test_blocks_stop_authors_changing_their_own_posts(): void {
+		$author   = $this->user();
+		$user_id  = (int) $author->user_id;
+		$question = $this->ask( $author );
+		$asked    = $this->ask( $this->user() );
+		$answer   = $this->answer( $author, $asked );
+		$sibling  = $this->answer( $this->user(), $asked, 'Another answer to comment on.' );
+		$other    = $this->answer( $this->user(), $question );
+		$comment  = $this->comment( $author, $question, $other );
+		$category = Services::categories()->create( null, 'Target' );
+		$this->assertIsInt( $category );
+		wp_set_current_user( $user_id );
+
+		$changes = array(
+			'PUT /questions'      => fn (): \WP_REST_Response => $this->request( 'PUT', '/questions/' . $question->id, array( 'title' => 'A question with a changed title' ) ),
+			'PUT /answers'        => fn (): \WP_REST_Response => $this->request( 'PUT', '/answers/' . $answer->id, array( 'content' => 'A changed answer text.' ) ),
+			'PUT /comments'       => fn (): \WP_REST_Response => $this->request( 'PUT', '/comments/' . $comment->id, array( 'content' => 'A changed comment text.' ) ),
+			'move'                => fn (): \WP_REST_Response => $this->request( 'POST', '/posts/' . $question->id . '/actions/move', array( 'category' => $category ) ),
+			'convert'             => fn (): \WP_REST_Response => $this->request( 'POST', '/posts/' . $answer->id . '/actions/convert', array( 'parent' => $sibling->id ) ),
+			'GET /questions edit' => fn (): \WP_REST_Response => $this->request( 'GET', '/questions/' . $question->id, array( 'context' => 'edit' ) ),
+		);
+		$states  = array(
+			'userblock' => array(
+				static fn () => \EasyQ\Users\User_Status::block( \EasyQ\Actor::system(), $user_id ),
+				static fn () => \EasyQ\Users\User_Status::unblock( \EasyQ\Actor::system(), $user_id ),
+			),
+			'ipblock'   => array(
+				static function (): void {
+					$_SERVER['REMOTE_ADDR'] = '203.0.113.7';
+					Options::update( 'spam', array( 'block_ips_write' => '203.0.113.*' ) );
+				},
+				static function (): void {
+					unset( $_SERVER['REMOTE_ADDR'] );
+					Options::update( 'spam', array( 'block_ips_write' => '' ) );
+				},
+			),
+			'confirm'   => array(
+				static function () use ( $user_id ): void {
+					Options::update(
+						'spam',
+						array(
+							'confirm_user_emails'   => true,
+							'confirm_user_required' => true,
+						)
+					);
+					\EasyQ\Users\User_Status::unconfirm( $user_id );
+				},
+				static fn () => Options::update( 'spam', array( 'confirm_user_required' => false ) ),
+			),
+		);
+
+		foreach ( $states as $reason => [ $enter, $leave ] ) {
+			$enter();
+			foreach ( Services::posts()->find_many( array( $question->id, $answer->id, $comment->id ) ) as $post ) {
+				$rules = Services::permissions()->post_rules( $post, \EasyQ\Actor::current( null ) );
+				$this->assertFalse( $rules['editable'], $reason . ' ' . $post->type );
+				$this->assertFalse( $rules['retaggable'], $reason . ' ' . $post->type );
+			}
+			foreach ( array_filter( $changes, static fn ( string $key ): bool => 'GET /questions edit' !== $key, ARRAY_FILTER_USE_KEY ) as $change => $send ) {
+				$this->assertSame( 'easyq_' . $reason, (string) $send()->as_error()?->get_error_code(), $reason . ' ' . $change );
+			}
+			// An unconfirmed user reads nothing while confirming is required, so the read is refused before the context.
+			$this->assertSame( 'confirm' === $reason ? 'easyq_confirm' : 'rest_forbidden_context', (string) $changes['GET /questions edit']()->as_error()?->get_error_code(), $reason );
+			$leave();
+		}
+
+		$this->assertSame( $question->title, $this->post( $question->id )->title );
+		$this->assertSame( $question->category_id, $this->post( $question->id )->category_id );
+		$this->assertSame( $answer->content, $this->post( $answer->id )->content );
+		$this->assertSame( $comment->content, $this->post( $comment->id )->content );
+		foreach ( $changes as $change => $send ) {
+			$this->assertSame( 200, $send()->get_status(), 'unblocked ' . $change );
+		}
+	}
+
 	public function test_every_reading_route_follows_the_permission_to_view(): void {
 		$question = $this->ask( $this->user() );
 		$answer   = $this->answer( $this->user(), $question );

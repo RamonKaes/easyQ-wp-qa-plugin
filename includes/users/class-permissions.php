@@ -291,6 +291,9 @@ final class Permissions {
 		$user_flag  = null !== $actor->user_id && $this->votes->has_flagged( $post->id, $actor->user_id );
 
 		$error = fn ( ?string $option ): ?string => $this->error( $option, $actor, $post );
+		// The author needs no permission to change or hide their own post, but must not be
+		// blocked, as `qa_page_q_permit_edit()` checks with the option null for them.
+		$own = $is_by_user ? $error( null ) : null;
 
 		$post_q = $error( 'permit_post_q' );
 		$post_a = $error( 'permit_post_a' );
@@ -305,7 +308,7 @@ final class Permissions {
 		$retag     = $error( 'permit_retag_cat' );
 		$flag      = $error( 'permit_flag' );
 		$hide_show = $error( 'permit_hide_show' );
-		$hide_self = $is_by_user ? $error( null ) : $hide_show;
+		$hide_self = $is_by_user ? $own : $hide_show;
 		$close     = $error( $is_by_user && Options::get_bool( 'posting', 'allow_close_own_questions' ) ? null : 'permit_close_q' );
 		$moderate  = $error( 'permit_moderate' );
 
@@ -331,11 +334,11 @@ final class Permissions {
 			&& Options::get_bool( 'posting', Post::QUESTION === $parent_post->type ? 'comment_on_qs' : 'comment_on_as' );
 
 		$rules['edit_button'] = ! $hidden && ! $closed && ( $is_by_user || ( ! in_array( $edit, $button_errors, true ) && ! $queued ) );
-		$rules['editable']    = $rules['edit_button'] && ( $is_by_user || null === $edit );
+		$rules['editable']    = $rules['edit_button'] && null === ( $is_by_user ? $own : $edit );
 
 		$rules['retag_button'] = Post::QUESTION === $base_type && '' !== $using && ! $hidden
 			&& ( $is_by_user || ! in_array( $retag, $button_errors, true ) );
-		$rules['retaggable']   = $rules['retag_button'] && ( $is_by_user || null === $retag );
+		$rules['retaggable']   = $rules['retag_button'] && null === ( $is_by_user ? $own : $retag );
 
 		$rules['answer_selectable'] = Post::QUESTION === $post->type && null === $error( $is_by_user ? null : 'permit_select_a' );
 

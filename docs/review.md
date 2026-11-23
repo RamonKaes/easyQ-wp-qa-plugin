@@ -187,7 +187,7 @@ measured on a network (`partly`). No cell carries ✓, so none was refuted.
 
 | | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | F-262 | F-251 | partly | F-252 | partly | partly | F-255 | F-258 | F-252 | — | partly | F-267 |
+| A | partly | F-262 | partly | partly | F-252 | partly | partly | F-255 | F-258 | F-252 | — | partly | F-267 |
 | B | partly | F-262 | F-257 | partly | partly | partly | partly | partly | partly | F-263 | F-266 | F-254 | F-266 |
 | C | partly | partly | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | F-286 |
 | D | partly | partly | partly | — | F-278 | partly | — | partly | partly | F-263 | partly | partly | F-269 |
