@@ -98,6 +98,72 @@ final class Multisite_Installer_Test extends Test_Case {
 		$this->assertTrue( $this->table_exists( $wpdb->get_blog_prefix( get_current_blog_id() ) . 'easyq_posts' ) );
 	}
 
+	/**
+	 * Tables and meta whose names look like those of a deleted site stay if easyQ never
+	 * installed that site: another install in the same database may use a prefix that starts
+	 * with the base prefix, such as `wp_2024_` (F-253). Core drops by the list of a site's
+	 * tables, never by a pattern (`wp_uninitialize_site()`).
+	 */
+	public function test_the_daily_run_leaves_tables_and_meta_of_another_install(): void {
+		global $wpdb;
+
+		$foreign = $wpdb->base_prefix . '2024_';
+		$table   = $foreign . 'easyq_posts';
+		$key     = $foreign . \EasyQ\Uninstaller::USER_META_PREFIX . 'level';
+		$user_id = self::factory()->user->create();
+		$site_id = self::factory()->blog->create();
+		$kept    = $wpdb->get_blog_prefix( $site_id ) . 'easyq_posts';
+		Installer::remember_site( $site_id );
+		// Real tables, as another install has, not the temporary ones of the test suite, which
+		// SHOW TABLES leaves out and a DROP of a real table does not reach.
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		$wpdb->query( $wpdb->prepare( 'CREATE TABLE IF NOT EXISTS %i LIKE %i', $table, $wpdb->prefix . 'easyq_posts' ) );
+		$wpdb->query( $wpdb->prepare( 'CREATE TABLE IF NOT EXISTS %i LIKE %i', $kept, $wpdb->prefix . 'easyq_posts' ) );
+		add_user_meta( $user_id, $key, '1' );
+
+		try {
+			\EasyQ\Privacy\IP_Retention::run();
+			\EasyQ\Uninstaller::remove_data_of_deleted_sites();
+
+			$this->assertTrue( $this->table_exists( $table ), 'The table of the other install was dropped.' );
+			$this->assertSame( '1', get_user_meta( $user_id, $key, true ), 'The meta of the other install was deleted.' );
+			$this->assertNotContains( 2024, Installer::installed_sites() );
+			$this->assertTrue( $this->table_exists( $kept ), 'The table of a site that exists was dropped.' );
+			$this->assertContains( $site_id, Installer::installed_sites() );
+		} finally {
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table ) );
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $kept ) );
+			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		}
+	}
+
+	public function test_the_list_of_sites_forgets_sites_whose_tables_are_gone(): void {
+		$deleted = self::factory()->blog->create();
+		$other   = self::factory()->blog->create();
+		foreach ( array( $deleted, $other ) as $site_id ) {
+			switch_to_blog( $site_id );
+			Installer::install_site();
+			restore_current_blog();
+		}
+		$this->assertContains( $deleted, Installer::installed_sites() );
+
+		// Deleted with easyQ loaded: core drops the tables easyQ names, and the list lets the site go.
+		wp_delete_site( $deleted );
+		$this->assertNotContains( $deleted, Installer::installed_sites() );
+		$this->assertContains( $other, Installer::installed_sites() );
+
+		// Uninstalled with the data: no site keeps tables, so nothing of the list stays.
+		foreach ( get_sites( array( 'fields' => 'ids' ) ) as $site_id ) {
+			switch_to_blog( (int) $site_id );
+			\EasyQ\Settings\Options::update( 'general', array( 'delete_data_on_uninstall' => true ) );
+			restore_current_blog();
+		}
+		\EasyQ\Uninstaller::run();
+		$this->assertFalse( get_network_option( get_main_network_id(), Installer::SITES_OPTION ) );
+	}
+
 	public function test_meta_tables_follow_site_switches(): void {
 		global $wpdb;
 

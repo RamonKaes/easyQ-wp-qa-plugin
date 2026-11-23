@@ -92,7 +92,9 @@ final class IP_Retention {
 	 * @since 0.1.0
 	 */
 	public static function run(): void {
-		// The data of sites deleted from the network while easyQ was not loaded goes too, see Uninstaller.
+		// The data of sites deleted from the network while easyQ was not loaded goes too, see Uninstaller;
+		// this site, which runs easyQ, is known as one of them, also if it was installed before the list.
+		\EasyQ\Database\Installer::remember_site( get_current_blog_id() );
 		\EasyQ\Uninstaller::remove_data_of_deleted_sites();
 
 		$cutoff = gmdate( 'Y-m-d H:i:s', time() - self::days() * DAY_IN_SECONDS );

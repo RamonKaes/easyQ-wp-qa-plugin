@@ -201,7 +201,7 @@ measured on a network (`partly`). No cell carries ✓, so none was refuted.
 | L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | partly | partly |
 | M | partly | — | — | — | F-287 | partly | partly | partly | — | partly | — | partly | partly |
 | N | — | — | partly | — | partly | partly | — | F-282 | — | partly | — | partly | partly |
-| O | — | — | — | partly | partly | F-260 | partly | F-259 | — | F-293 | — | F-253 | partly |
+| O | — | — | — | partly | partly | F-260 | partly | F-259 | — | F-293 | — | partly | partly |
 | P | partly | F-296 | partly | partly | — | — | — | — | — | partly | — | — | F-281 |
 | Q | — | — | — | — | — | partly | — | partly | — | partly | partly | partly | partly |
 

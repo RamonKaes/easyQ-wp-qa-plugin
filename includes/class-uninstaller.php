@@ -134,6 +134,7 @@ final class Uninstaller {
 		self::delete_site_user_meta();
 		// The mark of uploaded avatars; the images stay in the Media Library, like other uploads.
 		delete_post_meta_by_key( Avatars::ATTACHMENT_META );
+		Installer::forget_site( get_current_blog_id() );
 	}
 
 	/**
@@ -233,7 +234,9 @@ final class Uninstaller {
 	 * (`wp_uninitialize_site()`, `wpmu_drop_tables`). When easyQ is active on some sites only,
 	 * the network admin that deletes one does not load it, so its tables, with posts, email
 	 * and IP addresses, would stay for good. The daily run of every site with easyQ and the
-	 * uninstall remove them.
+	 * uninstall remove them: only the tables of sites easyQ installed itself
+	 * (Installer::installed_sites()), as core drops by the list of a site's tables and never
+	 * by a pattern of names, which would also match another install in the same database.
 	 *
 	 * @since 0.1.0
 	 */
@@ -242,49 +245,24 @@ final class Uninstaller {
 			return;
 		}
 
-		$wpdb     = DB::wpdb();
-		$site_ids = array_map(
-			'intval',
-			get_sites(
-				array(
-					'fields' => 'ids',
-					'number' => 0,
-				)
-			)
-		);
-		$own      = array_flip( Schema::table_names( '' ) );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- No API lists the tables of deleted sites.
-		$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->base_prefix ) . '%' ) );
-		foreach ( array_filter( $tables, 'is_string' ) as $table ) {
-			if ( 1 !== preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+)_(.+)$/', $table, $match ) || ! isset( $own[ $match[2] ] ) || in_array( (int) $match[1], $site_ids, true ) ) {
-				continue;
-			}
-			$sql = $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table );
-			if ( null !== $sql ) {
-				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; the tables of easyQ of a site that no longer exists.
-				$wpdb->query( $sql );
+		$wpdb    = DB::wpdb();
+		$deleted = array();
+		foreach ( Installer::installed_sites() as $site_id ) {
+			if ( null === get_site( $site_id ) ) {
+				$deleted[] = $site_id;
 			}
 		}
 
-		self::delete_meta_of_deleted_sites( $site_ids );
-	}
-
-	/**
-	 * Deletes the user meta of sites of the network that no longer exist.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @param int[] $site_ids Sites that exist.
-	 */
-	private static function delete_meta_of_deleted_sites( array $site_ids ): void {
-		$wpdb = DB::wpdb();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off cleanup on uninstall; no API lists meta keys.
-		$keys = $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT meta_key FROM %i WHERE meta_key LIKE %s', $wpdb->usermeta, $wpdb->esc_like( $wpdb->base_prefix ) . '%' . $wpdb->esc_like( '_' . self::USER_META_PREFIX ) . '%' ) );
-		foreach ( array_filter( $keys, 'is_string' ) as $key ) {
-			if ( 1 === preg_match( '/^' . preg_quote( $wpdb->base_prefix, '/' ) . '(\d+)_' . preg_quote( self::USER_META_PREFIX, '/' ) . '/', $key, $site ) && ! in_array( (int) $site[1], $site_ids, true ) ) {
-				delete_metadata( 'user', 0, $key, '', true );
+		foreach ( $deleted as $site_id ) {
+			foreach ( Schema::table_names( $wpdb->get_blog_prefix( $site_id ) ) as $table ) {
+				$sql = $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table );
+				if ( null !== $sql ) {
+					// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; the tables of easyQ of a site that no longer exists.
+					$wpdb->query( $sql );
+				}
 			}
+			self::delete_meta_with_prefix( $wpdb->get_blog_prefix( $site_id ) . self::USER_META_PREFIX );
+			Installer::forget_site( $site_id );
 		}
 	}
 }

@@ -164,11 +164,14 @@ final class Lifecycle_Test extends Test_Case {
 		wpmu_delete_blog( $site, true );
 		$this->assertSame( '', get_user_meta( $user, $key, true ) );
 
-		// Meta of a site deleted before the plugin knew of it goes with the uninstall.
+		// Meta of a site easyQ installed and that was deleted while easyQ was not loaded goes with
+		// the uninstall; meta of a site easyQ never installed stays (F-253, Multisite_Installer_Test).
+		\EasyQ\Database\Installer::remember_site( 9999 );
 		$orphan = $wpdb->base_prefix . '9999_easyq_level';
 		update_user_meta( $user, $orphan, 50 );
 		Uninstaller::run();
 		$this->assertSame( '', get_user_meta( $user, $orphan, true ) );
+		$this->assertNotContains( 9999, \EasyQ\Database\Installer::installed_sites() );
 	}
 
 	public function test_a_site_without_easyq_does_not_keep_the_meta_of_the_network(): void {

@@ -58,6 +58,20 @@ final class Installer {
 	private const RETRY_AFTER = HOUR_IN_SECONDS;
 
 	/**
+	 * Option of the main network with the sites of a network on which easyQ created its tables.
+	 *
+	 * Core drops the tables of a deleted site that it knows or a loaded plugin names
+	 * (`wp_uninitialize_site()`, `wpmu_drop_tables`), never by the pattern of their names; a
+	 * database may hold another install whose prefix starts with the same letters. When easyQ
+	 * was not loaded as a site was deleted, this list tells which tables were its own.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @var string
+	 */
+	public const SITES_OPTION = 'easyq_sites';
+
+	/**
 	 * Hooks the installer into WordPress.
 	 *
 	 * @since 0.1.0
@@ -169,6 +183,8 @@ final class Installer {
 			}
 
 			$first = 0 === self::stored_version();
+			// Noted before the tables are created, so that tables of a failed install are known as well.
+			self::remember_site( get_current_blog_id() );
 			Schema::install();
 			Schema::register_meta_tables();
 
@@ -248,6 +264,59 @@ final class Installer {
 	}
 
 	/**
+	 * Returns the sites of the network on which easyQ created its tables.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return int[] Site IDs, deleted sites whose tables are left included.
+	 */
+	public static function installed_sites(): array {
+		if ( ! is_multisite() ) {
+			return array();
+		}
+
+		$sites = get_network_option( get_main_network_id(), self::SITES_OPTION, array() );
+
+		return is_array( $sites ) ? array_values( array_unique( array_map( 'intval', array_filter( $sites, 'is_numeric' ) ) ) ) : array();
+	}
+
+	/**
+	 * Notes a site of the network on which easyQ creates or keeps its tables.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $site_id Site ID.
+	 */
+	public static function remember_site( int $site_id ): void {
+		$sites = self::installed_sites();
+		if ( is_multisite() && ! in_array( $site_id, $sites, true ) ) {
+			$sites[] = $site_id;
+			update_network_option( get_main_network_id(), self::SITES_OPTION, $sites );
+		}
+	}
+
+	/**
+	 * Forgets a site of the network whose tables of easyQ are gone.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param int $site_id Site ID.
+	 */
+	public static function forget_site( int $site_id ): void {
+		$sites = self::installed_sites();
+		if ( ! in_array( $site_id, $sites, true ) ) {
+			return;
+		}
+
+		$sites = array_values( array_diff( $sites, array( $site_id ) ) );
+		if ( array() === $sites ) {
+			delete_network_option( get_main_network_id(), self::SITES_OPTION );
+			return;
+		}
+		update_network_option( get_main_network_id(), self::SITES_OPTION, $sites );
+	}
+
+	/**
 	 * Installs a new site of the network if the plugin is network-activated.
 	 *
 	 * @since 0.1.0
@@ -293,6 +362,7 @@ final class Installer {
 	 */
 	public static function uninitialize_site( WP_Site $site ): void {
 		\EasyQ\Uninstaller::delete_meta_with_prefix( DB::wpdb()->get_blog_prefix( (int) $site->blog_id ) . \EasyQ\Uninstaller::USER_META_PREFIX );
+		self::forget_site( (int) $site->blog_id );
 	}
 
 	/**
