@@ -13,6 +13,7 @@ use EasyQ\Capabilities;
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Moderation_Query;
 use EasyQ\Posts\Post;
+use EasyQ\Posts\Post_Service;
 use EasyQ\Services;
 use WP_Error;
 use WP_REST_Request;
@@ -413,7 +414,7 @@ final class Posts_Controller extends Controller {
 			'reshow'             => $this->reshow( $actor, $post, $question, $parent_post ),
 			'delete'             => $this->delete( $actor, $post, $question, $parent_post ),
 			'close'              => $this->close( $actor, $post, $request ),
-			'reopen'             => $this->run( static fn () => $service->reopen( $actor, $post ) ),
+			'reopen'             => null === $service->reopen( $actor, $post ) ? Post_Service::conflict() : true,
 			'claim'              => $this->run( static fn () => $service->claim( $actor, $post ) ),
 			'convert'            => $this->convert( $actor, $post, $question, self::int_param( $request, 'parent' ) ?? $question->id ),
 			'move'               => $this->move( $actor, $post, $request ),
@@ -502,7 +503,7 @@ final class Posts_Controller extends Controller {
 			default        => $service->set_comment_status( $actor, $post, $question, $parent_post, $status ),
 		};
 
-		return $changed ? true : new WP_Error( 'easyq_changed', __( 'Someone else changed this post in the meantime. Reload the page to see it.', 'easyq' ), array( 'status' => 409 ) );
+		return $changed ? true : Post_Service::conflict();
 	}
 
 	/**
@@ -567,18 +568,14 @@ final class Posts_Controller extends Controller {
 				return $this->invalid( 'duplicate_of', __( 'The original question does not exist.', 'easyq' ) );
 			}
 
-			Services::post_service()->close_as_duplicate( $actor, $question, $original->id );
-
-			return true;
+			return Services::post_service()->close_as_duplicate( $actor, $question, $original->id );
 		}
 
 		if ( '' === $note ) {
 			return $this->invalid( 'note', __( 'Please give a reason or the original question.', 'easyq' ) );
 		}
 
-		Services::post_service()->close_with_note( $actor, $question, $note );
-
-		return true;
+		return Services::post_service()->close_with_note( $actor, $question, $note );
 	}
 
 	/**
@@ -601,9 +598,7 @@ final class Posts_Controller extends Controller {
 			return $this->invalid( 'parent', __( 'The comment must belong to the question or another of its answers that may get comments.', 'easyq' ) );
 		}
 
-		Services::post_service()->answer_to_comment( $actor, $answer, $question, $parent_id, (string) $answer->content, $answer->format, $answer->notify );
-
-		return true;
+		return Services::post_service()->answer_to_comment( $actor, $answer, $question, $parent_id, (string) $answer->content, $answer->format, $answer->notify ) ? true : Post_Service::conflict();
 	}
 
 	/**
@@ -624,9 +619,7 @@ final class Posts_Controller extends Controller {
 			return REST_Errors::invalid( $error );
 		}
 
-		Services::post_service()->set_category( $actor, $question, $category_id );
-
-		return true;
+		return Services::post_service()->set_category( $actor, $question, $category_id ) ? true : Post_Service::conflict();
 	}
 
 	/**

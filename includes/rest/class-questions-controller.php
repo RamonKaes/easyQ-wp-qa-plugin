@@ -12,6 +12,7 @@ use EasyQ\Blocks\Render\Query_Resolver;
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Duplicates;
 use EasyQ\Posts\Post;
+use EasyQ\Posts\Post_Service;
 use EasyQ\Posts\Question_Query;
 use EasyQ\Search\Search;
 use EasyQ\Search\Search_Result;
@@ -367,12 +368,14 @@ final class Questions_Controller extends Controller {
 		$remoderate = Options::get_bool( 'spam', 'moderate_edited_again' ) && null !== Services::permissions()->moderation_reason( $actor );
 		$notify     = $request->has_param( 'notify' ) ? Post_Input::author( $actor, $request )['notify'] : $question->notify;
 
-		Services::post_service()->edit_question( $actor, $question, $title, $content, $format, $tags, $notify, Post_Input::edited_name( $request, $question, $actor ), $remoderate, $silent, Post_Input::extra( $request ) );
+		if ( ! Services::post_service()->edit_question( $actor, $question, $title, $content, $format, $tags, $notify, Post_Input::edited_name( $request, $question, $actor ), $remoderate, $silent, Post_Input::extra( $request ) ) ) {
+			return Post_Service::conflict();
+		}
 
 		if ( $category_id !== $question->category_id ) {
 			$edited = Services::posts()->find( $question->id );
-			if ( null !== $edited ) {
-				Services::post_service()->set_category( $actor, $edited, $category_id, $silent );
+			if ( null === $edited || ! Services::post_service()->set_category( $actor, $edited, $category_id, $silent ) ) {
+				return Post_Service::conflict();
 			}
 		}
 

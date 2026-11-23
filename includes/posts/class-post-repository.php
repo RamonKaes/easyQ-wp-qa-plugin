@@ -408,14 +408,30 @@ final class Post_Repository {
 	/**
 	 * Deletes a post together with its votes, flags and meta data.
 	 *
+	 * With a type, the post goes only if it still has the type it was read with, as
+	 * change_type() changes it: two moderators, or a moderator and a privacy erasure, may act
+	 * on the same post at once, and a post shown again in between must stay.
+	 *
 	 * The search index must be cleared before, see Search\Index::unindex_post().
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param int $id Post ID.
+	 * @param int         $id   Post ID.
+	 * @param string|null $type Type the post was read with, or null to delete it whatever it is.
+	 * @return bool Whether the post was deleted; false if it no longer had the type.
 	 */
-	public function delete( int $id ): void {
+	public function delete( int $id, ?string $type = null ): bool {
 		$wpdb = DB::wpdb();
+
+		$sql = null === $type
+			? $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'posts' ), $id )
+			: $wpdb->prepare( 'DELETE FROM %i WHERE id = %d AND type = %s', Schema::table( 'posts' ), $id, $type );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
+		$deleted = null === $sql ? false : $wpdb->query( $sql );
+		$this->forget( $id );
+		if ( null !== $type && ( ! is_int( $deleted ) || 0 === $deleted ) ) {
+			return false;
+		}
 
 		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE post_id = %d', Schema::table( 'uservotes' ), $id );
 		if ( null !== $sql ) {
@@ -424,13 +440,8 @@ final class Post_Repository {
 		}
 		Votes::forget();
 		Schema::delete_all_meta( 'easyq_post', $id );
-		$sql = $wpdb->prepare( 'DELETE FROM %i WHERE id = %d', Schema::table( 'posts' ), $id );
-		if ( null !== $sql ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Prepared above; custom tables without a WordPress API.
-			$wpdb->query( $sql );
-		}
 
-		$this->forget( $id );
+		return true;
 	}
 
 	/**

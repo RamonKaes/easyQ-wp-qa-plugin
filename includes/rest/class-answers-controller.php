@@ -11,6 +11,7 @@ namespace EasyQ\REST;
 use EasyQ\Limits\Limits;
 use EasyQ\Posts\Duplicates;
 use EasyQ\Posts\Post;
+use EasyQ\Posts\Post_Service;
 use EasyQ\Services;
 use EasyQ\Settings\Options;
 use WP_Error;
@@ -320,7 +321,9 @@ final class Answers_Controller extends Controller {
 		$remoderate = Options::get_bool( 'spam', 'moderate_edited_again' ) && null !== Services::permissions()->moderation_reason( $actor );
 		$notify     = $request->has_param( 'notify' ) ? Post_Input::author( $actor, $request )['notify'] : $answer->notify;
 
-		Services::post_service()->edit_answer( $actor, $answer, $question, $content, $format, $notify, Post_Input::edited_name( $request, $answer, $actor ), $remoderate, self::bool_param( $request, 'silent' ) );
+		if ( ! Services::post_service()->edit_answer( $actor, $answer, $question, $content, $format, $notify, Post_Input::edited_name( $request, $answer, $actor ), $remoderate, self::bool_param( $request, 'silent' ) ) ) {
+			return Post_Service::conflict();
+		}
 
 		$updated = Services::posts()->find( $answer->id );
 		$request->set_param( 'context', 'edit' );

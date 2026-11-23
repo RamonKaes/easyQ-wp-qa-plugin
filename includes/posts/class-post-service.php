@@ -103,6 +103,18 @@ final class Post_Service {
 	}
 
 	/**
+	 * Returns the error of a change that ran into someone else's: the post no longer had the
+	 * state it was read with, or is gone.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @return WP_Error The error `easyq_changed` with status 409.
+	 */
+	public static function conflict(): WP_Error {
+		return new WP_Error( 'easyq_changed', __( 'Someone else changed this post in the meantime. Reload the page to see it.', 'easyq' ), array( 'status' => 409 ) );
+	}
+
+	/**
 	 * Checks whether a question counts as closed.
 	 *
 	 * A question is closed by a duplicate or a note, or, if the site closes
@@ -133,7 +145,7 @@ final class Post_Service {
 	 * @param Post|null   $follow_answer Answer the question follows on from.
 	 * @param bool        $queued        Whether the question waits for moderation.
 	 * @param string|null $extra         Value of the extra question field.
-	 * @return int The new question ID, 0 on failure.
+	 * @return int The new question ID, 0 on failure or if another request deleted it at once.
 	 */
 	public function create_question( Actor $actor, string $title, string $content, string $format = '', array $tags = array(), ?int $category_id = null, ?string $notify = null, ?string $name = null, ?Post $follow_answer = null, bool $queued = false, ?string $extra = null ): int {
 		$tag_string = Text::tags_to_string( $tags );
@@ -149,7 +161,11 @@ final class Post_Service {
 		}
 
 		$this->posts->update_hotness( $id );
-		$question = $this->require_post( $id );
+		$question = $this->reread( $id );
+		if ( null === $question ) {
+			// Deleted by another request right away: nothing to count or announce.
+			return 0;
+		}
 
 		if ( $queued ) {
 			Counts::invalidate( Counts::QUEUED );
@@ -192,7 +208,7 @@ final class Post_Service {
 	 * @param string|null $notify   Notification value, see notify_value().
 	 * @param string|null $name     Name of an anonymous author.
 	 * @param bool        $queued   Whether the answer waits for moderation.
-	 * @return int The new answer ID, 0 on failure.
+	 * @return int The new answer ID, 0 on failure or if another request deleted it at once.
 	 */
 	public function create_answer( Actor $actor, Post $question, string $content, string $format = '', ?string $notify = null, ?string $name = null, bool $queued = false ): int {
 		$id = $this->posts->insert( $queued ? 'A_QUEUED' : 'A', $question->id, $question->category_id, $actor, null, $content, $format, null, $notify, $name );
@@ -202,7 +218,11 @@ final class Post_Service {
 			return 0;
 		}
 
-		$answer = $this->require_post( $id );
+		$answer = $this->reread( $id );
+		if ( null === $answer ) {
+			// Deleted by another request right away: nothing to count or announce.
+			return 0;
+		}
 
 		if ( $queued ) {
 			Counts::invalidate( Counts::QUEUED );
@@ -247,7 +267,7 @@ final class Post_Service {
 	 * @param string|null $notify   Notification value, see notify_value().
 	 * @param string|null $name     Name of an anonymous author.
 	 * @param bool        $queued   Whether the comment waits for moderation.
-	 * @return int The new comment ID, 0 on failure.
+	 * @return int The new comment ID, 0 on failure or if another request deleted it at once.
 	 */
 	public function create_comment( Actor $actor, Post $question, Post $parent_post, string $content, string $format = '', ?string $notify = null, ?string $name = null, bool $queued = false ): int {
 		$id = $this->posts->insert( $queued ? 'C_QUEUED' : 'C', $parent_post->id, $question->category_id, $actor, null, $content, $format, null, $notify, $name );
@@ -257,7 +277,11 @@ final class Post_Service {
 			return 0;
 		}
 
-		$comment = $this->require_post( $id );
+		$comment = $this->reread( $id );
+		if ( null === $comment ) {
+			// Deleted by another request right away: nothing to count or announce.
+			return 0;
+		}
 
 		if ( $queued ) {
 			Counts::invalidate( Counts::QUEUED );
@@ -307,8 +331,9 @@ final class Post_Service {
 	 * @param bool        $remoderate Whether a changed question goes back to moderation.
 	 * @param bool        $silent     Whether to skip recording the edit.
 	 * @param string|null $extra      Value of the extra question field, or null to keep it.
+	 * @return bool False if another request deleted the question in between.
 	 */
-	public function edit_question( Actor $actor, Post $question, string $title, string $content, string $format, array $tags, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false, ?string $extra = null ): void {
+	public function edit_question( Actor $actor, Post $question, string $title, string $content, string $format, array $tags, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false, ?string $extra = null ): bool {
 		$tag_string = Text::tags_to_string( $tags );
 
 		$this->search->unindex( $question->id );
@@ -337,24 +362,27 @@ final class Post_Service {
 			$record_edit ? $actor : null,
 			( $title_changed || $content_changed ) ? Post::UPDATE_CONTENT : Post::UPDATE_TAGS
 		);
+		$updated = $this->reread( $question->id );
+		if ( null === $updated ) {
+			return false;
+		}
 		if ( $new_address ) {
-			Unsubscribe::ask_for_confirmation( $this->require_post( $question->id ) );
+			Unsubscribe::ask_for_confirmation( $updated );
 		}
 
 		if ( null !== $extra ) {
 			update_metadata( 'easyq_post', $question->id, self::EXTRA_META, $extra );
 		}
 
-		$requeue = $record_edit && $remoderate;
-		$updated = $this->require_post( $question->id );
+		// Back to moderation only from the status the question was read with, as any change of status.
+		$requeue = $record_edit && $remoderate && $this->posts->change_type( $question->id, $question->type, 'Q_QUEUED' );
 
 		if ( $requeue ) {
 			$this->unindex_question_tree( $question );
-			$this->posts->update( $question->id, array( 'type' => 'Q_QUEUED' ) );
 			$this->question_counts_changed( $question );
 			Counts::invalidate( Counts::QUEUED, Counts::FLAGGED );
 			$this->points->update( $question->user_id, array( Points::QUESTIONS, Points::SELECTIONS ) );
-		} elseif ( Post::QUESTION === $question->type ) {
+		} elseif ( Post::QUESTION === $updated->type ) {
 			$this->search->index( $updated, $question->id, $question->category_id );
 			if ( $tags_changed ) {
 				Counts::invalidate( Counts::TAGS );
@@ -387,6 +415,8 @@ final class Post_Service {
 		if ( $requeue ) {
 			Events::dispatch( 'q_requeue', $params, $actor );
 		}
+
+		return true;
 	}
 
 	/**
@@ -403,27 +433,31 @@ final class Post_Service {
 	 * @param string|null $name       Name of an anonymous author, or null to keep it.
 	 * @param bool        $remoderate Whether a changed answer goes back to moderation.
 	 * @param bool        $silent     Whether to skip recording the edit.
+	 * @return bool False if another request deleted the answer in between.
 	 */
-	public function edit_answer( Actor $actor, Post $answer, Post $question, string $content, string $format, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false ): void {
+	public function edit_answer( Actor $actor, Post $answer, Post $question, string $content, string $format, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false ): bool {
 		$this->search->unindex( $answer->id );
 
 		$content_changed = (string) $answer->content !== $content || $answer->format !== $format;
 		$record_edit     = $content_changed && ! $answer->is_queued() && ! $silent;
-		$requeue         = $record_edit && $remoderate;
 
-		$this->update_content( $actor, $answer, $content, $format, $notify, $name, $record_edit );
+		$updated = $this->update_content( $actor, $answer, $content, $format, $notify, $name, $record_edit );
+		if ( null === $updated ) {
+			return false;
+		}
 
+		// Back to moderation only from the status the answer was read with, as any change of status.
+		$requeue = $record_edit && $remoderate && $this->posts->change_type( $answer->id, $answer->type, 'A_QUEUED' );
 		if ( $requeue ) {
 			foreach ( $this->comments_of( $question, $answer->id ) as $comment ) {
 				$this->search->unindex( $comment->id );
 			}
 
-			$this->posts->update( $answer->id, array( 'type' => 'A_QUEUED' ) );
 			$this->answers_changed( $question );
 			Counts::invalidate( Counts::QUEUED, Counts::FLAGGED );
 			$this->points->update( $answer->user_id, array( Points::ANSWERS, Points::ANSWERS_SELECTED ) );
-		} elseif ( Post::ANSWER === $answer->type && Post::QUESTION === $question->type ) {
-			$this->search->index( $this->require_post( $answer->id ), $question->id, $answer->category_id );
+		} elseif ( Post::ANSWER === $updated->type && Post::QUESTION === $question->type ) {
+			$this->search->index( $updated, $question->id, $answer->category_id );
 		}
 
 		$params = array(
@@ -448,6 +482,8 @@ final class Post_Service {
 		if ( $requeue ) {
 			Events::dispatch( 'a_requeue', $params, $actor );
 		}
+
+		return true;
 	}
 
 	/**
@@ -465,22 +501,26 @@ final class Post_Service {
 	 * @param string|null $name       Name of an anonymous author, or null to keep it.
 	 * @param bool        $remoderate Whether a changed comment goes back to moderation.
 	 * @param bool        $silent     Whether to skip recording the edit.
+	 * @return bool False if another request deleted the comment in between.
 	 */
-	public function edit_comment( Actor $actor, Post $comment, Post $question, Post $parent_post, string $content, string $format, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false ): void {
+	public function edit_comment( Actor $actor, Post $comment, Post $question, Post $parent_post, string $content, string $format, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false ): bool {
 		$this->search->unindex( $comment->id );
 
 		$content_changed = (string) $comment->content !== $content || $comment->format !== $format;
 		$record_edit     = $content_changed && ! $comment->is_queued() && ! $silent;
-		$requeue         = $record_edit && $remoderate;
 
-		$this->update_content( $actor, $comment, $content, $format, $notify, $name, $record_edit );
+		$updated = $this->update_content( $actor, $comment, $content, $format, $notify, $name, $record_edit );
+		if ( null === $updated ) {
+			return false;
+		}
 
+		// Back to moderation only from the status the comment was read with, as any change of status.
+		$requeue = $record_edit && $remoderate && $this->posts->change_type( $comment->id, $comment->type, 'C_QUEUED' );
 		if ( $requeue ) {
-			$this->posts->update( $comment->id, array( 'type' => 'C_QUEUED' ) );
 			Counts::invalidate( Counts::COMMENTS, Counts::QUEUED, Counts::FLAGGED );
 			$this->points->update( $comment->user_id, array( Points::COMMENTS ) );
-		} elseif ( Post::COMMENT === $comment->type && $this->comment_indexable( $question, $parent_post ) ) {
-			$this->search->index( $this->require_post( $comment->id ), $question->id, $comment->category_id );
+		} elseif ( Post::COMMENT === $updated->type && $this->comment_indexable( $question, $parent_post ) ) {
+			$this->search->index( $updated, $question->id, $comment->category_id );
 		}
 
 		$params = array(
@@ -507,6 +547,8 @@ final class Post_Service {
 		if ( $requeue ) {
 			Events::dispatch( 'c_requeue', $params, $actor );
 		}
+
+		return true;
 	}
 
 	/**
@@ -517,7 +559,7 @@ final class Post_Service {
 	 * @param Actor  $actor    Who changes the status.
 	 * @param Post   $question Question before the change.
 	 * @param string $status   One of the Post::STATUS_* constants.
-	 * @return bool False if the question no longer had the type it was read with: someone else changed it first.
+	 * @return bool False if the question no longer had the type it was read with, or is gone: someone else changed it first.
 	 */
 	public function set_question_status( Actor $actor, Post $question, string $status ): bool {
 		$was_hidden   = $question->is_hidden();
@@ -545,7 +587,11 @@ final class Post_Service {
 		Counts::invalidate( Counts::QUEUED, Counts::FLAGGED );
 		$this->points->update( $question->user_id, array( Points::QUESTIONS, Points::SELECTIONS ) );
 
-		$updated = $this->require_post( $question->id );
+		$updated = $this->reread( $question->id );
+		if ( null === $updated ) {
+			// Deleted by another request since the change; the counts above are read from the database.
+			return false;
+		}
 		if ( Post::STATUS_NORMAL === $status ) {
 			$this->index_question_tree( $updated );
 		}
@@ -572,7 +618,7 @@ final class Post_Service {
 	 * @param Post   $answer   Answer before the change.
 	 * @param Post   $question Question of the answer.
 	 * @param string $status   One of the Post::STATUS_* constants.
-	 * @return bool False if the post no longer had the type it was read with: someone else changed it first.
+	 * @return bool False if the post no longer had the type it was read with, or is gone: someone else changed it first.
 	 */
 	public function set_answer_status( Actor $actor, Post $answer, Post $question, string $status ): bool {
 		$was_hidden   = $answer->is_hidden();
@@ -593,7 +639,8 @@ final class Post_Service {
 
 		if ( Post::STATUS_HIDDEN === $status && $question->selected_child_id === $answer->id ) {
 			$this->select_answer( Actor::system(), $question, null );
-			$question = $this->require_post( $question->id );
+			// A question with answers cannot be deleted; the copy read before stands in for a broken thread.
+			$question = $this->reread( $question->id ) ?? $question;
 		}
 
 		if ( $was_queued && Post::STATUS_NORMAL === $status && Options::get_bool( 'spam', 'moderate_update_time' ) ) {
@@ -604,7 +651,11 @@ final class Post_Service {
 		Counts::invalidate( Counts::QUEUED, Counts::FLAGGED );
 		$this->points->update( $answer->user_id, array( Points::ANSWERS, Points::ANSWERS_SELECTED ) );
 
-		$updated = $this->require_post( $answer->id );
+		$updated = $this->reread( $answer->id );
+		if ( null === $updated ) {
+			// Deleted by another request since the change; the counts above are read from the database.
+			return false;
+		}
 		if ( Post::QUESTION === $question->type && Post::STATUS_NORMAL === $status ) {
 			$this->search->index( $updated, $question->id, $updated->category_id );
 			foreach ( $comments as $comment ) {
@@ -637,7 +688,7 @@ final class Post_Service {
 	 * @param Post   $question Question the comment belongs to.
 	 * @param Post   $parent_post   Question or answer the comment is on.
 	 * @param string $status   One of the Post::STATUS_* constants.
-	 * @return bool False if the post no longer had the type it was read with: someone else changed it first.
+	 * @return bool False if the post no longer had the type it was read with, or is gone: someone else changed it first.
 	 */
 	public function set_comment_status( Actor $actor, Post $comment, Post $question, Post $parent_post, string $status ): bool {
 		$was_hidden   = $comment->is_hidden();
@@ -659,7 +710,11 @@ final class Post_Service {
 		Counts::invalidate( Counts::COMMENTS, Counts::QUEUED, Counts::FLAGGED );
 		$this->points->update( $comment->user_id, array( Points::COMMENTS ) );
 
-		$updated = $this->require_post( $comment->id );
+		$updated = $this->reread( $comment->id );
+		if ( null === $updated ) {
+			// Deleted by another request since the change; the counts above are read from the database.
+			return false;
+		}
 		if ( Post::STATUS_NORMAL === $status && $this->comment_indexable( $question, $parent_post ) ) {
 			$this->search->index( $updated, $question->id, $updated->category_id );
 		}
@@ -712,17 +767,18 @@ final class Post_Service {
 		);
 		Events::dispatch( 'q_delete_before', $params, $actor );
 
-		if ( null !== $note ) {
-			$this->posts->update( $question->id, array( 'closed_by_id' => null ) );
-			$this->search->unindex( $note->id );
-			$this->posts->delete( $note->id );
-		}
-
 		$voters       = $this->voters( $question->id );
 		$category_ids = $this->posts->category_ids_of( $question->id );
 
+		// Only while it is still hidden: someone may have shown it again since it was read.
+		if ( ! $this->posts->delete( $question->id, $question->type ) ) {
+			return self::conflict();
+		}
 		$this->search->unindex( $question->id );
-		$this->posts->delete( $question->id );
+		if ( null !== $note ) {
+			$this->search->unindex( $note->id );
+			$this->posts->delete( $note->id );
+		}
 		$this->categories->recount( $category_ids );
 
 		$this->points->update( $question->user_id, array( Points::QUESTIONS, Points::SELECTIONS, Points::QUESTION_VOTE_POINTS, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ) );
@@ -763,8 +819,11 @@ final class Post_Service {
 
 		$voters = $this->voters( $answer->id );
 
+		// Only while it is still hidden: someone may have shown it again since it was read.
+		if ( ! $this->posts->delete( $answer->id, $answer->type ) ) {
+			return self::conflict();
+		}
 		$this->search->unindex( $answer->id );
-		$this->posts->delete( $answer->id );
 
 		// Not reachable today: hiding an answer clears the selection first; this repairs data stored before that.
 		if ( $question->selected_child_id === $answer->id ) {
@@ -810,8 +869,11 @@ final class Post_Service {
 
 		$voters = $this->voters( $comment->id );
 
+		// Only while it is still hidden: someone may have shown it again since it was read.
+		if ( ! $this->posts->delete( $comment->id, $comment->type ) ) {
+			return self::conflict();
+		}
 		$this->search->unindex( $comment->id );
-		$this->posts->delete( $comment->id );
 
 		$this->points->update( $comment->user_id, array( Points::COMMENTS, Points::COMMENT_VOTE_POINTS, Points::UPVOTES_RECEIVED, Points::DOWNVOTES_RECEIVED ) );
 		foreach ( $voters as $voter_id => $vote ) {
@@ -904,9 +966,13 @@ final class Post_Service {
 	 * @param Actor $actor       Who closes the question.
 	 * @param Post  $question    Question.
 	 * @param int   $original_id ID of the original question.
+	 * @return true|WP_Error The error of conflict() if another request deleted the question in between.
 	 */
-	public function close_as_duplicate( Actor $actor, Post $question, int $original_id ): void {
+	public function close_as_duplicate( Actor $actor, Post $question, int $original_id ): bool|WP_Error {
 		$question = $this->reopen( $actor, $question );
+		if ( null === $question ) {
+			return self::conflict();
+		}
 
 		$this->posts->update( $question->id, array( 'closed_by_id' => $original_id ), $actor, Post::UPDATE_CLOSED );
 		$this->question_counts_changed( $question );
@@ -921,6 +987,8 @@ final class Post_Service {
 			),
 			$actor
 		);
+
+		return true;
 	}
 
 	/**
@@ -931,18 +999,29 @@ final class Post_Service {
 	 * @param Actor  $actor    Who closes the question.
 	 * @param Post   $question Question.
 	 * @param string $note     Reason.
+	 * @return true|WP_Error The error `easyq_not_created` if the database refused the note, the
+	 *                       error of conflict() if another request deleted the question or the
+	 *                       note in between.
 	 */
-	public function close_with_note( Actor $actor, Post $question, string $note ): void {
+	public function close_with_note( Actor $actor, Post $question, string $note ): bool|WP_Error {
 		$question = $this->reopen( $actor, $question );
+		if ( null === $question ) {
+			return self::conflict();
+		}
 
 		$note_id = $this->posts->insert( Post::NOTE, $question->id, $question->category_id, $actor, null, $note, '', null, null, null );
 		if ( 0 === $note_id ) {
 			// The database refused the post (Failed_Insert_Test).
-			return;
+			return new WP_Error( 'easyq_not_created', __( 'The reason for closing could not be saved.', 'easyq' ), array( 'status' => 500 ) );
 		}
 
+		$note_post = $this->reread( $note_id );
+		if ( null === $note_post ) {
+			// Deleted by another request that reopened the question right away.
+			return self::conflict();
+		}
 		if ( Post::QUESTION === $question->type ) {
-			$this->search->index( $this->require_post( $note_id ), $question->id, $question->category_id );
+			$this->search->index( $note_post, $question->id, $question->category_id );
 		}
 
 		$this->posts->update( $question->id, array( 'closed_by_id' => $note_id ), $actor, Post::UPDATE_CLOSED );
@@ -958,6 +1037,8 @@ final class Post_Service {
 			),
 			$actor
 		);
+
+		return true;
 	}
 
 	/**
@@ -967,9 +1048,9 @@ final class Post_Service {
 	 *
 	 * @param Actor $actor    Who reopens the question.
 	 * @param Post  $question Question.
-	 * @return Post The question after the change.
+	 * @return Post|null The question after the change, or null if another request deleted it in between.
 	 */
-	public function reopen( Actor $actor, Post $question ): Post {
+	public function reopen( Actor $actor, Post $question ): ?Post {
 		if ( null === $question->closed_by_id ) {
 			return $question;
 		}
@@ -994,7 +1075,7 @@ final class Post_Service {
 			$actor
 		);
 
-		return $this->require_post( $question->id );
+		return $this->reread( $question->id );
 	}
 
 	/**
@@ -1006,14 +1087,20 @@ final class Post_Service {
 	 * @param Post     $question    Question.
 	 * @param int|null $category_id New category ID, or null for none.
 	 * @param bool     $silent      Whether to skip recording the change.
+	 * @return bool False if another request deleted the question in between.
 	 */
-	public function set_category( Actor $actor, Post $question, ?int $category_id, bool $silent = false ): void {
+	public function set_category( Actor $actor, Post $question, ?int $category_id, bool $silent = false ): bool {
 		$old_categories = $this->posts->category_ids_of( $question->id );
 
 		$this->posts->update( $question->id, array( 'category_id' => $category_id ), $silent ? null : $actor, Post::UPDATE_CATEGORY );
 		$this->posts->calc_category_path( $question->id );
 
-		$updated = $this->require_post( $question->id );
+		$updated = $this->reread( $question->id );
+		if ( null === $updated ) {
+			$this->categories->recount( $old_categories );
+
+			return false;
+		}
 		$this->categories->recount( array_merge( $old_categories, $this->posts->category_ids_of( $question->id ) ) );
 
 		$other_ids = array_merge(
@@ -1039,6 +1126,8 @@ final class Post_Service {
 			),
 			$actor
 		);
+
+		return true;
 	}
 
 	/**
@@ -1058,12 +1147,12 @@ final class Post_Service {
 	 * @param string|null $name       Name of an anonymous author, or null to keep it.
 	 * @param bool        $remoderate Whether a changed comment goes back to moderation.
 	 * @param bool        $silent     Whether to skip recording the change.
+	 * @return bool False if the answer no longer had the type it was read with, or is gone:
+	 *              someone else changed it first.
 	 */
-	public function answer_to_comment( Actor $actor, Post $answer, Post $question, int $parent_id, string $content, string $format, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false ): void {
+	public function answer_to_comment( Actor $actor, Post $answer, Post $question, int $parent_id, string $content, string $format, ?string $notify, ?string $name = null, bool $remoderate = false, bool $silent = false ): bool {
 		$answers     = $this->posts->answers_of( $question->id );
 		$parent_post = $answers[ $parent_id ] ?? $question;
-
-		$this->search->unindex( $answer->id );
 
 		$was_queued      = $answer->is_queued();
 		$content_changed = (string) $answer->content !== $content || $answer->format !== $format;
@@ -1071,9 +1160,14 @@ final class Post_Service {
 		$requeue         = $record_edit && $remoderate;
 		$new_type        = $requeue ? 'C_QUEUED' : 'C' . substr( $answer->type, 1 );
 
-		$this->posts->update( $answer->id, array( 'type' => $new_type ), ( $was_queued || $silent ) ? null : $actor, Post::UPDATE_TYPE );
+		// A change of type, so only from the type the answer was read with, as set_answer_status().
+		if ( ! $this->posts->change_type( $answer->id, $answer->type, $new_type, ( $was_queued || $silent ) ? null : $actor, Post::UPDATE_TYPE ) ) {
+			return false;
+		}
+
+		$this->search->unindex( $answer->id );
 		$this->posts->update( $answer->id, array( 'parent_id' => $parent_post->id ) );
-		$this->update_content( $actor, $answer, $content, $format, $notify, $name, $record_edit );
+		$converted = $this->update_content( $actor, $answer, $content, $format, $notify, $name, $record_edit );
 
 		foreach ( $this->posts->children( $answer->id ) as $child ) {
 			$this->posts->update( $child->id, array( 'parent_id' => $parent_post->id ) );
@@ -1094,8 +1188,12 @@ final class Post_Service {
 			);
 		}
 
+		if ( null === $converted ) {
+			// Deleted by another request since the change; the counts above are read from the database.
+			return false;
+		}
 		if ( ! $requeue && Post::ANSWER === $answer->type && $this->comment_indexable( $question, $parent_post ) ) {
-			$this->search->index( $this->require_post( $answer->id ), $question->id, $answer->category_id );
+			$this->search->index( $converted, $question->id, $answer->category_id );
 		}
 
 		$params = array(
@@ -1122,6 +1220,8 @@ final class Post_Service {
 		if ( $requeue ) {
 			Events::dispatch( 'c_requeue', $params, $actor );
 		}
+
+		return true;
 	}
 
 	/**
@@ -1259,8 +1359,9 @@ final class Post_Service {
 	 * @param string|null $notify      Notification value.
 	 * @param string|null $name        Name of an anonymous author, or null to keep it.
 	 * @param bool        $record_edit Whether to record the edit.
+	 * @return Post|null The post after the change, or null if another request deleted it in between.
 	 */
-	private function update_content( Actor $actor, Post $post, string $content, string $format, ?string $notify, ?string $name, bool $record_edit ): void {
+	private function update_content( Actor $actor, Post $post, string $content, string $format, ?string $notify, ?string $name, bool $record_edit ): ?Post {
 		$columns = array(
 			'content' => $content,
 			'format'  => $format,
@@ -1272,9 +1373,12 @@ final class Post_Service {
 
 		$new_address = $this->forget_confirmation( $post, $notify );
 		$this->posts->update( $post->id, $columns, $record_edit ? $actor : null, Post::UPDATE_CONTENT );
-		if ( $new_address ) {
-			Unsubscribe::ask_for_confirmation( $this->require_post( $post->id ) );
+		$updated = $this->reread( $post->id );
+		if ( null !== $updated && $new_address ) {
+			Unsubscribe::ask_for_confirmation( $updated );
 		}
+
+		return $updated;
 	}
 
 	/**
@@ -1532,21 +1636,20 @@ final class Post_Service {
 	}
 
 	/**
-	 * Loads a post that must exist.
+	 * Reads a post again after a change, as the database has it now.
+	 *
+	 * Another request may have deleted the post since this one changed it: two moderators,
+	 * or a moderator and a privacy erasure. The caller then ends with its error result (the
+	 * change ran into someone else's), never with an exception.
 	 *
 	 * @since 0.1.0
 	 *
 	 * @param int $id Post ID.
-	 * @return Post
-	 * @throws \RuntimeException If the post does not exist.
+	 * @return Post|null Null if the post is gone.
 	 */
-	private function require_post( int $id ): Post {
-		$post = $this->posts->find( $id );
-		if ( null === $post ) {
-			// Not covered: only a race (the post deleted between write and read) gets here.
-			throw new \RuntimeException( esc_html( sprintf( 'Post %d does not exist.', $id ) ) );
-		}
+	private function reread( int $id ): ?Post {
+		$this->posts->forget( $id );
 
-		return $post;
+		return $this->posts->find( $id );
 	}
 }

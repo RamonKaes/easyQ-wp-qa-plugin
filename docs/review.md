@@ -187,7 +187,7 @@ measured on a network (`partly`). No cell carries ✓, so none was refuted.
 
 | | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | F-262 | partly | partly | F-252 | partly | partly | F-255 | F-258 | F-252 | — | partly | F-267 |
+| A | partly | F-262 | partly | partly | F-256 | partly | partly | F-255 | F-258 | partly | — | partly | F-267 |
 | B | partly | F-262 | F-257 | partly | partly | partly | partly | partly | partly | F-263 | F-266 | F-254 | F-266 |
 | C | partly | partly | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | F-286 |
 | D | partly | partly | partly | — | F-278 | partly | — | partly | partly | F-263 | partly | partly | F-269 |
@@ -200,7 +200,7 @@ measured on a network (`partly`). No cell carries ✓, so none was refuted.
 | K | — | — | — | partly | partly | F-279 | partly | partly | — | partly | — | partly | partly |
 | L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | partly | partly |
 | M | partly | — | — | — | F-287 | partly | partly | partly | — | partly | — | partly | partly |
-| N | — | — | partly | — | F-252 | partly | — | F-282 | — | partly | — | partly | partly |
+| N | — | — | partly | — | partly | partly | — | F-282 | — | partly | — | partly | partly |
 | O | — | — | — | partly | partly | F-260 | partly | F-259 | — | F-293 | — | F-253 | partly |
 | P | partly | F-296 | partly | partly | — | — | — | — | — | partly | — | — | F-281 |
 | Q | — | — | — | — | — | partly | — | partly | — | partly | partly | partly | partly |
