@@ -197,4 +197,38 @@ final class Duplicate_Posts_Test extends REST_Test_Case {
 		$this->assertTrue( $this->data( $this->request( 'POST', '/questions', $params ) )['queued'] );
 		$this->assertSame( 409, $this->request( 'POST', '/questions', $params )->get_status() );
 	}
+
+	/**
+	 * Check and insert are one step: while one request checks and creates, a second
+	 * request, on its own connection to the database, cannot take the lock and waits, so it
+	 * sees the post of the first and is refused (F-277, promised by F-144).
+	 */
+	public function test_check_and_insert_hold_a_lock_other_requests_wait_for(): void {
+		global $wpdb;
+		$lock  = $wpdb->prefix . 'easyq_post';
+		$other = new \wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+		$take  = static fn (): string => (string) $other->get_var( $other->prepare( 'SELECT GET_LOCK(%s, 0)', $lock ) );
+		$held  = null;
+
+		$id    = \EasyQ\Posts\Duplicates::create(
+			$this->user(),
+			Post::QUESTION,
+			null,
+			'A question posted twice at once',
+			'Content.',
+			'',
+			static function () use ( $take, &$held ): int {
+				$held = $take();
+
+				return 4711;
+			}
+		);
+		$after = $take();
+		$other->query( $other->prepare( 'SELECT RELEASE_LOCK(%s)', $lock ) );
+		$other->close();
+
+		$this->assertSame( 4711, $id );
+		$this->assertSame( '0', $held, 'A second request cannot take the lock while the first checks and creates.' );
+		$this->assertSame( '1', $after, 'The lock is free once the post is created.' );
+	}
 }
