@@ -59,6 +59,10 @@ final class Registration {
 		add_filter( 'wpmu_validate_user_signup', array( $this, 'validate_signup' ) );
 		add_filter( 'add_signup_meta', array( $this, 'add_signup_meta' ) );
 		add_action( 'wpmu_activate_user', array( $this, 'activate' ), 10, 3 );
+		// A sign-up with a site of its own goes through a second form, the site form, and is
+		// activated as a site (`wp-signup.php`, `wpmu_activate_signup()`).
+		add_action( 'signup_hidden_fields', array( $this, 'carry' ) );
+		add_action( 'wpmu_activate_blog', array( $this, 'activate_blog' ), 10, 5 );
 	}
 
 	/**
@@ -235,16 +239,51 @@ final class Registration {
 	 * @return mixed
 	 */
 	public function validate_signup( mixed $result ): mixed {
-		// Only the form of `wp-signup.php`; network administrators add users without it.
+		// Only the form of `wp-signup.php`; network administrators add users without it. The second
+		// stage of a sign-up with a site validates the user again (`validate_blog_signup()`), and with
+		// it the input the site form carried on.
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Only tells which form was sent.
 		$stage = isset( $_POST['stage'] ) && is_string( $_POST['stage'] ) ? sanitize_key( wp_unslash( $_POST['stage'] ) ) : '';
-		if ( 'validate-user-signup' !== $stage || ! is_array( $result ) || ! ( $result['errors'] ?? null ) instanceof WP_Error ) {
+		if ( ! in_array( $stage, array( 'validate-user-signup', 'validate-blog-signup' ), true ) || ! is_array( $result ) || ! ( $result['errors'] ?? null ) instanceof WP_Error ) {
 			return $result;
 		}
 
 		$this->validate( $result['errors'] );
 
 		return $result;
+	}
+
+	/**
+	 * Carries the input of the user form of a network sign-up through the site form, as core
+	 * carries the username and the email address, so that the second stage validates and keeps
+	 * it; with a nonce of its own, as the form is a new one.
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $context Step of the sign-up: `validate-site` for the site form of a new
+	 *                       account; the other steps have no input of easyQ.
+	 */
+	public function carry( mixed $context ): void {
+		if ( 'validate-site' !== $context ) {
+			return;
+		}
+
+		$input = $this->input();
+		if ( null === $input ) {
+			return;
+		}
+
+		wp_nonce_field( self::NONCE, self::NONCE, false );
+		foreach ( $input['fields'] as $field_id => $value ) {
+			printf( '<input type="hidden" name="%s" value="%s" />', esc_attr( 'easyq_fields[' . $field_id . ']' ), esc_attr( $value ) );
+		}
+		$boxes = array(
+			'easyq_terms'      => $input['terms'],
+			'easyq_newsletter' => $input['newsletter'],
+		);
+		foreach ( array_keys( array_filter( $boxes ) ) as $name ) {
+			printf( '<input type="hidden" name="%s" value="1" />', esc_attr( $name ) );
+		}
 	}
 
 	/**
@@ -294,6 +333,24 @@ final class Registration {
 		if ( $switched ) {
 			restore_current_blog();
 		}
+	}
+
+	/**
+	 * Saves the input of a network sign-up with a site of its own once it is activated, as
+	 * `activate()` saves it for an account alone: core then fires `wpmu_activate_blog` instead of
+	 * `wpmu_activate_user` (`wpmu_activate_signup()`).
+	 *
+	 * @since 0.1.0
+	 *
+	 * @param mixed $blog_id  ID of the new site, unused: the input belongs to the site it was sent on.
+	 * @param mixed $user_id  ID of the new user.
+	 * @param mixed $password Password, unused.
+	 * @param mixed $title    Title of the new site, unused.
+	 * @param mixed $meta     Meta of the sign-up.
+	 */
+	public function activate_blog( mixed $blog_id, mixed $user_id, mixed $password, mixed $title, mixed $meta ): void {
+		unset( $blog_id, $title );
+		$this->activate( $user_id, $password, $meta );
 	}
 
 	/**

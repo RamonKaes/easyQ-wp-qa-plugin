@@ -121,6 +121,107 @@ final class Registration_Test extends Test_Case {
 		$this->assertNotSame( Newsletter::state( $user_id ), Newsletter::state( (int) $this->user()->user_id ), 'The newsletter was asked for.' );
 	}
 
+	/**
+	 * A sign-up with a site of its own goes through the user form and the site form of
+	 * `wp-signup.php` and is activated as a site: the terms are asked and checked at both
+	 * stages, and the consent, the fields and the newsletter wish arrive (F-254).
+	 *
+	 * @group ms-required
+	 */
+	public function test_the_sign_up_of_a_network_with_a_site_asks_and_keeps_the_input(): void {
+		global $wpdb;
+		reset_phpmailer_instance();
+		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
+		$this->assertIsInt( $field );
+		Options::update( 'users', array( 'show_register_terms' => true ) );
+		Options::update(
+			'newsletter',
+			array(
+				'mailing_enabled' => true,
+				'mailing_subject' => 'News',
+				'mailing_body'    => 'Some news.',
+			)
+		);
+		$hidden = static function ( string $context ): array {
+			ob_start();
+			do_action( 'signup_hidden_fields', $context );
+			preg_match_all( '/<input type="hidden"[^>]* name="([^"]+)" value="([^"]*)"/', (string) ob_get_clean(), $inputs, PREG_SET_ORDER );
+			parse_str( implode( '&', array_map( static fn ( array $input ): string => rawurlencode( html_entity_decode( $input[1] ) ) . '=' . rawurlencode( html_entity_decode( $input[2] ) ), $inputs ) ), $values );
+
+			return $values;
+		};
+
+		// Stage 1, the user form with `signup_for=blog`: validated as for an account alone.
+		$_POST = array(
+			'stage'            => 'validate-user-signup',
+			'signup_for'       => 'blog',
+			'easyq_register'   => wp_create_nonce( 'easyq_register' ),
+			'easyq_terms'      => '1',
+			'easyq_newsletter' => '1',
+			'easyq_fields'     => array( $field => 'Lovelace Ltd' ),
+		);
+		$this->assertSame( array(), wpmu_validate_user_signup( 'siteuser', 'site@example.org' )['errors']->get_error_codes() );
+
+		// The site form carries the input on, with a nonce; creating another site has none to carry.
+		$carried = $hidden( 'validate-site' );
+		$this->assertSame( array(), preg_grep( '/^easyq_/', array_keys( $hidden( 'create-another-site' ) ) ) );
+		$this->assertSame( array( $field => 'Lovelace Ltd' ), $carried['easyq_fields'] ?? null );
+		$this->assertSame( '1', $carried['easyq_terms'] ?? null );
+		$this->assertSame( '1', $carried['easyq_newsletter'] ?? null );
+		$this->assertNotFalse( wp_verify_nonce( (string) ( $carried['easyq_register'] ?? '' ), 'easyq_register' ) );
+
+		// Stage 2 without the terms, as a request sent by hand with the nonce: refused.
+		$_POST = array(
+			'stage'          => 'validate-blog-signup',
+			'easyq_register' => $carried['easyq_register'],
+		);
+		$this->assertContains( 'easyq_terms', wpmu_validate_user_signup( 'siteuser', 'site@example.org' )['errors']->get_error_codes() );
+
+		// Stage 2 as the site form sends it: accepted and kept with the sign-up of the site.
+		$_POST = array( 'stage' => 'validate-blog-signup' ) + $carried;
+		$this->assertSame( array(), wpmu_validate_user_signup( 'siteuser', 'site@example.org' )['errors']->get_error_codes() );
+		add_filter( 'wp_mail_from', static fn (): string => 'wordpress@example.org' );
+		$network = get_network();
+		$this->assertInstanceOf( \WP_Network::class, $network );
+		wpmu_signup_blog(
+			$network->domain,
+			$network->path . 'siteuser/',
+			'A site of the user',
+			'siteuser',
+			'site@example.org',
+			apply_filters(
+				'add_signup_meta',
+				array(
+					'lang_id' => 1,
+					'public'  => 1,
+				)
+			)
+		);
+		$_POST = array();
+
+		// Activated as a site: the input is saved on the site the form was sent on.
+		$key = (string) $wpdb->get_var( $wpdb->prepare( "SELECT activation_key FROM {$wpdb->signups} WHERE user_login = %s", 'siteuser' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The key core mails, in a test.
+		// Core logs the address of a new site (`wpmu_log_new_registrations()`), which a request always has.
+		$remote_addr            = $_SERVER['REMOTE_ADDR'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- Restored as it was.
+		$_SERVER['REMOTE_ADDR'] = '192.0.2.1';
+		try {
+			$result = wpmu_activate_signup( $key );
+		} finally {
+			if ( null === $remote_addr ) {
+				unset( $_SERVER['REMOTE_ADDR'] );
+			} else {
+				$_SERVER['REMOTE_ADDR'] = $remote_addr;
+			}
+		}
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'blog_id', $result );
+		$user_id = (int) $result['user_id'];
+
+		$this->assertSame( 'Lovelace Ltd', Services::user_fields()->value( $user_id, Services::user_fields()->find( $field ) ) );
+		$this->assertIsArray( Registration::accepted_terms( $user_id ) );
+		$this->assertNotSame( Newsletter::state( $user_id ), Newsletter::state( (int) $this->user()->user_id ), 'The newsletter was asked for.' );
+	}
+
 	public function test_the_form_keeps_what_was_entered_after_core_refused_it(): void {
 		$field = Services::user_fields()->create( 'company', 'Company', User_Field::FLAG_ON_REGISTER, null );
 		$this->assertIsInt( $field );
