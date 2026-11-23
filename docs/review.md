@@ -180,29 +180,30 @@ line).
 ### The matrix
 
 A cell names an open finding where one is open; several findings of a cell are in
-`docs/findings.md`. Cells that were ✓ and were refuted this round are back to `partly`
-(rule 4): A Identity (F-140), B Value (F-156), B Error path (F-157), G Error path (F-174),
-I Error path (F-157, F-158).
+`docs/findings.md`. Set by the cross-check of 2026-11-22: cells that named a finding
+fixed since are `partly` again (the fix added a test for a part, no review raised them),
+cells with a finding of that cross-check name it, and L Multisite and M Multisite were
+measured on a network (`partly`). No cell carries ✓, so none was refuted.
 
 | | Form | Value | Identity | Frequency | Concurrency | Volume | Time | State | Abuse | Error path | Presentation | Multisite | Guidelines |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A | partly | F-214 | F-217 | F-231 | F-144 | F-231 | partly | F-231 | F-144 | F-214 | — | partly | F-149 |
-| B | F-161 | F-229 | F-219 | F-154 | partly | F-225 | F-160 | F-224 | F-223 | F-224 | partly | partly | partly |
-| C | partly | partly | F-219 | partly | partly | partly | — | partly | partly | partly | partly | partly | partly |
-| D | partly | partly | partly | — | F-226 | partly | — | F-165 | partly | F-226 | F-164 | partly | F-230 |
-| E | — | partly | partly | — | — | open | — | partly | partly | partly | partly | partly | partly |
-| F | partly | partly | F-216 | partly | F-172 | F-168 | partly | partly | F-220 | F-171 | partly | partly | F-216 |
-| G | F-174 | partly | partly | partly | F-169 | F-175 | — | F-169 | partly | F-174 | partly | partly | partly |
-| H | open | partly | partly | partly | F-178 | — | partly | partly | F-198 | partly | — | partly | partly |
-| I | F-158 | partly | F-163 | partly | partly | partly | — | partly | partly | F-215 | partly | partly | F-215 |
-| J | — | F-198 | F-221 | F-181 | F-177 | partly | partly | partly | F-222 | partly | partly | partly | F-230 |
-| K | — | — | — | partly | F-177 | partly | partly | partly | — | partly | — | partly | partly |
-| L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | open | partly |
-| M | partly | — | — | — | partly | partly | partly | partly | — | partly | — | open | partly |
-| N | — | — | partly | — | open | F-185 | — | partly | — | partly | — | partly | F-228 |
-| O | — | — | — | partly | F-186 | partly | partly | F-187 | — | F-187 | — | partly | partly |
-| P | F-202 | partly | partly | partly | — | — | — | — | — | partly | — | — | F-204 |
-| Q | — | — | — | — | — | partly | — | partly | — | partly | partly | F-189 | partly |
+| A | partly | F-262 | F-251 | partly | F-252 | partly | partly | F-255 | F-258 | F-252 | — | partly | F-267 |
+| B | partly | F-262 | F-257 | partly | partly | partly | partly | partly | partly | F-263 | F-266 | F-254 | F-266 |
+| C | partly | partly | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | F-286 |
+| D | partly | partly | partly | — | F-278 | partly | — | partly | partly | F-263 | partly | partly | F-269 |
+| E | — | F-274 | partly | — | — | open | — | partly | partly | partly | partly | partly | partly |
+| F | partly | partly | F-273 | partly | partly | F-279 | partly | partly | partly | partly | F-295 | F-261 | F-270 |
+| G | partly | F-289 | partly | partly | F-288 | partly | — | partly | partly | partly | partly | partly | partly |
+| H | open | partly | partly | partly | partly | — | partly | partly | partly | partly | — | partly | partly |
+| I | partly | F-276 | partly | partly | partly | partly | — | partly | partly | partly | partly | F-291 | partly |
+| J | — | F-262 | partly | partly | partly | partly | partly | partly | partly | F-294 | partly | partly | partly |
+| K | — | — | — | partly | partly | F-279 | partly | partly | — | partly | — | partly | partly |
+| L | partly | partly | partly | partly | — | partly | partly | partly | partly | partly | partly | partly | partly |
+| M | partly | — | — | — | F-287 | partly | partly | partly | — | partly | — | partly | partly |
+| N | — | — | partly | — | F-252 | partly | — | F-282 | — | partly | — | partly | partly |
+| O | — | — | — | partly | partly | F-260 | partly | F-259 | — | F-293 | — | F-253 | partly |
+| P | partly | F-296 | partly | partly | — | — | — | — | — | partly | — | — | F-281 |
+| Q | — | — | — | — | — | partly | — | partly | — | partly | partly | partly | partly |
 
 Cells that changed from `—`: H Identity (the visitor cookie decides what a visitor may
 edit), M Time (an expired lock of the tools), O Frequency (an install on every request
@@ -265,6 +266,44 @@ repository, in the audit folder of the environment.
   auditors "Mensch und Recht" and "Browser und Store" (`mut-6`), the data mutations on
   the single-site suite, `npm run env:start` from the fresh clone (ports in use). The run
   therefore does not count as a round until these are made up.
+
+## Cross-check on 2026-11-22
+
+`/cross-check-review` over the whole matrix on commit f935125, step by step with a halt
+after each part on the owner's wish (2026-11-22 and 2026-11-23). Lead and the nine part
+auditors (Identity and rights, Security, Abuse and domain logic, Robustness, Data,
+multisite and lifecycle, Browser and store, People and law, WordPress guidelines,
+Hygiene) ran on Opus 5.5, each auditor in a context of its own and blind to
+`docs/findings.md` until the lead's phase B. Notes and frozen lists:
+`.claude/audit/2026-11-22/` of the environment.
+
+- **Machines**: PHPCS, PHPStan, unit (101), ESLint, PHP single site (1065) and multisite
+  (1081) after `wp-env clean all`, E2E (161), Plugin Check on the development site and
+  as the CI action runs it (release archive, PHP 8.2, Plugin Check 2.2.0, experimental,
+  warnings counted): all green. Coverage with Xdebug: 492 lines unrun, 81 of them added
+  since 2026-11-19 without a comment (F-297).
+- **Findings**: F-251 to F-297: 4 blocker (F-251 to F-254), 29 should (F-255 to F-283), 14 low (F-284 to F-297; merged
+  rows). The open suspicions of 2026-11-21: six became findings, three are refuted, one
+  became F-252; three new suspicions (two should).
+- **Fresh clone** (`README.md`, `CLAUDE.md`): composer, npm, build, lints, analysis,
+  unit, both PHP suites with override ports green; deviations in F-296.
+- **History**: eight reverts of five fix commits since 2026-11-19: three red, two
+  equivalent, three green (F-277, F-297).
+- **Guards attacked** in a form they are not built for: four green (F-297), the mail
+  guard held.
+- **Fix commits checked** (§4a of the command): F-144 (lock untested, F-277), F-218
+  (refused cases untested and Question2Answer's approve rule missing, F-272, F-284),
+  F-224 (the hidden question and the store path missed, F-263), F-230 (texts and the
+  `withSyncEvent()` guard, F-270, F-278), F-234 part 21 (generic codes, F-268), F-244
+  (drops tables of other installs, F-253), F-12 (case of the route, F-255).
+
+### Does the cross-check of 2026-11-22 count as a round
+
+Yes: over the whole matrix and complete; every part auditor, coverage and the mutations
+on both suites ran. Not run: E2E in the fresh clone, a screen reader, right to left in
+the admin, WP-Cron through a real page view on a network. Blocker in old code: F-251,
+F-252, F-254 (F-253 is a gap of the fix of F-244). Rounds in a row without a finding of
+class should or blocker in old code: 0.
 
 ## Cross-cutting standards
 
